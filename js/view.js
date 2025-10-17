@@ -101,12 +101,25 @@ export const PortfolioView = {
             return input;
         };
 
-        // --- 첫 번째 줄 (Inputs) ---
-        trInputs.appendChild(createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name)), 'cell-name'));
+        const nameCell = createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name)), 'cell-name');
+        nameCell.rowSpan = 2;
+        trInputs.appendChild(nameCell);
+        
         trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-ticker'));
         trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-sector'));
         trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } }), 'cell-targetRatio'));
         trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' }), 'cell-currentPrice'));
+        
+        if (mainMode === 'add') {
+            const fixedBuyContainer = document.createElement('div');
+            fixedBuyContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: center;';
+            const checkbox = createInput('checkbox', 'isFixedBuyEnabled', stock.isFixedBuyEnabled, '고정 매수 활성화');
+            checkbox.checked = stock.isFixedBuyEnabled;
+            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
+            amountInput.disabled = !stock.isFixedBuyEnabled;
+            fixedBuyContainer.append(checkbox, amountInput);
+            trInputs.appendChild(createCell(fixedBuyContainer, 'cell-fixedBuy'));
+        }
         
         const actionsContainer = document.createElement('div');
         actionsContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
@@ -121,38 +134,32 @@ export const PortfolioView = {
         actionsContainer.append(manageBtn, deleteBtn);
         
         const actionsCell = createCell(actionsContainer, 'cell-actions');
-        actionsCell.rowSpan = 2; // 두 줄에 걸쳐 표시
+        actionsCell.rowSpan = 2;
         trInputs.appendChild(actionsCell);
 
-        // --- 두 번째 줄 (Outputs) ---
-        const createOutputCell = (label, valueContent, className) => {
-            const cell = document.createElement('td');
-            cell.className = `output-cell ${className}`;
-            cell.innerHTML = `<span class="label">${label}</span><span class="value">${valueContent}</span>`;
-            return cell;
+        const createOutputCell = (label, valueContent) => {
+            return `<div class="output-cell">
+                        <span class="label">${label}</span>
+                        <span class="value">${valueContent}</span>
+                    </div>`;
         };
         
         const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss.isPositive() ? '+' : '';
 
-        trOutputs.appendChild(createOutputCell('보유 수량', quantity.toNumber().toLocaleString(), 'cell-quantity'));
-        trOutputs.appendChild(createOutputCell('평균 단가($)', formatCurrency(avgBuyPrice, currency), 'cell-avgBuyPrice'));
-        trOutputs.appendChild(createOutputCell('평가 금액($)', formatCurrency(currentAmount, currency), 'cell-currentAmount'));
-        trOutputs.appendChild(createOutputCell('손익(수익률)', `<div class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</div>`, 'cell-profit'));
-
-        // 'add' 모드일 때 고정매수 칸과 빈 칸 추가
-        if (mainMode === 'add') {
-            const fixedBuyContainer = document.createElement('div');
-            fixedBuyContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: center;';
-            const checkbox = createInput('checkbox', 'isFixedBuyEnabled', stock.isFixedBuyEnabled, '고정 매수 활성화');
-            checkbox.checked = stock.isFixedBuyEnabled;
-            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
-            amountInput.disabled = !stock.isFixedBuyEnabled;
-            fixedBuyContainer.append(checkbox, amountInput);
-            trInputs.insertBefore(createCell(fixedBuyContainer, 'cell-fixedBuy'), actionsCell);
-            
-            trOutputs.appendChild(createCell('', 'cell-fixedBuy-placeholder'));
-        }
+        const outputsHTML = `
+            <div class="outputs-container">
+                ${createOutputCell('보유 수량', quantity.toNumber().toLocaleString())}
+                ${createOutputCell('평균 단가', formatCurrency(avgBuyPrice, currency))}
+                ${createOutputCell('평가 금액', formatCurrency(currentAmount, currency))}
+                ${createOutputCell('손익(수익률)', `<span class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</span>`)}
+            </div>
+        `;
+        
+        const outputContainerCell = document.createElement('td');
+        outputContainerCell.colSpan = mainMode === 'add' ? 5 : 4;
+        outputContainerCell.innerHTML = outputsHTML;
+        trOutputs.appendChild(outputContainerCell);
 
         tbody.append(trInputs, trOutputs);
         return tbody;
@@ -167,16 +174,17 @@ export const PortfolioView = {
         tbody.querySelector('[data-field="targetRatio"]').value = stock.targetRatio.toFixed(2);
         tbody.querySelector('[data-field="currentPrice"]').value = stock.currentPrice;
 
-        tbody.querySelector('.cell-quantity .value').textContent = quantity.toNumber().toLocaleString();
-        tbody.querySelector('.cell-avgBuyPrice .value').textContent = formatCurrency(avgBuyPrice, currency);
-        tbody.querySelector('.cell-currentAmount .value').textContent = formatCurrency(currentAmount, currency);
-
-        const profitEl = tbody.querySelector('.cell-profit .value div');
-        if (profitEl) {
+        const outputContainer = tbody.querySelector('.outputs-container');
+        if (outputContainer) {
             const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
             const profitSign = profitLoss.isPositive() ? '+' : '';
-            profitEl.className = profitClass;
-            profitEl.innerHTML = `${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)`;
+
+            outputContainer.children[0].querySelector('.value').textContent = quantity.toNumber().toLocaleString();
+            outputContainer.children[1].querySelector('.value').textContent = formatCurrency(avgBuyPrice, currency);
+            outputContainer.children[2].querySelector('.value').textContent = formatCurrency(currentAmount, currency);
+            const profitValueEl = outputContainer.children[3].querySelector('.value span');
+            profitValueEl.className = profitClass;
+            profitValueEl.innerHTML = `${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)`;
         }
         
         if (mainMode === 'add') {
@@ -206,7 +214,7 @@ export const PortfolioView = {
         const fixedBuyHeader = mainMode === 'add' ? `<th scope="col">고정 매수(${currencySymbol})</th>` : '';
         this.dom.portfolioTableHead.innerHTML = `
             <tr>
-                <th scope="col">종목명</th>
+                <th scope="col" rowspan="2">종목명</th>
                 <th scope="col">티커</th>
                 <th scope="col">섹터</th>
                 <th scope="col">목표 비율(%)</th>

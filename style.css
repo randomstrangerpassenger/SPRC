@@ -66,11 +66,20 @@ tbody:hover { background-color: rgba(0,0,0,0.02); }
     padding-top: 12px;
     padding-bottom: 12px;
 }
+.stock-inputs td[rowspan="2"] {
+    vertical-align: middle;
+}
 .stock-outputs {
     background-color: rgba(0,0,0,0.015);
 }
 body.dark-mode .stock-outputs {
     background-color: rgba(255,255,255,0.03);
+}
+.outputs-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
 }
 .output-cell {
     text-align: center !important;
