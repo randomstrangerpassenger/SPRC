@@ -200,7 +200,7 @@ export const PortfolioView = {
 
     renderTable(calculatedPortfolioData, currency, mainMode) {
         this.updateTableHeader(currency, mainMode);
-        this.dom.portfolioBody.innerHTML = '';
+        this.dom.portfolioBody.innerHTML = ''; 
 
         const fragment = document.createDocumentFragment();
         calculatedPortfolioData.forEach(stock => {
