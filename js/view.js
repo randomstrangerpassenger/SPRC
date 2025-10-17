@@ -67,8 +67,15 @@ export const PortfolioView = {
     },
     
     createStockRowElement(stock, currency, mainMode) {
-        const tr = document.createElement('tr');
-        tr.dataset.id = stock.id;
+        const tbody = document.createElement('tbody');
+        tbody.className = 'stock-entry';
+        tbody.dataset.id = stock.id;
+
+        const trInputs = document.createElement('tr');
+        trInputs.className = 'stock-inputs';
+
+        const trOutputs = document.createElement('tr');
+        trOutputs.className = 'stock-outputs';
 
         const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
 
@@ -94,90 +101,88 @@ export const PortfolioView = {
             return input;
         };
 
-        tr.appendChild(createCell(createInput('text', 'name', stock.name, `${stock.name} 종목명`), 'cell-name'));
-        tr.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-ticker'));
-        tr.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-sector'));
-        tr.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } }), 'cell-targetRatio'));
-        tr.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' }), 'cell-currentPrice'));
-        tr.appendChild(createCell(`<span class="calculated-value">${quantity.toNumber().toLocaleString()}</span>`, 'amount-input cell-quantity'));
-        tr.appendChild(createCell(`<span class="calculated-value">${formatCurrency(avgBuyPrice, currency)}</span>`, 'amount-input cell-avgBuyPrice'));
-        tr.appendChild(createCell(`<span class="calculated-value">${formatCurrency(currentAmount, currency)}</span>`, 'amount-input cell-currentAmount'));
-
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
-        const profitContent = `
-            <div class="${profitClass}" style="font-weight:bold;">
-                ${profitSign}${formatCurrency(profitLoss, currency)}
-                <br>
-                <small>(${profitSign}${profitLossRate.toFixed(2)}%)</small>
-            </div>
-        `;
-        tr.appendChild(createCell(profitContent, 'amount-input cell-profit'));
-
-        if (mainMode === 'add') {
-            const fixedBuyContainer = document.createElement('div');
-            fixedBuyContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: center;';
-            
-            const checkbox = createInput('checkbox', 'isFixedBuyEnabled', stock.isFixedBuyEnabled, '고정 매수 활성화');
-            checkbox.checked = stock.isFixedBuyEnabled;
-            
-            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
-            amountInput.disabled = !stock.isFixedBuyEnabled;
-
-            fixedBuyContainer.append(checkbox, amountInput);
-            tr.appendChild(createCell(fixedBuyContainer, 'cell-fixedBuy'));
-        }
-
+        // --- 첫 번째 줄 (Inputs) ---
+        trInputs.appendChild(createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name)), 'cell-name'));
+        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-ticker'));
+        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-sector'));
+        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } }), 'cell-targetRatio'));
+        trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' }), 'cell-currentPrice'));
+        
         const actionsContainer = document.createElement('div');
         actionsContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
-        
         const manageBtn = document.createElement('button');
         manageBtn.className = 'btn btn--blue btn--small';
         manageBtn.dataset.action = 'manage';
         manageBtn.textContent = '거래 관리';
-
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn--delete btn--small';
         deleteBtn.dataset.action = 'delete';
         deleteBtn.textContent = '삭제';
-        
         actionsContainer.append(manageBtn, deleteBtn);
-        tr.appendChild(createCell(actionsContainer, 'cell-actions'));
+        
+        const actionsCell = createCell(actionsContainer, 'cell-actions');
+        actionsCell.rowSpan = 2; // 두 줄에 걸쳐 표시
+        trInputs.appendChild(actionsCell);
 
-        return tr;
+        // --- 두 번째 줄 (Outputs) ---
+        const createOutputCell = (label, valueContent, className) => {
+            const cell = document.createElement('td');
+            cell.className = `output-cell ${className}`;
+            cell.innerHTML = `<span class="label">${label}</span><span class="value">${valueContent}</span>`;
+            return cell;
+        };
+        
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        trOutputs.appendChild(createOutputCell('보유 수량', quantity.toNumber().toLocaleString(), 'cell-quantity'));
+        trOutputs.appendChild(createOutputCell('평균 단가($)', formatCurrency(avgBuyPrice, currency), 'cell-avgBuyPrice'));
+        trOutputs.appendChild(createOutputCell('평가 금액($)', formatCurrency(currentAmount, currency), 'cell-currentAmount'));
+        trOutputs.appendChild(createOutputCell('손익(수익률)', `<div class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</div>`, 'cell-profit'));
+
+        // 'add' 모드일 때 고정매수 칸과 빈 칸 추가
+        if (mainMode === 'add') {
+            const fixedBuyContainer = document.createElement('div');
+            fixedBuyContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: center;';
+            const checkbox = createInput('checkbox', 'isFixedBuyEnabled', stock.isFixedBuyEnabled, '고정 매수 활성화');
+            checkbox.checked = stock.isFixedBuyEnabled;
+            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
+            amountInput.disabled = !stock.isFixedBuyEnabled;
+            fixedBuyContainer.append(checkbox, amountInput);
+            trInputs.insertBefore(createCell(fixedBuyContainer, 'cell-fixedBuy'), actionsCell);
+            
+            trOutputs.appendChild(createCell('', 'cell-fixedBuy-placeholder'));
+        }
+
+        tbody.append(trInputs, trOutputs);
+        return tbody;
     },
 
-    updateStockRowElement(row, stock, currency, mainMode) {
+    updateStockRowElement(tbody, stock, currency, mainMode) {
         const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
         
-        row.querySelector('[data-field="name"]').value = stock.name;
-        row.querySelector('[data-field="ticker"]').value = stock.ticker;
-        row.querySelector('[data-field="sector"]').value = stock.sector;
-        row.querySelector('[data-field="targetRatio"]').value = stock.targetRatio.toFixed(2);
-        row.querySelector('[data-field="currentPrice"]').value = stock.currentPrice;
+        tbody.querySelector('[data-field="name"]').value = stock.name;
+        tbody.querySelector('[data-field="ticker"]').value = stock.ticker;
+        tbody.querySelector('[data-field="sector"]').value = stock.sector;
+        tbody.querySelector('[data-field="targetRatio"]').value = stock.targetRatio.toFixed(2);
+        tbody.querySelector('[data-field="currentPrice"]').value = stock.currentPrice;
 
-        row.querySelector('.cell-quantity .calculated-value').textContent = quantity.toNumber().toLocaleString();
-        row.querySelector('.cell-avgBuyPrice .calculated-value').textContent = formatCurrency(avgBuyPrice, currency);
-        row.querySelector('.cell-currentAmount .calculated-value').textContent = formatCurrency(currentAmount, currency);
+        tbody.querySelector('.cell-quantity .value').textContent = quantity.toNumber().toLocaleString();
+        tbody.querySelector('.cell-avgBuyPrice .value').textContent = formatCurrency(avgBuyPrice, currency);
+        tbody.querySelector('.cell-currentAmount .value').textContent = formatCurrency(currentAmount, currency);
 
-        const profitEl = row.querySelector('.cell-profit div');
+        const profitEl = tbody.querySelector('.cell-profit .value div');
         if (profitEl) {
             const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
             const profitSign = profitLoss.isPositive() ? '+' : '';
             profitEl.className = profitClass;
-            profitEl.innerHTML = `
-                ${profitSign}${formatCurrency(profitLoss, currency)}
-                <br>
-                <small>(${profitSign}${profitLossRate.toFixed(2)}%)</small>
-            `;
+            profitEl.innerHTML = `${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)`;
         }
         
         if (mainMode === 'add') {
-            const checkbox = row.querySelector('[data-field="isFixedBuyEnabled"]');
-            const amountInput = row.querySelector('[data-field="fixedBuyAmount"]');
-            if (checkbox) {
-                checkbox.checked = stock.isFixedBuyEnabled;
-            }
+            const checkbox = tbody.querySelector('[data-field="isFixedBuyEnabled"]');
+            const amountInput = tbody.querySelector('[data-field="fixedBuyAmount"]');
+            if (checkbox) checkbox.checked = stock.isFixedBuyEnabled;
             if (amountInput) {
                 amountInput.value = stock.fixedBuyAmount;
                 amountInput.disabled = !stock.isFixedBuyEnabled;
@@ -187,25 +192,13 @@ export const PortfolioView = {
 
     renderTable(calculatedPortfolioData, currency, mainMode) {
         this.updateTableHeader(currency, mainMode);
+        this.dom.portfolioBody.innerHTML = '';
 
-        const existingRows = new Map(
-            Array.from(this.dom.portfolioBody.children).map(row => [row.dataset.id, row])
-        );
-        
-        for (const stock of calculatedPortfolioData) {
-            const stockId = String(stock.id);
-            const row = existingRows.get(stockId);
-
-            if (row) {
-                this.updateStockRowElement(row, stock, currency, mainMode);
-                existingRows.delete(stockId);
-            } else {
-                const newRow = this.createStockRowElement(stock, currency, mainMode);
-                this.dom.portfolioBody.appendChild(newRow);
-            }
-        }
-        
-        existingRows.forEach(row => row.remove());
+        const fragment = document.createDocumentFragment();
+        calculatedPortfolioData.forEach(stock => {
+            fragment.appendChild(this.createStockRowElement(stock, currency, mainMode));
+        });
+        this.dom.portfolioBody.appendChild(fragment);
     },
 
     updateTableHeader(currency, mainMode) {
@@ -218,12 +211,8 @@ export const PortfolioView = {
                 <th scope="col">섹터</th>
                 <th scope="col">목표 비율(%)</th>
                 <th scope="col">현재가(${currencySymbol})</th>
-                <th scope="col">보유 수량</th>
-                <th scope="col">평균 단가(${currencySymbol})</th>
-                <th scope="col">평가 금액(${currencySymbol})</th>
-                <th scope="col">손익(수익률)</th>
                 ${fixedBuyHeader}
-                <th scope="col">작업</th>
+                <th scope="col" rowspan="2">작업</th>
             </tr>
         `;
     },
