@@ -21,6 +21,13 @@ export function bindEventListeners(controller, dom) {
     dom.portfolioBody.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e));
     dom.portfolioBody.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
 
+    // 숫자 입력 칸 클릭 시 전체 선택 (UX 개선)
+    dom.portfolioBody.addEventListener('focusin', (e) => {
+        if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+            e.target.select();
+        }
+    });
+
     // 계산 및 모드 변경
     dom.calculateBtn.addEventListener('click', () => controller.handleCalculate());
     dom.mainModeSelector.forEach(r => r.addEventListener('change', (e) => controller.handleMainModeChange(e.target.value)));
