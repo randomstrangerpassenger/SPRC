@@ -11,7 +11,7 @@ export function bindEventListeners(controller, dom) {
     dom.addNewStockBtn.addEventListener('click', () => controller.handleAddNewStock());
     dom.resetDataBtn.addEventListener('click', () => controller.handleResetData());
     dom.normalizeRatiosBtn.addEventListener('click', () => controller.handleNormalizeRatios());
-    dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData());
+    dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData(true));
     dom.loadDataBtn.addEventListener('click', () => controller.handleLoadData());
     dom.exportDataBtn.addEventListener('click', () => controller.handleExportData());
     dom.importDataBtn.addEventListener('click', () => controller.handleImportData());
@@ -37,6 +37,16 @@ export function bindEventListeners(controller, dom) {
         if (isValid) debouncedConversion('krw');
     });
 
+    const handleEnterKey = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            controller.handleCalculate();
+        }
+    };
+    dom.additionalAmountInput.addEventListener('keydown', handleEnterKey);
+    dom.additionalAmountUSDInput.addEventListener('keydown', handleEnterKey);
+    dom.exchangeRateInput.addEventListener('keydown', handleEnterKey);
+
     // 모달 관련 이벤트
     dom.closeModalBtn.addEventListener('click', () => controller.view.closeTransactionModal());
     dom.transactionModal.addEventListener('click', (e) => {
@@ -47,4 +57,5 @@ export function bindEventListeners(controller, dom) {
     
     // 기타 UI 이벤트
     dom.darkModeToggle.addEventListener('click', () => controller.handleToggleDarkMode());
+    window.addEventListener('beforeunload', () => controller.handleSaveData(false));
 }

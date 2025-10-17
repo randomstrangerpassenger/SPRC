@@ -1,6 +1,7 @@
 import { CONFIG, MESSAGES } from './constants.js';
 import { formatCurrency } from './utils.js';
-import Decimal from 'https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.mjs';
+import Decimal from 'decimal.js';
+import Chart from 'chart.js/auto';
 
 export const PortfolioView = {
     dom: {},
@@ -69,7 +70,7 @@ export const PortfolioView = {
         const tr = document.createElement('tr');
         tr.dataset.id = stock.id;
 
-        const { quantity, avgBuyPrice, currentAmount } = stock.calculated;
+        const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
 
         const createCell = (content, className = '') => {
             const td = document.createElement('td');
@@ -101,6 +102,17 @@ export const PortfolioView = {
         tr.appendChild(createCell(`<span class="calculated-value">${quantity.toNumber().toLocaleString()}</span>`, 'amount-input cell-quantity'));
         tr.appendChild(createCell(`<span class="calculated-value">${formatCurrency(avgBuyPrice, currency)}</span>`, 'amount-input cell-avgBuyPrice'));
         tr.appendChild(createCell(`<span class="calculated-value">${formatCurrency(currentAmount, currency)}</span>`, 'amount-input cell-currentAmount'));
+
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+        const profitContent = `
+            <div class="${profitClass}" style="font-weight:bold;">
+                ${profitSign}${formatCurrency(profitLoss, currency)}
+                <br>
+                <small>(${profitSign}${profitLossRate.toFixed(2)}%)</small>
+            </div>
+        `;
+        tr.appendChild(createCell(profitContent, 'amount-input cell-profit'));
 
         if (mainMode === 'add') {
             const fixedBuyContainer = document.createElement('div');
@@ -136,7 +148,7 @@ export const PortfolioView = {
     },
 
     updateStockRowElement(row, stock, currency, mainMode) {
-        const { quantity, avgBuyPrice, currentAmount } = stock.calculated;
+        const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
         
         row.querySelector('[data-field="name"]').value = stock.name;
         row.querySelector('[data-field="ticker"]').value = stock.ticker;
@@ -147,6 +159,18 @@ export const PortfolioView = {
         row.querySelector('.cell-quantity .calculated-value').textContent = quantity.toNumber().toLocaleString();
         row.querySelector('.cell-avgBuyPrice .calculated-value').textContent = formatCurrency(avgBuyPrice, currency);
         row.querySelector('.cell-currentAmount .calculated-value').textContent = formatCurrency(currentAmount, currency);
+
+        const profitEl = row.querySelector('.cell-profit div');
+        if (profitEl) {
+            const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+            const profitSign = profitLoss.isPositive() ? '+' : '';
+            profitEl.className = profitClass;
+            profitEl.innerHTML = `
+                ${profitSign}${formatCurrency(profitLoss, currency)}
+                <br>
+                <small>(${profitSign}${profitLossRate.toFixed(2)}%)</small>
+            `;
+        }
         
         if (mainMode === 'add') {
             const checkbox = row.querySelector('[data-field="isFixedBuyEnabled"]');
@@ -197,6 +221,7 @@ export const PortfolioView = {
                 <th scope="col">보유 수량</th>
                 <th scope="col">평균 단가(${currencySymbol})</th>
                 <th scope="col">평가 금액(${currencySymbol})</th>
+                <th scope="col">손익(수익률)</th>
                 ${fixedBuyHeader}
                 <th scope="col">작업</th>
             </tr>
@@ -270,6 +295,46 @@ export const PortfolioView = {
         });
     },
 
+    displaySkeleton() {
+        const skeletonHTML = `
+            <div class="skeleton-wrapper">
+                <div class="skeleton-summary">
+                    <div class="skeleton skeleton-summary-item"></div>
+                    <div class="skeleton skeleton-summary-item"></div>
+                    <div class="skeleton skeleton-summary-item"></div>
+                </div>
+                <div class="skeleton-table">
+                    <div class="skeleton skeleton-table-row">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text--short"></div>
+                    </div>
+                    <div class="skeleton skeleton-table-row">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text--short"></div>
+                    </div>
+                    <div class="skeleton skeleton-table-row">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text--short"></div>
+                    </div>
+                     <div class="skeleton skeleton-table-row">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text--short"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        this.dom.resultsSection.innerHTML = skeletonHTML;
+        this.dom.resultsSection.classList.remove('hidden');
+        this.dom.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+
+    cleanupObserver() {
+        if (this.currentObserver) {
+            this.currentObserver.disconnect();
+            this.currentObserver = null;
+        }
+    },
+
     hideResults() {
         this.dom.resultsSection.innerHTML = '';
         this.dom.resultsSection.classList.add('hidden');
@@ -277,16 +342,11 @@ export const PortfolioView = {
         this.dom.sectorAnalysisSection.classList.add('hidden');
         this.dom.chartSection.classList.add('hidden');
         
-        if (this.currentObserver) {
-            this.currentObserver.disconnect();
-            this.currentObserver = null;
-        }
+        this.cleanupObserver();
     },
 
     displayResults(html) {
-        if (this.currentObserver) {
-            this.currentObserver.disconnect();
-        }
+        this.cleanupObserver();
 
         requestAnimationFrame(() => {
             this.dom.resultsSection.innerHTML = html;
@@ -318,7 +378,7 @@ export const PortfolioView = {
         });
     },
     
-    displayChart(labels, data, title, Chart) {
+    displayChart(labels, data, title) {
         this.dom.chartSection.classList.remove('hidden');
 
         if (this.chartInstance) {
@@ -374,8 +434,13 @@ export const PortfolioView = {
             if (!errorEl) {
                 errorEl = document.createElement('span');
                 errorEl.className = errorClass;
-                errorEl.style.color = 'var(--invalid-text-color)';
-                errorEl.style.fontSize = '0.8rem';
+                errorEl.style.cssText = `
+                    color: var(--invalid-text-color);
+                    font-size: 0.8rem;
+                    width: 100%;
+                    display: block;
+                    margin-top: 4px;
+                `;
                 parent.appendChild(errorEl);
             }
             errorEl.textContent = errorMessage;

@@ -21,14 +21,23 @@ export const Calculator = {
                     totalBuyCost = totalBuyCost.plus(txQuantity.times(txPrice));
                     totalBuyQuantity = totalBuyQuantity.plus(txQuantity);
                 } else { // 'sell'
+                    if (!totalBuyQuantity.isZero()) {
+                        const avgBuyPrice = totalBuyCost.div(totalBuyQuantity);
+                        totalBuyCost = totalBuyCost.minus(txQuantity.times(avgBuyPrice));
+                        totalBuyQuantity = totalBuyQuantity.minus(txQuantity);
+                    }
                     totalQuantity = totalQuantity.minus(txQuantity);
                 }
             }
             
             totalQuantity = Decimal.max(ZERO, totalQuantity);
+            totalBuyCost = Decimal.max(ZERO, totalBuyCost);
 
             const averageBuyPrice = totalBuyQuantity.isZero() ? ZERO : totalBuyCost.div(totalBuyQuantity);
             const currentAmount = totalQuantity.times(new Decimal(stock.currentPrice || 0));
+
+            const profitLoss = currentAmount.minus(totalBuyCost);
+            const profitLossRate = totalBuyCost.isZero() ? ZERO : profitLoss.div(totalBuyCost).times(100);
 
             return {
                 ...stock,
@@ -36,6 +45,8 @@ export const Calculator = {
                     quantity: totalQuantity,
                     avgBuyPrice: averageBuyPrice,
                     currentAmount: currentAmount,
+                    profitLoss: profitLoss,
+                    profitLossRate: profitLossRate,
                 }
             };
         });

@@ -4,15 +4,25 @@ import Decimal from 'decimal.js';
 
 export function generateAddModeResultsHTML(results, summary, currency) {
     const sortedResults = [...results].sort((a, b) => b.finalBuyAmount.comparedTo(a.finalBuyAmount));
-    const resultsRows = sortedResults.map((stock, index) => `
-        <tr class="result-row-highlight" data-delay="${index * 0.05}s">
-            <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
-            <td style="text-align: center;">${stock.currentRatio.toFixed(1)}%</td>
-            <td style="text-align: center;"><strong>${stock.targetRatio.toFixed(1)}%</strong></td>
-            <td style="text-align: right;"><div class="text-buy">${formatCurrency(stock.finalBuyAmount, currency)}</div></td>
-            <td style="text-align: center;">${stock.buyRatio.toFixed(1)}%</td>
-        </tr>
-    `).join('');
+    const resultsRows = sortedResults.map((stock, index) => {
+        const { profitLoss, profitLossRate } = stock.calculated;
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        return `
+            <tr class="result-row-highlight" data-delay="${index * 0.05}s">
+                <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
+                <td style="text-align: center;">${stock.currentRatio.toFixed(1)}%</td>
+                <td style="text-align: center;"><strong>${stock.targetRatio.toFixed(1)}%</strong></td>
+                <td style="text-align: right;">
+                    <div class="${profitClass}">
+                        ${profitSign}${profitLossRate.toFixed(2)}%
+                    </div>
+                </td>
+                <td style="text-align: right;"><div class="text-buy">${formatCurrency(stock.finalBuyAmount, currency)}</div></td>
+            </tr>
+        `;
+    }).join('');
     
     const buyableStocks = sortedResults.filter(s => s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT));
     const guideContent = buyableStocks.length > 0 
@@ -33,7 +43,13 @@ export function generateAddModeResultsHTML(results, summary, currency) {
             <h2>📈 추가 투자 배분 가이드 (매수 금액순 정렬)</h2>
             <div class="table-responsive">
                 <table>
-                    <thead><tr><th>종목</th><th>현재 비율</th><th>목표 비율</th><th>매수 추천 금액</th><th>투자금 중 비율</th></tr></thead>
+                    <thead><tr>
+                        <th>종목</th>
+                        <th>현재 비율</th>
+                        <th>목표 비율</th>
+                        <th>수익률</th>
+                        <th>매수 추천 금액</th>
+                    </tr></thead>
                     <tbody>${resultsRows}</tbody>
                 </table>
             </div>

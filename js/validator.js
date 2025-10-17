@@ -1,6 +1,6 @@
 import { CONFIG, MESSAGES } from './constants.js';
 import { getRatioSum } from './utils.js';
-import Decimal from 'https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.mjs';
+import Decimal from 'decimal.js';
 
 export const Validator = {
     validateForCalculation({ mainMode, portfolioData, additionalInvestment }) {
@@ -51,9 +51,17 @@ export const Validator = {
     },
 
     validateTransaction(txData) {
-        const { date, quantity, price } = txData;
-        if (!date || isNaN(quantity) || isNaN(price) || quantity <= 0 || price <= 0) {
-            return { isValid: false, message: MESSAGES.INVALID_TRANSACTION_DATA };
+        if (!txData.date || isNaN(new Date(txData.date))) {
+            return { isValid: false, message: '유효한 날짜를 입력해주세요.' };
+        }
+        if (new Date(txData.date) > new Date()) {
+            return { isValid: false, message: '미래 날짜는 입력할 수 없습니다.' };
+        }
+        if (isNaN(txData.quantity) || txData.quantity <= 0) {
+            return { isValid: false, message: '수량은 0보다 커야 합니다.' };
+        }
+        if (isNaN(txData.price) || txData.price <= 0) {
+            return { isValid: false, message: '단가는 0보다 커야 합니다.' };
         }
         return { isValid: true };
     },
