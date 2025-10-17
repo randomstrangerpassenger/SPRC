@@ -1,0 +1,21 @@
+{
+  "name": "portfolio-rebalancer",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^7.1.10"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "decimal.js": "^10.6.0"
+  }
+}

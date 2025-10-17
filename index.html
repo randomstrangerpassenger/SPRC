@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포트폴리오 리밸런싱 계산기 (플래티넘版)</title>
+    <meta name="description" content="포트폴리오 리밸런싱 계산기를 통해 목표 비율에 맞춰 투자 전략을 최적화하세요.">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button id="darkModeToggle" class="btn dark-mode-toggle" aria-label="다크 모드 전환">🌙</button>
+    <div class="container">
+        <header class="header">
+            <h1>📊 포트폴리오 리밸런싱 계산기</h1>
+            <p>목표 비율에 맞춰 포트폴리오를 조정하는 최적의 방법을 계산합니다.</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>📁 포트폴리오 관리</h2>
+                <div class="input-group">
+                    <label for="portfolioSelector">현재 포트폴리오:</label>
+                    <select id="portfolioSelector" class="input-group__select"></select>
+                </div>
+                <div class="btn-controls">
+                    <button id="newPortfolioBtn" class="btn btn--green">➕ 새로 만들기</button>
+                    <button id="renamePortfolioBtn" class="btn btn--blue">✏️ 이름 변경</button>
+                    <button id="deletePortfolioBtn" class="btn btn--orange">🗑️ 삭제</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>⚙️ 계산 모드 선택</h2>
+                <div class="mode-selector">
+                    <label for="modeAdd"><input type="radio" name="mainMode" value="add" id="modeAdd" checked> ➕ 추가 매수 모드</label>
+                    <label for="modeSell"><input type="radio" name="mainMode" value="sell" id="modeSell"> ⚖️ 매도 리밸런싱 모드</label>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>💼 현재 포트폴리오 설정</h2>
+                <div class="btn-controls">
+                    <button id="addNewStockBtn" class="btn btn--green">➕ 새 종목 추가</button>
+                    <button id="resetDataBtn" class="btn btn--orange">🔄 초기화</button>
+                    <button id="normalizeRatiosBtn" class="btn btn--blue">⚖️ 비율 자동 맞춤(100%)</button>
+                    <button id="saveDataBtn" class="btn btn--blue">💾 저장</button>
+                    <button id="loadDataBtn" class="btn btn--grey">📂 불러오기</button>
+                    <button id="exportDataBtn" class="btn btn--blue">📤 내보내기 (JSON)</button>
+                    <button id="importDataBtn" class="btn btn--grey">📥 가져오기 (JSON)</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                </div>
+                <div class="table-responsive">
+                    <table id="portfolioTable">
+                        <thead id="portfolioTableHead"></thead>
+                        <tbody id="portfolioBody"></tbody>
+                    </table>
+                </div>
+                <div id="ratioValidator" class="ratio-validator">
+                    <strong>목표 비율 합계:</strong>
+                    <span class="ratio-value" id="ratioSum">0%</span>
+                </div>
+            </section>
+
+            <section id="addInvestmentCard" class="card">
+                <h2>💰 추가 투자금 계산</h2>
+                <div class="mode-selector">
+                    <label for="currencyKRW"><input type="radio" name="currencyMode" value="krw" id="currencyKRW" checked> 원화(KRW) 기준</label>
+                    <label for="currencyUSD"><input type="radio" name="currencyMode" value="usd" id="currencyUSD"> 달러(USD) 기준</label>
+                </div>
+                <div id="exchangeRateGroup" class="input-group hidden">
+                    <label for="exchangeRate">환율 (1 USD):</label>
+                    <input type="number" id="exchangeRate" placeholder="예: 1300" min="0.01" step="0.01" value="1300">
+                </div>
+                <div class="input-group">
+                    <label for="additionalAmount">추가 투자 금액:</label>
+                    <input type="number" id="additionalAmount" placeholder="예: 1000000" min="0">
+                    <span id="usdInputGroup" class="hidden" style="display: contents;">
+                        <span style="margin: 0 10px;">또는</span>
+                        <label for="additionalAmountUSD" class="hidden">USD</label>
+                        <input type="number" id="additionalAmountUSD" placeholder="예: 1000" min="0" step="0.01">
+                        <span>USD</span>
+                    </span>
+                </div>
+            </section>
+            
+            <button id="calculateBtn" class="btn" style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 25px;">계산하기</button>
+            
+            <section id="resultsSection" class="hidden" aria-live="polite"></section>
+            <section id="sectorAnalysisSection" class="hidden"></section>
+            <section id="chartSection" class="card hidden">
+                <h2>📊 포트폴리오 시각화</h2>
+                <div>
+                    <canvas id="portfolioChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="transactionModal" class="modal-overlay hidden">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h2 id="modalStockName">거래 내역 관리</h2>
+                <button id="closeModalBtn" class="modal-close-btn" aria-label="닫기">&times;</button>
+            </div>
+            
+            <div class="table-responsive" style="margin-bottom: 20px;">
+                <table id="transactionTable">
+                    <caption>거래 내역 목록</caption>
+                    <thead>
+                        <tr>
+                            <th>날짜</th><th>종류</th><th>수량</th><th>단가</th><th>총액</th><th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionListBody"></tbody>
+                </table>
+            </div>
+
+            <form id="newTransactionForm">
+                <h3>새 거래 추가</h3>
+                <div class="mode-selector" style="margin-bottom: 15px;">
+                    <label><input type="radio" name="txType" value="buy" checked> 매수</label>
+                    <label><input type="radio" name="txType" value="sell"> 매도</label>
+                </div>
+                <div class="input-grid">
+                    <div class="input-group-vertical">
+                        <label for="txDate">날짜</label>
+                        <input type="date" id="txDate" required>
+                    </div>
+                    <div class="input-group-vertical">
+                        <label for="txQuantity">수량</label>
+                        <input type="number" id="txQuantity" placeholder="예: 10" min="0" step="any" required>
+                    </div>
+                    <div class="input-group-vertical">
+                        <label for="txPrice">단가</label>
+                        <input type="number" id="txPrice" placeholder="예: 150000" min="0" step="any" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn--blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>
