@@ -41,17 +41,30 @@ body {
 
 /* --- 테이블 및 반응형 개선 --- */
 .table-responsive { overflow-x: auto; } 
-table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px; }
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 15px; 
+    min-width: 600px;
+    border-spacing: 0;
+}
 caption { caption-side: top; text-align: left; font-weight: bold; padding: 10px 0; font-size: 1.1rem; color: var(--text-color); }
 th, td { 
     padding: 12px; 
     text-align: left; 
-    border-bottom: none; 
     white-space: nowrap; 
     vertical-align: middle; 
+    border-bottom: 1px solid var(--border-color);
 }
-th { background-color: rgba(0,0,0,0.03); font-weight: 600; }
-tbody:hover { background-color: rgba(0,0,0,0.02); } 
+thead tr:last-child th {
+    border-bottom: 2px solid var(--accent-color);
+}
+.stock-outputs td {
+    border-bottom: 2px solid #ccc;
+}
+body.dark-mode .stock-outputs td {
+    border-bottom: 2px solid #555;
+}
 .ticker { 
     background-color: var(--input-border); color: var(--text-color); padding: 4px 8px; border-radius: 6px; 
     font-family: 'Courier New',monospace; font-size: .9rem; font-weight: bold; 
@@ -59,27 +72,15 @@ tbody:hover { background-color: rgba(0,0,0,0.02); }
 .calculated-value { font-weight: 500; color: var(--accent-color); }
 
 /* 2줄 레이아웃 스타일 */
-.stock-entry {
-    border-bottom: 1px solid var(--border-color);
-}
 .stock-inputs td, .stock-outputs td {
     padding-top: 12px;
     padding-bottom: 12px;
-}
-.stock-inputs td[rowspan="2"] {
-    vertical-align: middle;
 }
 .stock-outputs {
     background-color: rgba(0,0,0,0.015);
 }
 body.dark-mode .stock-outputs {
     background-color: rgba(255,255,255,0.03);
-}
-.outputs-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    width: 100%;
 }
 .output-cell {
     text-align: center !important;

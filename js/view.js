@@ -67,12 +67,9 @@ export const PortfolioView = {
     },
     
     createStockRowElement(stock, currency, mainMode) {
-        const tbody = document.createElement('tbody');
-        tbody.className = 'stock-entry';
-        tbody.dataset.id = stock.id;
-
         const trInputs = document.createElement('tr');
         trInputs.className = 'stock-inputs';
+        trInputs.dataset.id = stock.id;
 
         const trOutputs = document.createElement('tr');
         trOutputs.className = 'stock-outputs';
@@ -98,10 +95,8 @@ export const PortfolioView = {
             return input;
         };
 
-        const nameCell = createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name)));
-        nameCell.rowSpan = 2;
-        trInputs.appendChild(nameCell);
-        
+        // --- 첫 번째 줄 (Inputs) ---
+        trInputs.appendChild(createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name))));
         trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } })));
         trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } })));
         trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } })));
@@ -129,47 +124,45 @@ export const PortfolioView = {
         deleteBtn.dataset.action = 'delete';
         deleteBtn.textContent = '삭제';
         actionsContainer.append(manageBtn, deleteBtn);
-        
-        const actionsCell = createCell(actionsContainer);
-        actionsCell.rowSpan = 2;
-        trInputs.appendChild(actionsCell);
+        trInputs.appendChild(createCell(actionsContainer));
 
-        const createOutputCell = (label, valueContent) => `<div class="output-cell"><span class="label">${label}</span><span class="value">${valueContent}</span></div>`;
-        
+        // --- 두 번째 줄 (Outputs) ---
         const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss.isPositive() ? '+' : '';
 
-        const outputsHTML = `
-            <div class="outputs-container">
-                ${createOutputCell('보유 수량', quantity.toNumber().toLocaleString())}
-                ${createOutputCell('평균 단가', formatCurrency(avgBuyPrice, currency))}
-                ${createOutputCell('평가 금액', formatCurrency(currentAmount, currency))}
-                ${createOutputCell('손익(수익률)', `<span class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</span>`)}
-            </div>
-        `;
+        trOutputs.appendChild(createCell('')); // 종목명 칸에 해당하는 빈 셀
         
-        const outputContainerCell = document.createElement('td');
-        outputContainerCell.colSpan = mainMode === 'add' ? 5 : 4;
-        outputContainerCell.innerHTML = outputsHTML;
-        trOutputs.appendChild(outputContainerCell);
+        const createOutputCell = (label, valueContent) => {
+            const cell = document.createElement('td');
+            cell.className = 'output-cell';
+            cell.innerHTML = `<span class="label">${label}</span><span class="value">${valueContent}</span>`;
+            return cell;
+        };
 
-        tbody.append(trInputs, trOutputs);
-        return tbody;
-    },
+        trOutputs.appendChild(createOutputCell('보유 수량', quantity.toNumber().toLocaleString()));
+        trOutputs.appendChild(createOutputCell('평균 단가', formatCurrency(avgBuyPrice, currency)));
+        trOutputs.appendChild(createOutputCell('평가 금액', formatCurrency(currentAmount, currency)));
+        trOutputs.appendChild(createOutputCell('손익(수익률)', `<span class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</span>`));
+        
+        const totalCols = mainMode === 'add' ? 7 : 6;
+        const secondRowCols = 5;
+        for (let i = 0; i < totalCols - secondRowCols; i++) {
+            trOutputs.appendChild(createCell(''));
+        }
 
-    updateStockRowElement(tbody, stock, currency, mainMode) {
-        // This function is currently not used due to the full re-render approach in renderTable for stability.
+        const fragment = document.createDocumentFragment();
+        fragment.append(trInputs, trOutputs);
+        return fragment;
     },
 
     renderTable(calculatedPortfolioData, currency, mainMode) {
         this.updateTableHeader(currency, mainMode);
         this.dom.portfolioBody.innerHTML = ''; 
 
-        const fragment = document.createDocumentFragment();
         calculatedPortfolioData.forEach(stock => {
-            fragment.appendChild(this.createStockRowElement(stock, currency, mainMode));
+            const rowsFragment = this.createStockRowElement(stock, currency, mainMode);
+            this.dom.portfolioBody.appendChild(rowsFragment);
         });
-        this.dom.portfolioBody.appendChild(fragment);
     },
 
     updateTableHeader(currency, mainMode) {
@@ -177,13 +170,13 @@ export const PortfolioView = {
         const fixedBuyHeader = mainMode === 'add' ? `<th scope="col">고정 매수(${currencySymbol})</th>` : '';
         this.dom.portfolioTableHead.innerHTML = `
             <tr>
-                <th scope="col" rowspan="2">종목명</th>
+                <th scope="col">종목명</th>
                 <th scope="col">티커</th>
                 <th scope="col">섹터</th>
                 <th scope="col">목표 비율(%)</th>
                 <th scope="col">현재가(${currencySymbol})</th>
                 ${fixedBuyHeader}
-                <th scope="col" rowspan="2">작업</th>
+                <th scope="col">작업</th>
             </tr>
         `;
     },
