@@ -79,13 +79,10 @@ export const PortfolioView = {
 
         const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
 
-        const createCell = (content, className = '') => {
+        const createCell = (content) => {
             const td = document.createElement('td');
-            if (className) td.className = className;
-            if (typeof content === 'string' || typeof content === 'number') {
-                td.innerHTML = content;
-            } else if (content instanceof Node) {
-                td.appendChild(content);
+            if (typeof content === 'string' || content instanceof Node) {
+                td.append(content);
             }
             return td;
         };
@@ -101,14 +98,14 @@ export const PortfolioView = {
             return input;
         };
 
-        const nameCell = createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name)), 'cell-name');
+        const nameCell = createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name)));
         nameCell.rowSpan = 2;
         trInputs.appendChild(nameCell);
         
-        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-ticker'));
-        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-sector'));
-        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } }), 'cell-targetRatio'));
-        trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' }), 'cell-currentPrice'));
+        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } })));
+        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } })));
+        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } })));
+        trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' })));
         
         if (mainMode === 'add') {
             const fixedBuyContainer = document.createElement('div');
@@ -118,7 +115,7 @@ export const PortfolioView = {
             const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
             amountInput.disabled = !stock.isFixedBuyEnabled;
             fixedBuyContainer.append(checkbox, amountInput);
-            trInputs.appendChild(createCell(fixedBuyContainer, 'cell-fixedBuy'));
+            trInputs.appendChild(createCell(fixedBuyContainer));
         }
         
         const actionsContainer = document.createElement('div');
@@ -133,16 +130,11 @@ export const PortfolioView = {
         deleteBtn.textContent = '삭제';
         actionsContainer.append(manageBtn, deleteBtn);
         
-        const actionsCell = createCell(actionsContainer, 'cell-actions');
+        const actionsCell = createCell(actionsContainer);
         actionsCell.rowSpan = 2;
         trInputs.appendChild(actionsCell);
 
-        const createOutputCell = (label, valueContent) => {
-            return `<div class="output-cell">
-                        <span class="label">${label}</span>
-                        <span class="value">${valueContent}</span>
-                    </div>`;
-        };
+        const createOutputCell = (label, valueContent) => `<div class="output-cell"><span class="label">${label}</span><span class="value">${valueContent}</span></div>`;
         
         const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss.isPositive() ? '+' : '';
@@ -166,36 +158,7 @@ export const PortfolioView = {
     },
 
     updateStockRowElement(tbody, stock, currency, mainMode) {
-        const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
-        
-        tbody.querySelector('[data-field="name"]').value = stock.name;
-        tbody.querySelector('[data-field="ticker"]').value = stock.ticker;
-        tbody.querySelector('[data-field="sector"]').value = stock.sector;
-        tbody.querySelector('[data-field="targetRatio"]').value = stock.targetRatio.toFixed(2);
-        tbody.querySelector('[data-field="currentPrice"]').value = stock.currentPrice;
-
-        const outputContainer = tbody.querySelector('.outputs-container');
-        if (outputContainer) {
-            const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-            const profitSign = profitLoss.isPositive() ? '+' : '';
-
-            outputContainer.children[0].querySelector('.value').textContent = quantity.toNumber().toLocaleString();
-            outputContainer.children[1].querySelector('.value').textContent = formatCurrency(avgBuyPrice, currency);
-            outputContainer.children[2].querySelector('.value').textContent = formatCurrency(currentAmount, currency);
-            const profitValueEl = outputContainer.children[3].querySelector('.value span');
-            profitValueEl.className = profitClass;
-            profitValueEl.innerHTML = `${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)`;
-        }
-        
-        if (mainMode === 'add') {
-            const checkbox = tbody.querySelector('[data-field="isFixedBuyEnabled"]');
-            const amountInput = tbody.querySelector('[data-field="fixedBuyAmount"]');
-            if (checkbox) checkbox.checked = stock.isFixedBuyEnabled;
-            if (amountInput) {
-                amountInput.value = stock.fixedBuyAmount;
-                amountInput.disabled = !stock.isFixedBuyEnabled;
-            }
-        }
+        // This function is currently not used due to the full re-render approach in renderTable for stability.
     },
 
     renderTable(calculatedPortfolioData, currency, mainMode) {
