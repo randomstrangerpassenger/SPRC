@@ -82,6 +82,12 @@ body.dark-mode .stock-outputs td {
 body.dark-mode .stock-outputs {
     background-color: rgba(255,255,255,0.03);
 }
+.outputs-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+}
 .output-cell {
     text-align: center !important;
 }
@@ -108,6 +114,9 @@ input, .input-group__select {
     padding: 12px; border: 2px solid var(--input-border); border-radius: 8px; font-size: 1rem; 
     background: var(--input-bg); color: var(--text-color); transition: border-color 0.3s; 
 }
+#portfolioTable input[type="text"] {
+    text-align: center;
+}
 .input-group__select {
     flex-grow: 1;
 }
@@ -133,6 +142,38 @@ body.dark-mode input:disabled { background-color: #2a2a2a; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
+
+/* --- 드롭다운 버튼 스타일 --- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--card-bg);
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px var(--card-shadow);
+    z-index: 1;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.dropdown-content a {
+    color: var(--text-color);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.2s;
+}
+.dropdown-content a:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+body.dark-mode .dropdown-content a:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+.show {
+    display: block;
+}
 
 /* --- UI 컴포넌트 --- */
 .mode-selector { 

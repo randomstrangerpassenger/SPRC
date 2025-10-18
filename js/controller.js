@@ -47,24 +47,27 @@ export class PortfolioController {
         localStorage.setItem(CONFIG.DARK_MODE_KEY, isDark);
     }
 
-    handlePortfolioBodyChange(e) {
+    handlePortfolioBodyChange(e, updateCallback) {
         const target = e.target;
-        const row = target.closest('tr');
+        const row = target.closest('tr[data-id]');
         if (!row || !target.dataset.field) return;
 
         const id = parseInt(row.dataset.id, 10);
         const field = target.dataset.field;
         const value = target.type === 'checkbox' ? target.checked : target.value;
 
-        this.handleStockUpdate(id, field, value, target);
+        this.handleStockUpdate(id, field, value, target, updateCallback);
     }
 
     handlePortfolioBodyClick(e) {
         const button = e.target.closest('button[data-action]');
         if (!button) return;
 
+        const row = button.closest('tr[data-id]');
+        if (!row) return;
+
         const action = button.dataset.action;
-        const id = parseInt(button.closest('tr').dataset.id, 10);
+        const id = parseInt(row.dataset.id, 10);
         
         if (action === 'delete') {
             this.handleDeleteStock(id);
@@ -93,7 +96,7 @@ export class PortfolioController {
         }
     }
 
-    handleStockUpdate(id, field, value, element) {
+    handleStockUpdate(id, field, value, element, updateCallback) {
         const numericFields = ['targetRatio', 'currentPrice', 'fixedBuyAmount'];
         
         if (numericFields.includes(field)) {
@@ -112,7 +115,7 @@ export class PortfolioController {
         }
         
         if (['currentPrice', 'targetRatio', 'fixedBuyAmount', 'isFixedBuyEnabled'].includes(field)) {
-            this.updateUI();
+            updateCallback();
         }
     }
     
@@ -220,7 +223,7 @@ export class PortfolioController {
     }
 
     handleImportData() {
-        this.view.dom.importFileInput.click();
+        document.getElementById('importFileInput').click();
     }
 
     handleFileSelected(e) {

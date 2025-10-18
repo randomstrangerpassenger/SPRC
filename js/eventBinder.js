@@ -13,15 +13,42 @@ export function bindEventListeners(controller, dom) {
     dom.normalizeRatiosBtn.addEventListener('click', () => controller.handleNormalizeRatios());
     dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData(true));
     dom.loadDataBtn.addEventListener('click', () => controller.handleLoadData());
-    dom.exportDataBtn.addEventListener('click', () => controller.handleExportData());
-    dom.importDataBtn.addEventListener('click', () => controller.handleImportData());
+    
+    const dataManagementBtn = document.getElementById('dataManagementBtn');
+    const dataDropdownContent = document.getElementById('dataDropdownContent');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const importDataBtn = document.getElementById('importDataBtn');
+
+    dataManagementBtn.addEventListener('click', () => {
+        dataDropdownContent.classList.toggle('show');
+    });
+
+    exportDataBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        controller.handleExportData();
+        dataDropdownContent.classList.remove('show');
+    });
+
+    importDataBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        controller.handleImportData();
+        dataDropdownContent.classList.remove('show');
+    });
+
+    window.addEventListener('click', (e) => {
+        if (!e.target.matches('#dataManagementBtn')) {
+            if (dataDropdownContent.classList.contains('show')) {
+                dataDropdownContent.classList.remove('show');
+            }
+        }
+    });
+
     dom.importFileInput.addEventListener('change', (e) => controller.handleFileSelected(e));
 
     // 메인 테이블 이벤트 (이벤트 위임)
-    dom.portfolioBody.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e));
+    const debouncedUpdate = debounce(() => controller.updateUI(), 300);
+    dom.portfolioBody.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, debouncedUpdate));
     dom.portfolioBody.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
-
-    // 숫자 입력 칸 클릭 시 전체 선택 (UX 개선)
     dom.portfolioBody.addEventListener('focusin', (e) => {
         if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
             e.target.select();

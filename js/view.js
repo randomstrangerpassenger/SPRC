@@ -31,16 +31,6 @@ export const PortfolioView = {
             normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
             saveDataBtn: D.getElementById('saveDataBtn'),
             loadDataBtn: D.getElementById('loadDataBtn'),
-            exportDataBtn: D.getElementById('exportDataBtn'),
-            importDataBtn: D.getElementById('importDataBtn'),
-            importFileInput: D.getElementById('importFileInput'),
-            portfolioTableHead: D.getElementById('portfolioTableHead'),
-            ratioValidator: D.getElementById('ratioValidator'),
-            ratioSum: D.getElementById('ratioSum'),
-            portfolioSelector: D.getElementById('portfolioSelector'),
-            newPortfolioBtn: D.getElementById('newPortfolioBtn'),
-            renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
-            deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
             
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
@@ -95,11 +85,10 @@ export const PortfolioView = {
             return input;
         };
 
-        // --- 첫 번째 줄 (Inputs) ---
         trInputs.appendChild(createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name))));
-        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } })));
-        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } })));
-        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } })));
+        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name))));
+        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name))));
+        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input' })));
         trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' })));
         
         if (mainMode === 'add') {
@@ -126,11 +115,10 @@ export const PortfolioView = {
         actionsContainer.append(manageBtn, deleteBtn);
         trInputs.appendChild(createCell(actionsContainer));
 
-        // --- 두 번째 줄 (Outputs) ---
         const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss.isPositive() ? '+' : '';
 
-        trOutputs.appendChild(createCell('')); // 종목명 칸에 해당하는 빈 셀
+        trOutputs.appendChild(createCell('')); 
         
         const createOutputCell = (label, valueContent) => {
             const cell = document.createElement('td');
