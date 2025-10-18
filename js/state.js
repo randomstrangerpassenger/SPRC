@@ -2,25 +2,6 @@ import { CONFIG, MESSAGES } from './constants.js';
 import { Validator } from './validator.js';
 import { getRatioSum as calculateRatioSum } from './utils.js';
 
-/**
- * @typedef {'buy'|'sell'} TransactionType
- * @typedef {Object} Transaction
- * @property {string} id - 거래 고유 ID
- * @property {TransactionType} type - 거래 종류
- * @property {string} date - 거래 날짜 (ISO 8601)
- * @property {number} quantity - 수량
- * @property {number} price - 개당 가격
- * @typedef {Object} Stock
- * @property {number} id
- * @property {string} name
- * @property {string} ticker
- * @property {string} sector
- * @property {number} targetRatio
- * @property {number} currentPrice - 현재가 (사용자 입력)
- * @property {Array<Transaction>} transactions - 거래 내역 배열
- * @property {boolean} isFixedBuyEnabled - 고정 매수 활성화 여부
- * @property {number} fixedBuyAmount - 고정 매수 금액
- */
 export class PortfolioState {
     portfolios = {};
     activePortfolioId = null;
@@ -41,25 +22,26 @@ export class PortfolioState {
     }
 
     loadTemplateData(name = "기본 포트폴리오") {
-        const id = Date.now();
+        const now = Date.now();
         const templateData = {
             name: name,
             portfolioData: [
-                { id: Date.now() + 1, name: "알파벳 A", ticker: "GOOGL", sector: "기술주", targetRatio: 25, currentPrice: 175, transactions: [
-                    { id: Date.now() + 101, type: 'buy', date: '2023-01-15', quantity: 10, price: 95 },
-                    { id: Date.now() + 102, type: 'buy', date: '2023-06-20', quantity: 5, price: 125 },
+                { id: crypto.randomUUID(), name: "알파벳 A", ticker: "GOOGL", sector: "기술주", targetRatio: 25, currentPrice: 175, transactions: [
+                    { id: crypto.randomUUID(), type: 'buy', date: '2023-01-15', quantity: 10, price: 95 },
+                    { id: crypto.randomUUID(), type: 'buy', date: '2023-06-20', quantity: 5, price: 125 },
                 ], isFixedBuyEnabled: false, fixedBuyAmount: 0 },
-                { id: Date.now() + 2, name: "엔비디아", ticker: "NVDA", sector: "기술주", targetRatio: 30, currentPrice: 120, transactions: [
-                    { id: Date.now() + 201, type: 'buy', date: '2023-03-10', quantity: 20, price: 45 },
+                { id: crypto.randomUUID(), name: "엔비디아", ticker: "NVDA", sector: "기술주", targetRatio: 30, currentPrice: 120, transactions: [
+                    { id: crypto.randomUUID(), type: 'buy', date: '2023-03-10', quantity: 20, price: 45 },
                 ], isFixedBuyEnabled: false, fixedBuyAmount: 0 },
-                { id: Date.now() + 3, name: "마이크로소프트", ticker: "MSFT", sector: "기술주", targetRatio: 25, currentPrice: 445, transactions: [], isFixedBuyEnabled: false, fixedBuyAmount: 0 },
-                { id: Date.now() + 4, name: "코카콜라", ticker: "KO", sector: "소비재", targetRatio: 20, currentPrice: 62, transactions: [], isFixedBuyEnabled: false, fixedBuyAmount: 0 },
+                { id: crypto.randomUUID(), name: "마이크로소프트", ticker: "MSFT", sector: "기술주", targetRatio: 25, currentPrice: 445, transactions: [], isFixedBuyEnabled: false, fixedBuyAmount: 0 },
+                { id: crypto.randomUUID(), name: "코카콜라", ticker: "KO", sector: "소비재", targetRatio: 20, currentPrice: 62, transactions: [], isFixedBuyEnabled: false, fixedBuyAmount: 0 },
             ],
             settings: {
                 mainMode: 'add',
                 currentCurrency: 'usd',
             }
         };
+        const id = crypto.randomUUID();
         return { id, data: templateData };
     }
 
@@ -69,28 +51,30 @@ export class PortfolioState {
             try {
                 const savedData = JSON.parse(savedDataString);
                 if (!Validator.isDataStructureValid(savedData)) {
-                    throw new Error("Invalid data structure");
+                    throw new Error("Invalid data structure from localStorage.");
                 }
                 this.portfolios = savedData.portfolios;
                 this.activePortfolioId = savedData.activePortfolioId;
                 if (!this.portfolios[this.activePortfolioId]) {
                     this.activePortfolioId = Object.keys(this.portfolios)[0];
-                    if (!this.activePortfolioId) throw new Error("No portfolios found.");
+                    if (!this.activePortfolioId) throw new Error("No valid portfolios found.");
                 }
             } catch (error) {
-                console.error("Failed to load saved portfolios:", error);
-                const defaultPortfolio = this.loadTemplateData();
-                this.portfolios = { [defaultPortfolio.id]: defaultPortfolio.data };
-                this.activePortfolioId = defaultPortfolio.id;
+                console.error("Failed to load or validate saved portfolios:", error);
+                this.loadDefaultPortfolio();
             }
         } else {
-            const defaultPortfolio = this.loadTemplateData();
-            this.portfolios = { [defaultPortfolio.id]: defaultPortfolio.data };
-            this.activePortfolioId = defaultPortfolio.id;
+            this.loadDefaultPortfolio();
         }
-
+        
         const savedDarkMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
         if (savedDarkMode === 'true') document.body.classList.add('dark-mode');
+    }
+
+    loadDefaultPortfolio() {
+        const defaultPortfolio = this.loadTemplateData();
+        this.portfolios = { [defaultPortfolio.id]: defaultPortfolio.data };
+        this.activePortfolioId = defaultPortfolio.id;
     }
 
     saveState() {
@@ -153,7 +137,7 @@ export class PortfolioState {
     
     addNewStock() {
         const activePortfolioData = this.getActivePortfolio().portfolioData;
-        const newStock = this.createStock(Date.now(), "새 종목", "NEW");
+        const newStock = this.createStock(crypto.randomUUID(), "새 종목", "NEW");
         activePortfolioData.push(newStock);
         return newStock;
     }
@@ -190,7 +174,7 @@ export class PortfolioState {
 
         const newTransaction = {
             ...transactionData,
-            id: `tx_${Date.now()}`
+            id: crypto.randomUUID()
         };
         stock.transactions.push(newTransaction);
         return true;
@@ -213,14 +197,14 @@ export class PortfolioState {
         const portfolioData = this.getActivePortfolio().portfolioData;
         
         const sum = calculateRatioSum(portfolioData);
-        if (sum === 0) return false;
+        if (sum.isZero()) return false;
         
         let total = 0;
         portfolioData.forEach((stock, index) => {
             if (index === portfolioData.length - 1) {
                 stock.targetRatio = parseFloat((100 - total).toFixed(4));
             } else {
-                const normalized = (stock.targetRatio / sum) * 100;
+                const normalized = (parseFloat(stock.targetRatio) / sum.toNumber()) * 100;
                 const rounded = parseFloat(normalized.toFixed(4));
                 stock.targetRatio = rounded;
                 total += rounded;

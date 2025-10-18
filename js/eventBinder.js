@@ -11,8 +11,6 @@ export function bindEventListeners(controller, dom) {
     dom.addNewStockBtn.addEventListener('click', () => controller.handleAddNewStock());
     dom.resetDataBtn.addEventListener('click', () => controller.handleResetData());
     dom.normalizeRatiosBtn.addEventListener('click', () => controller.handleNormalizeRatios());
-    dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData(true));
-    dom.loadDataBtn.addEventListener('click', () => controller.handleLoadData());
     
     const dataManagementBtn = document.getElementById('dataManagementBtn');
     const dataDropdownContent = document.getElementById('dataDropdownContent');
@@ -45,7 +43,7 @@ export function bindEventListeners(controller, dom) {
     
     document.getElementById('importFileInput').addEventListener('change', (e) => controller.handleFileSelected(e));
 
-    const debouncedUpdate = debounce(() => controller.updateUI(), 300);
+    const debouncedUpdate = debounce(() => controller.updateUIState(), 300);
     dom.portfolioBody.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, debouncedUpdate));
     dom.portfolioBody.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
     dom.portfolioBody.addEventListener('focusin', (e) => {
@@ -69,7 +67,7 @@ export function bindEventListeners(controller, dom) {
     });
 
     const handleEnterKey = (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.isComposing) {
             e.preventDefault();
             controller.handleCalculate();
         }
@@ -77,7 +75,8 @@ export function bindEventListeners(controller, dom) {
     dom.additionalAmountInput.addEventListener('keydown', handleEnterKey);
     dom.additionalAmountUSDInput.addEventListener('keydown', handleEnterKey);
     dom.exchangeRateInput.addEventListener('keydown', handleEnterKey);
-
+    
+    // 모달 관련 이벤트
     dom.closeModalBtn.addEventListener('click', () => controller.view.closeTransactionModal());
     dom.transactionModal.addEventListener('click', (e) => {
         if (e.target === dom.transactionModal) controller.view.closeTransactionModal();
@@ -85,6 +84,7 @@ export function bindEventListeners(controller, dom) {
     dom.newTransactionForm.addEventListener('submit', (e) => controller.handleAddNewTransaction(e));
     dom.transactionListBody.addEventListener('click', (e) => controller.handleTransactionListClick(e));
     
+    // 기타
     dom.darkModeToggle.addEventListener('click', () => controller.handleToggleDarkMode());
-    window.addEventListener('beforeunload', () => controller.handleSaveData(false));
+    window.addEventListener('beforeunload', () => controller.handleSaveDataOnExit());
 }

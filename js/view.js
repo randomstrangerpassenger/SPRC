@@ -1,12 +1,13 @@
 import { CONFIG, MESSAGES } from './constants.js';
-import { formatCurrency } from './utils.js';
+import { formatCurrency, escapeHTML } from './utils.js';
 import Decimal from 'decimal.js';
-import Chart from 'chart.js/auto';
 
 export const PortfolioView = {
     dom: {},
     chartInstance: null,
     currentObserver: null,
+    activeModalResolver: null,
+    lastFocusedElement: null,
 
     cacheDomElements() {
         const D = document;
@@ -29,8 +30,6 @@ export const PortfolioView = {
             addNewStockBtn: D.getElementById('addNewStockBtn'),
             resetDataBtn: D.getElementById('resetDataBtn'),
             normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
-            saveDataBtn: D.getElementById('saveDataBtn'),
-            loadDataBtn: D.getElementById('loadDataBtn'),
             
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
@@ -40,133 +39,196 @@ export const PortfolioView = {
             txDate: D.getElementById('txDate'),
             txQuantity: D.getElementById('txQuantity'),
             txPrice: D.getElementById('txPrice'),
+            
+            portfolioSelector: D.getElementById('portfolioSelector'),
+            newPortfolioBtn: D.getElementById('newPortfolioBtn'),
+            renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
+            deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
+            portfolioTableHead: D.getElementById('portfolioTableHead'),
+            ratioValidator: D.getElementById('ratioValidator'),
+            ratioSum: D.getElementById('ratioSum'),
+            
+            customModal: D.getElementById('customModal'),
+            customModalTitle: D.getElementById('customModalTitle'),
+            customModalMessage: D.getElementById('customModalMessage'),
+            customModalInput: D.getElementById('customModalInput'),
+            customModalConfirm: D.getElementById('customModalConfirm'),
+            customModalCancel: D.getElementById('customModalCancel'),
         };
+        
+        this.dom.customModalCancel.addEventListener('click', () => this._handleCustomModal(false));
+        this.dom.customModalConfirm.addEventListener('click', () => this._handleCustomModal(true));
+        this.dom.customModal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this._handleCustomModal(false);
+        });
+    },
+
+    async showConfirm(title, message) {
+        return this._showModal({ title, message, type: 'confirm' });
+    },
+    
+    async showPrompt(title, message, defaultValue = '') {
+        return this._showModal({ title, message, defaultValue, type: 'prompt' });
+    },
+
+    _showModal({ title, message, defaultValue, type }) {
+        return new Promise((resolve) => {
+            this.lastFocusedElement = document.activeElement;
+            this.activeModalResolver = resolve;
+            
+            this.dom.customModalTitle.textContent = title;
+            this.dom.customModalMessage.textContent = message;
+
+            if (type === 'prompt') {
+                this.dom.customModalInput.value = defaultValue;
+                this.dom.customModalInput.classList.remove('hidden');
+            } else {
+                this.dom.customModalInput.classList.add('hidden');
+            }
+            
+            this.dom.customModal.classList.remove('hidden');
+            this._trapFocus(this.dom.customModal);
+            
+            type === 'prompt' ? this.dom.customModalInput.focus() : this.dom.customModalConfirm.focus();
+        });
+    },
+    
+    _handleCustomModal(confirmed) {
+        if (!this.activeModalResolver) return;
+
+        const value = this.dom.customModalInput.classList.contains('hidden') 
+            ? confirmed
+            : (confirmed ? this.dom.customModalInput.value : null);
+
+        this.activeModalResolver(value);
+
+        this.dom.customModal.classList.add('hidden');
+        if (this.lastFocusedElement) this.lastFocusedElement.focus();
+        
+        this.activeModalResolver = null;
+        this.lastFocusedElement = null;
+    },
+
+    _trapFocus(element) {
+        const focusableEls = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstFocusableEl = focusableEls[0];
+        const lastFocusableEl = focusableEls[focusableEls.length - 1];
+        
+        element.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab') return;
+            if (e.shiftKey) {
+                if (document.activeElement === firstFocusableEl) {
+                    lastFocusableEl.focus();
+                    e.preventDefault();
+                }
+            } else {
+                if (document.activeElement === lastFocusableEl) {
+                    firstFocusableEl.focus();
+                    e.preventDefault();
+                }
+            }
+        });
     },
 
     renderPortfolioSelector(portfolios, activeId) {
         this.dom.portfolioSelector.innerHTML = '';
-        for (const id in portfolios) {
+        Object.entries(portfolios).forEach(([id, portfolio]) => {
             const option = document.createElement('option');
             option.value = id;
-            option.textContent = portfolios[id].name;
-            if (id.toString() === activeId.toString()) {
-                option.selected = true;
-            }
+            option.textContent = portfolio.name;
+            option.selected = (id === activeId);
             this.dom.portfolioSelector.appendChild(option);
-        }
+        });
     },
     
-    createStockRowElement(stock, currency, mainMode) {
+    createStockRowFragment(stock, currency, mainMode) {
+        const fragment = document.createDocumentFragment();
         const trInputs = document.createElement('tr');
         trInputs.className = 'stock-inputs';
         trInputs.dataset.id = stock.id;
 
         const trOutputs = document.createElement('tr');
         trOutputs.className = 'stock-outputs';
-
-        const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
-
-        const createCell = (content) => {
-            const td = document.createElement('td');
-            if (typeof content === 'string' || content instanceof Node) {
-                td.append(content);
-            }
-            return td;
-        };
+        trOutputs.dataset.id = stock.id;
         
-        const createInput = (type, field, value, ariaLabel, styles = {}) => {
-            const input = document.createElement('input');
-            input.type = type;
-            input.dataset.field = field;
-            input.setAttribute('aria-label', ariaLabel);
-            input.value = (value === undefined || value === null) ? '' : value;
-            if (styles.inline) Object.assign(input.style, styles.inline);
-            if (styles.className) input.className = styles.className;
-            return input;
-        };
-
-        trInputs.appendChild(createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name))));
-        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name))));
-        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name))));
-        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input' })));
-        trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' })));
+        trInputs.innerHTML = this.getStockInputsHTML(stock, mainMode);
+        trOutputs.innerHTML = this.getStockOutputsHTML(stock, currency, mainMode);
         
-        if (mainMode === 'add') {
-            const fixedBuyContainer = document.createElement('div');
-            fixedBuyContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: center;';
-            const checkbox = createInput('checkbox', 'isFixedBuyEnabled', stock.isFixedBuyEnabled, '고정 매수 활성화');
-            checkbox.checked = stock.isFixedBuyEnabled;
-            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
-            amountInput.disabled = !stock.isFixedBuyEnabled;
-            fixedBuyContainer.append(checkbox, amountInput);
-            trInputs.appendChild(createCell(fixedBuyContainer));
-        }
-        
-        const actionsContainer = document.createElement('div');
-        actionsContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
-        const manageBtn = document.createElement('button');
-        manageBtn.className = 'btn btn--blue btn--small';
-        manageBtn.dataset.action = 'manage';
-        manageBtn.textContent = '거래 관리';
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn btn--delete btn--small';
-        deleteBtn.dataset.action = 'delete';
-        deleteBtn.textContent = '삭제';
-        actionsContainer.append(manageBtn, deleteBtn);
-        trInputs.appendChild(createCell(actionsContainer));
-
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
-
-        trOutputs.appendChild(createCell('')); 
-        
-        const createOutputCell = (label, valueContent) => {
-            const cell = document.createElement('td');
-            cell.className = 'output-cell';
-            cell.innerHTML = `<span class="label">${label}</span><span class="value">${valueContent}</span>`;
-            return cell;
-        };
-
-        trOutputs.appendChild(createOutputCell('보유 수량', quantity.toNumber().toLocaleString()));
-        trOutputs.appendChild(createOutputCell('평균 단가', formatCurrency(avgBuyPrice, currency)));
-        trOutputs.appendChild(createOutputCell('평가 금액', formatCurrency(currentAmount, currency)));
-        trOutputs.appendChild(createOutputCell('손익(수익률)', `<span class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</span>`));
-        
-        const totalCols = mainMode === 'add' ? 7 : 6;
-        const secondRowCols = 5;
-        for (let i = 0; i < totalCols - secondRowCols; i++) {
-            trOutputs.appendChild(createCell(''));
-        }
-
-        const fragment = document.createDocumentFragment();
         fragment.append(trInputs, trOutputs);
         return fragment;
+    },
+    
+    getStockInputsHTML(stock, mainMode) {
+        const fixedBuyHTML = mainMode === 'add' ? `
+            <td>
+                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                    <input type="checkbox" data-field="isFixedBuyEnabled" aria-label="고정 매수 활성화" ${stock.isFixedBuyEnabled ? 'checked' : ''}>
+                    <input type="number" class="amount-input" data-field="fixedBuyAmount" value="${stock.fixedBuyAmount}" aria-label="고정 매수 금액" ${!stock.isFixedBuyEnabled ? 'disabled' : ''}>
+                </div>
+            </td>` : '';
+
+        return `
+            <td><input type="text" data-field="name" value="${escapeHTML(stock.name)}" aria-label="${MESSAGES.TICKER_INPUT(stock.name)}"></td>
+            <td><input type="text" data-field="ticker" value="${escapeHTML(stock.ticker)}" aria-label="${MESSAGES.TICKER_INPUT(stock.name)}"></td>
+            <td><input type="text" data-field="sector" value="${escapeHTML(stock.sector)}" aria-label="${MESSAGES.SECTOR_INPUT(stock.name)}"></td>
+            <td><input type="number" class="amount-input" data-field="targetRatio" value="${stock.targetRatio.toFixed(2)}" aria-label="${MESSAGES.TARGET_RATIO_INPUT(stock.name)}"></td>
+            <td><input type="number" class="amount-input" data-field="currentPrice" value="${stock.currentPrice}" aria-label="${MESSAGES.CURRENT_PRICE_INPUT(stock.name)}"></td>
+            ${fixedBuyHTML}
+            <td>
+                <div style="display: flex; gap: 5px; justify-content: center;">
+                    <button class="btn btn--blue btn--small" data-action="manage" aria-label="${escapeHTML(stock.name)} 거래 관리">거래 관리</button>
+                    <button class="btn btn--delete btn--small" data-action="delete" aria-label="${escapeHTML(stock.name)} 삭제">삭제</button>
+                </div>
+            </td>`;
+    },
+
+    getStockOutputsHTML(stock, currency, mainMode) {
+        const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+        const totalCols = mainMode === 'add' ? 7 : 6;
+        const emptyCols = totalCols - 5 > 0 ? `<td colspan="${totalCols - 5}"></td>` : '';
+
+        return `
+            <td></td>
+            <td class="output-cell"><span class="label">보유 수량</span><span class="value">${quantity.toNumber().toLocaleString()}</span></td>
+            <td class="output-cell"><span class="label">평균 단가</span><span class="value">${formatCurrency(avgBuyPrice, currency)}</span></td>
+            <td class="output-cell"><span class="label">평가 금액</span><span class="value">${formatCurrency(currentAmount, currency)}</span></td>
+            <td class="output-cell"><span class="label">손익(수익률)</span><span class="value ${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</span></td>
+            ${emptyCols}`;
+    },
+
+    updateStockRowOutputs(id, stock, currency, mainMode) {
+        const row = this.dom.portfolioBody.querySelector(`.stock-outputs[data-id="${id}"]`);
+        if (row) {
+            row.innerHTML = this.getStockOutputsHTML(stock, currency, mainMode);
+        }
     },
 
     renderTable(calculatedPortfolioData, currency, mainMode) {
         this.updateTableHeader(currency, mainMode);
         this.dom.portfolioBody.innerHTML = ''; 
-
+        
+        const fragment = document.createDocumentFragment();
         calculatedPortfolioData.forEach(stock => {
-            const rowsFragment = this.createStockRowElement(stock, currency, mainMode);
-            this.dom.portfolioBody.appendChild(rowsFragment);
+            fragment.appendChild(this.createStockRowFragment(stock, currency, mainMode));
         });
+        this.dom.portfolioBody.appendChild(fragment);
     },
 
     updateTableHeader(currency, mainMode) {
         const currencySymbol = currency.toLowerCase() === 'usd' ? '$' : '원';
         const fixedBuyHeader = mainMode === 'add' ? `<th scope="col">고정 매수(${currencySymbol})</th>` : '';
         this.dom.portfolioTableHead.innerHTML = `
-            <tr>
-                <th scope="col">종목명</th>
-                <th scope="col">티커</th>
-                <th scope="col">섹터</th>
-                <th scope="col">목표 비율(%)</th>
-                <th scope="col">현재가(${currencySymbol})</th>
+            <tr role="row">
+                <th scope="col" role="columnheader">종목명</th>
+                <th scope="col" role="columnheader">티커</th>
+                <th scope="col" role="columnheader">섹터</th>
+                <th scope="col" role="columnheader">목표 비율(%)</th>
+                <th scope="col" role="columnheader">현재가(${currencySymbol})</th>
                 ${fixedBuyHeader}
-                <th scope="col">작업</th>
-            </tr>
-        `;
+                <th scope="col" role="columnheader">작업</th>
+            </tr>`;
     },
 
     updateRatioSum(totalRatio) {
@@ -198,17 +260,21 @@ export const PortfolioView = {
     },
     
     openTransactionModal(stock, currency) {
+        this.lastFocusedElement = document.activeElement;
         this.dom.transactionModal.dataset.stockId = stock.id;
-        this.dom.modalStockName.textContent = `${stock.name} (${stock.ticker}) 거래 내역`;
+        this.dom.modalStockName.textContent = `${escapeHTML(stock.name)} (${escapeHTML(stock.ticker)}) 거래 내역`;
         this.renderTransactionList(stock.transactions, currency);
         this.dom.txDate.valueAsDate = new Date();
         this.dom.transactionModal.classList.remove('hidden');
+        this._trapFocus(this.dom.transactionModal);
+        this.dom.closeModalBtn.focus();
     },
 
     closeTransactionModal() {
         this.dom.transactionModal.classList.add('hidden');
         this.dom.newTransactionForm.reset();
         this.dom.transactionModal.removeAttribute('data-stock-id');
+        if (this.lastFocusedElement) this.lastFocusedElement.focus();
     },
 
     renderTransactionList(transactions, currency) {
@@ -225,17 +291,17 @@ export const PortfolioView = {
             tr.dataset.txId = tx.id;
             const total = new Decimal(tx.quantity || 0).times(new Decimal(tx.price || 0));
             tr.innerHTML = `
-                <td>${tx.date}</td>
+                <td>${escapeHTML(tx.date)}</td>
                 <td><span class="${tx.type === 'buy' ? 'text-buy' : 'text-sell'}">${tx.type === 'buy' ? '매수' : '매도'}</span></td>
                 <td style="text-align:right;">${Number(tx.quantity).toLocaleString()}</td>
                 <td style="text-align:right;">${formatCurrency(tx.price, currency)}</td>
                 <td style="text-align:right;">${formatCurrency(total, currency)}</td>
-                <td style="text-align:center;"><button class="btn btn--delete btn--small" data-action="delete-tx">삭제</button></td>
+                <td style="text-align:center;"><button class="btn btn--delete btn--small" data-action="delete-tx" aria-label="${tx.date} 거래 삭제">삭제</button></td>
             `;
             this.dom.transactionListBody.appendChild(tr);
         });
     },
-
+    
     displaySkeleton() {
         const skeletonHTML = `
             <div class="skeleton-wrapper">
@@ -245,22 +311,9 @@ export const PortfolioView = {
                     <div class="skeleton skeleton-summary-item"></div>
                 </div>
                 <div class="skeleton-table">
-                    <div class="skeleton skeleton-table-row">
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text--short"></div>
-                    </div>
-                    <div class="skeleton skeleton-table-row">
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text--short"></div>
-                    </div>
-                    <div class="skeleton skeleton-table-row">
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text--short"></div>
-                    </div>
-                     <div class="skeleton skeleton-table-row">
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text--short"></div>
-                    </div>
+                    <div class="skeleton skeleton-table-row"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text--short"></div></div>
+                    <div class="skeleton skeleton-table-row"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text--short"></div></div>
+                    <div class="skeleton skeleton-table-row"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text--short"></div></div>
                 </div>
             </div>
         `;
@@ -282,13 +335,10 @@ export const PortfolioView = {
         this.dom.sectorAnalysisSection.innerHTML = '';
         this.dom.sectorAnalysisSection.classList.add('hidden');
         this.dom.chartSection.classList.add('hidden');
-        
         this.cleanupObserver();
     },
 
     displayResults(html) {
-        this.cleanupObserver();
-
         requestAnimationFrame(() => {
             this.dom.resultsSection.innerHTML = html;
             this.dom.resultsSection.classList.remove('hidden');
@@ -306,9 +356,7 @@ export const PortfolioView = {
                 });
             }, { threshold: 0.1 });
 
-            rows.forEach((row) => {
-                this.currentObserver.observe(row);
-            });
+            rows.forEach((row) => this.currentObserver.observe(row));
         });
     },
 
@@ -319,75 +367,44 @@ export const PortfolioView = {
         });
     },
     
-    displayChart(labels, data, title) {
+    displayChart(Chart, labels, data, title) {
         this.dom.chartSection.classList.remove('hidden');
 
+        const chartOptions = {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: title, font: { size: 16 } }
+            }
+        };
+
+        const chartData = {
+            labels: labels,
+            datasets: [{
+                label: '비중',
+                data: data,
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#77DD77', '#FDFD96', '#836FFF', '#FFB347', '#FFD1DC'],
+                borderColor: document.body.classList.contains('dark-mode') ? '#2d2d2d' : '#ffffff',
+                borderWidth: 2
+            }]
+        };
+
         if (this.chartInstance) {
-            this.chartInstance.data.labels = labels;
-            this.chartInstance.data.datasets[0].data = data;
-            this.chartInstance.options.plugins.title.text = title;
+            this.chartInstance.data = chartData;
+            this.chartInstance.options = chartOptions;
             this.chartInstance.update();
         } else {
             const ctx = this.dom.portfolioChart.getContext('2d');
             this.chartInstance = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '비중',
-                        data: data,
-                        backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
-                            '#C9CBCF', '#77DD77', '#FDFD96', '#836FFF', '#FFB347', '#FFD1DC'
-                        ],
-                        borderColor: document.body.classList.contains('dark-mode') ? '#2d2d2d' : '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: title,
-                            font: {
-                                size: 16
-                            }
-                        }
-                    }
-                }
+                data: chartData,
+                options: chartOptions
             });
         }
     },
 
     toggleInputValidation(inputElement, isValid, errorMessage = '') {
         inputElement.classList.toggle('input-invalid', !isValid);
-        inputElement.setAttribute('aria-invalid', String(!isValid));
-        
-        const errorClass = 'error-message';
-        const parent = inputElement.parentElement;
-        let errorEl = parent.querySelector(`.${errorClass}`);
-
-        if (!isValid && errorMessage) {
-            if (!errorEl) {
-                errorEl = document.createElement('span');
-                errorEl.className = errorClass;
-                errorEl.style.cssText = `
-                    color: var(--invalid-text-color);
-                    font-size: 0.8rem;
-                    width: 100%;
-                    display: block;
-                    margin-top: 4px;
-                `;
-                parent.appendChild(errorEl);
-            }
-            errorEl.textContent = errorMessage;
-        } else if (errorEl) {
-            errorEl.remove();
-        }
     },
     
     showToast(message, type = 'info') {

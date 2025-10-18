@@ -15,19 +15,24 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "vite": "^7.1.10"
+    "vite": "^7.1.10",
+    "vitest": "^1.6.0",
+    "jsdom": "^24.1.0"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
     "decimal.js": "^10.6.0"
   }
 }
+
 ```
 
 ---
@@ -35,10 +40,18 @@
 ## `vite.config.js`
 
 ```javascript
+// vite.config.js
+
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   base: './',
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    // 아래 'include' 라인을 추가해서 테스트 파일 경로를 명시적으로 지정합니다.
+    include: ['js/**/*.test.js'],
+  },
 });
 ```
 
@@ -63,55 +76,10 @@ dist
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>포트폴리오 리밸런싱 계산기 (플래티넘版)</title>
+    <title>포트폴리오 리밸런싱 계산기</title>
     <meta name="description" content="포트폴리오 리밸런싱 계산기를 통해 목표 비율에 맞춰 투자 전략을 최적화하세요.">
     
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg-color: #f5f5f5; --text-color: #333; --card-bg: white; --card-shadow: rgba(0,0,0,0.1);
-            --border-color: #eee; --accent-color: #667eea; --input-border: #e9ecef; --input-bg: white;
-            --header-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --green-grad: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            --orange-grad: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-            --blue-grad: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            --grey-grad: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        }
-        body.dark-mode {
-            --bg-color: #1a1a1a; --text-color: #e0e0e0; --card-bg: #2d2d2d; --card-shadow: rgba(0,0,0,0.5);
-            --border-color: #444; --input-border: #555; --input-bg: #3d3d3d;
-        }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            line-height: 1.6; 
-            color: var(--text-color); 
-            background-color: var(--bg-color); 
-            transition: background-color 0.3s, color 0.3s; 
-        }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { 
-            background: var(--header-grad); color: white; padding: 30px; border-radius: 15px; 
-            margin-bottom: 30px; text-align: center; box-shadow: 0 10px 30px var(--card-shadow); 
-        }
-        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
-        .card { 
-            background: var(--card-bg); border-radius: 15px; padding: 25px; 
-            margin-bottom: 25px; box-shadow: 0 5px 20px var(--card-shadow); 
-            transition: background-color 0.3s, box-shadow 0.3s; 
-        }
-        .card h2 { color: var(--accent-color); margin-bottom: 20px; font-size: 1.5rem; }
-        .btn { 
-            background: var(--header-grad); color: white; border: none; padding: 12px 25px; border-radius: 8px; 
-            cursor: pointer; font-size: 1rem; font-weight: 600;
-        }
-        .btn--green { background: var(--green-grad); }
-        .btn--orange { background: var(--orange-grad); }
-        .btn--blue { background: var(--blue-grad); }
-        .btn--grey { background: var(--grey-grad); }
-    </style>
-    
-    <link rel="stylesheet" href="/style.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="/style.css"></noscript>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <button id="darkModeToggle" class="btn dark-mode-toggle" aria-label="다크 모드 전환">🌙</button>
@@ -151,8 +119,15 @@ dist
                     <button id="normalizeRatiosBtn" class="btn btn--blue">⚖️ 비율 자동 맞춤(100%)</button>
                     <button id="saveDataBtn" class="btn btn--blue">💾 저장</button>
                     <button id="loadDataBtn" class="btn btn--grey">📂 불러오기</button>
-                    <button id="exportDataBtn" class="btn btn--blue">📤 내보내기 (JSON)</button>
-                    <button id="importDataBtn" class="btn btn--grey">📥 가져오기 (JSON)</button>
+                    
+                    <div class="dropdown">
+                        <button id="dataManagementBtn" class="btn btn--grey">💾 데이터 관리</button>
+                        <div id="dataDropdownContent" class="dropdown-content">
+                            <a href="#" id="exportDataBtn">📤 내보내기 (JSON)</a>
+                            <a href="#" id="importDataBtn">📥 가져오기 (JSON)</a>
+                        </div>
+                    </div>
+
                     <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 </div>
                 <div class="table-responsive">
@@ -248,7 +223,7 @@ dist
 
     <script type="module" src="/js/main.js"></script>
 </body>
-</html>
+</html> 
 ```
 
 ---
@@ -299,16 +274,69 @@ body {
 
 /* --- 테이블 및 반응형 개선 --- */
 .table-responsive { overflow-x: auto; } 
-table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px; }
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 15px; 
+    min-width: 600px;
+    border-spacing: 0;
+}
 caption { caption-side: top; text-align: left; font-weight: bold; padding: 10px 0; font-size: 1.1rem; color: var(--text-color); }
-th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-th { background-color: rgba(0,0,0,0.03); font-weight: 600; }
-tr:hover { background-color: rgba(0,0,0,0.02); }
+th, td { 
+    padding: 12px; 
+    text-align: left; 
+    white-space: nowrap; 
+    vertical-align: middle; 
+    border-bottom: 1px solid var(--border-color);
+}
+thead tr:last-child th {
+    border-bottom: 2px solid var(--accent-color);
+}
+.stock-outputs td {
+    border-bottom: 2px solid #ccc;
+}
+body.dark-mode .stock-outputs td {
+    border-bottom: 2px solid #555;
+}
 .ticker { 
     background-color: var(--input-border); color: var(--text-color); padding: 4px 8px; border-radius: 6px; 
     font-family: 'Courier New',monospace; font-size: .9rem; font-weight: bold; 
 }
 .calculated-value { font-weight: 500; color: var(--accent-color); }
+
+/* 2줄 레이아웃 스타일 */
+.stock-inputs td, .stock-outputs td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+.stock-outputs {
+    background-color: rgba(0,0,0,0.015);
+}
+body.dark-mode .stock-outputs {
+    background-color: rgba(255,255,255,0.03);
+}
+.outputs-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+.output-cell {
+    text-align: center !important;
+}
+.output-cell .label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+body.dark-mode .output-cell .label {
+    color: #9ab;
+}
+.output-cell .value {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
 
 /* --- 입력 필드 및 버튼 --- */
 .input-group { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -318,6 +346,9 @@ tr:hover { background-color: rgba(0,0,0,0.02); }
 input, .input-group__select {
     padding: 12px; border: 2px solid var(--input-border); border-radius: 8px; font-size: 1rem; 
     background: var(--input-bg); color: var(--text-color); transition: border-color 0.3s; 
+}
+#portfolioTable input[type="text"] {
+    text-align: center;
 }
 .input-group__select {
     flex-grow: 1;
@@ -344,6 +375,38 @@ body.dark-mode input:disabled { background-color: #2a2a2a; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
+
+/* --- 드롭다운 버튼 스타일 --- */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--card-bg);
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px var(--card-shadow);
+    z-index: 1;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.dropdown-content a {
+    color: var(--text-color);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.2s;
+}
+.dropdown-content a:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+body.dark-mode .dropdown-content a:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+.show {
+    display: block;
+}
 
 /* --- UI 컴포넌트 --- */
 .mode-selector { 
@@ -732,15 +795,25 @@ import Decimal from 'decimal.js';
 
 export function generateAddModeResultsHTML(results, summary, currency) {
     const sortedResults = [...results].sort((a, b) => b.finalBuyAmount.comparedTo(a.finalBuyAmount));
-    const resultsRows = sortedResults.map((stock, index) => `
-        <tr class="result-row-highlight" data-delay="${index * 0.05}s">
-            <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
-            <td style="text-align: center;">${stock.currentRatio.toFixed(1)}%</td>
-            <td style="text-align: center;"><strong>${stock.targetRatio.toFixed(1)}%</strong></td>
-            <td style="text-align: right;"><div class="text-buy">${formatCurrency(stock.finalBuyAmount, currency)}</div></td>
-            <td style="text-align: center;">${stock.buyRatio.toFixed(1)}%</td>
-        </tr>
-    `).join('');
+    const resultsRows = sortedResults.map((stock, index) => {
+        const { profitLoss, profitLossRate } = stock.calculated;
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        return `
+            <tr class="result-row-highlight" data-delay="${index * 0.05}s">
+                <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
+                <td style="text-align: center;">${stock.currentRatio.toFixed(1)}%</td>
+                <td style="text-align: center;"><strong>${stock.targetRatio.toFixed(1)}%</strong></td>
+                <td style="text-align: right;">
+                    <div class="${profitClass}">
+                        ${profitSign}${profitLossRate.toFixed(2)}%
+                    </div>
+                </td>
+                <td style="text-align: right;"><div class="text-buy">${formatCurrency(stock.finalBuyAmount, currency)}</div></td>
+            </tr>
+        `;
+    }).join('');
     
     const buyableStocks = sortedResults.filter(s => s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT));
     const guideContent = buyableStocks.length > 0 
@@ -761,7 +834,13 @@ export function generateAddModeResultsHTML(results, summary, currency) {
             <h2>📈 추가 투자 배분 가이드 (매수 금액순 정렬)</h2>
             <div class="table-responsive">
                 <table>
-                    <thead><tr><th>종목</th><th>현재 비율</th><th>목표 비율</th><th>매수 추천 금액</th><th>투자금 중 비율</th></tr></thead>
+                    <thead><tr>
+                        <th>종목</th>
+                        <th>현재 비율</th>
+                        <th>목표 비율</th>
+                        <th>수익률</th>
+                        <th>매수 추천 금액</th>
+                    </tr></thead>
                     <tbody>${resultsRows}</tbody>
                 </table>
             </div>
@@ -900,9 +979,17 @@ export const Validator = {
     },
 
     validateTransaction(txData) {
-        const { date, quantity, price } = txData;
-        if (!date || isNaN(quantity) || isNaN(price) || quantity <= 0 || price <= 0) {
-            return { isValid: false, message: MESSAGES.INVALID_TRANSACTION_DATA };
+        if (!txData.date || isNaN(new Date(txData.date))) {
+            return { isValid: false, message: '유효한 날짜를 입력해주세요.' };
+        }
+        if (new Date(txData.date) > new Date()) {
+            return { isValid: false, message: '미래 날짜는 입력할 수 없습니다.' };
+        }
+        if (isNaN(txData.quantity) || txData.quantity <= 0) {
+            return { isValid: false, message: '수량은 0보다 커야 합니다.' };
+        }
+        if (isNaN(txData.price) || txData.price <= 0) {
+            return { isValid: false, message: '단가는 0보다 커야 합니다.' };
         }
         return { isValid: true };
     },
@@ -920,158 +1007,6 @@ export const Validator = {
             return false;
         }
         return true;
-    }
-};
-```
-
----
-
-## `js/calculator.js`
-
-```javascript
-import Decimal from 'decimal.js';
-import { getRatioSum } from './utils.js';
-
-export const Calculator = {
-    calculatePortfolioState({ portfolioData }) {
-        return portfolioData.map(stock => {
-            let totalQuantity = new Decimal(0);
-            let totalBuyCost = new Decimal(0);
-            let totalBuyQuantity = new Decimal(0);
-            const ZERO = new Decimal(0);
-
-            const sortedTransactions = [...stock.transactions]
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            for (const tx of sortedTransactions) {
-                const txQuantity = new Decimal(tx.quantity || 0);
-                const txPrice = new Decimal(tx.price || 0);
-
-                if (tx.type === 'buy') {
-                    totalQuantity = totalQuantity.plus(txQuantity);
-                    totalBuyCost = totalBuyCost.plus(txQuantity.times(txPrice));
-                    totalBuyQuantity = totalBuyQuantity.plus(txQuantity);
-                } else { // 'sell'
-                    totalQuantity = totalQuantity.minus(txQuantity);
-                }
-            }
-            
-            totalQuantity = Decimal.max(ZERO, totalQuantity);
-
-            const averageBuyPrice = totalBuyQuantity.isZero() ? ZERO : totalBuyCost.div(totalBuyQuantity);
-            const currentAmount = totalQuantity.times(new Decimal(stock.currentPrice || 0));
-
-            return {
-                ...stock,
-                calculated: {
-                    quantity: totalQuantity,
-                    avgBuyPrice: averageBuyPrice,
-                    currentAmount: currentAmount,
-                }
-            };
-        });
-    },
-
-    calculateAddRebalancing({ portfolioData, additionalInvestment }) {
-        if (!Array.isArray(portfolioData)) throw new TypeError('유효하지 않은 포트폴리오 데이터입니다.');
-        if (!(additionalInvestment instanceof Decimal)) throw new TypeError('투자 금액은 Decimal 타입이어야 합니다.');
-        
-        const ZERO = new Decimal(0);
-
-        const totalFixedBuy = portfolioData.reduce((sum, s) => {
-            return s.isFixedBuyEnabled ? sum.plus(new Decimal(s.fixedBuyAmount || 0)) : sum;
-        }, ZERO);
-        
-        const remainingInvestment = Decimal.max(ZERO, additionalInvestment.minus(totalFixedBuy));
-        
-        const rebalancingStocks = portfolioData.filter(s => !s.isFixedBuyEnabled);
-        const totalRatio = getRatioSum(rebalancingStocks);
-        
-        const currentTotal = portfolioData.reduce((sum, s) => sum.plus(s.calculated.currentAmount), ZERO);
-        const finalTotal = currentTotal.plus(additionalInvestment);
-
-        let results = portfolioData.map(stock => ({
-            ...stock,
-            finalBuyAmount: stock.isFixedBuyEnabled ? new Decimal(stock.fixedBuyAmount || 0) : ZERO,
-            currentRatio: currentTotal.isZero() ? 0 : stock.calculated.currentAmount.div(currentTotal).times(100).toNumber()
-        }));
-        
-        if (remainingInvestment.greaterThan(0) && rebalancingStocks.length > 0) {
-            const currentRebalancingTotal = rebalancingStocks.reduce((sum, s) => sum.plus(s.calculated.currentAmount), ZERO);
-            const finalRebalancingTotal = currentRebalancingTotal.plus(remainingInvestment);
-
-            const neededForRebalancing = rebalancingStocks.map(s => {
-                const targetRatio = new Decimal(totalRatio > 0 ? (s.targetRatio || 0) / totalRatio : 1 / rebalancingStocks.length);
-                const targetValue = finalRebalancingTotal.times(targetRatio);
-                const needed = Decimal.max(ZERO, targetValue.minus(s.calculated.currentAmount));
-                return { id: s.id, needed };
-            });
-
-            const totalNeeded = neededForRebalancing.reduce((sum, s) => sum.plus(s.needed), ZERO);
-            
-            let distributedAmount = ZERO;
-            neededForRebalancing.forEach((stock, index) => {
-                const resultStock = results.find(r => r.id === stock.id);
-                if (index === neededForRebalancing.length - 1) {
-                    const remaining = remainingInvestment.minus(distributedAmount);
-                    resultStock.finalBuyAmount = resultStock.finalBuyAmount.plus(Decimal.max(ZERO, remaining));
-                } else {
-                    const proportion = totalNeeded.isZero() ? new Decimal(1).div(rebalancingStocks.length) : stock.needed.div(totalNeeded);
-                    const allocated = proportion.times(remainingInvestment).round();
-                    resultStock.finalBuyAmount = resultStock.finalBuyAmount.plus(allocated);
-                    distributedAmount = distributedAmount.plus(allocated);
-                }
-            });
-        }
-        
-        results.forEach(r => {
-            r.buyRatio = additionalInvestment.isZero() || r.finalBuyAmount.isZero() ? 0 : r.finalBuyAmount.div(additionalInvestment).times(100).toNumber();
-        });
-
-        const summary = { currentTotal, additionalInvestment, finalTotal };
-        return { results, summary };
-    },
-
-    calculateSellRebalancing({ portfolioData }) {
-        if (!Array.isArray(portfolioData)) throw new TypeError('유효하지 않은 포트폴리오 데이터입니다.');
-        
-        const ZERO = new Decimal(0);
-        const currentTotal = portfolioData.reduce((sum, s) => sum.plus(s.calculated.currentAmount), ZERO);
-
-        if (currentTotal.isZero()) {
-            return { results: portfolioData.map(s => ({ ...s, currentRatio: 0, adjustment: ZERO })) };
-        }
-
-        const results = portfolioData.map(stock => {
-            const targetAmountDec = currentTotal.times(new Decimal(stock.targetRatio || 0)).div(100);
-            return {
-                ...stock,
-                currentRatio: stock.calculated.currentAmount.div(currentTotal).times(100).toNumber(),
-                adjustment: stock.calculated.currentAmount.minus(targetAmountDec)
-            };
-        });
-        
-        return { results };
-    },
-
-    analyzeSectors({ portfolioData }) {
-        const totalAmount = portfolioData.reduce((sum, stock) => sum.plus(stock.calculated.currentAmount), new Decimal(0));
-        if (totalAmount.isZero()) return [];
-
-        const sectorMap = new Map();
-        portfolioData.forEach(stock => {
-            const sector = stock.sector || '미분류';
-            const sectorTotal = sectorMap.get(sector) || new Decimal(0);
-            sectorMap.set(sector, sectorTotal.plus(stock.calculated.currentAmount));
-        });
-
-        return Array.from(sectorMap.entries())
-            .map(([sector, amount]) => ({
-                sector,
-                amount,
-                percentage: amount.div(totalAmount).times(100).toNumber()
-            }))
-            .sort((a, b) => b.amount.comparedTo(a.amount));
     }
 };
 ```
@@ -1314,6 +1249,8 @@ export class PortfolioState {
 }
 ```
 
+---
+
 ## `js/eventBinder.js`
 
 ```javascript
@@ -1330,22 +1267,53 @@ export function bindEventListeners(controller, dom) {
     dom.addNewStockBtn.addEventListener('click', () => controller.handleAddNewStock());
     dom.resetDataBtn.addEventListener('click', () => controller.handleResetData());
     dom.normalizeRatiosBtn.addEventListener('click', () => controller.handleNormalizeRatios());
-    dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData());
+    dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData(true));
     dom.loadDataBtn.addEventListener('click', () => controller.handleLoadData());
-    dom.exportDataBtn.addEventListener('click', () => controller.handleExportData());
-    dom.importDataBtn.addEventListener('click', () => controller.handleImportData());
-    dom.importFileInput.addEventListener('change', (e) => controller.handleFileSelected(e));
+    
+    const dataManagementBtn = document.getElementById('dataManagementBtn');
+    const dataDropdownContent = document.getElementById('dataDropdownContent');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const importDataBtn = document.getElementById('importDataBtn');
 
-    // 메인 테이블 이벤트 (이벤트 위임)
-    dom.portfolioBody.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e));
+    dataManagementBtn.addEventListener('click', () => {
+        dataDropdownContent.classList.toggle('show');
+    });
+
+    exportDataBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        controller.handleExportData();
+        dataDropdownContent.classList.remove('show');
+    });
+
+    importDataBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        controller.handleImportData();
+        dataDropdownContent.classList.remove('show');
+    });
+
+    window.addEventListener('click', (e) => {
+        if (!e.target.matches('#dataManagementBtn')) {
+            if (dataDropdownContent.classList.contains('show')) {
+                dataDropdownContent.classList.remove('show');
+            }
+        }
+    });
+    
+    document.getElementById('importFileInput').addEventListener('change', (e) => controller.handleFileSelected(e));
+
+    const debouncedUpdate = debounce(() => controller.updateUI(), 300);
+    dom.portfolioBody.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, debouncedUpdate));
     dom.portfolioBody.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
+    dom.portfolioBody.addEventListener('focusin', (e) => {
+        if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+            e.target.select();
+        }
+    });
 
-    // 계산 및 모드 변경
     dom.calculateBtn.addEventListener('click', () => controller.handleCalculate());
     dom.mainModeSelector.forEach(r => r.addEventListener('change', (e) => controller.handleMainModeChange(e.target.value)));
     dom.currencyModeSelector.forEach(r => r.addEventListener('change', (e) => controller.handleCurrencyModeChange(e.target.value)));
 
-    // 추가 투자금 및 환율 (디바운스 적용)
     const debouncedConversion = debounce((source) => controller.handleCurrencyConversion(source), 300);
     dom.additionalAmountInput.addEventListener('input', () => debouncedConversion('krw'));
     dom.additionalAmountUSDInput.addEventListener('input', () => debouncedConversion('usd'));
@@ -1366,7 +1334,6 @@ export function bindEventListeners(controller, dom) {
     dom.additionalAmountUSDInput.addEventListener('keydown', handleEnterKey);
     dom.exchangeRateInput.addEventListener('keydown', handleEnterKey);
 
-    // 모달 관련 이벤트
     dom.closeModalBtn.addEventListener('click', () => controller.view.closeTransactionModal());
     dom.transactionModal.addEventListener('click', (e) => {
         if (e.target === dom.transactionModal) controller.view.closeTransactionModal();
@@ -1374,9 +1341,45 @@ export function bindEventListeners(controller, dom) {
     dom.newTransactionForm.addEventListener('submit', (e) => controller.handleAddNewTransaction(e));
     dom.transactionListBody.addEventListener('click', (e) => controller.handleTransactionListClick(e));
     
-    // 기타 UI 이벤트
     dom.darkModeToggle.addEventListener('click', () => controller.handleToggleDarkMode());
+    window.addEventListener('beforeunload', () => controller.handleSaveData(false));
 }
+```
+
+---
+
+## `js/errorService.js`
+
+```javascript
+import { PortfolioView } from './view.js';
+import { MESSAGES } from './constants.js';
+
+// 커스텀 에러 클래스
+export class ValidationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ValidationError';
+    }
+}
+
+// 에러 처리 서비스
+export const ErrorService = {
+    handle(error, context = 'General') {
+        console.error(`Error in ${context}:`, error);
+
+        let userMessage = MESSAGES.CALCULATION_ERROR; // 기본 메시지
+
+        if (error instanceof ValidationError) {
+            userMessage = `${MESSAGES.VALIDATION_ERROR_PREFIX}\n${error.message}`;
+        } else if (error.name === 'DecimalError') { // Decimal.js 에러
+            userMessage = MESSAGES.CALC_ERROR_DECIMAL;
+        } else if (error instanceof TypeError) {
+            userMessage = MESSAGES.CALC_ERROR_TYPE;
+        }
+        
+        PortfolioView.showToast(userMessage, 'error');
+    }
+};
 ```
 
 ---
@@ -1387,6 +1390,7 @@ export function bindEventListeners(controller, dom) {
 import { CONFIG, MESSAGES } from './constants.js';
 import { formatCurrency } from './utils.js';
 import Decimal from 'decimal.js';
+import Chart from 'chart.js/auto';
 
 export const PortfolioView = {
     dom: {},
@@ -1416,16 +1420,6 @@ export const PortfolioView = {
             normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
             saveDataBtn: D.getElementById('saveDataBtn'),
             loadDataBtn: D.getElementById('loadDataBtn'),
-            exportDataBtn: D.getElementById('exportDataBtn'),
-            importDataBtn: D.getElementById('importDataBtn'),
-            importFileInput: D.getElementById('importFileInput'),
-            portfolioTableHead: D.getElementById('portfolioTableHead'),
-            ratioValidator: D.getElementById('ratioValidator'),
-            ratioSum: D.getElementById('ratioSum'),
-            portfolioSelector: D.getElementById('portfolioSelector'),
-            newPortfolioBtn: D.getElementById('newPortfolioBtn'),
-            renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
-            deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
             
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
@@ -1435,6 +1429,14 @@ export const PortfolioView = {
             txDate: D.getElementById('txDate'),
             txQuantity: D.getElementById('txQuantity'),
             txPrice: D.getElementById('txPrice'),
+            
+            portfolioSelector: D.getElementById('portfolioSelector'),
+            newPortfolioBtn: D.getElementById('newPortfolioBtn'),
+            renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
+            deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
+            portfolioTableHead: D.getElementById('portfolioTableHead'),
+            ratioValidator: D.getElementById('ratioValidator'),
+            ratioSum: D.getElementById('ratioSum'),
         };
     },
 
@@ -1452,18 +1454,19 @@ export const PortfolioView = {
     },
     
     createStockRowElement(stock, currency, mainMode) {
-        const tr = document.createElement('tr');
-        tr.dataset.id = stock.id;
+        const trInputs = document.createElement('tr');
+        trInputs.className = 'stock-inputs';
+        trInputs.dataset.id = stock.id;
 
-        const { quantity, avgBuyPrice, currentAmount } = stock.calculated;
+        const trOutputs = document.createElement('tr');
+        trOutputs.className = 'stock-outputs';
 
-        const createCell = (content, className = '') => {
+        const { quantity, avgBuyPrice, currentAmount, profitLoss, profitLossRate } = stock.calculated;
+
+        const createCell = (content) => {
             const td = document.createElement('td');
-            if (className) td.className = className;
-            if (typeof content === 'string' || typeof content === 'number') {
-                td.innerHTML = content;
-            } else if (content instanceof Node) {
-                td.appendChild(content);
+            if (typeof content === 'string' || content instanceof Node) {
+                td.append(content);
             }
             return td;
         };
@@ -1479,95 +1482,72 @@ export const PortfolioView = {
             return input;
         };
 
-        tr.appendChild(createCell(createInput('text', 'name', stock.name, `${stock.name} 종목명`), 'cell-name'));
-        tr.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-ticker'));
-        tr.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name), { inline: { textAlign: 'center' } }), 'cell-sector'));
-        tr.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input', inline: { width: '80px', textAlign: 'center' } }), 'cell-targetRatio'));
-        tr.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' }), 'cell-currentPrice'));
-        tr.appendChild(createCell(`<span class="calculated-value">${quantity.toNumber().toLocaleString()}</span>`, 'amount-input cell-quantity'));
-        tr.appendChild(createCell(`<span class="calculated-value">${formatCurrency(avgBuyPrice, currency)}</span>`, 'amount-input cell-avgBuyPrice'));
-        tr.appendChild(createCell(`<span class="calculated-value">${formatCurrency(currentAmount, currency)}</span>`, 'amount-input cell-currentAmount'));
-
+        trInputs.appendChild(createCell(createInput('text', 'name', stock.name, MESSAGES.TICKER_INPUT(stock.name))));
+        trInputs.appendChild(createCell(createInput('text', 'ticker', stock.ticker, MESSAGES.TICKER_INPUT(stock.name))));
+        trInputs.appendChild(createCell(createInput('text', 'sector', stock.sector, MESSAGES.SECTOR_INPUT(stock.name))));
+        trInputs.appendChild(createCell(createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), MESSAGES.TARGET_RATIO_INPUT(stock.name), { className: 'amount-input' })));
+        trInputs.appendChild(createCell(createInput('number', 'currentPrice', stock.currentPrice, MESSAGES.CURRENT_PRICE_INPUT(stock.name), { className: 'amount-input' })));
+        
         if (mainMode === 'add') {
             const fixedBuyContainer = document.createElement('div');
             fixedBuyContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: center;';
-            
             const checkbox = createInput('checkbox', 'isFixedBuyEnabled', stock.isFixedBuyEnabled, '고정 매수 활성화');
             checkbox.checked = stock.isFixedBuyEnabled;
-            
             const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '고정 매수 금액', { className: 'amount-input' });
             amountInput.disabled = !stock.isFixedBuyEnabled;
-
             fixedBuyContainer.append(checkbox, amountInput);
-            tr.appendChild(createCell(fixedBuyContainer, 'cell-fixedBuy'));
+            trInputs.appendChild(createCell(fixedBuyContainer));
         }
-
+        
         const actionsContainer = document.createElement('div');
         actionsContainer.style.cssText = 'display: flex; gap: 5px; justify-content: center;';
-        
         const manageBtn = document.createElement('button');
         manageBtn.className = 'btn btn--blue btn--small';
         manageBtn.dataset.action = 'manage';
         manageBtn.textContent = '거래 관리';
-
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn--delete btn--small';
         deleteBtn.dataset.action = 'delete';
         deleteBtn.textContent = '삭제';
-        
         actionsContainer.append(manageBtn, deleteBtn);
-        tr.appendChild(createCell(actionsContainer, 'cell-actions'));
+        trInputs.appendChild(createCell(actionsContainer));
 
-        return tr;
-    },
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
 
-    updateStockRowElement(row, stock, currency, mainMode) {
-        const { quantity, avgBuyPrice, currentAmount } = stock.calculated;
+        trOutputs.appendChild(createCell('')); 
         
-        row.querySelector('[data-field="name"]').value = stock.name;
-        row.querySelector('[data-field="ticker"]').value = stock.ticker;
-        row.querySelector('[data-field="sector"]').value = stock.sector;
-        row.querySelector('[data-field="targetRatio"]').value = stock.targetRatio.toFixed(2);
-        row.querySelector('[data-field="currentPrice"]').value = stock.currentPrice;
+        const createOutputCell = (label, valueContent) => {
+            const cell = document.createElement('td');
+            cell.className = 'output-cell';
+            cell.innerHTML = `<span class="label">${label}</span><span class="value">${valueContent}</span>`;
+            return cell;
+        };
 
-        row.querySelector('.cell-quantity .calculated-value').textContent = quantity.toNumber().toLocaleString();
-        row.querySelector('.cell-avgBuyPrice .calculated-value').textContent = formatCurrency(avgBuyPrice, currency);
-        row.querySelector('.cell-currentAmount .calculated-value').textContent = formatCurrency(currentAmount, currency);
+        trOutputs.appendChild(createOutputCell('보유 수량', quantity.toNumber().toLocaleString()));
+        trOutputs.appendChild(createOutputCell('평균 단가', formatCurrency(avgBuyPrice, currency)));
+        trOutputs.appendChild(createOutputCell('평가 금액', formatCurrency(currentAmount, currency)));
+        trOutputs.appendChild(createOutputCell('손익(수익률)', `<span class="${profitClass}">${profitSign}${formatCurrency(profitLoss, currency)} (${profitSign}${profitLossRate.toFixed(2)}%)</span>`));
         
-        if (mainMode === 'add') {
-            const checkbox = row.querySelector('[data-field="isFixedBuyEnabled"]');
-            const amountInput = row.querySelector('[data-field="fixedBuyAmount"]');
-            if (checkbox) {
-                checkbox.checked = stock.isFixedBuyEnabled;
-            }
-            if (amountInput) {
-                amountInput.value = stock.fixedBuyAmount;
-                amountInput.disabled = !stock.isFixedBuyEnabled;
-            }
+        const totalCols = mainMode === 'add' ? 7 : 6;
+        const secondRowCols = 5;
+        for (let i = 0; i < totalCols - secondRowCols; i++) {
+            trOutputs.appendChild(createCell(''));
         }
+
+        const fragment = document.createDocumentFragment();
+        fragment.append(trInputs, trOutputs);
+        return fragment;
     },
 
     renderTable(calculatedPortfolioData, currency, mainMode) {
         this.updateTableHeader(currency, mainMode);
+        this.dom.portfolioBody.innerHTML = ''; 
 
-        const existingRows = new Map(
-            Array.from(this.dom.portfolioBody.children).map(row => [row.dataset.id, row])
-        );
-        
-        for (const stock of calculatedPortfolioData) {
-            const stockId = String(stock.id);
-            const row = existingRows.get(stockId);
-
-            if (row) {
-                this.updateStockRowElement(row, stock, currency, mainMode);
-                existingRows.delete(stockId);
-            } else {
-                const newRow = this.createStockRowElement(stock, currency, mainMode);
-                this.dom.portfolioBody.appendChild(newRow);
-            }
-        }
-        
-        existingRows.forEach(row => row.remove());
+        calculatedPortfolioData.forEach(stock => {
+            const rowsFragment = this.createStockRowElement(stock, currency, mainMode);
+            this.dom.portfolioBody.appendChild(rowsFragment);
+        });
     },
 
     updateTableHeader(currency, mainMode) {
@@ -1580,9 +1560,6 @@ export const PortfolioView = {
                 <th scope="col">섹터</th>
                 <th scope="col">목표 비율(%)</th>
                 <th scope="col">현재가(${currencySymbol})</th>
-                <th scope="col">보유 수량</th>
-                <th scope="col">평균 단가(${currencySymbol})</th>
-                <th scope="col">평가 금액(${currencySymbol})</th>
                 ${fixedBuyHeader}
                 <th scope="col">작업</th>
             </tr>
@@ -1689,6 +1666,13 @@ export const PortfolioView = {
         this.dom.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
+    cleanupObserver() {
+        if (this.currentObserver) {
+            this.currentObserver.disconnect();
+            this.currentObserver = null;
+        }
+    },
+
     hideResults() {
         this.dom.resultsSection.innerHTML = '';
         this.dom.resultsSection.classList.add('hidden');
@@ -1696,16 +1680,11 @@ export const PortfolioView = {
         this.dom.sectorAnalysisSection.classList.add('hidden');
         this.dom.chartSection.classList.add('hidden');
         
-        if (this.currentObserver) {
-            this.currentObserver.disconnect();
-            this.currentObserver = null;
-        }
+        this.cleanupObserver();
     },
 
     displayResults(html) {
-        if (this.currentObserver) {
-            this.currentObserver.disconnect();
-        }
+        this.cleanupObserver();
 
         requestAnimationFrame(() => {
             this.dom.resultsSection.innerHTML = html;
@@ -1737,7 +1716,7 @@ export const PortfolioView = {
         });
     },
     
-    displayChart(labels, data, title, Chart) {
+    displayChart(labels, data, title) {
         this.dom.chartSection.classList.remove('hidden');
 
         if (this.chartInstance) {
@@ -1835,7 +1814,7 @@ import { Validator } from './validator.js';
 import { CONFIG, MESSAGES } from './constants.js';
 import { generateAddModeResultsHTML, generateSellModeResultsHTML, generateSectorAnalysisHTML } from './templates.js';
 import { bindEventListeners } from './eventBinder.js';
-import Chart from 'chart.js/auto';
+import { ErrorService, ValidationError } from './errorService.js';
 import Decimal from 'decimal.js';
 
 export class PortfolioController {
@@ -1848,18 +1827,18 @@ export class PortfolioController {
         this.view.cacheDomElements();
         bindEventListeners(this, this.view.dom);
         
-        this.refreshUI();
+        this.updateUI();
         
         this.view.dom.darkModeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
     }
 
-    refreshUI() {
+    updateUI() {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) {
-            console.error("No active portfolio found. Cannot refresh UI.");
+            console.error("No active portfolio found. Cannot update UI.");
             return;
         }
-
+        
         const calculatedPortfolioData = Calculator.calculatePortfolioState({ portfolioData: activePortfolio.portfolioData });
         const { settings } = activePortfolio;
 
@@ -1867,7 +1846,6 @@ export class PortfolioController {
         this.view.renderTable(calculatedPortfolioData, settings.currentCurrency, settings.mainMode);
         this.view.updateMainModeUI(settings.mainMode);
         this.view.updateCurrencyModeUI(settings.currentCurrency);
-        
         this.handleRatioUpdate();
         this.view.hideResults();
     }
@@ -1878,24 +1856,27 @@ export class PortfolioController {
         localStorage.setItem(CONFIG.DARK_MODE_KEY, isDark);
     }
 
-    handlePortfolioBodyChange(e) {
+    handlePortfolioBodyChange(e, updateCallback) {
         const target = e.target;
-        const row = target.closest('tr');
+        const row = target.closest('tr[data-id]');
         if (!row || !target.dataset.field) return;
 
         const id = parseInt(row.dataset.id, 10);
         const field = target.dataset.field;
         const value = target.type === 'checkbox' ? target.checked : target.value;
 
-        this.handleStockUpdate(id, field, value, target);
+        this.handleStockUpdate(id, field, value, target, updateCallback);
     }
 
     handlePortfolioBodyClick(e) {
         const button = e.target.closest('button[data-action]');
         if (!button) return;
 
+        const row = button.closest('tr[data-id]');
+        if (!row) return;
+
         const action = button.dataset.action;
-        const id = parseInt(button.closest('tr').dataset.id, 10);
+        const id = parseInt(row.dataset.id, 10);
         
         if (action === 'delete') {
             this.handleDeleteStock(id);
@@ -1907,17 +1888,24 @@ export class PortfolioController {
     }
 
     handleAddNewStock() {
-        this.state.addNewStock();
-        this.refreshUI();
+        const newStock = this.state.addNewStock();
+        this.updateUI();
+
+        requestAnimationFrame(() => {
+            const newRow = this.view.dom.portfolioBody.querySelector(`tr[data-id="${newStock.id}"]`);
+            if (newRow) {
+                newRow.querySelector('[data-field="name"]').focus();
+            }
+        });
     }
 
     handleDeleteStock(id) {
         if (this.state.deleteStock(id)) {
-            this.refreshUI();
+            this.updateUI();
         }
     }
 
-    handleStockUpdate(id, field, value, element) {
+    handleStockUpdate(id, field, value, element, updateCallback) {
         const numericFields = ['targetRatio', 'currentPrice', 'fixedBuyAmount'];
         
         if (numericFields.includes(field)) {
@@ -1936,7 +1924,7 @@ export class PortfolioController {
         }
         
         if (['currentPrice', 'targetRatio', 'fixedBuyAmount', 'isFixedBuyEnabled'].includes(field)) {
-            this.refreshUI();
+            updateCallback();
         }
     }
     
@@ -1966,7 +1954,7 @@ export class PortfolioController {
             this.view.renderTransactionList(updatedStock.transactions, currency);
             dom.newTransactionForm.reset();
             dom.txDate.valueAsDate = new Date();
-            this.refreshUI();
+            this.updateUI();
         }
     }
     
@@ -1983,7 +1971,7 @@ export class PortfolioController {
                 const currency = this.state.getActivePortfolio().settings.currentCurrency;
                 const updatedStock = this.state.getActivePortfolio().portfolioData.find(s => s.id === stockId);
                 this.view.renderTransactionList(updatedStock.transactions, currency);
-                this.refreshUI();
+                this.updateUI();
             }
         }
     }
@@ -1997,7 +1985,7 @@ export class PortfolioController {
         if (confirm(MESSAGES.CONFIRM_RESET)) {
             const newPortfolio = this.state.loadTemplateData("초기화된 포트폴리오");
             this.state.getActivePortfolio().portfolioData = newPortfolio.data.portfolioData;
-            this.refreshUI();
+            this.updateUI();
             this.view.showToast(MESSAGES.DATA_RESET, "info");
         }
     }
@@ -2007,19 +1995,21 @@ export class PortfolioController {
             this.view.showToast(MESSAGES.NO_RATIOS_TO_NORMALIZE, "error");
             return;
         }
-        this.refreshUI();
+        this.updateUI();
         this.view.showToast(MESSAGES.RATIOS_NORMALIZED, "success");
     }
 
-    handleSaveData() { 
+    handleSaveData(showToast = true) {
         const result = this.state.saveState();
-        this.view.showToast(result.message, result.success ? "success" : "error");
+        if (showToast) {
+            this.view.showToast(result.message, result.success ? "success" : "error");
+        }
     }
 
     handleLoadData() {
         if (confirm(MESSAGES.CONFIRM_LOAD)) {
             this.state.init();
-            this.refreshUI();
+            this.updateUI();
             this.view.showToast(MESSAGES.LOAD_SUCCESS, 'info');
         }
     }
@@ -2042,7 +2032,7 @@ export class PortfolioController {
     }
 
     handleImportData() {
-        this.view.dom.importFileInput.click();
+        document.getElementById('importFileInput').click();
     }
 
     handleFileSelected(e) {
@@ -2060,12 +2050,11 @@ export class PortfolioController {
                 this.state.portfolios = importedData.portfolios;
                 this.state.activePortfolioId = importedData.activePortfolioId;
                 this.state.saveState();
-                this.refreshUI();
+                this.updateUI();
                 this.view.showToast(MESSAGES.IMPORT_SUCCESS, "success");
 
             } catch (error) {
-                console.error("File import error:", error);
-                this.view.showToast(MESSAGES.IMPORT_ERROR, "error");
+                ErrorService.handle(new Error("파일을 불러오는 중 오류가 발생했습니다."), 'handleFileSelected');
             } finally {
                 e.target.value = '';
             }
@@ -2077,7 +2066,7 @@ export class PortfolioController {
         const name = prompt(MESSAGES.PROMPT_NEW_PORTFOLIO_NAME, `포트폴리오 ${Object.keys(this.state.portfolios).length + 1}`);
         if (name && name.trim()) {
             const newPortfolio = this.state.addPortfolio(name.trim());
-            this.refreshUI();
+            this.updateUI();
             this.view.showToast(MESSAGES.PORTFOLIO_CREATED(newPortfolio.name), 'success');
         }
     }
@@ -2087,7 +2076,7 @@ export class PortfolioController {
         const newName = prompt(MESSAGES.PROMPT_RENAME_PORTFOLIO, activePortfolio.name);
         if (newName && newName.trim() && newName.trim() !== activePortfolio.name) {
             if (this.state.renamePortfolio(this.state.activePortfolioId, newName)) {
-                this.refreshUI();
+                this.updateUI();
                 this.view.showToast(MESSAGES.PORTFOLIO_RENAMED, 'success');
             }
         }
@@ -2097,7 +2086,7 @@ export class PortfolioController {
         const activePortfolio = this.state.getActivePortfolio();
         if (confirm(MESSAGES.CONFIRM_DELETE_PORTFOLIO(activePortfolio.name))) {
             if (this.state.deletePortfolio(this.state.activePortfolioId)) {
-                this.refreshUI();
+                this.updateUI();
                 this.view.showToast(MESSAGES.PORTFOLIO_DELETED, 'info');
             } else {
                 this.view.showToast(MESSAGES.LAST_PORTFOLIO_DELETE_ERROR, 'error');
@@ -2109,18 +2098,18 @@ export class PortfolioController {
         const selectedId = this.view.dom.portfolioSelector.value;
         if(this.state.switchPortfolio(selectedId)) {
             this.state.saveState();
-            this.refreshUI();
+            this.updateUI();
         }
     }
 
     handleMainModeChange(mode) {
         this.state.getActivePortfolio().settings.mainMode = mode;
-        this.refreshUI();
+        this.updateUI();
     }
 
     handleCurrencyModeChange(mode) {
         this.state.getActivePortfolio().settings.currentCurrency = mode;
-        this.refreshUI();
+        this.updateUI();
     }
     
     handleCurrencyConversion(source) {
@@ -2157,24 +2146,19 @@ export class PortfolioController {
         this.view.displaySkeleton();
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        const activePortfolio = this.state.getActivePortfolio();
-        const { settings } = activePortfolio;
-        const { mainMode, currentCurrency } = settings;
-        
-        const calculatedPortfolioData = Calculator.calculatePortfolioState({ portfolioData: activePortfolio.portfolioData });
-        const additionalInvestment = this.getInvestmentAmountInKRW();
-
-        const validationErrors = Validator.validateForCalculation({ mainMode, portfolioData: calculatedPortfolioData, additionalInvestment });
-        if (validationErrors.length > 0) {
-            this.view.displayResults(''); 
-            this.view.showToast(
-                [MESSAGES.VALIDATION_ERROR_PREFIX, ...validationErrors].join('\n'),
-                'error'
-            );
-            return;
-        }
-
         try {
+            const activePortfolio = this.state.getActivePortfolio();
+            const { settings } = activePortfolio;
+            const { mainMode, currentCurrency } = settings;
+            
+            const calculatedPortfolioData = Calculator.calculatePortfolioState({ portfolioData: activePortfolio.portfolioData });
+            const additionalInvestment = this.getInvestmentAmountInKRW();
+
+            const validationErrors = Validator.validateForCalculation({ mainMode, portfolioData: calculatedPortfolioData, additionalInvestment });
+            if (validationErrors.length > 0) {
+                throw new ValidationError(validationErrors.join('\n'));
+            }
+
             const currency = currentCurrency.toUpperCase();
             
             if (mainMode === 'add') {
@@ -2199,18 +2183,102 @@ export class PortfolioController {
             const labels = chartData.map(stock => stock.name);
             const data = chartData.map(stock => stock.targetRatio);
 
-            this.view.displayChart(labels, data, '목표 비율(%) 구성', Chart);
+            this.view.displayChart(labels, data, '목표 비율(%) 구성');
 
         } catch (error) {
-            console.error("Calculation Error:", error);
-            if (error instanceof Decimal.Error) {
-                this.view.showToast(MESSAGES.CALC_ERROR_DECIMAL, "error");
-            } else if (error instanceof TypeError) {
-                this.view.showToast(MESSAGES.CALC_ERROR_TYPE, "error");
-            } else {
-                this.view.showToast(MESSAGES.CALCULATION_ERROR, "error");
-            }
+            this.view.displayResults(''); 
+            ErrorService.handle(error, 'handleCalculate');
         }
     }
 }
+```
+
+---
+
+## `js/calculator.test.js`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import Decimal from 'decimal.js';
+import { Calculator } from './calculator.js';
+
+describe('Calculator.calculateSellRebalancing', () => {
+
+  it('목표 비율에 맞게 매도 및 매수해야 할 금액을 정확히 계산해야 한다', () => {
+    // Given
+    const portfolioData = [
+      {
+        id: 1,
+        name: "과체중 주식",
+        targetRatio: 25,
+        calculated: { currentAmount: new Decimal(5000) }
+      },
+      {
+        id: 2,
+        name: "저체중 주식",
+        targetRatio: 75,
+        calculated: { currentAmount: new Decimal(5000) }
+      }
+    ];
+
+    // When
+    const { results } = Calculator.calculateSellRebalancing({ portfolioData });
+    const overweightStock = results.find(s => s.id === 1);
+    const underweightStock = results.find(s => s.id === 2);
+
+    // Then
+    expect(overweightStock.adjustment.toString()).toBe('2500');
+    expect(underweightStock.adjustment.toString()).toBe('-2500');
+  });
+
+  it('포트폴리오 총액이 0일 때 모든 조정 금액은 0이어야 한다', () => {
+    // Given
+    const portfolioData = [
+      { id: 1, targetRatio: 50, calculated: { currentAmount: new Decimal(0) } },
+      { id: 2, targetRatio: 50, calculated: { currentAmount: new Decimal(0) } },
+    ];
+
+    // When
+    const { results } = Calculator.calculateSellRebalancing({ portfolioData });
+
+    // Then
+    expect(results[0].adjustment.toString()).toBe('0');
+    expect(results[1].adjustment.toString()).toBe('0');
+  });
+});
+
+describe('Calculator.calculateAddRebalancing', () => {
+
+  it('추가 투자금을 목표 비율에 미달하는 주식에 정확히 배분해야 한다', () => {
+    // Given: 총 자산 4000, 추가 투자금 1000 -> 최종 자산 5000
+    // A주식 목표: 2500 (현재 1000), B주식 목표: 2500 (현재 3000)
+    // 따라서 추가 투자금 1000은 모두 A주식에 배분되어야 함
+    const portfolioData = [
+      {
+        id: 1,
+        name: 'A주식 (저체중)',
+        targetRatio: 50,
+        isFixedBuyEnabled: false,
+        calculated: { currentAmount: new Decimal(1000) }
+      },
+      {
+        id: 2,
+        name: 'B주식 (과체중)',
+        targetRatio: 50,
+        isFixedBuyEnabled: false,
+        calculated: { currentAmount: new Decimal(3000) }
+      }
+    ];
+    const additionalInvestment = new Decimal(1000);
+
+    // When
+    const { results } = Calculator.calculateAddRebalancing({ portfolioData, additionalInvestment });
+    const underweightStock = results.find(s => s.id === 1);
+    const overweightStock = results.find(s => s.id === 2);
+
+    // Then
+    expect(underweightStock.finalBuyAmount.toString()).toBe('1000');
+    expect(overweightStock.finalBuyAmount.toString()).toBe('0');
+  });
+});
 ```

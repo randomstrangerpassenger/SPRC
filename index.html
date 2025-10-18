@@ -44,8 +44,6 @@
                     <button id="addNewStockBtn" class="btn btn--green">➕ 새 종목 추가</button>
                     <button id="resetDataBtn" class="btn btn--orange">🔄 초기화</button>
                     <button id="normalizeRatiosBtn" class="btn btn--blue">⚖️ 비율 자동 맞춤(100%)</button>
-                    <button id="saveDataBtn" class="btn btn--blue">💾 저장</button>
-                    <button id="loadDataBtn" class="btn btn--grey">📂 불러오기</button>
                     
                     <div class="dropdown">
                         <button id="dataManagementBtn" class="btn btn--grey">💾 데이터 관리</button>
@@ -58,14 +56,14 @@
                     <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 </div>
                 <div class="table-responsive">
-                    <table id="portfolioTable">
+                    <table id="portfolioTable" role="grid">
                         <thead id="portfolioTableHead"></thead>
                         <tbody id="portfolioBody"></tbody>
                     </table>
                 </div>
                 <div id="ratioValidator" class="ratio-validator">
                     <strong>목표 비율 합계:</strong>
-                    <span class="ratio-value" id="ratioSum">0%</span>
+                    <span class="ratio-value" id="ratioSum" aria-live="polite">0%</span>
                 </div>
             </section>
 
@@ -104,7 +102,7 @@
         </main>
     </div>
 
-    <div id="transactionModal" class="modal-overlay hidden">
+    <div id="transactionModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalStockName">
         <div class="modal-content card">
             <div class="modal-header">
                 <h2 id="modalStockName">거래 내역 관리</h2>
@@ -145,6 +143,18 @@
                 </div>
                 <button type="submit" class="btn btn--blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
             </form>
+        </div>
+    </div>
+    
+    <div id="customModal" class="modal-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="customModalTitle">
+        <div class="modal-content card">
+            <h2 id="customModalTitle"></h2>
+            <p id="customModalMessage"></p>
+            <input type="text" id="customModalInput" class="hidden" style="width: 100%; margin: 15px 0;">
+            <div class="btn-controls" style="justify-content: flex-end; margin-top: 20px;">
+                <button id="customModalCancel" class="btn btn--grey">취소</button>
+                <button id="customModalConfirm" class="btn btn--blue">확인</button>
+            </div>
         </div>
     </div>
 
