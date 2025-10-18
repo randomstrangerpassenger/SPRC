@@ -14,6 +14,7 @@ export function bindEventListeners(controller, dom) {
     dom.saveDataBtn.addEventListener('click', () => controller.handleSaveData(true));
     dom.loadDataBtn.addEventListener('click', () => controller.handleLoadData());
     
+    // --- 드롭다운 로직 ---
     const dataManagementBtn = document.getElementById('dataManagementBtn');
     const dataDropdownContent = document.getElementById('dataDropdownContent');
     const exportDataBtn = document.getElementById('exportDataBtn');
@@ -35,6 +36,7 @@ export function bindEventListeners(controller, dom) {
         dataDropdownContent.classList.remove('show');
     });
 
+    // 드롭다운 외부 클릭 시 메뉴 닫기
     window.addEventListener('click', (e) => {
         if (!e.target.matches('#dataManagementBtn')) {
             if (dataDropdownContent.classList.contains('show')) {
@@ -42,8 +44,9 @@ export function bindEventListeners(controller, dom) {
             }
         }
     });
-
-    dom.importFileInput.addEventListener('change', (e) => controller.handleFileSelected(e));
+    
+    document.getElementById('importFileInput').addEventListener('change', (e) => controller.handleFileSelected(e));
+    // --- 여기까지 ---
 
     // 메인 테이블 이벤트 (이벤트 위임)
     const debouncedUpdate = debounce(() => controller.updateUI(), 300);
