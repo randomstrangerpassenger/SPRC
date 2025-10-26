@@ -335,7 +335,13 @@ export class PortfolioState {
              return ''; // 임시 반환
         }
 
-        const newId = `p-${Date.now()}`;
+        // 고유 ID 생성 (crypto.randomUUID 또는 Date.now() + random suffix 사용)
+        let newId;
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            newId = `p-${crypto.randomUUID()}`;
+        } else {
+            newId = `p-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
         /** @type {PortfolioSettings} */
         const defaultSettings = {
             mainMode: 'add',

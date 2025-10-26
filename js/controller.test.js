@@ -16,17 +16,17 @@ vi.mock('./view.js', () => {
   };
 
   return {
-      PortfolioView: { 
+      PortfolioView: {
           // --- ⬇️ 핵심 수정: 누락된 mock 함수 모두 추가 ⬇️ ---
           dom: {},
           cacheDomElements: vi.fn(function() {
               Object.assign(this.dom, mockDom);
           }),
-          
-          renderPortfolioSelector: vi.fn(), 
-          updateCurrencyModeUI: vi.fn(),    
-          updateMainModeUI: vi.fn(),        
-          renderTable: vi.fn(),             // <--- 추가됨: TypeError 해결
+
+          renderPortfolioSelector: vi.fn(),
+          updateCurrencyModeUI: vi.fn(),
+          updateMainModeUI: vi.fn(),
+          renderTable: vi.fn(),
           updateStockRowOutputs: vi.fn(),
           displaySectorAnalysis: vi.fn(),
           updateAllTargetRatioInputs: vi.fn(),
@@ -40,12 +40,9 @@ vi.mock('./view.js', () => {
           updateTableHeader: vi.fn(),
           updateRatioSum: vi.fn(),
           cleanup: vi.fn(),
-          
+
           getDOMElements: vi.fn(function() { return this.dom; }),
           getDOMElement: vi.fn(function(id) { return this.dom[id]; }),
-          
-          generateAddModeResultsHTML: vi.fn().mockReturnValue('Add HTML'),
-          generateSellModeResultsHTML: vi.fn().mockReturnValue('Sell HTML'),
       }
   };
 });
@@ -137,7 +134,7 @@ describe('PortfolioController', () => {
   it('handleCalculate: 유효성 검사 실패 시 ErrorService를 호출해야 한다', async () => {
     const validationError = new ValidationError('- 테스트 오류');
     // @ts-ignore
-    vi.mocked(Validator.validateForCalculation).mockResolvedValue([{ field: null, stockId: null, message: '- 테스트 오류' }]);
+    vi.mocked(Validator.validateForCalculation).mockReturnValue([{ field: null, stockId: null, message: '- 테스트 오류' }]);
 
     await controller.handleCalculate();
 
@@ -148,9 +145,9 @@ describe('PortfolioController', () => {
 
   it('handleCalculate: 유효성 검사 성공 시 계산 및 뷰 업데이트를 호출해야 한다', async () => {
     const mockResults = { results: [ { id: '1' } ], summary: { total: 100 } };
-    
+
     // @ts-ignore
-    vi.mocked(Validator.validateForCalculation).mockResolvedValue([]);
+    vi.mocked(Validator.validateForCalculation).mockReturnValue([]);
     // @ts-ignore
     vi.mocked(Calculator.calculateAddRebalancing).mockReturnValue(mockResults); 
     // @ts-ignore

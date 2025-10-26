@@ -46,7 +46,7 @@ describe('PortfolioState', () => {
     localStorage.clear();
     if (typeof crypto === 'undefined') {
       global.crypto = { randomUUID: () => `mock-uuid-${Math.random()}` };
-    } else {
+    } else if (crypto && crypto.randomUUID) {
         // --- ⬇️ 핵심 수정: 괄호 문제 해결 ⬇️ ---
         vi.spyOn(crypto, 'randomUUID').mockImplementation(() => `mock-uuid-${Math.random()}`);
         // --- ⬆️ 핵심 수정 ⬆️ ---

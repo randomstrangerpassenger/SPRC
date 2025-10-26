@@ -6,8 +6,9 @@ import { Calculator } from './calculator.js';
 import { Validator } from './validator.js';
 import { debounce, formatCurrency } from './utils.js';
 import { CONFIG } from './constants.js';
-import { ErrorService } from './errorService.js';
+import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
+import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML } from './templates.js';
 import Decimal from 'decimal.js'; // 동기 임포트로 복구
 
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
@@ -119,7 +120,7 @@ export class PortfolioController {
 
         // 4. 섹터 분석 업데이트
         const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
-        this.view.displaySectorAnalysis(this.view.generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
+        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
 
         // 5. 활성 모드에 따라 추가 투자금 입력 필드 상태 업데이트
         this.view.updateMainModeUI(activePortfolio.settings.mainMode); // toggleAdditionalAmountInputs -> updateMainModeUI
@@ -172,7 +173,7 @@ export class PortfolioController {
 
         // 4. 섹터 분석 업데이트
         const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
-        this.view.displaySectorAnalysis(this.view.generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
+        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
 
         // 5. 계산된 상태 저장
         activePortfolio.portfolioData = calculatedState.portfolioData;
@@ -518,12 +519,12 @@ export class PortfolioController {
 
         // 5. 결과 렌더링 (템플릿 함수 사용)
         const resultsHTML = activePortfolio.settings.mainMode === 'add'
-             ? this.view.generateAddModeResultsHTML(rebalancingResults.results, {
+             ? generateAddModeResultsHTML(rebalancingResults.results, {
                    currentTotal: calculatedState.currentTotal,
                    additionalInvestment: additionalInvestment,
                    finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
                }, activePortfolio.settings.currentCurrency)
-             : this.view.generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
+             : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
 
         this.view.displayResults(resultsHTML); // renderResults -> displayResults
 
