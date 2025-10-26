@@ -12,7 +12,7 @@ import Decimal from 'decimal.js';
  * @description '추가 매수' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
  * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
  * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
- * @param {string} currency - 현재 통화 ('KRW' or 'USD')
+ * @param {string} currency - 현재 통화 ('krw' or 'usd')
  * @returns {string} 생성된 HTML 문자열
  */
 export function generateAddModeResultsHTML(results, summary, currency) {
@@ -95,7 +95,7 @@ export function generateAddModeResultsHTML(results, summary, currency) {
 /**
  * @description '매도 리밸런싱' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
  * @param {(CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[]} results - 계산 결과 배열
- * @param {string} currency - 현재 통화 ('KRW' or 'USD')
+ * @param {string} currency - 현재 통화 ('krw' or 'usd')
  * @returns {string} 생성된 HTML 문자열
  */
 export function generateSellModeResultsHTML(results, currency) {
@@ -120,7 +120,7 @@ export function generateSellModeResultsHTML(results, currency) {
                 <td style="text-align: center;"><strong>${targetRatioVal}%</strong></td>
                 <td style="text-align: right;">
                     <div class="${adjustmentVal.isPositive() ? 'text-sell' : 'text-buy'}">
-                        ${adjustmentVal.isPositive() ? '🔴 매도' : '🔵 매수'}: ${formatCurrency(adjustmentVal.abs(), currency)}
+                        ${adjustmentVal.isPositive() ? t('ui.sellWithIcon') : t('ui.buyWithIcon')}: ${formatCurrency(adjustmentVal.abs(), currency)}
                     </div>
                 </td>
             </tr>`;
@@ -165,7 +165,7 @@ export function generateSellModeResultsHTML(results, currency) {
 /**
  * @description 섹터 분석 결과를 표시할 HTML 문자열을 생성합니다.
  * @param {{ sector: string, amount: Decimal, percentage: Decimal }[]} sectorData - 섹터 분석 결과 배열
- * @param {string} currency - 현재 통화 ('KRW' or 'USD')
+ * @param {string} currency - 현재 통화 ('krw' or 'usd')
  * @returns {string} 생성된 HTML 문자열
  */
 export function generateSectorAnalysisHTML(sectorData, currency) {

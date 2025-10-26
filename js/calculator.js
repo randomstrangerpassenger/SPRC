@@ -121,13 +121,13 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
 
     /**
      * @description 포트폴리오 상태를 계산하고 캐싱합니다.
-     * @param {{ portfolioData: Stock[], exchangeRate: number, currentCurrency: 'KRW' | 'USD' }} options - 포트폴리오 데이터 및 환율/통화
+     * @param {{ portfolioData: Stock[], exchangeRate: number, currentCurrency: 'krw' | 'usd' }} options - 포트폴리오 데이터 및 환율/통화
      * @returns {PortfolioCalculationResult}
      */
-    static calculatePortfolioState({ portfolioData, exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE, currentCurrency = 'KRW' }) { // 'static' 키워드 추가
+    static calculatePortfolioState({ portfolioData, exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE, currentCurrency = 'krw' }) {
         const cacheKey = _generatePortfolioKey(portfolioData);
 
-        if (Calculator.#cache && Calculator.#cache.key === cacheKey) { // 'this.#cache'를 'Calculator.#cache'로 변경
+        if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
             return Calculator.#cache.result;
         }
 
@@ -136,14 +136,13 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
 
         /** @type {CalculatedStock[]} */
         const calculatedPortfolioData = portfolioData.map(stock => {
-            // 'this.calculateStockMetrics'를 'Calculator.calculateStockMetrics'로 변경
-            const calculatedMetrics = Calculator.calculateStockMetrics(stock); 
-            
+            const calculatedMetrics = Calculator.calculateStockMetrics(stock);
+
             // 현재가치를 KRW와 USD로 변환
-            if (currentCurrency === 'KRW') {
+            if (currentCurrency === 'krw') {
                 calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
                 calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
-            } else { // USD
+            } else { // usd
                 calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
                 calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
             }

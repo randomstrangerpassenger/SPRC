@@ -298,9 +298,9 @@ export const PortfolioView = {
             return td;
         };
 
-        appendCellWithContent(trInputs, createInput('text', 'name', stock.name, '종목명'));
-        appendCellWithContent(trInputs, createInput('text', 'ticker', stock.ticker, '티커', false, t('aria.tickerInput', { name: stock.name })));
-        appendCellWithContent(trInputs, createInput('text', 'sector', stock.sector || '', '섹터', false, t('aria.sectorInput', { name: stock.name }))); // 섹터 추가
+        appendCellWithContent(trInputs, createInput('text', 'name', stock.name, t('ui.stockName')));
+        appendCellWithContent(trInputs, createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
+        appendCellWithContent(trInputs, createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name }))); // 섹터 추가
         appendCellWithContent(trInputs, createInput('number', 'targetRatio', stock.targetRatio.toFixed(2), '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
         appendCellWithContent(trInputs, createInput('number', 'currentPrice', stock.currentPrice.toFixed(2), '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
 
@@ -315,9 +315,9 @@ export const PortfolioView = {
         const actionCell = trInputs.insertCell();
         actionCell.style.textAlign = 'center';
         actionCell.append(
-            createButton('manage', '거래', t('aria.manageTransactions', { name: stock.name }), 'blue'),
+            createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
             ' ',
-            createButton('delete', '삭제', t('aria.deleteStock', { name: stock.name }), 'delete')
+            createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
         );
 
         // --- 출력 행 (trOutputs) 생성 ---
@@ -349,11 +349,11 @@ export const PortfolioView = {
 
         appendCellWithContent(trOutputs, ''); // 첫 번째 빈 셀 (이름 열 아래)
         trOutputs.cells[0].colSpan = 2; // 이름+티커 열 병합
-        appendCellWithContent(trOutputs, createOutputCell('수량', quantity.toFixed(0)));
-        appendCellWithContent(trOutputs, createOutputCell('평단가', formatCurrency(avgBuyPrice, currency)));
-        appendCellWithContent(trOutputs, createOutputCell('현재 평가액', formatCurrency(currentAmount, currency)));
-        appendCellWithContent(trOutputs, createOutputCell('평가 손익', `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
-        appendCellWithContent(trOutputs, createOutputCell('수익률', `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
+        appendCellWithContent(trOutputs, createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+        appendCellWithContent(trOutputs, createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+        appendCellWithContent(trOutputs, createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+        appendCellWithContent(trOutputs, createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
+        appendCellWithContent(trOutputs, createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
 
         // colspan 조정
         if(trOutputs.cells.length > 0) {
@@ -459,9 +459,9 @@ export const PortfolioView = {
      * @returns {void}
      */
     updateTableHeader(currency, mainMode) {
-        const currencySymbol = currency.toLowerCase() === 'usd' ? '$' : '원';
+        const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
         // 섹터 헤더 추가
-        const fixedBuyHeader = mainMode === 'add' ? `<th scope="col">고정 매수(${currencySymbol})</th>` : '';
+        const fixedBuyHeader = mainMode === 'add' ? `<th scope="col">${t('ui.fixedBuy')}(${currencySymbol})</th>` : '';
         /** @type {HTMLElement | null} */
         const tableHead = this.dom.portfolioTableHead;
         if (!tableHead) return;
@@ -669,7 +669,7 @@ export const PortfolioView = {
                 const typeTd = tr.insertCell();
                 const typeSpan = document.createElement('span');
                 typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
-                typeSpan.textContent = tx.type === 'buy' ? '매수' : '매도';
+                typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
                 typeTd.appendChild(typeSpan);
                 // 수량
                 const qtyTd = tr.insertCell();
@@ -690,7 +690,7 @@ export const PortfolioView = {
                 btnDelete.className = 'btn btn--small';
                 btnDelete.dataset.variant = 'delete';
                 btnDelete.dataset.action = 'delete-tx';
-                btnDelete.textContent = '삭제';
+                btnDelete.textContent = t('ui.delete');
                 btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
                 actionTd.appendChild(btnDelete);
             }
@@ -871,7 +871,7 @@ export const PortfolioView = {
         // 기존 차트 인스턴스가 있으면 업데이트, 없으면 새로 생성
         if (this.chartInstance) {
             this.chartInstance.data = chartData;
-            // @ts-ignore - Chart.js 타입 정의가 복잡하여 options 할당 에러 무시
+            // Chart.js options assignment (library handles type internally)
             this.chartInstance.options = chartOptions;
             this.chartInstance.update();
         } else {
@@ -919,5 +919,44 @@ export const PortfolioView = {
 
         // 3초 후 자동으로 사라짐
         setTimeout(() => toast.remove(), 3000);
+    },
+
+    /**
+     * @description 새로 추가된 주식의 이름 입력 필드로 포커스를 이동하고 선택합니다.
+     * @param {string} stockId - 포커스할 주식 ID
+     * @returns {void}
+     */
+    focusOnNewStock(stockId) {
+        /** @type {HTMLElement | null} */
+        const portfolioBody = this.dom.portfolioBody;
+        const inputRow = portfolioBody?.querySelector(`.stock-inputs[data-id="${stockId}"]`);
+        if (!inputRow) return;
+
+        /** @type {HTMLInputElement | null} */
+        const nameInput = inputRow.querySelector('input[data-field="name"]');
+        if (nameInput instanceof HTMLInputElement) {
+            nameInput.focus();
+            nameInput.select();
+        }
+    },
+
+    /**
+     * @description '현재가 일괄 업데이트' 버튼의 로딩 상태를 토글합니다.
+     * @param {boolean} loading - 로딩 중 여부
+     * @returns {void}
+     */
+    toggleFetchButton(loading) {
+        /** @type {HTMLButtonElement | null} */
+        const btn = this.dom.fetchAllPricesBtn;
+        if (!(btn instanceof HTMLButtonElement)) return;
+
+        btn.disabled = loading;
+        btn.textContent = loading ? t('ui.fetchingPrices') : t('ui.updateAllPrices');
+
+        if (loading) {
+            btn.setAttribute('aria-busy', 'true');
+        } else {
+            btn.removeAttribute('aria-busy');
+        }
     }
 }; // End of PortfolioView object

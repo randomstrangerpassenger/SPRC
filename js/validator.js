@@ -92,7 +92,6 @@ export const Validator = {
         if (stringValue === '') return { isValid: true, value: 0 };
 
         const numValue = parseFloat(stringValue);
-        // @ts-ignore
         if (isNaN(numValue)) return { isValid: false, message: t('validation.invalidNumber') };
         if (numValue < 0) return { isValid: false, message: t('validation.negativeNumber') };
 
