@@ -919,5 +919,44 @@ export const PortfolioView = {
 
         // 3초 후 자동으로 사라짐
         setTimeout(() => toast.remove(), 3000);
+    },
+
+    /**
+     * @description 새로 추가된 주식의 이름 입력 필드로 포커스를 이동하고 선택합니다.
+     * @param {string} stockId - 포커스할 주식 ID
+     * @returns {void}
+     */
+    focusOnNewStock(stockId) {
+        /** @type {HTMLElement | null} */
+        const portfolioBody = this.dom.portfolioBody;
+        const inputRow = portfolioBody?.querySelector(`.stock-inputs[data-id="${stockId}"]`);
+        if (!inputRow) return;
+
+        /** @type {HTMLInputElement | null} */
+        const nameInput = inputRow.querySelector('input[data-field="name"]');
+        if (nameInput instanceof HTMLInputElement) {
+            nameInput.focus();
+            nameInput.select();
+        }
+    },
+
+    /**
+     * @description '현재가 일괄 업데이트' 버튼의 로딩 상태를 토글합니다.
+     * @param {boolean} loading - 로딩 중 여부
+     * @returns {void}
+     */
+    toggleFetchButton(loading) {
+        /** @type {HTMLButtonElement | null} */
+        const btn = this.dom.fetchAllPricesBtn;
+        if (!(btn instanceof HTMLButtonElement)) return;
+
+        btn.disabled = loading;
+        btn.textContent = loading ? '가져오는 중...' : '현재가 일괄 업데이트';
+
+        if (loading) {
+            btn.setAttribute('aria-busy', 'true');
+        } else {
+            btn.removeAttribute('aria-busy');
+        }
     }
 }; // End of PortfolioView object

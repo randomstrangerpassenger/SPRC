@@ -71,7 +71,8 @@ export function bindEventListeners(controller, dom) {
     dom.portfolioBody?.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
     
     // 포트폴리오 테이블 내 키보드 네비게이션 및 단축키
-    const portfolioBody = dom.portfolioBody as HTMLElement | null;
+    /** @type {HTMLElement | null} */
+    const portfolioBody = dom.portfolioBody;
     portfolioBody?.addEventListener('keydown', (e) => {
         const target = /** @type {HTMLElement} */ (e.target);
         if (!target || !(target.matches('input[type="text"], input[type="number"], input[type="checkbox"]'))) return; // 입력 요소에서만 동작
@@ -141,9 +142,19 @@ export function bindEventListeners(controller, dom) {
 
     // 계산/통화 모드 라디오 버튼
     // @ts-ignore
-    dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => controller.handleMainModeChange(/** @type {HTMLInputElement} */ (e.target).value as 'add' | 'sell')));
+    dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        /** @type {'add' | 'sell'} */
+        const mode = target.value;
+        controller.handleMainModeChange(mode);
+    }));
     // @ts-ignore
-    dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => controller.handleCurrencyModeChange(/** @type {HTMLInputElement} */ (e.target).value as 'KRW' | 'USD')));
+    dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        /** @type {'krw' | 'usd'} */
+        const currency = target.value;
+        controller.handleCurrencyModeChange(currency);
+    }));
 
     // 추가 투자금액 입력 및 환율 변환 (Debounce 적용, immediate 옵션 선택적 사용)
     const debouncedConversion = debounce((source) => controller.handleCurrencyConversion(source), 300 /*, true*/ );

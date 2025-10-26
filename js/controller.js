@@ -9,7 +9,8 @@ import { CONFIG } from './constants.js';
 import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
 import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML } from './templates.js';
-import Decimal from 'decimal.js'; // 동기 임포트로 복구
+import Decimal from 'decimal.js';
+import { bindEventListeners } from './eventBinder.js';
 
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
 /** @typedef {import('./types.js').Portfolio} Portfolio */
@@ -74,21 +75,12 @@ export class PortfolioController {
         }
     }
 
-    // --- ⬇️ [수정됨] 이벤트 바인딩 함수 분리 (initialize에서 호출) ⬇️ ---
+    /**
+     * @description 애플리케이션의 모든 이벤트 리스너를 바인딩합니다.
+     */
     bindAppEventListeners() {
-        // 여기에 eventBinder.js의 bindEventListeners 함수 내용을 가져오거나,
-        // eventBinder.js를 import하여 호출합니다.
-        // 예시 (import 사용 시):
-        // import { bindEventListeners } from './eventBinder.js';
-        // bindEventListeners(this, this.view.dom);
-
-        // 직접 구현 예시 (일부만):
-        // @ts-ignore
-        this.view.dom.calculateBtn?.addEventListener('click', () => this.handleCalculate());
-        // ... 나머지 이벤트 리스너 바인딩 ...
-        console.log("Event listeners bound (Placeholder in controller.js)"); // 실제 구현 필요
+        bindEventListeners(this, this.view.dom);
     }
-    // --- ⬆️ [수정됨] ⬆️ ---
 
 
     // --- UI 렌더링 ---
@@ -554,60 +546,63 @@ export class PortfolioController {
             .map(s => ({ id: s.id, ticker: s.ticker.trim() })); // ID와 함께 매핑
 
         if (tickersToFetch.length === 0) {
-            this.view.showToast('가져올 티커가 없습니다.', "info"); // 직접 메시지
+            this.view.showToast('가져올 티커가 없습니다.', "info");
             return;
         }
 
-        // @ts-ignore
-        this.view.toggleFetchButton(true); // 로딩 시작 (view에 이 함수가 있다고 가정)
+        this.view.toggleFetchButton(true); // 로딩 시작
 
-        let successCount = 0;
-        let failureCount = 0;
-        const failedTickers = [];
+        try {
+            let successCount = 0;
+            let failureCount = 0;
+            const failedTickers = [];
 
-        // Promise.allSettled를 사용하여 모든 요청이 완료될 때까지 기다림
-        const results = await Promise.allSettled(
-            tickersToFetch.map(item => this._fetchPrice(item.ticker))
-        );
+            // Promise.allSettled를 사용하여 모든 요청이 완료될 때까지 기다림
+            const results = await Promise.allSettled(
+                tickersToFetch.map(item => this._fetchPrice(item.ticker))
+            );
 
-        results.forEach((result, index) => {
-            const { id, ticker } = tickersToFetch[index];
-            if (result.status === 'fulfilled') {
-                const price = result.value;
-                if (typeof price === 'number' && price > 0) {
-                    this.state.updateStockProperty(id, 'currentPrice', price);
-                    this.view.updateCurrentPriceInput(id, price.toFixed(2)); // UI 즉시 업데이트 (소수점 2자리)
-                    successCount++;
+            results.forEach((result, index) => {
+                const { id, ticker } = tickersToFetch[index];
+                if (result.status === 'fulfilled') {
+                    const price = result.value;
+                    if (typeof price === 'number' && price > 0) {
+                        this.state.updateStockProperty(id, 'currentPrice', price);
+                        this.view.updateCurrentPriceInput(id, price.toFixed(2)); // UI 즉시 업데이트 (소수점 2자리)
+                        successCount++;
+                    } else {
+                        failureCount++;
+                        failedTickers.push(ticker);
+                        console.warn(`[API] Invalid price for ${ticker}:`, price);
+                    }
                 } else {
                     failureCount++;
                     failedTickers.push(ticker);
-                    console.warn(`[API] Invalid price for ${ticker}:`, price);
+                    console.error(`[API] Failed to fetch price for ${ticker}:`, result.reason);
                 }
+            });
+
+            Calculator.clearPortfolioStateCache(); // 가격 변경 시 캐시 무효화
+            this.updateUIState(); // 최종적으로 UI 출력값 갱신 및 저장
+
+            // 결과 토스트 메시지
+            if (successCount === tickersToFetch.length) {
+                this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), "success");
+            } else if (successCount > 0) {
+                this.view.showToast(t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }), "warning");
             } else {
-                failureCount++;
-                failedTickers.push(ticker);
-                console.error(`[API] Failed to fetch price for ${ticker}:`, result.reason);
+                this.view.showToast(t('api.fetchFailedAll', { failed: failureCount }), "error");
             }
-        });
-
-        Calculator.clearPortfolioStateCache(); // 가격 변경 시 캐시 무효화
-        this.updateUIState(); // 최종적으로 UI 출력값 갱신 및 저장
-
-        // 결과 토스트 메시지
-        if (successCount === tickersToFetch.length) {
-            this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), "success");
-        } else if (successCount > 0) {
-            this.view.showToast(t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }), "warning");
-        } else {
-             this.view.showToast(t('api.fetchFailedAll', { failed: failureCount }), "error");
+            // 실패한 티커 목록 로깅 (필요시)
+            if (failedTickers.length > 0) {
+                console.log("Failed tickers:", failedTickers.join(', '));
+            }
+        } catch (error) {
+            ErrorService.handle(/** @type {Error} */ (error), 'handleFetchAllPrices');
+            this.view.showToast(t('api.fetchError'), 'error');
+        } finally {
+            this.view.toggleFetchButton(false); // 항상 로딩 종료
         }
-         // 실패한 티커 목록 로깅 (필요시)
-         if (failedTickers.length > 0) {
-             console.log("Failed tickers:", failedTickers.join(', '));
-         }
-
-        // @ts-ignore
-        this.view.toggleFetchButton(false); // 로딩 종료 (view에 이 함수가 있다고 가정)
     }
 
 
