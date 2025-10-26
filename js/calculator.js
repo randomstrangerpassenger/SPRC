@@ -1,4 +1,4 @@
-// js/calculator.js
+// js/calculator.js (Updated)
 // @ts-check
 import Decimal from 'decimal.js'; 
 import { CONFIG } from './constants.js';
@@ -45,16 +45,19 @@ function _generatePortfolioKey(portfolioData) {
  * @property {PortfolioCalculationResult} result - 계산 결과
  */
 
-export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 변경
+export class Calculator { 
     /** @type {CalculatorCache | null} */
-    static #cache = null; // 'static' 키워드를 추가하고 '#' 문법 유지
+    static #cache = null; 
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
      * @param {Stock} stock - 계산할 주식 객체
      * @returns {CalculatedStock['calculated']} 계산 결과 객체
      */
-    static calculateStockMetrics(stock) { // 'static' 키워드 추가
+    static calculateStockMetrics(stock) { 
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const startTime = performance.now();
+        // --- ⬆️ Performance Monitoring ⬆️ ---
         try {
             const result = {
                 totalBuyQuantity: new Decimal(0),
@@ -82,10 +85,7 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
             }
 
             // 2. 순 보유 수량
-            // --- ⬇️ [수정됨] ⬇️ ---
-            // result.netQuantity = result.totalBuyQuantity.minus(result.totalSellQuantity); // <-- 이전 코드
-            result.netQuantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); // <-- 수정된 코드 (음수 방지)
-            // --- ⬆️ [수정됨] ⬆️ ---
+            result.netQuantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); 
 
             // 3. 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
             if (result.totalBuyQuantity.greaterThan(0)) {
@@ -116,6 +116,11 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
                 totalBuyAmount: new Decimal(0), currentAmount: new Decimal(0), currentAmountUSD: new Decimal(0), currentAmountKRW: new Decimal(0),
                 avgBuyPrice: new Decimal(0), profitLoss: new Decimal(0), profitLossRate: new Decimal(0),
             };
+        } finally {
+            // --- ⬇️ Performance Monitoring ⬇️ ---
+            const endTime = performance.now();
+            console.log(`[Perf] calculateStockMetrics (${stock.name || stock.id}) took ${(endTime - startTime).toFixed(2)} ms`);
+            // --- ⬆️ Performance Monitoring ⬆️ ---
         }
     }
 
@@ -125,9 +130,17 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
      * @returns {PortfolioCalculationResult}
      */
     static calculatePortfolioState({ portfolioData, exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE, currentCurrency = 'krw' }) {
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const startTime = performance.now();
+        // --- ⬆️ Performance Monitoring ⬆️ ---
+
         const cacheKey = _generatePortfolioKey(portfolioData);
 
         if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
+             // --- ⬇️ Performance Monitoring (Cache Hit) ⬇️ ---
+            const endTime = performance.now();
+            console.log(`[Perf] calculatePortfolioState (Cache Hit) took ${(endTime - startTime).toFixed(2)} ms`);
+            // --- ⬆️ Performance Monitoring ⬆️ ---
             return Calculator.#cache.result;
         }
 
@@ -136,7 +149,7 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
 
         /** @type {CalculatedStock[]} */
         const calculatedPortfolioData = portfolioData.map(stock => {
-            const calculatedMetrics = Calculator.calculateStockMetrics(stock);
+            const calculatedMetrics = Calculator.calculateStockMetrics(stock); // This will log its own performance
 
             // 현재가치를 KRW와 USD로 변환
             if (currentCurrency === 'krw') {
@@ -161,7 +174,12 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
         };
         
         // 캐시 업데이트
-        Calculator.#cache = { key: cacheKey, result: result }; // 'this.#cache'를 'Calculator.#cache'로 변경
+        Calculator.#cache = { key: cacheKey, result: result }; 
+
+        // --- ⬇️ Performance Monitoring (Cache Miss) ⬇️ ---
+        const endTime = performance.now();
+        console.log(`[Perf] calculatePortfolioState (Cache Miss) for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        // --- ⬆️ Performance Monitoring ⬆️ ---
 
         return result;
     }
@@ -171,7 +189,11 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
      * @param {{ portfolioData: CalculatedStock[], additionalInvestment: Decimal }} options - 계산된 데이터, 추가 투자금 (현재 통화 기준)
      * @returns {{ results: (CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[] }}
      */
-    static calculateAddRebalancing({ portfolioData, additionalInvestment }) { // 'static' 키워드 추가
+    static calculateAddRebalancing({ portfolioData, additionalInvestment }) { 
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const startTime = performance.now();
+        // --- ⬆️ Performance Monitoring ⬆️ ---
+        
         const totalInvestment = portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0)).plus(additionalInvestment);
         const results = [];
 
@@ -270,6 +292,11 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
                 buyRatio: buyRatio,
             };
         });
+        
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const endTime = performance.now();
+        console.log(`[Perf] calculateAddRebalancing for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        // --- ⬆️ Performance Monitoring ⬆️ ---
 
         return { results: finalResults };
     }
@@ -279,13 +306,21 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
      * @param {{ portfolioData: CalculatedStock[] }} options - 계산된 데이터
      * @returns {{ results: (CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[] }}
      */
-    static calculateSellRebalancing({ portfolioData }) { // 'static' 키워드 추가
+    static calculateSellRebalancing({ portfolioData }) { 
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const startTime = performance.now();
+        // --- ⬆️ Performance Monitoring ⬆️ ---
+        
         const currentTotal = portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0));
         const totalRatio = portfolioData.reduce((sum, s) => sum + (s.targetRatio || 0), 0);
         const results = [];
         const zero = new Decimal(0);
 
         if (currentTotal.isZero() || totalRatio === 0) {
+            // --- ⬇️ Performance Monitoring (Aborted) ⬇️ ---
+            const endTime = performance.now();
+            console.log(`[Perf] calculateSellRebalancing (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
+            // --- ⬆️ Performance Monitoring ⬆️ ---
             return { results: [] };
         }
         
@@ -317,7 +352,12 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
                 adjustment: adjustment
             });
         }
-
+        
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const endTime = performance.now();
+        console.log(`[Perf] calculateSellRebalancing for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        // --- ⬆️ Performance Monitoring ⬆️ ---
+        
         return { results };
     }
 
@@ -326,7 +366,11 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
      * @param {CalculatedStock[]} portfolioData - 계산된 주식 데이터
      * @returns {{ sector: string, amount: Decimal, percentage: Decimal }[]} 섹터 분석 결과
      */
-    static calculateSectorAnalysis(portfolioData) { // 'static' 키워드 추가
+    static calculateSectorAnalysis(portfolioData) { 
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const startTime = performance.now();
+        // --- ⬆️ Performance Monitoring ⬆️ ---
+        
         /** @type {Map<string, Decimal>} */
         const sectorMap = new Map();
         let currentTotal = new Decimal(0);
@@ -349,14 +393,19 @@ export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 
 
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
-
+        
+        // --- ⬇️ Performance Monitoring ⬇️ ---
+        const endTime = performance.now();
+        console.log(`[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        // --- ⬆️ Performance Monitoring ⬆️ ---
+        
         return result;
     }
 
     /**
      * @description 포트폴리오 계산 캐시를 초기화합니다.
      */
-    static clearPortfolioStateCache() { // 'static' 키워드 추가
-        Calculator.#cache = null; // 'this.#cache'를 'Calculator.#cache'로 변경
+    static clearPortfolioStateCache() { 
+        Calculator.#cache = null; 
     }
 };

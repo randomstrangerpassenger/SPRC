@@ -417,7 +417,7 @@ export class PortfolioController {
             const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
             if (stock && currency) {
                 // state.getTransactions는 동기 함수
-                this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId));
+                this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId)); // Pass transactions
             }
         } else if (action === 'delete') { // data-action 이름 변경 (delete-stock -> delete)
             this.handleDeleteStock(stockId);
@@ -459,15 +459,12 @@ export class PortfolioController {
         const validationErrors = Validator.validateForCalculation(inputs);
 
         if (validationErrors.length > 0) {
-            // this.view.showValidationErrors(validationErrors); // 이 함수가 없으므로 주석 처리 또는 구현 필요
             // 오류 메시지를 토스트로 표시
             const errorMessages = validationErrors.map(err => err.message).join('\n');
             ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation'); // ErrorService 사용
             this.view.hideResults();
             return;
         }
-
-        // this.view.clearValidationErrors(); // 이 함수가 없으므로 주석 처리
 
         // 목표 비율 합계 확인 (100% 아니면 경고)
         const totalRatio = getRatioSum(inputs.portfolioData);
@@ -509,10 +506,12 @@ export class PortfolioController {
                }, activePortfolio.settings.currentCurrency)
              : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
 
+        // --- ⬇️ view.displayResults 내부에서 announce(t('aria.resultsLoaded')) 호출됨 ⬇️ ---
         this.view.displayResults(resultsHTML); // renderResults -> displayResults
+        // --- ⬆️ 스크린 리더 공지 확인 ⬆️ ---
+
 
         // 6. 계산된 상태 저장 (portfolioData 업데이트는 fullRender 또는 updateUIState에서 이미 처리됨)
-        // activePortfolio.portfolioData = calculatedState.portfolioData; // 중복 제거
         this.debouncedSave();
 
         // 7. 토스트 메시지
@@ -541,7 +540,7 @@ export class PortfolioController {
             return;
         }
 
-        this.view.toggleFetchButton(true); // 로딩 시작
+        this.view.toggleFetchButton(true); // 로딩 시작 (announce 호출 포함)
 
         try {
             let successCount = 0;
@@ -590,7 +589,7 @@ export class PortfolioController {
             }
         } catch (error) {
             ErrorService.handle(/** @type {Error} */ (error), 'handleFetchAllPrices');
-            this.view.showToast(t('api.fetchError'), 'error');
+            this.view.showToast(t('api.fetchError'), 'error'); // i18n key might need update ('api.fetchErrorGlobal'?)
         } finally {
             this.view.toggleFetchButton(false); // 항상 로딩 종료
         }
@@ -640,7 +639,6 @@ export class PortfolioController {
     handleMainModeChange(newMode) {
         this.state.updatePortfolioSettings('mainMode', newMode);
         this.view.updateMainModeUI(newMode); // setMainMode -> updateMainModeUI
-        // this.view.toggleAdditionalAmountInputs(newMode === 'add'); // updateMainModeUI에 포함됨
         this.fullRender(); // 테이블 헤더 등 변경 위해 fullRender 호출
         const modeName = newMode === 'add' ? t('ui.addMode') : t('ui.sellMode');
         this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
@@ -710,8 +708,6 @@ export class PortfolioController {
 
         // 3. 상태 및 UI 업데이트
         const currentCurrency = activePortfolio.settings.currentCurrency;
-        // 상태에는 현재 선택된 통화 기준의 금액을 저장하지 않음 (항상 KRW 기준?) -> 저장 로직 제거
-
         // 상호 보완적인 입력 필드만 업데이트 (소수점 2자리 반올림)
         if (source === 'krw') {
              additionalAmountUSDInput.value = usdAmountDec.toFixed(2);

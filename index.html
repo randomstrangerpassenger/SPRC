@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <div id="aria-announcer" class="visually-hidden" aria-live="assertive" aria-atomic="true"></div>
     <button id="darkModeToggle" class="btn dark-mode-toggle" aria-label="다크 모드 전환">🌙</button>
     <div class="container">
         <header class="header">
@@ -48,13 +49,19 @@
                     <button id="normalizeRatiosBtn" class="btn" data-variant="blue">⚖️ 비율 자동 맞춤(100%)</button>
                     
                     <div class="dropdown">
-                        <button id="dataManagementBtn" class="btn" data-variant="grey">💾 데이터 관리</button>
-                        <div id="dataDropdownContent" class="dropdown-content">
-                            <a href="#" id="exportDataBtn">📤 내보내기 (JSON)</a>
-                            <a href="#" id="importDataBtn">📥 가져오기 (JSON)</a>
+                        <button id="dataManagementBtn" class="btn" data-variant="grey" 
+                                aria-haspopup="true" 
+                                aria-expanded="false" 
+                                aria-controls="dataDropdownContent">
+                            💾 데이터 관리
+                        </button>
+                        <div id="dataDropdownContent" class="dropdown-content" 
+                             role="menu" 
+                             aria-labelledby="dataManagementBtn">
+                            <a href="#" id="exportDataBtn" role="menuitem">📤 내보내기 (JSON)</a>
+                            <a href="#" id="importDataBtn" role="menuitem">📥 가져오기 (JSON)</a>
                         </div>
                     </div>
-
                     <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 </div>
                 <div class="table-responsive">

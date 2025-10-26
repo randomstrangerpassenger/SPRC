@@ -1,810 +1,694 @@
+// js/state.js
 // @ts-check
-import { CONFIG } from './constants.js';
-import { ErrorService } from './errorService.js';
-import { Validator } from './validator.js';
-import { t } from './i18n.js';
+import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
-
-// Decimal.js 설정 (앱 시작 시 한 번만 실행)
-Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
+import { CONFIG } from './constants.js';
+import { t } from './i18n.js';
+import { ErrorService } from './errorService.js';
+import { Validator } from './validator.js'; // Validator import 추가
 
 /** @typedef {import('./types.js').Stock} Stock */
-// ... (다른 타입 정의 동일) ...
+/** @typedef {import('./types.js').Transaction} Transaction */
+/** @typedef {import('./types.js').Portfolio} Portfolio */
+/** @typedef {import('./types.js').PortfolioSettings} PortfolioSettings */
+/** @typedef {import('./types.js').MetaState} MetaState */
 
-// 상태 관리를 위한 싱글톤 객체
 export class PortfolioState {
-    /** @type {PortfolioDataStructure} */
-    #data;
+    /** @type {Record<string, Portfolio>} */
+    #portfolios = {};
     /** @type {string | null} */
-    #activePortfolioId;
-
-    /** @type {Map<string, CalculatedStock['transactions']>} */
-    #transactionCache = new Map();
-
+    #activePortfolioId = null;
     /** @type {Promise<void> | null} */
-    #initializationPromise = null; // 초기화 Promise 추가
+    #initializationPromise = null;
 
     constructor() {
-        this.#data = { portfolios: {}, activePortfolioId: '' };
-        this.#activePortfolioId = null;
-        // --- ⬇️ [수정됨] 생성자에서는 초기화 시작만 ⬇️ ---
-        // 생성자에서는 초기화 시작만 하고, 완료는 #initializationPromise로 추적
-        this.#initializationPromise = this.loadInitialState();
-        // --- ⬆️ [수정됨] ⬆️ ---
+        this.#initializationPromise = this._initialize();
     }
 
-    // --- ⬇️ [추가됨] 초기화 완료 대기 메서드 ⬇️ ---
     /**
-     * @description 초기화가 완료될 때까지 기다리는 메서드
-     * @returns {Promise<void>}
+     * @description 비동기 초기화를 수행하고 완료될 때까지 기다립니다.
      */
     async ensureInitialized() {
-        if (!this.#initializationPromise) {
-             // 만약 초기화 Promise가 없다면 즉시 loadInitialState 호출 (안전 장치)
-             console.warn("Initialization promise was null, re-initializing.");
-             this.#initializationPromise = this.loadInitialState();
-        }
+        await this.#initializationPromise;
+    }
+
+    /**
+     * @description 로컬 스토리지에서 데이터를 로드하거나 기본값을 생성하여 상태를 초기화합니다.
+     * @private
+     */
+    async _initialize() {
         try {
-            await this.#initializationPromise;
+            const loadedMetaData = this._loadMeta();
+            const loadedPortfolios = this._loadPortfolios();
+
+            // 데이터 구조 검증 및 업그레이드
+            const { meta, portfolios } = this._validateAndUpgradeData(loadedMetaData, loadedPortfolios);
+
+            this.#portfolios = portfolios;
+            this.#activePortfolioId = meta.activePortfolioId;
+
+            // 유효한 포트폴리오가 하나도 없는 경우 기본 포트폴리오 생성
+            if (Object.keys(this.#portfolios).length === 0 || !this.#portfolios[this.#activePortfolioId]) {
+                 console.warn("No valid portfolios found or active ID invalid. Creating default portfolio.");
+                this.resetData(false); // Don't save immediately after reset in constructor
+            }
+
+            console.log("PortfolioState initialized.");
+
         } catch (error) {
-             console.error("Initialization failed:", error);
-             // 초기화 실패 시 복구 로직 (예: 기본 포트폴리오 강제 생성)
-             if (Object.keys(this.#data.portfolios).length === 0) {
-                 this.createNewPortfolio(t('defaults.defaultPortfolioName'));
-             }
-             // 에러를 다시 던져서 호출 측에서 알 수 있게 할 수도 있음
-             // throw error;
+            ErrorService.handle(/** @type {Error} */ (error), '_initialize');
+            console.error("Initialization failed, resetting data.");
+            // 초기화 실패 시 안전하게 기본값으로 리셋
+            this.resetData(false);
         }
     }
-    // --- ⬆️ [추가됨] ⬆️ ---
 
 
-    async loadInitialState() {
+    /**
+     * @description 로컬 스토리지에서 메타데이터를 로드합니다.
+     * @returns {MetaState | null} 로드된 메타데이터 또는 null
+     * @private
+     */
+    _loadMeta() {
         try {
-            const metaJson = localStorage.getItem(CONFIG.META_KEY);
-            if (metaJson) {
-                const meta = JSON.parse(metaJson);
-                this.#activePortfolioId = meta.activePortfolioId;
-            }
+            const metaData = localStorage.getItem(CONFIG.LOCAL_STORAGE_META_KEY);
+            return metaData ? JSON.parse(metaData) : null;
+        } catch (error) {
+            ErrorService.handle(/** @type {Error} */ (error), '_loadMeta - JSON Parsing');
+            localStorage.removeItem(CONFIG.LOCAL_STORAGE_META_KEY); // Remove corrupted data
+            return null;
+        }
+    }
 
-            const portfolioIds = this.getAllPortfolioIdsFromLocalStorage();
-            const loadedPortfolios = {};
+    /**
+     * @description 로컬 스토리지에서 포트폴리오 데이터를 로드합니다.
+     * @returns {Record<string, any> | null} 로드된 포트폴리오 데이터 또는 null
+     * @private
+     */
+    _loadPortfolios() {
+        try {
+            const portfolioData = localStorage.getItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY);
+            return portfolioData ? JSON.parse(portfolioData) : null;
+        } catch (error) {
+            ErrorService.handle(/** @type {Error} */ (error), '_loadPortfolios - JSON Parsing');
+            localStorage.removeItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY); // Remove corrupted data
+            return null;
+        }
+    }
 
-            console.log(`Found ${portfolioIds.length} portfolio IDs in localStorage.`); // 로그 추가
 
-            if (portfolioIds.length > 0) {
-                // 동기적으로 모든 포트폴리오를 역직렬화
-                portfolioIds.forEach((id) => {
-                    const dataJson = localStorage.getItem(CONFIG.DATA_PREFIX + id);
-                    if (dataJson) {
-                        try {
-                            const loadedData = JSON.parse(dataJson);
-                            const deserializedPortfolio = this._deserializePortfolioData(loadedData);
-                            console.log(`Successfully deserialized portfolio: ${id}`);
-                            loadedPortfolios[id] = deserializedPortfolio;
-                        } catch (parseError) {
-                            console.warn(`[State] Invalid JSON or deserialization error for portfolio ID: ${id}. Skipping.`, parseError);
-                        }
-                    } else {
-                        console.log(`No data found for portfolio ID: ${id}`);
+    /**
+     * @description 로드된 데이터 구조를 검증하고 최신 버전으로 마이그레이션합니다.
+     * @param {object | null} loadedMetaData - 로드된 메타 데이터
+     * @param {object | null} loadedPortfolios - 로드된 포트폴리오 데이터
+     * @returns {{meta: MetaState, portfolios: Record<string, Portfolio>}} 검증/업그레이드된 데이터
+     * @private
+     */
+    _validateAndUpgradeData(loadedMetaData, loadedPortfolios) {
+        // --- 데이터 버전 관리 (간단한 예시) ---
+        // 이전 버전 데이터 구조 변경 시 여기에 마이그레이션 로직 추가
+        const currentVersion = CONFIG.DATA_VERSION;
+        const loadedVersion = loadedMetaData?.version;
+
+        if (loadedVersion !== currentVersion) {
+            console.warn(`Data version mismatch. Loaded: ${loadedVersion}, Current: ${currentVersion}. Attempting migration/reset.`);
+            // TODO: Add migration logic here if possible, otherwise reset
+            // For now, we'll proceed assuming basic structure or reset later
+        }
+
+        const validatedPortfolios = {};
+        let validatedActiveId = loadedMetaData?.activePortfolioId;
+        let foundActive = false;
+
+        // 포트폴리오 데이터 검증 및 기본값 채우기
+        if (loadedPortfolios && typeof loadedPortfolios === 'object') {
+            Object.keys(loadedPortfolios).forEach(portId => {
+                const portfolio = loadedPortfolios[portId];
+                // --- ⬇️ 수정: nanoid() 대신 portId 사용 ---
+                const newId = portId; // <-- 수정된 코드: 로드된 ID 유지
+                // --- ⬆️ 수정 ⬆️ ---
+
+                // Basic portfolio structure validation
+                if (portfolio && typeof portfolio === 'object' && portfolio.id === portId && portfolio.name) {
+                    validatedPortfolios[newId] = {
+                        id: newId,
+                        name: portfolio.name,
+                        settings: {
+                            mainMode: ['add', 'sell'].includes(portfolio.settings?.mainMode) ? portfolio.settings.mainMode : 'add',
+                            currentCurrency: ['krw', 'usd'].includes(portfolio.settings?.currentCurrency) ? portfolio.settings.currentCurrency : 'krw',
+                            exchangeRate: typeof portfolio.settings?.exchangeRate === 'number' && portfolio.settings.exchangeRate > 0 ? portfolio.settings.exchangeRate : CONFIG.DEFAULT_EXCHANGE_RATE,
+                        },
+                        portfolioData: Array.isArray(portfolio.portfolioData) ? portfolio.portfolioData.map(stock => ({
+                            id: stock.id || `s-${nanoid()}`,
+                            name: stock.name || t('defaults.newStock'),
+                            ticker: stock.ticker || '',
+                            sector: stock.sector || '', // Ensure sector exists
+                            targetRatio: typeof stock.targetRatio === 'number' ? stock.targetRatio : 0,
+                            currentPrice: typeof stock.currentPrice === 'number' ? stock.currentPrice : 0,
+                            // --- ⬇️ 수정: Decimal로 기본값/로드값 설정 ⬇️ ---
+                            isFixedBuyEnabled: typeof stock.isFixedBuyEnabled === 'boolean' ? stock.isFixedBuyEnabled : false,
+                            fixedBuyAmount: new Decimal(typeof stock.fixedBuyAmount === 'number' || typeof stock.fixedBuyAmount === 'string' ? stock.fixedBuyAmount : 0), // Use Decimal, allow string for loading old data
+                            // --- ⬆️ 수정 ⬆️ ---
+                            transactions: Array.isArray(stock.transactions) ? stock.transactions.map(tx => ({
+                                id: tx.id || `tx-${nanoid()}`,
+                                type: tx.type === 'sell' ? 'sell' : 'buy',
+                                date: typeof tx.date === 'string' ? tx.date : new Date().toISOString().slice(0, 10),
+                                // --- ⬇️ 수정: Decimal로 값 설정 ⬇️ ---
+                                quantity: new Decimal(typeof tx.quantity === 'number' || typeof tx.quantity === 'string' ? tx.quantity : 0), // Use Decimal
+                                price: new Decimal(typeof tx.price === 'number' || typeof tx.price === 'string' ? tx.price : 0), // Use Decimal
+                                // --- ⬆️ 수정 ⬆️ ---
+                            }))
+                            // Ensure quantities/prices are valid Decimals before sorting or further processing
+                            .filter(tx => tx.quantity.greaterThan(0) && tx.price.greaterThan(0)) // Filter out potentially invalid transactions after Decimal conversion
+                            .sort((a, b) => a.date.localeCompare(b.date)) // Sort valid transactions by date
+                            : []
+                        })) : []
+                    };
+                    // Check transactions again to ensure Decimal conversion was successful
+                    validatedPortfolios[newId].portfolioData.forEach(stock => {
+                        stock.transactions = stock.transactions.filter(tx =>
+                            tx.quantity instanceof Decimal && !tx.quantity.isNaN() &&
+                            tx.price instanceof Decimal && !tx.price.isNaN()
+                        );
+                    });
+
+
+                    if (newId === validatedActiveId) {
+                        foundActive = true;
                     }
-                });
-            }
-
-            // this.#data.portfolios 업데이트
-            this.#data.portfolios = loadedPortfolios;
-            console.log(`Loaded ${Object.keys(this.#data.portfolios).length} portfolios into state.`); // 로그 추가
-
-            const loadedPortfolioIds = Object.keys(this.#data.portfolios);
-
-            if (loadedPortfolioIds.length > 0) {
-                if (!this.#activePortfolioId || !this.#data.portfolios[this.#activePortfolioId]) {
-                    console.log(`Invalid or missing activePortfolioId (${this.#activePortfolioId}). Setting to first loaded: ${loadedPortfolioIds[0]}`); // 로그 추가
-                    this.#activePortfolioId = loadedPortfolioIds[0];
+                } else {
+                     console.warn(`Invalid portfolio structure skipped for ID: ${portId}`);
                 }
-                 console.log(`Active portfolio ID set to: ${this.#activePortfolioId}`); // 로그 추가
-            } else {
-                 console.log("No portfolios loaded. Creating default portfolio."); // 로그 추가
-                // 새 포트폴리오 생성 시에도 Decimal 로드가 완료된 후여야 함
-                this.createNewPortfolio('기본 포트폴리오');
-                 console.log(`Default portfolio created. Active ID: ${this.#activePortfolioId}`); // 로그 추가
-            }
-
-            this.saveMeta();
-             console.log("Initial state loaded and meta saved."); // 최종 로그
-        } catch (e) {
-            console.error("Critical error during loadInitialState:", e); // 에러 로그 강화
-            ErrorService.handle(/** @type {Error} */(e), 'loadInitialState');
-            if (Object.keys(this.#data.portfolios).length === 0) {
-                 console.log("Creating default portfolio after critical error."); // 로그 추가
-                 // 새 포트폴리오 생성 시에도 Decimal 로드가 완료된 후여야 함
-                this.createNewPortfolio('기본 포트폴리오');
-            }
-        }
-    }
-    // --- [수정 완료] ---
-
-
-    /**
-     * @description LocalStorage에서 포트폴리오 ID 목록을 가져옵니다.
-     * @returns {string[]}
-     */
-    getAllPortfolioIdsFromLocalStorage() {
-        const ids = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key?.startsWith(CONFIG.DATA_PREFIX)) {
-                ids.push(key.substring(CONFIG.DATA_PREFIX.length));
-            }
-        }
-        return ids;
-    }
-
-    saveMeta() {
-        if (!this.#activePortfolioId) return;
-        try {
-            const meta = { activePortfolioId: this.#activePortfolioId };
-            localStorage.setItem(CONFIG.META_KEY, JSON.stringify(meta));
-        } catch (e) {
-            const error = /** @type {Error} */(e);
-
-            // 에러 타입별 상세 로그
-            if (error.name === 'QuotaExceededError') {
-                console.error("LocalStorage quota exceeded while saving metadata.", error);
-            } else if (error.name === 'SecurityError') {
-                console.error("LocalStorage access denied while saving metadata.", error);
-            } else {
-                console.error("Failed to save metadata to localStorage.", error);
-            }
-
-            ErrorService.handle(error, 'saveMeta');
-        }
-    }
-
-    /**
-     * @description 현재 활성 포트폴리오 데이터를 LocalStorage에 저장합니다.
-     * 주의: 이 함수는 debounce 되어 호출됩니다.
-     */
-    saveActivePortfolio() {
-        if (!this.#activePortfolioId) return;
-        try {
-            const activePortfolio = this.#data.portfolios[this.#activePortfolioId];
-            if (activePortfolio) {
-                const serializedData = this._serializePortfolioData(activePortfolio);
-                localStorage.setItem(CONFIG.DATA_PREFIX + this.#activePortfolioId, JSON.stringify(serializedData));
-            }
-        } catch (e) {
-            const error = /** @type {Error} */(e);
-
-            // 에러 타입별 상세 로그
-            if (error.name === 'QuotaExceededError') {
-                console.error("LocalStorage quota exceeded. Consider deleting old portfolios or clearing browser data.", error);
-            } else if (error.name === 'SecurityError') {
-                console.error("LocalStorage access denied. Check browser privacy settings and ensure cookies/site data are allowed.", error);
-            } else {
-                console.error("Failed to save portfolio to localStorage. Data might be lost.", error);
-            }
-
-            // ErrorService가 사용자에게 토스트 메시지를 표시
-            ErrorService.handle(error, 'saveActivePortfolio');
-        }
-    }
-
-    // --- 데이터 직렬화/역직렬화 ---
-
-    /**
-     * @description 저장 전 데이터를 Decimal 객체에서 일반 숫자로 변환합니다.
-     * @param {Portfolio} portfolio - 포트폴리오 데이터
-     * @returns {any}
-     */
-    _serializePortfolioData(portfolio) {
-         // portfolioData가 없을 경우 빈 배열로 처리
-        const portfolioData = portfolio.portfolioData || [];
-        return {
-            ...portfolio,
-            portfolioData: portfolioData.map(stock => {
-                 // transactions가 없을 경우 빈 배열로 처리
-                const transactions = stock.transactions || [];
-                return {
-                    ...stock,
-                    transactions: transactions.map(tx => ({
-                        ...tx,
-                        // Decimal 객체 확인 후 toNumber() 호출 (안전하게)
-                        quantity: (tx.quantity && typeof tx.quantity === 'object' && 'toNumber' in tx.quantity) ? tx.quantity.toNumber() : Number(tx.quantity || 0),
-                        price: (tx.price && typeof tx.price === 'object' && 'toNumber' in tx.price) ? tx.price.toNumber() : Number(tx.price || 0),
-                    })),
-                    // _sortedTransactions는 저장하지 않음 (임시 캐시)
-                    _sortedTransactions: undefined
-                };
-            }),
-        };
-    }
-
-
-    /**
-     * @description 로드 후 데이터를 일반 숫자에서 Decimal 객체로 변환합니다.
-     * @param {any} loadedData - 로드된 데이터 (숫자 형태)
-     * @returns {Portfolio}
-     */
-    _deserializePortfolioData(loadedData) {
-        // loadedData.portfolioData가 없거나 배열이 아니면 빈 배열 사용
-        const portfolioDataArray = Array.isArray(loadedData.portfolioData) ? loadedData.portfolioData : [];
-
-        const portfolioData = portfolioDataArray.map((stock) => {
-            // Ensure required fields are present with default values if necessary
-            const name = stock.name || 'Untitled Stock';
-            const ticker = stock.ticker || 'TICKER';
-            const sector = stock.sector || t('defaults.uncategorized');
-            const currentPrice = Number(stock.currentPrice) || 0;
-            const targetRatio = Number(stock.targetRatio) || 0;
-            const fixedBuyAmount = Number(stock.fixedBuyAmount) || 0;
-
-            // stock.transactions가 없거나 배열이 아니면 빈 배열 사용
-            const transactionsArray = Array.isArray(stock.transactions) ? stock.transactions : [];
-
-            const transactions = transactionsArray.map((tx) => {
-                // 기본값 강화 및 타입 확인
-                const quantityValue = tx.quantity ?? 0;
-                const priceValue = tx.price ?? 0;
-                return {
-                    id: tx.id || `tx-fallback-${Date.now()}-${Math.random()}`,
-                    type: (tx.type === 'buy' || tx.type === 'sell') ? tx.type : 'buy',
-                    date: typeof tx.date === 'string' ? tx.date : new Date().toISOString().split('T')[0],
-                    quantity: new Decimal(quantityValue),
-                    price: new Decimal(priceValue),
-                };
             });
+        }
 
-            return {
-                id: stock.id || `s-fallback-${Date.now()}-${Math.random()}`,
-                name: name,
-                ticker: ticker,
-                sector: sector,
-                currentPrice: currentPrice,
-                targetRatio: targetRatio,
-                isFixedBuyEnabled: stock.isFixedBuyEnabled || false,
-                fixedBuyAmount: fixedBuyAmount,
-                transactions: transactions,
-                _sortedTransactions: this._sortTransactions(transactions)
-            };
-        });
+        // 활성 ID가 유효하지 않으면 첫 번째 포트폴리오 ID로 설정
+        if (!foundActive || !validatedPortfolios[validatedActiveId]) {
+            const firstValidId = Object.keys(validatedPortfolios)[0];
+            if (firstValidId) {
+                console.warn(`Active portfolio ID '${validatedActiveId}' not found. Setting active ID to '${firstValidId}'.`);
+                validatedActiveId = firstValidId;
+            } else {
+                 console.warn(`No valid portfolios loaded. Active ID set to null.`);
+                validatedActiveId = null; // No valid portfolios at all
+            }
+        }
 
-        // 기본 설정값 보장
-        const defaultSettings = {
-            mainMode: 'add',
-            currentCurrency: 'krw',
-            exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
+        // 최종 메타데이터 생성
+        const validatedMeta = {
+            activePortfolioId: validatedActiveId,
+            version: currentVersion
         };
-        const settings = { ...defaultSettings, ...(loadedData.settings || {}) };
-        // mainMode, currentCurrency 유효성 검사 추가
-        if (settings.mainMode !== 'add' && settings.mainMode !== 'sell') settings.mainMode = 'add';
-        if (settings.currentCurrency !== 'krw' && settings.currentCurrency !== 'usd') settings.currentCurrency = 'krw';
 
 
-        return {
-            id: loadedData.id || `p-fallback-${Date.now()}-${Math.random()}`, // ID 없으면 생성
-            name: loadedData.name || 'Unnamed Portfolio',
-            settings: settings,
-            portfolioData: portfolioData,
-        };
+        return { meta: validatedMeta, portfolios: validatedPortfolios };
     }
 
 
     /**
-     * @description 트랜잭션을 정렬하고 캐시합니다. (state 내부 유틸리티)
-     * @param {Stock['transactions']} transactions
-     * @returns {Stock['transactions']}
+     * @description 현재 활성화된 포트폴리오 객체를 반환합니다.
+     * @returns {Portfolio | null} 활성 포트폴리오 또는 null
      */
-    _sortTransactions(transactions) {
-         // transactions가 배열이 아니면 빈 배열 반환
-         if (!Array.isArray(transactions)) return [];
-         return [...transactions].sort((a, b) => {
-            const dateA = a?.date || ''; // null 방지
-            const dateB = b?.date || ''; // null 방지
-            const idA = a?.id || '';   // null 방지
-            const idB = b?.id || '';   // null 방지
-            const dateCompare = dateA.localeCompare(dateB);
-            if (dateCompare !== 0) return dateCompare;
-            return idA.localeCompare(idB); // 날짜 같으면 ID로 안정 정렬
-        });
+    getActivePortfolio() {
+        return this.#activePortfolioId ? this.#portfolios[this.#activePortfolioId] : null;
     }
 
-
-    // --- 포트폴리오 관리 ---
+    /**
+     * @description 모든 포트폴리오 객체를 반환합니다. (읽기 전용 목적)
+     * @returns {Readonly<Record<string, Portfolio>>} 포트폴리오 맵
+     */
+    getAllPortfolios() {
+        return this.#portfolios; // Consider returning a deep clone if mutation is a risk
+    }
 
     /**
-     * @description 새로운 포트폴리오를 생성하고 활성화합니다.
-     * @param {string} name - 포트폴리오 이름
-     * @returns {string} 새로 생성된 포트폴리오 ID
+     * @description 활성 포트폴리오 ID를 설정합니다.
+     * @param {string} id - 새 활성 포트폴리오 ID
+     */
+    setActivePortfolioId(id) {
+        if (this.#portfolios[id]) {
+            this.#activePortfolioId = id;
+            this.saveMeta();
+        } else {
+            ErrorService.handle(new Error(`Portfolio with ID ${id} not found.`), 'setActivePortfolioId');
+        }
+    }
+
+    /**
+     * @description 새 포트폴리오를 생성하고 활성화합니다.
+     * @param {string} name - 새 포트폴리오 이름
+     * @returns {Portfolio} 생성된 포트폴리오 객체
      */
     createNewPortfolio(name) {
-        // Decimal 라이브러리가 로드되었는지 확인 (방어 코드)
-        if (!Decimal) {
-            console.error("Decimal library not loaded. Cannot create new portfolio properly.");
-             // 여기서 에러를 던지거나, 로드를 기다리는 로직 추가 가능
-             // throw new Error("Decimal not ready");
-             return ''; // 임시 반환
-        }
-
-        // 고유 ID 생성 (crypto.randomUUID 또는 Date.now() + random suffix 사용)
-        let newId;
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            newId = `p-${crypto.randomUUID()}`;
-        } else {
-            newId = `p-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        }
-        /** @type {PortfolioSettings} */
-        const defaultSettings = {
-            mainMode: 'add',
-            currentCurrency: 'krw',
-            exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
-        };
-
-        /** @type {Stock} */
-        const defaultStock = {
-            id: `s-${Date.now() + 1}`,
-            name: t('defaults.newStock'),
-            ticker: 'TICKER',
-            sector: t('defaults.uncategorized'),
-            currentPrice: 0,
-            targetRatio: 100, // 기본 100%
-            isFixedBuyEnabled: false,
-            fixedBuyAmount: 0,
-            transactions: [],
-            _sortedTransactions: []
-        };
-
-        /** @type {Portfolio} */
-        const newPortfolio = {
-            id: newId,
-            name: name,
-            settings: defaultSettings,
-            portfolioData: [defaultStock],
-        };
-
-        this.#data.portfolios[newId] = newPortfolio;
-        this.setActivePortfolioId(newId);
-        this.saveActivePortfolio(); // 새 포트폴리오 즉시 저장
-        console.log(`Portfolio '${name}' (ID: ${newId}) created and saved.`); // 로그 추가
-        return newId;
+        const newId = `p-${nanoid()}`;
+        const newPortfolio = this._createDefaultPortfolio(newId, name);
+        this.#portfolios[newId] = newPortfolio;
+        this.#activePortfolioId = newId;
+        this.savePortfolios();
+        this.saveMeta();
+        return newPortfolio;
     }
 
-
     /**
-     * @description 포트폴리오를 삭제합니다.
+     * @description 특정 ID의 포트폴리오를 삭제합니다. 마지막 포트폴리오는 삭제할 수 없습니다.
      * @param {string} id - 삭제할 포트폴리오 ID
      * @returns {boolean} 삭제 성공 여부
      */
     deletePortfolio(id) {
-        if (Object.keys(this.#data.portfolios).length <= 1) {
-            console.warn("Cannot delete the last remaining portfolio.");
-            return false;
+        if (Object.keys(this.#portfolios).length <= 1) {
+            console.warn("Cannot delete the last portfolio.");
+            return false; // 마지막 포트폴리오는 삭제 불가
         }
-        if (!this.#data.portfolios[id]) {
+        if (!this.#portfolios[id]) {
              console.warn(`Portfolio with ID ${id} not found for deletion.`);
-             return false;
+             return false; // 존재하지 않는 포트폴리오
         }
 
-        delete this.#data.portfolios[id];
-        localStorage.removeItem(CONFIG.DATA_PREFIX + id);
-        this.#transactionCache.clear(); // 전체 캐시 클리어 (간단하게)
+        delete this.#portfolios[id];
 
-        // 활성 포트폴리오 ID 재설정
-        if (this.#activePortfolioId === id) { // 삭제된 것이 활성 포트폴리오였다면
-             const remainingIds = Object.keys(this.#data.portfolios);
-             // 남아있는 첫 번째 포트폴리오를 활성화, 없으면 null
-             this.setActivePortfolioId(remainingIds.length > 0 ? remainingIds[0] : null);
-        } else {
-             this.saveMeta(); // 활성 ID는 그대로 두고 메타만 저장 (필요 없을 수 있음)
+        // 삭제된 포트폴리오가 활성 상태였다면 다른 포트폴리오를 활성화
+        if (this.#activePortfolioId === id) {
+            this.#activePortfolioId = Object.keys(this.#portfolios)[0] || null;
+            this.saveMeta();
         }
-
+        this.savePortfolios();
         return true;
     }
 
     /**
      * @description 포트폴리오 이름을 변경합니다.
-     * @param {string} id - 변경할 포트폴리오 ID
+     * @param {string} id - 이름을 변경할 포트폴리오 ID
      * @param {string} newName - 새 이름
-     * @returns {boolean} 변경 성공 여부
      */
     renamePortfolio(id, newName) {
-        const portfolio = this.#data.portfolios[id];
-        if (portfolio && newName && newName.trim()) { // 이름 유효성 검사 추가
-            portfolio.name = newName.trim();
-            this.saveActivePortfolio(); // 현재 활성 포트폴리오면 바로 저장
-            return true;
+        if (this.#portfolios[id]) {
+            this.#portfolios[id].name = newName.trim();
+            this.savePortfolios();
+        } else {
+             ErrorService.handle(new Error(`Portfolio with ID ${id} not found for renaming.`), 'renamePortfolio');
         }
-        return false;
     }
 
-
     /**
-     * @description 활성 포트폴리오 ID를 설정합니다.
-     * @param {string | null} id - 새로운 활성 포트폴리오 ID (null 가능)
+     * @description 활성 포트폴리오의 설정을 업데이트합니다.
+     * @param {keyof PortfolioSettings} key - 업데이트할 설정 키
+     * @param {PortfolioSettings[keyof PortfolioSettings]} value - 새 설정 값
      */
-    setActivePortfolioId(id) {
-         // ID가 null이거나, 존재하지 않는 포트폴리오 ID인 경우 처리
-         if (id === null || this.#data.portfolios[id]) {
-            this.#activePortfolioId = id;
-            this.saveMeta();
-            this.#transactionCache.clear(); // 포트폴리오 변경 시 캐시 클리어
-            console.log(`Active portfolio ID changed to: ${id}`); // 로그 추가
-         } else {
-             console.warn(`Attempted to set active portfolio to non-existent ID: ${id}`);
-         }
-    }
-
-
-    // --- 주식 데이터 관리 ---
-
-    /**
-     * @description 활성 포트폴리오 데이터를 가져옵니다.
-     * @returns {Portfolio | undefined}
-     */
-    getActivePortfolio() {
-        if (this.#activePortfolioId) {
-            return this.#data.portfolios[this.#activePortfolioId];
+    updatePortfolioSettings(key, value) {
+        const activePortfolio = this.getActivePortfolio();
+        if (activePortfolio) {
+            // 타입 검증 추가 (예시)
+            if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
+                 console.warn(`Invalid exchange rate value: ${value}. Using default.`);
+                 activePortfolio.settings[key] = CONFIG.DEFAULT_EXCHANGE_RATE;
+            } else if (key === 'mainMode' && !['add', 'sell'].includes(/** @type {string} */(value))) {
+                 console.warn(`Invalid main mode value: ${value}. Using default.`);
+                 activePortfolio.settings[key] = 'add';
+            } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(/** @type {string} */(value))) {
+                 console.warn(`Invalid currency mode value: ${value}. Using default.`);
+                 activePortfolio.settings[key] = 'krw';
+            }
+            else {
+                activePortfolio.settings[key] = value;
+            }
+            this.saveActivePortfolio();
         }
-        return undefined;
-    }
-
-    /**
-     * @description 모든 포트폴리오 목록을 (ID: Portfolio) 객체로 가져옵니다.
-     * @returns {Record<string, Portfolio>}
-     */
-    getAllPortfolios() {
-        return this.#data.portfolios;
-    }
-
-    /**
-     * @description 특정 주식의 데이터를 가져옵니다.
-     * @param {string} stockId - 주식 ID
-     * @returns {Stock | undefined}
-     */
-    getStockById(stockId) {
-        const portfolio = this.getActivePortfolio();
-        return portfolio?.portfolioData?.find(s => s.id === stockId); // portfolioData null 체크 추가
     }
 
 
     /**
-     * @description 새 주식을 포트폴리오에 추가합니다.
-     * @returns {Stock | null}
+     * @description 활성 포트폴리오에 새 주식 항목을 추가합니다.
+     * @returns {Stock | null} 추가된 주식 객체 또는 null
      */
     addNewStock() {
-        const portfolio = this.getActivePortfolio();
-        if (portfolio) {
-             // portfolioData가 배열이 아니거나 없으면 초기화
-            if (!Array.isArray(portfolio.portfolioData)) {
-                portfolio.portfolioData = [];
-            }
-
-            /** @type {Stock} */
-            const newStock = {
-                id: `s-${Date.now()}`,
-                name: t('defaults.newStock'),
-                ticker: '',
-                sector: t('defaults.uncategorized'),
-                currentPrice: 0,
-                targetRatio: 0,
-                isFixedBuyEnabled: false,
-                fixedBuyAmount: 0,
-                transactions: [],
-                _sortedTransactions: []
-            };
-            portfolio.portfolioData.push(newStock);
+        const activePortfolio = this.getActivePortfolio();
+        if (activePortfolio) {
+            const newStock = this._createDefaultStock();
+            activePortfolio.portfolioData.push(newStock);
             this.saveActivePortfolio();
             return newStock;
         }
         return null;
     }
 
-
     /**
-     * @description 포트폴리오에서 주식을 제거합니다.
-     * @param {string} stockId - 제거할 주식 ID
-     * @returns {boolean}
+     * @description 활성 포트폴리오에서 특정 주식을 삭제합니다. 마지막 주식은 삭제할 수 없습니다.
+     * @param {string} stockId - 삭제할 주식 ID
+     * @returns {boolean} 삭제 성공 여부
      */
     deleteStock(stockId) {
-        const portfolio = this.getActivePortfolio();
-        if (portfolio && Array.isArray(portfolio.portfolioData)) { // portfolioData 배열 확인
-            if (portfolio.portfolioData.length <= 1) {
-                console.warn("Cannot delete the last stock.");
-                return false;
-            }
-            const initialLength = portfolio.portfolioData.length;
-            portfolio.portfolioData = portfolio.portfolioData.filter(s => s.id !== stockId);
-            // 삭제가 실제로 일어났는지 확인
-            if (portfolio.portfolioData.length < initialLength) {
-                this.#transactionCache.delete(stockId);
-                this.saveActivePortfolio();
-                return true;
+        const activePortfolio = this.getActivePortfolio();
+        if (activePortfolio) {
+             if (activePortfolio.portfolioData.length <= 1) {
+                 console.warn("Cannot delete the last stock in the portfolio.");
+                 return false; // 마지막 주식은 삭제 불가
+             }
+            const initialLength = activePortfolio.portfolioData.length;
+            activePortfolio.portfolioData = activePortfolio.portfolioData.filter(stock => stock.id !== stockId);
+
+            if (activePortfolio.portfolioData.length < initialLength) {
+                 this.saveActivePortfolio();
+                 return true;
+            } else {
+                 console.warn(`Stock with ID ${stockId} not found for deletion.`);
+                 return false; // 삭제할 주식이 없었음
             }
         }
         return false;
     }
 
+    /**
+     * @description 특정 주식 객체를 ID로 찾습니다.
+     * @param {string} stockId - 찾을 주식 ID
+     * @returns {Stock | undefined} 주식 객체 또는 undefined
+     */
+    getStockById(stockId) {
+        const activePortfolio = this.getActivePortfolio();
+        return activePortfolio?.portfolioData.find(s => s.id === stockId);
+    }
 
     /**
-     * @description 주식 속성 (이름, 티커, 목표 비율 등)을 업데이트합니다.
-     * @param {string} stockId - 주식 ID
-     * @param {string} field - 업데이트할 속성 이름
-     * @param {string | number | boolean} value - 새로운 값
+     * @description 활성 포트폴리오 내 특정 주식의 속성을 업데이트합니다.
+     * @param {string} stockId - 업데이트할 주식 ID
+     * @param {keyof Stock | string} field - 업데이트할 속성 이름
+     * @param {any} value - 새 값
      */
     updateStockProperty(stockId, field, value) {
-        const stock = this.getStockById(stockId);
-        if (stock) {
-            // Dynamic property assignment (field is validated above)
-            if (field === 'targetRatio' || field === 'currentPrice' || field === 'fixedBuyAmount') {
-                const numValue = Number(value);
-                stock[field] = isNaN(numValue) ? 0 : numValue;
-            } else if (field === 'isFixedBuyEnabled') {
-                stock[field] = Boolean(value);
-            } else {
-                stock[field] = String(value);
+        const activePortfolio = this.getActivePortfolio();
+        if (activePortfolio) {
+            const stockIndex = activePortfolio.portfolioData.findIndex(s => s.id === stockId);
+            if (stockIndex > -1) {
+                const stock = activePortfolio.portfolioData[stockIndex];
+                // 숫자 필드는 Decimal로 변환 시도
+                 if (['targetRatio', 'currentPrice', 'fixedBuyAmount'].includes(field)) {
+                     try {
+                         // Ensure value is not null/undefined before creating Decimal
+                         const decimalValue = new Decimal(value ?? 0);
+                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
+                          // @ts-ignore - Allow assignment based on field name
+                         stock[field] = decimalValue;
+                     } catch (e) {
+                         ErrorService.handle(new Error(`Invalid numeric value for ${field}: ${value}`), 'updateStockProperty');
+                         // Optionally reset to 0 or keep the old value
+                          // @ts-ignore
+                         stock[field] = new Decimal(0);
+                     }
+                 } else if (field === 'isFixedBuyEnabled') {
+                      // @ts-ignore
+                     stock[field] = Boolean(value);
+                 } else if (typeof stock[field] !== 'undefined') { // Check if the field exists on the Stock type
+                      // @ts-ignore
+                     stock[field] = value;
+                 } else {
+                      console.warn(`Attempted to update non-existent property '${field}' on stock ${stockId}`);
+                 }
+                // No immediate save here, expects debouncedSave in controller or explicit save call
             }
-            this.saveActivePortfolio();
-        } else {
-            console.warn(`Stock with ID ${stockId} not found for update.`);
         }
     }
 
-
-    // --- 거래 내역 관리 ---
-
     /**
-     * @description 특정 주식의 거래 내역을 가져옵니다 (캐싱 적용).
+     * @description 특정 주식에 거래 내역을 추가합니다.
      * @param {string} stockId - 주식 ID
-     * @returns {Stock['transactions']} 정렬된 거래 내역
+     * @param {Omit<Transaction, 'id'>} transactionData - 거래 데이터 (ID 제외)
+     * @returns {boolean} 추가 성공 여부
      */
-    getTransactions(stockId) {
-        const stock = this.getStockById(stockId);
-        // _sortedTransactions가 없으면 transactions를 정렬해서 반환 (방어 코드)
-        return stock?._sortedTransactions || this._sortTransactions(stock?.transactions || []);
-    }
-
-
-    /**
-     * @description 새 거래를 추가합니다.
-     * @param {string} stockId - 주식 ID
-     * @param {{type: 'buy'|'sell', date: string, quantity: number | Decimal, price: number | Decimal}} txData - 거래 데이터
-     * @returns {boolean}
-     */
-    addTransaction(stockId, txData) {
+    addTransaction(stockId, transactionData) {
         const stock = this.getStockById(stockId);
         if (stock) {
-            // transactions 배열이 없으면 초기화
-            if (!Array.isArray(stock.transactions)) {
-                stock.transactions = [];
+            // Validate transaction data before adding
+            const validation = Validator.validateTransaction(transactionData);
+            if (!validation.isValid) {
+                 ErrorService.handle(new Error(`Invalid transaction data: ${validation.message}`), 'addTransaction');
+                 return false;
             }
-            /** @type {Stock['transactions'][number]} */
-            const newTx = {
-                id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-                type: txData.type,
-                date: txData.date,
-                quantity: new Decimal(txData.quantity),
-                price: new Decimal(txData.price),
+
+            const newTransaction = {
+                ...transactionData,
+                id: `tx-${nanoid()}`,
+                 // Ensure quantity and price are Decimals
+                 quantity: new Decimal(transactionData.quantity),
+                 price: new Decimal(transactionData.price)
             };
-            stock.transactions.push(newTx);
-            stock._sortedTransactions = this._sortTransactions(stock.transactions);
+            stock.transactions.push(newTransaction);
+            // 거래 내역 추가 후 날짜순 정렬 유지
+            stock.transactions.sort((a, b) => a.date.localeCompare(b.date));
             this.saveActivePortfolio();
             return true;
         }
-        console.warn(`Stock with ID ${stockId} not found for adding transaction.`);
         return false;
     }
 
-
     /**
-     * @description 거래 내역을 삭제합니다.
+     * @description 특정 주식에서 거래 내역을 삭제합니다.
      * @param {string} stockId - 주식 ID
-     * @param {string} transactionId - 거래 ID
-     * @returns {boolean}
+     * @param {string} transactionId - 삭제할 거래 ID
+     * @returns {boolean} 삭제 성공 여부
      */
     deleteTransaction(stockId, transactionId) {
         const stock = this.getStockById(stockId);
-        if (stock && Array.isArray(stock.transactions)) { // transactions 배열 확인
+        if (stock) {
             const initialLength = stock.transactions.length;
             stock.transactions = stock.transactions.filter(tx => tx.id !== transactionId);
-            // 삭제가 일어났는지 확인
             if (stock.transactions.length < initialLength) {
-                stock._sortedTransactions = this._sortTransactions(stock.transactions);
-                this.saveActivePortfolio();
-                return true;
+                 this.saveActivePortfolio();
+                 return true;
+            } else {
+                 console.warn(`Transaction ID ${transactionId} not found for stock ${stockId}.`);
+                 return false;
             }
         }
         return false;
     }
 
-
-    // --- 유틸리티 ---
-    // --- ⬇️ [수정됨] getRatioSum을 동기 방식으로 변경 (utils.js 내용 가져옴) ⬇️ ---
     /**
-     * @description 현재 활성 포트폴리오의 목표 비율 합계를 동기적으로 계산합니다.
-     * @returns {Decimal} 목표 비율 합계 (Decimal 객체)
+     * @description 특정 주식의 모든 거래 내역을 반환합니다.
+     * @param {string} stockId - 주식 ID
+     * @returns {Transaction[]} 거래 내역 배열 (없으면 빈 배열)
      */
-    getRatioSum() {
-        const portfolio = this.getActivePortfolio();
-        let sum = new Decimal(0);
-        if (!portfolio || !Array.isArray(portfolio.portfolioData)) return sum; // 방어 코드
-
-        for (const s of portfolio.portfolioData) {
-            const ratio = new Decimal(s.targetRatio || 0);
-            sum = sum.plus(ratio);
-        }
-        return sum;
+    getTransactions(stockId) {
+        const stock = this.getStockById(stockId);
+        return stock ? [...stock.transactions] : []; // Return a copy
     }
-    // --- ⬆️ [수정됨] ⬆️ ---
+
 
     /**
-     * @description 목표 비율의 합계를 100%로 정규화합니다.
-     * @returns {boolean} 정규화 성공 여부
+     * @description 활성 포트폴리오의 목표 비율 합계가 100%가 되도록 정규화합니다.
+     * @returns {boolean} 정규화 실행 여부 (비율 0인 경우 false)
      */
     normalizeRatios() {
-        const portfolio = this.getActivePortfolio();
-        if (!portfolio || !Array.isArray(portfolio.portfolioData) || portfolio.portfolioData.length === 0) return false;
+        const activePortfolio = this.getActivePortfolio();
+        if (!activePortfolio || activePortfolio.portfolioData.length === 0) return false;
 
-        const portfolioData = portfolio.portfolioData;
-        const currentSum = this.getRatioSum();
+        const totalRatio = activePortfolio.portfolioData.reduce((sum, stock) => sum.plus(stock.targetRatio || 0), new Decimal(0));
 
-        if (currentSum.isZero() || currentSum.isNaN()) {
-            console.warn("Cannot normalize ratios with zero or NaN sum.");
-            return false;
+        if (totalRatio.isZero() || totalRatio.isNaN()) {
+            console.warn("Total target ratio is zero or NaN, cannot normalize.");
+            return false; // 0으로 나눌 수 없음
         }
 
-        const hundred = new Decimal(100);
-        const multiplier = hundred.div(currentSum);
+        const factor = new Decimal(100).div(totalRatio);
+        activePortfolio.portfolioData.forEach(stock => {
+            stock.targetRatio = new Decimal(stock.targetRatio || 0).times(factor).toDecimalPlaces(2).toNumber(); // 소수점 2자리까지 반올림
+        });
 
-        let needsSave = false;
-        for (const stock of portfolioData) {
-            const currentRatio = stock.targetRatio || 0;
-            const ratioDec = new Decimal(currentRatio);
-            const newRatioNum = ratioDec.times(multiplier).toDecimalPlaces(2).toNumber();
+        // 정규화 후 합계가 정확히 100이 아닐 수 있는 미세 오차 조정 (가장 큰 비율 항목에 추가/감산)
+        let newSum = activePortfolio.portfolioData.reduce((sum, stock) => sum.plus(stock.targetRatio || 0), new Decimal(0));
+        let diff = new Decimal(100).minus(newSum);
 
-            if (stock.targetRatio !== newRatioNum) {
-                stock.targetRatio = newRatioNum;
-                needsSave = true;
-            }
+        if (!diff.isZero() && activePortfolio.portfolioData.length > 0) {
+             // Find stock with the largest target ratio to adjust
+             let stockToAdjust = activePortfolio.portfolioData.reduce((maxStock, currentStock) => {
+                 return (currentStock.targetRatio > maxStock.targetRatio) ? currentStock : maxStock;
+             }, activePortfolio.portfolioData[0]);
+
+             stockToAdjust.targetRatio = new Decimal(stockToAdjust.targetRatio).plus(diff).toDecimalPlaces(2).toNumber();
         }
 
-        if (needsSave) {
-            this.saveActivePortfolio();
-        }
+
+        // No immediate save here, controller should handle saving
         return true;
     }
 
-
     /**
-     * @description 포트폴리오의 설정(통화, 환율, 모드 등)을 업데이트합니다.
-     * @param {string} field - 업데이트할 설정 속성
-     * @param {string | number} value - 새로운 값
+     * @description 모든 포트폴리오 데이터를 초기 상태로 리셋합니다.
+     * @param {boolean} [save=true] - 리셋 후 즉시 저장할지 여부
      */
-    updatePortfolioSettings(field, value) {
-        const portfolio = this.getActivePortfolio();
-        if (portfolio?.settings) {
-            // Dynamic property assignment with validation
-            let newValue = value;
-            // 타입 검사/변환 강화
-            if (field === 'exchangeRate') {
-                 const numValue = Number(value);
-                 newValue = isNaN(numValue) || numValue <= 0 ? CONFIG.DEFAULT_EXCHANGE_RATE : numValue;
-            } else if (field === 'mainMode' && value !== 'add' && value !== 'sell') {
-                 newValue = 'add';
-            } else if (field === 'currentCurrency' && value !== 'krw' && value !== 'usd') {
-                 newValue = 'krw';
-            }
-            if (portfolio.settings[field] !== newValue) {
-                 portfolio.settings[field] = newValue;
-                 this.saveActivePortfolio();
-            }
-        } else {
-             console.warn("Cannot update settings: Active portfolio or settings not found.");
+    resetData(save = true) {
+        const defaultPortfolio = this._createDefaultPortfolio(`p-${nanoid()}`);
+        this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
+        this.#activePortfolioId = defaultPortfolio.id;
+        if (save) {
+            this.savePortfolios();
+            this.saveMeta();
         }
+        console.log("Data reset to default.");
     }
 
-
     /**
-     * @description 외부에서 JSON 데이터를 로드합니다. (비동기)
-     * @param {PortfolioDataStructure} loadedData - 로드된 전체 포트폴리오 데이터
-     * @returns {Promise<void>}
-     */
-    async importData(loadedData) {
-        if (!loadedData || typeof loadedData.portfolios !== 'object' || !loadedData.activePortfolioId) {
-            throw new Error('Invalid data structure for import.');
-        }
-
-        // 기존 로컬 스토리지 데이터 삭제 (덮어쓰기)
-        this.getAllPortfolioIdsFromLocalStorage().forEach(id => {
-             localStorage.removeItem(CONFIG.DATA_PREFIX + id);
-        });
-
-        const newPortfolios = {};
-        try {
-            await Promise.all(Object.keys(loadedData.portfolios).map(async (id) => {
-                 const portfolioData = loadedData.portfolios[id];
-                 if (!portfolioData) return; // 데이터 없으면 건너뛰기
-
-                 // Deserialize each portfolio
-                 newPortfolios[id] = await this._deserializePortfolioData(portfolioData);
-
-                 // Save immediately to local storage to ensure persistence
-                 try {
-                     const serializedData = this._serializePortfolioData(newPortfolios[id]);
-                     localStorage.setItem(CONFIG.DATA_PREFIX + id, JSON.stringify(serializedData));
-                 } catch (storageError) {
-                     const error = /** @type {Error} */(storageError);
-
-                     // 에러 타입별 상세 로그
-                     if (error.name === 'QuotaExceededError') {
-                         console.error(`LocalStorage quota exceeded while importing portfolio ${id}.`, error);
-                     } else if (error.name === 'SecurityError') {
-                         console.error(`LocalStorage access denied while importing portfolio ${id}.`, error);
-                     } else {
-                         console.error(`Failed to save imported portfolio ${id} to localStorage.`, error);
-                     }
-                     throw error; // Re-throw to be caught by outer catch
-                 }
-            }));
-        } catch (importError) {
-             const error = /** @type {Error} */(importError);
-             console.error("Error during data import:", error);
-
-             // 사용자에게 알림
-             ErrorService.handle(error, 'importData');
-
-             throw new Error("Failed to import data."); // 에러 다시 던지기
-        }
-
-
-        this.#data.portfolios = newPortfolios;
-
-        // activePortfolioId 유효성 검사 후 설정
-        if (newPortfolios[loadedData.activePortfolioId]) {
-             this.setActivePortfolioId(loadedData.activePortfolioId);
-        } else {
-             // 유효하지 않으면 로드된 첫 번째 포트폴리오를 활성화
-             const firstLoadedId = Object.keys(newPortfolios)[0];
-             this.setActivePortfolioId(firstLoadedId || null); // 포트폴리오가 없을 수도 있음
-        }
-        // this.saveMeta(); // setActivePortfolioId에 포함됨
-        this.#transactionCache.clear();
-         console.log("Data imported successfully."); // 성공 로그
-    }
-
-
-    /**
-     * @description 모든 포트폴리오 데이터를 JSON으로 내보냅니다.
-     * @returns {PortfolioDataStructure}
+     * @description 데이터를 JSON 파일로 내보내기 위한 객체를 생성합니다.
+     * @returns {{meta: MetaState, portfolios: Record<string, Portfolio>}} 내보낼 데이터
      */
     exportData() {
-        const exportedPortfolios = {};
-        for (const id in this.#data.portfolios) {
-            // hasOwnProperty 체크 추가 (안전성)
-            if (Object.prototype.hasOwnProperty.call(this.#data.portfolios, id)) {
-                // 직렬화하여 일반 숫자 형태로 내보내기
-                exportedPortfolios[id] = this._serializePortfolioData(this.#data.portfolios[id]);
-            }
-        }
+        // Ensure Decimals are converted to strings/numbers for JSON compatibility
+         const exportablePortfolios = {};
+         Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
+             exportablePortfolios[id] = {
+                 ...portfolio,
+                 portfolioData: portfolio.portfolioData.map(stock => ({
+                     ...stock,
+                     // Convert Decimal fields back to number for export
+                     fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
+                     transactions: stock.transactions.map(tx => ({
+                         ...tx,
+                         quantity: tx.quantity.toNumber(),
+                         price: tx.price.toNumber(),
+                     }))
+                 }))
+             };
+         });
+
         return {
-            portfolios: exportedPortfolios,
-            activePortfolioId: this.#activePortfolioId || '' // null 대신 빈 문자열
+            meta: { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION },
+            portfolios: exportablePortfolios
         };
     }
 
     /**
-     * @description 모든 데이터를 초기화하고 기본 포트폴리오를 생성합니다.
+     * @description JSON 파일에서 데이터를 가져와 현재 상태에 병합/교체합니다. (구조 검증 포함)
+     * @param {any} importedData - JSON.parse로 읽어온 데이터
+     * @returns {Promise<void>}
      */
-    resetData() {
-        // 모든 포트폴리오 데이터 삭제
-        const portfolioIds = this.getAllPortfolioIdsFromLocalStorage();
-        portfolioIds.forEach(id => localStorage.removeItem(CONFIG.DATA_PREFIX + id));
-        localStorage.removeItem(CONFIG.META_KEY);
+    async importData(importedData) {
+         // Use Validator to check structure
+         if (!Validator.isDataStructureValid(importedData)) {
+            throw new Error("Imported data structure is invalid.");
+         }
 
-        this.#data = { portfolios: {}, activePortfolioId: '' };
-        this.#activePortfolioId = null;
-        this.#transactionCache.clear();
-        this.createNewPortfolio('기본 포트폴리오'); // 기본 포트폴리오 생성
-         console.log("All data reset. Default portfolio created."); // 로그 추가
+        // Validate and upgrade/sanitize the imported data
+        const { meta, portfolios } = this._validateAndUpgradeData(importedData.meta, importedData.portfolios);
+
+        // Replace current state
+        this.#portfolios = portfolios;
+        this.#activePortfolioId = meta.activePortfolioId;
+
+        // Ensure at least one portfolio exists after import, otherwise reset
+        if (Object.keys(this.#portfolios).length === 0 || !this.#portfolios[this.#activePortfolioId]) {
+            console.warn("Imported data resulted in no valid portfolios. Resetting to default.");
+            this.resetData(false); // Reset without saving yet
+        }
+
+        // Save the imported and validated data
+        this.savePortfolios();
+        this.saveMeta();
+        console.log("Data imported successfully.");
+        // Reload or re-render might be needed in the controller
     }
 
-} // End of PortfolioState class
+
+    /**
+     * @description 현재 메타데이터를 로컬 스토리지에 저장합니다.
+     */
+    saveMeta() {
+        try {
+            const metaData = { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION };
+            localStorage.setItem(CONFIG.LOCAL_STORAGE_META_KEY, JSON.stringify(metaData));
+        } catch (error) {
+            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta');
+        }
+    }
+
+    /**
+     * @description 모든 포트폴리오 데이터를 로컬 스토리지에 저장합니다. (Decimal -> number 변환 포함)
+     */
+    savePortfolios() {
+        try {
+            // Convert Decimal back to number before saving
+             const saveablePortfolios = {};
+             Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
+                 saveablePortfolios[id] = {
+                     ...portfolio,
+                     portfolioData: portfolio.portfolioData.map(stock => ({
+                         ...stock,
+                         // Convert Decimal fields
+                         fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
+                         transactions: stock.transactions.map(tx => ({
+                             ...tx,
+                             quantity: tx.quantity.toNumber(),
+                             price: tx.price.toNumber(),
+                         }))
+                     }))
+                 };
+             });
+            localStorage.setItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY, JSON.stringify(saveablePortfolios));
+        } catch (error) {
+             // Handle potential quota exceeded error
+             if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+                 ErrorService.handle(error, 'savePortfolios - Quota Exceeded');
+             } else {
+                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios');
+             }
+        }
+    }
+
+    /**
+     * @description 현재 활성 포트폴리오 데이터만 로컬 스토리지에 저장합니다. (효율적)
+     * @remarks 이 함수는 개별 포트폴리오를 별도 키로 저장하는 경우 유용하지만,
+     * 현재 구조에서는 전체 포트폴리오를 저장하는 savePortfolios가 더 적합합니다.
+     * savePortfolios를 호출하도록 변경합니다.
+     */
+    saveActivePortfolio() {
+        // const activePortfolio = this.getActivePortfolio();
+        // if (activePortfolio) {
+        //     try {
+        //         localStorage.setItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY + activePortfolio.id, JSON.stringify(activePortfolio));
+        //     } catch (error) {
+        //        ErrorService.handle(/** @type {Error} */ (error), 'saveActivePortfolio');
+        //     }
+        // }
+        // --- ⬇️ 전체 저장으로 변경 ⬇️ ---
+        this.savePortfolios();
+        // --- ⬆️ 전체 저장으로 변경 ⬆️ ---
+    }
+
+    // --- Private Helper Methods ---
+
+    /**
+     * @description 기본 포트폴리오 객체를 생성합니다.
+     * @param {string} id - 포트폴리오 ID
+     * @param {string} [name] - 포트폴리오 이름 (없으면 기본값 사용)
+     * @returns {Portfolio} 기본 포트폴리오 객체
+     * @private
+     */
+    _createDefaultPortfolio(id, name = t('defaults.defaultPortfolioName')) {
+        return {
+            id: id,
+            name: name,
+            settings: {
+                mainMode: 'add',
+                currentCurrency: 'krw',
+                exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
+            },
+            portfolioData: [this._createDefaultStock()] // 기본 주식 1개 포함
+        };
+    }
+
+    /**
+     * @description 기본 주식 객체를 생성합니다.
+     * @returns {Stock} 기본 주식 객체
+     * @private
+     */
+    _createDefaultStock() {
+        return {
+            id: `s-${nanoid()}`,
+            name: t('defaults.newStock'),
+            ticker: '',
+            sector: '', // 기본 섹터는 비워둠
+            targetRatio: 0,
+            currentPrice: 0,
+            isFixedBuyEnabled: false,
+            fixedBuyAmount: new Decimal(0), // Use Decimal
+            transactions: []
+        };
+    }
+}
