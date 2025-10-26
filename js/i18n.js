@@ -39,6 +39,7 @@ const messages = {
     validationErrorPrefix: "입력값을 확인해주세요: ",
     saveErrorGeneral: "저장 중 오류가 발생했습니다.",
     saveErrorQuota: "저장 공간이 부족합니다. 불필요한 포트폴리오를 삭제해 주세요.",
+    saveErrorSecurity: "브라우저 설정으로 인해 데이터를 저장할 수 없습니다. 쿠키 및 사이트 데이터 설정을 확인해주세요.",
     calcErrorDecimal: "입력값이 너무 크거나 잘못된 형식입니다.",
     calcErrorType: "데이터 형식 오류가 발생했습니다.",
     invalidFileStructure: "파일의 구조가 올바르지 않거나 손상되었습니다.",

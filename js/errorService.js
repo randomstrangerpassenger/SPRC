@@ -31,12 +31,17 @@ export const ErrorService = {
         // 오류 타입에 따라 사용자 메시지 구체화
         if (error instanceof ValidationError) {
             userMessage = `${t('validation.validationErrorPrefix')}\n${error.message}`;
+        } else if (error.name === 'QuotaExceededError') { // LocalStorage quota exceeded
+            userMessage = t('validation.saveErrorQuota');
+        } else if (error.name === 'SecurityError') { // LocalStorage access denied
+            userMessage = t('validation.saveErrorSecurity');
         } else if (error.name === 'DecimalError') { // Decimal.js 관련 오류
             userMessage = t('validation.calcErrorDecimal');
         } else if (error.message.includes("structure")) { // 파일 구조 관련 오류 (import 시)
             userMessage = t('validation.invalidFileStructure');
+        } else if (context.includes('save') || context.includes('Save')) { // 저장 관련 컨텍스트
+            userMessage = t('validation.saveErrorGeneral');
         }
-        // TODO: 네트워크 오류 등 다른 종류의 에러에 대한 처리 추가 가능
 
         // 사용자에게 토스트 메시지 표시
         PortfolioView.showToast(userMessage, 'error');

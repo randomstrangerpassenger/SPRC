@@ -145,7 +145,18 @@ export class PortfolioState {
             const meta = { activePortfolioId: this.#activePortfolioId };
             localStorage.setItem(CONFIG.META_KEY, JSON.stringify(meta));
         } catch (e) {
-            ErrorService.handle(/** @type {Error} */(e), 'saveMeta');
+            const error = /** @type {Error} */(e);
+
+            // 에러 타입별 상세 로그
+            if (error.name === 'QuotaExceededError') {
+                console.error("LocalStorage quota exceeded while saving metadata.", error);
+            } else if (error.name === 'SecurityError') {
+                console.error("LocalStorage access denied while saving metadata.", error);
+            } else {
+                console.error("Failed to save metadata to localStorage.", error);
+            }
+
+            ErrorService.handle(error, 'saveMeta');
         }
     }
 
@@ -158,15 +169,23 @@ export class PortfolioState {
         try {
             const activePortfolio = this.#data.portfolios[this.#activePortfolioId];
             if (activePortfolio) {
-                // 저장 전에 직렬화
                 const serializedData = this._serializePortfolioData(activePortfolio);
                 localStorage.setItem(CONFIG.DATA_PREFIX + this.#activePortfolioId, JSON.stringify(serializedData));
             }
         } catch (e) {
-            ErrorService.handle(/** @type {Error} */(e), 'saveActivePortfolio');
-            // 저장 실패 시 사용자에게 알림 (예: 토스트 메시지)
-            console.error("Failed to save portfolio to localStorage. Data might be lost.", e);
-            // view?.showToast(...) // view가 있다면 알림 표시
+            const error = /** @type {Error} */(e);
+
+            // 에러 타입별 상세 로그
+            if (error.name === 'QuotaExceededError') {
+                console.error("LocalStorage quota exceeded. Consider deleting old portfolios or clearing browser data.", error);
+            } else if (error.name === 'SecurityError') {
+                console.error("LocalStorage access denied. Check browser privacy settings and ensure cookies/site data are allowed.", error);
+            } else {
+                console.error("Failed to save portfolio to localStorage. Data might be lost.", error);
+            }
+
+            // ErrorService가 사용자에게 토스트 메시지를 표시
+            ErrorService.handle(error, 'saveActivePortfolio');
         }
     }
 
@@ -699,7 +718,6 @@ export class PortfolioState {
         });
 
         const newPortfolios = {};
-        // Promise.all로 병렬 처리 및 에러 핸들링 강화
         try {
             await Promise.all(Object.keys(loadedData.portfolios).map(async (id) => {
                  const portfolioData = loadedData.portfolios[id];
@@ -707,15 +725,33 @@ export class PortfolioState {
 
                  // Deserialize each portfolio
                  newPortfolios[id] = await this._deserializePortfolioData(portfolioData);
+
                  // Save immediately to local storage to ensure persistence
-                 const serializedData = this._serializePortfolioData(newPortfolios[id]);
-                 localStorage.setItem(CONFIG.DATA_PREFIX + id, JSON.stringify(serializedData));
+                 try {
+                     const serializedData = this._serializePortfolioData(newPortfolios[id]);
+                     localStorage.setItem(CONFIG.DATA_PREFIX + id, JSON.stringify(serializedData));
+                 } catch (storageError) {
+                     const error = /** @type {Error} */(storageError);
+
+                     // 에러 타입별 상세 로그
+                     if (error.name === 'QuotaExceededError') {
+                         console.error(`LocalStorage quota exceeded while importing portfolio ${id}.`, error);
+                     } else if (error.name === 'SecurityError') {
+                         console.error(`LocalStorage access denied while importing portfolio ${id}.`, error);
+                     } else {
+                         console.error(`Failed to save imported portfolio ${id} to localStorage.`, error);
+                     }
+                     throw error; // Re-throw to be caught by outer catch
+                 }
             }));
-        } catch (deserializeError) {
-             console.error("Error during data import deserialization:", deserializeError);
-             // 임포트 실패 시 롤백 또는 사용자 알림 필요
-             // 예: 이전 상태로 복구 시도 또는 오류 메시지 표시
-             throw new Error("Failed to deserialize imported data."); // 에러 다시 던지기
+        } catch (importError) {
+             const error = /** @type {Error} */(importError);
+             console.error("Error during data import:", error);
+
+             // 사용자에게 알림
+             ErrorService.handle(error, 'importData');
+
+             throw new Error("Failed to import data."); // 에러 다시 던지기
         }
 
 

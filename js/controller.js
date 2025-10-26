@@ -4,7 +4,7 @@ import { PortfolioState } from './state.js';
 import { PortfolioView } from './view.js';
 import { Calculator } from './calculator.js';
 import { Validator } from './validator.js';
-import { debounce, formatCurrency } from './utils.js';
+import { debounce, formatCurrency, getRatioSum } from './utils.js';
 import { CONFIG } from './constants.js';
 import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
@@ -109,7 +109,7 @@ export class PortfolioController {
         );
 
         // 3. 비율 합계 업데이트 (비동기 처리 제거)
-        const ratioSum = this.calculateRatioSumSync(activePortfolio.portfolioData); // 동기 함수 사용
+        const ratioSum = getRatioSum(activePortfolio.portfolioData); // 동기 함수 사용
         this.view.updateRatioSum(ratioSum.toNumber());
 
         // 4. 섹터 분석 업데이트
@@ -124,22 +124,6 @@ export class PortfolioController {
         activePortfolio.portfolioData = calculatedState.portfolioData;
         this.debouncedSave();
     }
-     // --- ⬇️ [추가됨] 동기 비율 합계 계산 함수 ⬇️ ---
-    /**
-     * @description 포트폴리오 데이터에서 목표 비율 합계를 동기적으로 계산합니다.
-     * @param {Stock[]} portfolioData
-     * @returns {Decimal}
-     */
-    calculateRatioSumSync(portfolioData) {
-        let sum = new Decimal(0);
-        if (!Array.isArray(portfolioData)) return sum;
-        for (const s of portfolioData) {
-            const ratio = new Decimal(s.targetRatio || 0);
-            sum = sum.plus(ratio);
-        }
-        return sum;
-    }
-    // --- ⬆️ [추가됨] ⬆️ ---
 
 
     /**
@@ -162,7 +146,7 @@ export class PortfolioController {
         });
 
         // 3. 비율 합계 업데이트 (동기)
-        const ratioSum = this.calculateRatioSumSync(activePortfolio.portfolioData);
+        const ratioSum = getRatioSum(activePortfolio.portfolioData);
         this.view.updateRatioSum(ratioSum.toNumber());
 
         // 4. 섹터 분석 업데이트
@@ -330,7 +314,7 @@ export class PortfolioController {
             this.view.updateAllTargetRatioInputs(activePortfolio.portfolioData);
 
             // 비율 합계 업데이트 (동기)
-            const sum = this.calculateRatioSumSync(activePortfolio.portfolioData);
+            const sum = getRatioSum(activePortfolio.portfolioData);
             this.view.updateRatioSum(sum.toNumber());
 
             this.debouncedSave();
@@ -483,7 +467,7 @@ export class PortfolioController {
         // this.view.clearValidationErrors(); // 이 함수가 없으므로 주석 처리
 
         // 목표 비율 합계 확인 (100% 아니면 경고)
-        const totalRatio = this.calculateRatioSumSync(inputs.portfolioData);
+        const totalRatio = getRatioSum(inputs.portfolioData);
         if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
             const proceed = await this.view.showConfirm(
                 t('modal.confirmRatioSumWarnTitle'),
