@@ -2304,7 +2304,6 @@
     }
   }
 }
-
 ```
 
 ---
@@ -3889,8 +3888,6 @@ export function generateSectorAnalysisHTML(sectorData, currency) {
 
 ---
 
----
-
 ## `js/validator.js`
 
 ```javascript
@@ -4429,7 +4426,13 @@ export class PortfolioState {
              return ''; // 임시 반환
         }
 
-        const newId = `p-${Date.now()}`;
+        // 고유 ID 생성 (crypto.randomUUID 또는 Date.now() + random suffix 사용)
+        let newId;
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            newId = `p-${crypto.randomUUID()}`;
+        } else {
+            newId = `p-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
         /** @type {PortfolioSettings} */
         const defaultSettings = {
             mainMode: 'add',
@@ -4904,20 +4907,18 @@ export class PortfolioState {
 ## `js/state.test.js`
 
 ```javascript
-// js/state.test.js (최종 수정본)
+// js/state.test.js
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PortfolioState } from './state.js';
-import { CONFIG } from './constants.js'; 
-import Decimal from 'decimal.js'; 
+import { CONFIG } from './constants.js';
+import Decimal from 'decimal.js';
 
-// --- ⬇️ 핵심 수정: debounce 모킹 (즉시 실행) ⬇️ ---
-// debounce 함수가 실제 함수를 즉시 호출하도록 모킹합니다.
-vi.mock('../utils.js', async (importOriginal) => {
+// Mock debounce to execute immediately
+vi.mock('./utils.js', async (importOriginal) => {
     const actual = await importOriginal();
     return {
         ...actual,
-        // debounce 함수가 전달된 함수를 즉시 실행하도록 재정의
         debounce: (fn) => {
             return function(...args) {
                 return fn.apply(this, args);
@@ -4925,10 +4926,8 @@ vi.mock('../utils.js', async (importOriginal) => {
         },
     };
 });
-// --- ⬆️ 핵심 수정 ⬆️ ---
 
-
-// localStorage 모의(mock) 처리
+// localStorage mock
 const localStorageMock = (() => {
   let store = {};
   return {
@@ -4941,9 +4940,7 @@ const localStorageMock = (() => {
   };
 })();
 
-// window.localStorage 모의 객체 할당
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-
 
 describe('PortfolioState', () => {
   let state;
@@ -4952,28 +4949,25 @@ describe('PortfolioState', () => {
     localStorage.clear();
     if (typeof crypto === 'undefined') {
       global.crypto = { randomUUID: () => `mock-uuid-${Math.random()}` };
-    } else {
-        // --- ⬇️ 핵심 수정: 괄호 문제 해결 ⬇️ ---
+    } else if (crypto && crypto.randomUUID) {
         vi.spyOn(crypto, 'randomUUID').mockImplementation(() => `mock-uuid-${Math.random()}`);
-        // --- ⬆️ 핵심 수정 ⬆️ ---
     }
     state = new PortfolioState();
-    await state.ensureInitialized(); 
+    await state.ensureInitialized();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks(); // 모든 모의 함수 복원
+    vi.restoreAllMocks();
   });
 
-  it('초기화 시 기본 포트폴리오("기본 포트폴리오")를 생성해야 합니다.', () => {
+  it('should create default portfolio on initialization', () => {
     expect(Object.keys(state.getAllPortfolios()).length).toBe(1);
     expect(state.getActivePortfolio()?.name).toBe('기본 포트폴리오');
-    expect(state.getActivePortfolio()?.portfolioData?.length).toBe(1); 
+    expect(state.getActivePortfolio()?.portfolioData?.length).toBe(1);
     expect(state.getActivePortfolio()?.portfolioData?.[0]?.name).toBe('새 종목');
   });
 
-  // ⬇️ [수정] localStorage 로드 테스트 케이스
-  it('localStorage에 저장된 데이터가 있으면 올바르게 로드해야 합니다.', async () => { 
+  it('should load portfolio from localStorage', async () => {
     localStorage.clear();
 
     const testId = 'p-test123';
@@ -4996,18 +4990,16 @@ describe('PortfolioState', () => {
     localStorage.setItem(CONFIG.META_KEY, JSON.stringify(metaData));
 
     const loadedState = new PortfolioState();
-    await loadedState.ensureInitialized(); 
+    await loadedState.ensureInitialized();
 
-    // 검증
     expect(Object.keys(loadedState.getAllPortfolios()).length).toBe(1);
-    expect(loadedState.getActivePortfolio()?.id).toBe(testId); 
+    expect(loadedState.getActivePortfolio()?.id).toBe(testId);
     expect(loadedState.getActivePortfolio()?.name).toBe("Saved Portfolio");
     expect(loadedState.getActivePortfolio()?.portfolioData.length).toBe(1);
     expect(loadedState.getActivePortfolio()?.portfolioData[0].name).toBe("Test Stock");
   });
 
-  // ⬇️ [수정] META_KEY ID 유효하지 않을 때 테스트
-  it('META_KEY의 activePortfolioId가 유효하지 않으면 로드된 첫 포트폴리오를 활성화해야 합니다.', async () => { 
+  it('should activate first portfolio if activePortfolioId is invalid', async () => {
     localStorage.clear();
 
     const testId = 'p-test123';
@@ -5018,39 +5010,36 @@ describe('PortfolioState', () => {
     localStorage.setItem(CONFIG.META_KEY, JSON.stringify(metaData));
 
     const loadedState = new PortfolioState();
-    await loadedState.ensureInitialized(); 
+    await loadedState.ensureInitialized();
 
-    // 검증
     expect(Object.keys(loadedState.getAllPortfolios()).length).toBe(1);
-    expect(loadedState.getActivePortfolio()?.id).toBe(testId); 
+    expect(loadedState.getActivePortfolio()?.id).toBe(testId);
     expect(loadedState.getActivePortfolio()?.name).toBe("Saved Portfolio");
   });
 
-  it('새로운 주식을 액티브 포트폴리오에 추가해야 합니다.', () => {
-    const initialCount = state.getActivePortfolio()?.portfolioData.length ?? 0; // 1
+  it('should add new stock to active portfolio', () => {
+    const initialCount = state.getActivePortfolio()?.portfolioData.length ?? 0;
     const newStock = state.addNewStock();
     expect(newStock).not.toBeNull();
     const newCount = state.getActivePortfolio()?.portfolioData.length ?? 0;
-    expect(newCount).toBe(initialCount + 1); // 1 + 1 = 2
+    expect(newCount).toBe(initialCount + 1);
   });
 
-  // --- ⬇️ 핵심 수정: 주식 삭제 후 길이 검증 (debouncedSave 모킹으로 통과) ⬇️ ---
-  it('주식을 삭제해야 합니다.', () => {
-    state.addNewStock(); // 1(기본) + 1(추가) = 2개
+  it('should delete stock', () => {
+    state.addNewStock();
     const portfolio = state.getActivePortfolio()?.portfolioData;
-    expect(portfolio?.length).toBeGreaterThanOrEqual(2); 
+    expect(portfolio?.length).toBeGreaterThanOrEqual(2);
 
-    const initialCount = portfolio.length; // 2
+    const initialCount = portfolio.length;
     const stockToDelete = portfolio[0];
     const result = state.deleteStock(stockToDelete.id);
     expect(result).toBe(true);
-    expect(state.getActivePortfolio()?.portfolioData.length).toBe(initialCount - 1); // 2 - 1 = 1 (이제 통과)
+    expect(state.getActivePortfolio()?.portfolioData.length).toBe(initialCount - 1);
   });
-  // --- ⬆️ 핵심 수정 ⬆️ ---
 
-  it('마지막 남은 주식은 삭제할 수 없습니다.', () => {
+  it('should not delete last stock', () => {
     const portfolio = state.getActivePortfolio()?.portfolioData;
-    expect(portfolio?.length).toBe(1); 
+    expect(portfolio?.length).toBe(1);
 
     const lastStockId = portfolio[0].id;
     const result = state.deleteStock(lastStockId);
@@ -5059,9 +5048,9 @@ describe('PortfolioState', () => {
     expect(state.getActivePortfolio()?.portfolioData.length).toBe(1);
   });
 
-  it('주식 정보를 업데이트해야 합니다.', () => {
+  it('should update stock property', () => {
     const stock = state.getActivePortfolio()?.portfolioData[0];
-    expect(stock).toBeDefined(); 
+    expect(stock).toBeDefined();
 
     const newName = "Updated Stock Name";
     state.updateStockProperty(stock.id, 'name', newName);
@@ -5069,14 +5058,14 @@ describe('PortfolioState', () => {
     expect(updatedStock?.name).toBe(newName);
   });
 
-  it('새로운 포트폴리오를 추가하고 활성화해야 합니다.', async () => {
-    const initialPortfolioCount = Object.keys(state.getAllPortfolios()).length; // 1
+  it('should create and activate new portfolio', async () => {
+    const initialPortfolioCount = Object.keys(state.getAllPortfolios()).length;
     const newPortfolioName = "My New Portfolio";
     const newId = state.createNewPortfolio(newPortfolioName);
 
-    const newCount = Object.keys(state.getAllPortfolios()).length; 
-    
-    expect(newCount).toBe(initialPortfolioCount + 1); // 1 + 1 = 2 (이제 통과)
+    const newCount = Object.keys(state.getAllPortfolios()).length;
+
+    expect(newCount).toBe(initialPortfolioCount + 1);
     expect(state.getActivePortfolio()?.id).toBe(newId);
     expect(state.getActivePortfolio()?.name).toBe(newPortfolioName);
   });
@@ -6382,7 +6371,7 @@ export const PortfolioView = {
         // 3초 후 자동으로 사라짐
         setTimeout(() => toast.remove(), 3000);
     }
-}; // End of PortfolioView object
+};
 ```
 
 ---
@@ -6398,8 +6387,9 @@ import { Calculator } from './calculator.js';
 import { Validator } from './validator.js';
 import { debounce, formatCurrency } from './utils.js';
 import { CONFIG } from './constants.js';
-import { ErrorService } from './errorService.js';
+import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
+import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML } from './templates.js';
 import Decimal from 'decimal.js'; // 동기 임포트로 복구
 
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
@@ -6511,7 +6501,7 @@ export class PortfolioController {
 
         // 4. 섹터 분석 업데이트
         const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
-        this.view.displaySectorAnalysis(this.view.generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
+        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
 
         // 5. 활성 모드에 따라 추가 투자금 입력 필드 상태 업데이트
         this.view.updateMainModeUI(activePortfolio.settings.mainMode); // toggleAdditionalAmountInputs -> updateMainModeUI
@@ -6564,7 +6554,7 @@ export class PortfolioController {
 
         // 4. 섹터 분석 업데이트
         const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
-        this.view.displaySectorAnalysis(this.view.generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
+        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)); // displaySectorAnalysis 인자 수정
 
         // 5. 계산된 상태 저장
         activePortfolio.portfolioData = calculatedState.portfolioData;
@@ -6910,12 +6900,12 @@ export class PortfolioController {
 
         // 5. 결과 렌더링 (템플릿 함수 사용)
         const resultsHTML = activePortfolio.settings.mainMode === 'add'
-             ? this.view.generateAddModeResultsHTML(rebalancingResults.results, {
+             ? generateAddModeResultsHTML(rebalancingResults.results, {
                    currentTotal: calculatedState.currentTotal,
                    additionalInvestment: additionalInvestment,
                    finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
                }, activePortfolio.settings.currentCurrency)
-             : this.view.generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
+             : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
 
         this.view.displayResults(resultsHTML); // renderResults -> displayResults
 
@@ -7386,17 +7376,17 @@ vi.mock('./view.js', () => {
   };
 
   return {
-      PortfolioView: { 
+      PortfolioView: {
           // --- ⬇️ 핵심 수정: 누락된 mock 함수 모두 추가 ⬇️ ---
           dom: {},
           cacheDomElements: vi.fn(function() {
               Object.assign(this.dom, mockDom);
           }),
-          
-          renderPortfolioSelector: vi.fn(), 
-          updateCurrencyModeUI: vi.fn(),    
-          updateMainModeUI: vi.fn(),        
-          renderTable: vi.fn(),             // <--- 추가됨: TypeError 해결
+
+          renderPortfolioSelector: vi.fn(),
+          updateCurrencyModeUI: vi.fn(),
+          updateMainModeUI: vi.fn(),
+          renderTable: vi.fn(),
           updateStockRowOutputs: vi.fn(),
           displaySectorAnalysis: vi.fn(),
           updateAllTargetRatioInputs: vi.fn(),
@@ -7410,12 +7400,9 @@ vi.mock('./view.js', () => {
           updateTableHeader: vi.fn(),
           updateRatioSum: vi.fn(),
           cleanup: vi.fn(),
-          
+
           getDOMElements: vi.fn(function() { return this.dom; }),
           getDOMElement: vi.fn(function(id) { return this.dom[id]; }),
-          
-          generateAddModeResultsHTML: vi.fn().mockReturnValue('Add HTML'),
-          generateSellModeResultsHTML: vi.fn().mockReturnValue('Sell HTML'),
       }
   };
 });
@@ -7507,7 +7494,7 @@ describe('PortfolioController', () => {
   it('handleCalculate: 유효성 검사 실패 시 ErrorService를 호출해야 한다', async () => {
     const validationError = new ValidationError('- 테스트 오류');
     // @ts-ignore
-    vi.mocked(Validator.validateForCalculation).mockResolvedValue([{ field: null, stockId: null, message: '- 테스트 오류' }]);
+    vi.mocked(Validator.validateForCalculation).mockReturnValue([{ field: null, stockId: null, message: '- 테스트 오류' }]);
 
     await controller.handleCalculate();
 
@@ -7518,9 +7505,9 @@ describe('PortfolioController', () => {
 
   it('handleCalculate: 유효성 검사 성공 시 계산 및 뷰 업데이트를 호출해야 한다', async () => {
     const mockResults = { results: [ { id: '1' } ], summary: { total: 100 } };
-    
+
     // @ts-ignore
-    vi.mocked(Validator.validateForCalculation).mockResolvedValue([]);
+    vi.mocked(Validator.validateForCalculation).mockReturnValue([]);
     // @ts-ignore
     vi.mocked(Calculator.calculateAddRebalancing).mockReturnValue(mockResults); 
     // @ts-ignore
