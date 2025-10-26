@@ -1,5 +1,6 @@
+// js/calculator.js
 // @ts-check
-import Decimal from 'decimal.js'; // 동기 임포트로 복구
+import Decimal from 'decimal.js'; 
 import { CONFIG } from './constants.js';
 import { ErrorService } from './errorService.js';
 
@@ -44,16 +45,16 @@ function _generatePortfolioKey(portfolioData) {
  * @property {PortfolioCalculationResult} result - 계산 결과
  */
 
-export const Calculator = {
+export class Calculator { // 'const Calculator = {' 를 'class Calculator {'로 변경
     /** @type {CalculatorCache | null} */
-    #cache: null,
+    static #cache = null; // 'static' 키워드를 추가하고 '#' 문법 유지
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
      * @param {Stock} stock - 계산할 주식 객체
      * @returns {CalculatedStock['calculated']} 계산 결과 객체
      */
-    calculateStockMetrics(stock) {
+    static calculateStockMetrics(stock) { // 'static' 키워드 추가
         try {
             const result = {
                 totalBuyQuantity: new Decimal(0),
@@ -81,7 +82,10 @@ export const Calculator = {
             }
 
             // 2. 순 보유 수량
-            result.netQuantity = result.totalBuyQuantity.minus(result.totalSellQuantity);
+            // --- ⬇️ [수정됨] ⬇️ ---
+            // result.netQuantity = result.totalBuyQuantity.minus(result.totalSellQuantity); // <-- 이전 코드
+            result.netQuantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); // <-- 수정된 코드 (음수 방지)
+            // --- ⬆️ [수정됨] ⬆️ ---
 
             // 3. 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
             if (result.totalBuyQuantity.greaterThan(0)) {
@@ -113,18 +117,18 @@ export const Calculator = {
                 avgBuyPrice: new Decimal(0), profitLoss: new Decimal(0), profitLossRate: new Decimal(0),
             };
         }
-    },
+    }
 
     /**
      * @description 포트폴리오 상태를 계산하고 캐싱합니다.
      * @param {{ portfolioData: Stock[], exchangeRate: number, currentCurrency: 'KRW' | 'USD' }} options - 포트폴리오 데이터 및 환율/통화
      * @returns {PortfolioCalculationResult}
      */
-    calculatePortfolioState({ portfolioData, exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE, currentCurrency = 'KRW' }) {
+    static calculatePortfolioState({ portfolioData, exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE, currentCurrency = 'KRW' }) { // 'static' 키워드 추가
         const cacheKey = _generatePortfolioKey(portfolioData);
 
-        if (this.#cache && this.#cache.key === cacheKey) {
-            return this.#cache.result;
+        if (Calculator.#cache && Calculator.#cache.key === cacheKey) { // 'this.#cache'를 'Calculator.#cache'로 변경
+            return Calculator.#cache.result;
         }
 
         const exchangeRateDec = new Decimal(exchangeRate);
@@ -132,7 +136,8 @@ export const Calculator = {
 
         /** @type {CalculatedStock[]} */
         const calculatedPortfolioData = portfolioData.map(stock => {
-            const calculatedMetrics = this.calculateStockMetrics(stock);
+            // 'this.calculateStockMetrics'를 'Calculator.calculateStockMetrics'로 변경
+            const calculatedMetrics = Calculator.calculateStockMetrics(stock); 
             
             // 현재가치를 KRW와 USD로 변환
             if (currentCurrency === 'KRW') {
@@ -157,17 +162,17 @@ export const Calculator = {
         };
         
         // 캐시 업데이트
-        this.#cache = { key: cacheKey, result: result };
+        Calculator.#cache = { key: cacheKey, result: result }; // 'this.#cache'를 'Calculator.#cache'로 변경
 
         return result;
-    },
+    }
 
     /**
      * @description '추가 매수' 모드의 리밸런싱을 계산합니다.
      * @param {{ portfolioData: CalculatedStock[], additionalInvestment: Decimal }} options - 계산된 데이터, 추가 투자금 (현재 통화 기준)
      * @returns {{ results: (CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[] }}
      */
-    calculateAddRebalancing({ portfolioData, additionalInvestment }) {
+    static calculateAddRebalancing({ portfolioData, additionalInvestment }) { // 'static' 키워드 추가
         const totalInvestment = portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0)).plus(additionalInvestment);
         const results = [];
 
@@ -268,14 +273,14 @@ export const Calculator = {
         });
 
         return { results: finalResults };
-    },
+    }
 
     /**
      * @description '매도 리밸런싱' 모드의 조정을 계산합니다. (현금 유입/유출은 없음)
      * @param {{ portfolioData: CalculatedStock[] }} options - 계산된 데이터
      * @returns {{ results: (CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[] }}
      */
-    calculateSellRebalancing({ portfolioData }) {
+    static calculateSellRebalancing({ portfolioData }) { // 'static' 키워드 추가
         const currentTotal = portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0));
         const totalRatio = portfolioData.reduce((sum, s) => sum + (s.targetRatio || 0), 0);
         const results = [];
@@ -315,14 +320,14 @@ export const Calculator = {
         }
 
         return { results };
-    },
+    }
 
     /**
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
      * @param {CalculatedStock[]} portfolioData - 계산된 주식 데이터
      * @returns {{ sector: string, amount: Decimal, percentage: Decimal }[]} 섹터 분석 결과
      */
-    calculateSectorAnalysis(portfolioData) {
+    static calculateSectorAnalysis(portfolioData) { // 'static' 키워드 추가
         /** @type {Map<string, Decimal>} */
         const sectorMap = new Map();
         let currentTotal = new Decimal(0);
@@ -347,12 +352,12 @@ export const Calculator = {
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
         return result;
-    },
+    }
 
     /**
      * @description 포트폴리오 계산 캐시를 초기화합니다.
      */
-    clearPortfolioStateCache() {
-        this.#cache = null;
+    static clearPortfolioStateCache() { // 'static' 키워드 추가
+        Calculator.#cache = null; // 'this.#cache'를 'Calculator.#cache'로 변경
     }
 };

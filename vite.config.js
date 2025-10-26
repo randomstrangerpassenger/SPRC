@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom',
       include: ['js/**/*.test.js'],
+      // --- ⬇️ [추가된 부분] ⬇️ ---
+      esbuild: {
+        target: 'esnext', // 테스트 환경에서도 esnext 문법(예: #)을 사용하도록 설정
+      },
+      // --- ⬆️ [추가된 부분] ⬆️ ---
       // pool, threads, deps.optimizer 등 제거
     },
 
