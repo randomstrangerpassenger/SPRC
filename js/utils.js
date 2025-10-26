@@ -48,7 +48,6 @@ export function formatCurrency(amount, currency = 'krw') {
         if (amount === null || amount === undefined) {
             num = 0;
         } else if (typeof amount === 'object' && 'toNumber' in amount) { // Check if it's Decimal-like
-            // @ts-ignore
             num = amount.toNumber(); // This is synchronous
         } else {
             num = Number(amount);
@@ -85,8 +84,6 @@ export function debounce(func, delay = 300, immediate = false) { // immediate �
     let timeoutId;
     return function(...args) {
         const context = this; // 'this' 컨텍스트 저장
-        const callNow = immediate && !timeoutId; // 즉시 실행 조건 확인
-        // @ts-ignore
         clearTimeout(timeoutId); // 기존 타이머 취소
         timeoutId = setTimeout(() => {
             timeoutId = null; // 타이머 완료 후 ID 초기화

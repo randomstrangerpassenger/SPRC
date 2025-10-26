@@ -79,7 +79,6 @@ export function t(key, replacements = {}) {
     // 'toast.dataReset' -> ['toast', 'dataReset']
     const keys = key.split('.');
     
-    // @ts-ignore
     let message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, messages);
 
     if (typeof message !== 'string') {

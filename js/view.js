@@ -871,7 +871,7 @@ export const PortfolioView = {
         // 기존 차트 인스턴스가 있으면 업데이트, 없으면 새로 생성
         if (this.chartInstance) {
             this.chartInstance.data = chartData;
-            // @ts-ignore - Chart.js 타입 정의가 복잡하여 options 할당 에러 무시
+            // Chart.js options assignment (library handles type internally)
             this.chartInstance.options = chartOptions;
             this.chartInstance.update();
         } else {

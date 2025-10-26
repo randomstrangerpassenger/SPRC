@@ -64,12 +64,14 @@ export class PortfolioController {
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {
-            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id); // initializePortfolioSelector -> renderPortfolioSelector
-            this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency); // setCurrencyMode -> updateCurrencyModeUI
-            this.view.updateMainModeUI(activePortfolio.settings.mainMode); // setMainMode -> updateMainModeUI
-            // @ts-ignore
-            this.view.dom.exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString(); // updateExchangeRate -> 직접 값 설정
-            // updateAdditionalAmount 호출 제거 (getInvestmentAmountInKRW에서 처리)
+            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
+            this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+
+            const { exchangeRateInput } = this.view.dom;
+            if (exchangeRateInput instanceof HTMLInputElement) {
+                exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+            }
 
             this.fullRender();
         }
@@ -233,19 +235,20 @@ export class PortfolioController {
      * @description 포트폴리오 전환을 처리합니다.
      */
     handleSwitchPortfolio() {
-        const selector = this.view.dom.portfolioSelector; // getDOMElement -> dom
-        // @ts-ignore
+        const selector = this.view.dom.portfolioSelector;
         const newId = selector?.value;
         if (newId) {
             this.state.setActivePortfolioId(newId);
             const activePortfolio = this.state.getActivePortfolio();
             if (activePortfolio) {
                 // UI 설정값 업데이트
-                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency); // setCurrencyMode -> updateCurrencyModeUI
-                this.view.updateMainModeUI(activePortfolio.settings.mainMode); // setMainMode -> updateMainModeUI
-                // @ts-ignore
-                this.view.dom.exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString(); // updateExchangeRate -> 직접 값 설정
-                // updateAdditionalAmount 호출 제거
+                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+
+                const { exchangeRateInput } = this.view.dom;
+                if (exchangeRateInput instanceof HTMLInputElement) {
+                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
             }
             this.fullRender();
         }
@@ -297,8 +300,11 @@ export class PortfolioController {
                 this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                // @ts-ignore
-                this.view.dom.exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+
+                const { exchangeRateInput } = this.view.dom;
+                if (exchangeRateInput instanceof HTMLInputElement) {
+                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
              }
             this.fullRender();
             // --- ⬆️ [수정됨] ⬆️ ---
@@ -452,9 +458,7 @@ export class PortfolioController {
 
         const additionalInvestment = this.getInvestmentAmountInKRW(
              activePortfolio.settings.currentCurrency,
-             // @ts-ignore
              additionalAmountInput, // dom 객체에서 직접 전달
-             // @ts-ignore
              exchangeRateInput     // dom 객체에서 직접 전달
         );
 
@@ -680,7 +684,6 @@ export class PortfolioController {
 
 
         // 1. 환율 업데이트 및 검증
-        // @ts-ignore
         const exchangeRate = Number(exchangeRateInput.value) || CONFIG.DEFAULT_EXCHANGE_RATE;
         const isValidRate = exchangeRate > 0;
 
@@ -688,7 +691,6 @@ export class PortfolioController {
             this.state.updatePortfolioSettings('exchangeRate', exchangeRate);
         } else {
              this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
-             // @ts-ignore
              exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString(); // 입력 필드 값도 되돌림
              this.view.showToast('유효하지 않은 환율입니다. 기본값으로 복원됩니다.', "error"); // i18n 키 대신 직접 메시지
              // 변환 로직 중단 없이 기본 환율로 계속 진행
@@ -702,12 +704,10 @@ export class PortfolioController {
 
         try {
             if (source === 'krw') {
-                // @ts-ignore
                 krwAmountDec = new Decimal(additionalAmountInput.value || 0);
                  if (krwAmountDec.isNegative()) throw new Error('Negative KRW input');
                 usdAmountDec = krwAmountDec.div(currentExchangeRate);
             } else { // source === 'usd'
-                // @ts-ignore
                 usdAmountDec = new Decimal(additionalAmountUSDInput.value || 0);
                 if (usdAmountDec.isNegative()) throw new Error('Negative USD input');
                 krwAmountDec = usdAmountDec.times(currentExchangeRate);
@@ -716,7 +716,6 @@ export class PortfolioController {
              console.error("Error during currency conversion:", e);
              this.view.showToast("금액 입력 오류.", "error");
              // 오류 발생 시 입력값 초기화 또는 다른 처리 가능
-             // @ts-ignore
              if (source === 'krw') additionalAmountUSDInput.value = ''; else additionalAmountInput.value = '';
              return; // 추가 처리 중단
         }
@@ -727,10 +726,8 @@ export class PortfolioController {
 
         // 상호 보완적인 입력 필드만 업데이트 (소수점 2자리 반올림)
         if (source === 'krw') {
-             // @ts-ignore
              additionalAmountUSDInput.value = usdAmountDec.toFixed(2);
         } else {
-            // @ts-ignore
             additionalAmountInput.value = krwAmountDec.toFixed(0); // 원화는 소수점 없음
         }
 
@@ -859,7 +856,6 @@ export class PortfolioController {
      */
     handleImportData() {
         const fileInput = this.view.dom.importFileInput; // getDOMElement -> dom
-        // @ts-ignore
         fileInput?.click();
     }
 
@@ -949,7 +945,6 @@ export class PortfolioController {
         if (!usdInput) return new Decimal(0); // USD 입력 필드 없으면 0 반환
 
         const amountKRW = new Decimal(krwInput.value || 0);
-        // @ts-ignore
         const amountUSD = new Decimal(usdInput.value || 0);
         const exchangeRate = new Decimal(exchangeRateInput.value || CONFIG.DEFAULT_EXCHANGE_RATE);
         // --- ⬆️ [수정됨] ⬆️ ---

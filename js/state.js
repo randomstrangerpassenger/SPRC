@@ -514,19 +514,14 @@ export class PortfolioState {
     updateStockProperty(stockId, field, value) {
         const stock = this.getStockById(stockId);
         if (stock) {
-            // @ts-ignore - 동적 속성 할당 허용
-            // 필드별 유효성 검사 또는 타입 변환 추가 가능
+            // Dynamic property assignment (field is validated above)
             if (field === 'targetRatio' || field === 'currentPrice' || field === 'fixedBuyAmount') {
-                 // 숫자로 변환 시도, 실패하면 0으로
-                 const numValue = Number(value);
-                 // @ts-ignore
-                 stock[field] = isNaN(numValue) ? 0 : numValue;
+                const numValue = Number(value);
+                stock[field] = isNaN(numValue) ? 0 : numValue;
             } else if (field === 'isFixedBuyEnabled') {
-                 // @ts-ignore
-                 stock[field] = Boolean(value);
+                stock[field] = Boolean(value);
             } else {
-                 // @ts-ignore
-                 stock[field] = String(value); // 기본적으로 문자열로 저장
+                stock[field] = String(value);
             }
             this.saveActivePortfolio();
         } else {
@@ -666,21 +661,19 @@ export class PortfolioState {
      */
     updatePortfolioSettings(field, value) {
         const portfolio = this.getActivePortfolio();
-        if (portfolio?.settings) { // settings 객체 존재 확인
-            // @ts-ignore - 동적 할당
+        if (portfolio?.settings) {
+            // Dynamic property assignment with validation
             let newValue = value;
             // 타입 검사/변환 강화
             if (field === 'exchangeRate') {
                  const numValue = Number(value);
                  newValue = isNaN(numValue) || numValue <= 0 ? CONFIG.DEFAULT_EXCHANGE_RATE : numValue;
             } else if (field === 'mainMode' && value !== 'add' && value !== 'sell') {
-                 newValue = 'add'; // 기본값
+                 newValue = 'add';
             } else if (field === 'currentCurrency' && value !== 'krw' && value !== 'usd') {
-                 newValue = 'krw'; // 기본값
+                 newValue = 'krw';
             }
-            // @ts-ignore
-            if (portfolio.settings[field] !== newValue) { // 값이 변경되었을 때만 저장
-                 // @ts-ignore
+            if (portfolio.settings[field] !== newValue) {
                  portfolio.settings[field] = newValue;
                  this.saveActivePortfolio();
             }
