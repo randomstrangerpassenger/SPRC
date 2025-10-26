@@ -24,9 +24,9 @@
                     <select id="portfolioSelector" class="input-group__select"></select>
                 </div>
                 <div class="btn-controls">
-                    <button id="newPortfolioBtn" class="btn btn--green">➕ 새로 만들기</button>
-                    <button id="renamePortfolioBtn" class="btn btn--blue">✏️ 이름 변경</button>
-                    <button id="deletePortfolioBtn" class="btn btn--orange">🗑️ 삭제</button>
+                    <button id="newPortfolioBtn" class="btn" data-variant="green">➕ 새로 만들기</button>
+                    <button id="renamePortfolioBtn" class="btn" data-variant="blue">✏️ 이름 변경</button>
+                    <button id="deletePortfolioBtn" class="btn" data-variant="orange">🗑️ 삭제</button>
                 </div>
             </section>
 
@@ -41,12 +41,14 @@
             <section class="card">
                 <h2>💼 현재 포트폴리오 설정</h2>
                 <div class="btn-controls">
-                    <button id="addNewStockBtn" class="btn btn--green">➕ 새 종목 추가</button>
-                    <button id="resetDataBtn" class="btn btn--orange">🔄 초기화</button>
-                    <button id="normalizeRatiosBtn" class="btn btn--blue">⚖️ 비율 자동 맞춤(100%)</button>
+                    <button id="addNewStockBtn" class="btn" data-variant="green">➕ 새 종목 추가</button>
+                    <button id="fetchAllPricesBtn" class="btn" data-variant="blue" style="width: 100%;">📈 현재가 모두 불러오기</button>
+                    
+                    <button id="resetDataBtn" class="btn" data-variant="orange">🔄 초기화</button>
+                    <button id="normalizeRatiosBtn" class="btn" data-variant="blue">⚖️ 비율 자동 맞춤(100%)</button>
                     
                     <div class="dropdown">
-                        <button id="dataManagementBtn" class="btn btn--grey">💾 데이터 관리</button>
+                        <button id="dataManagementBtn" class="btn" data-variant="grey">💾 데이터 관리</button>
                         <div id="dataDropdownContent" class="dropdown-content">
                             <a href="#" id="exportDataBtn">📤 내보내기 (JSON)</a>
                             <a href="#" id="importDataBtn">📥 가져오기 (JSON)</a>
@@ -141,7 +143,7 @@
                         <input type="number" id="txPrice" placeholder="예: 150000" min="0" step="any" required>
                     </div>
                 </div>
-                <button type="submit" class="btn btn--blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
+                <button type="submit" class="btn" data-variant="blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
             </form>
         </div>
     </div>
@@ -152,8 +154,8 @@
             <p id="customModalMessage"></p>
             <input type="text" id="customModalInput" class="hidden" style="width: 100%; margin: 15px 0;">
             <div class="btn-controls" style="justify-content: flex-end; margin-top: 20px;">
-                <button id="customModalCancel" class="btn btn--grey">취소</button>
-                <button id="customModalConfirm" class="btn btn--blue">확인</button>
+                <button id="customModalCancel" class="btn" data-variant="grey">취소</button>
+                <button id="customModalConfirm" class="btn" data-variant="blue">확인</button>
             </div>
         </div>
     </div>

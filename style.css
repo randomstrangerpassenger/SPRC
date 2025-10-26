@@ -111,11 +111,19 @@ body.dark-mode input:disabled { background-color: #2a2a2a; }
 }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
 .btn-controls { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; margin-bottom: 15px; }
-.btn--green { background: var(--green-grad); }
-.btn--orange { background: var(--orange-grad); }
-.btn--blue { background: var(--blue-grad); }
-.btn--grey { background: var(--grey-grad); }
-.btn--delete { background: var(--red-grad); padding: 6px 12px; font-size: 0.9rem; }
+
+/* ⬇️ [수정] data-variant 속성 선택자 사용 */
+.btn[data-variant="green"] { background: var(--green-grad); }
+.btn[data-variant="orange"] { background: var(--orange-grad); }
+.btn[data-variant="blue"] { background: var(--blue-grad); }
+.btn[data-variant="grey"] { background: var(--grey-grad); }
+.btn[data-variant="delete"] { 
+    background: var(--red-grad); 
+    padding: 6px 12px; 
+    font-size: 0.9rem; 
+}
+/* ⬆️ [수정] */
+
 .btn--small { padding: 8px 16px; font-size: 0.9rem; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -207,6 +215,27 @@ body.dark-mode .guide-box--sell { background-color: #4a1f1f; }
     position: fixed; bottom: var(--spacing-lg); right: var(--spacing-lg); z-index: 1000; width: 60px; height: 60px; border-radius: 50%;
     font-size: 1.8rem; box-shadow: 0 5px 20px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; padding: 0;
 }
+
+/* --- [추가] 스크린 리더 전용 클래스 --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- [추가] 키보드 네비게이션 시 포커스 스타일 --- */
+body.keyboard-nav *:focus {
+    outline: 3px solid var(--accent-color); /* 포커스 시 강조 아웃라인 */
+    outline-offset: 2px; /* 아웃라인과 요소 사이 간격 */
+}
+/* 기본 input 포커스 스타일은 유지 */
+
 
 /* --- Toast 알림 --- */
 .toast {

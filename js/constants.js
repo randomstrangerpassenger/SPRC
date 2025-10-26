@@ -1,61 +1,9 @@
-export const MESSAGES = {
-    // Toast Messages
-    DATA_RESET: "데이터가 초기화되었습니다.",
-    RATIOS_NORMALIZED: "목표 비율이 100%에 맞춰 조정되었습니다.",
-    NO_RATIOS_TO_NORMALIZE: "자동 조정을 위한 목표 비율이 없습니다.",
-    SAVE_SUCCESS: "포트폴리오가 저장되었습니다.",
-    SAVE_NO_DATA: "저장할 데이터가 없습니다.",
-    LOAD_SUCCESS: "저장된 데이터를 불러왔습니다.",
-    IMPORT_SUCCESS: "데이터를 성공적으로 불러왔습니다.",
-    IMPORT_ERROR: "파일을 불러오는 중 오류가 발생했습니다.",
-    PORTFOLIO_CREATED: (name) => `포트폴리오 '${name}'이(가) 생성되었습니다.`,
-    PORTFOLIO_RENAMED: "포트폴리오 이름이 변경되었습니다.",
-    PORTFOLIO_DELETED: "포트폴리오가 삭제되었습니다.",
-    LAST_PORTFOLIO_DELETE_ERROR: "마지막 포트폴리오는 삭제할 수 없습니다.",
-    TRANSACTION_ADDED: "거래 내역이 추가되었습니다.",
-    TRANSACTION_DELETED: "거래 내역이 삭제되었습니다.",
-    
-    // Custom Modal Messages
-    CONFIRM_RESET_TITLE: "데이터 초기화",
-    CONFIRM_RESET_MSG: "현재 포트폴리오를 초기 템플릿으로 되돌리시겠습니까? 이 작업은 되돌릴 수 없습니다.",
-    CONFIRM_DELETE_PORTFOLIO_TITLE: "포트폴리오 삭제",
-    CONFIRM_DELETE_PORTFOLIO_MSG: (name) => `정말로 '${name}' 포트폴리오를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-    CONFIRM_DELETE_TRANSACTION_TITLE: "거래 내역 삭제",
-    CONFIRM_DELETE_TRANSACTION_MSG: "이 거래 내역을 정말로 삭제하시겠습니까?",
-    CONFIRM_RATIO_SUM_WARN_TITLE: "목표 비율 확인",
-    CONFIRM_RATIO_SUM_WARN_MSG: (totalRatio) => `목표비율 합이 ${totalRatio.toFixed(1)}%입니다. 100%가 아니어도 계산을 진행하시겠습니까?`,
-
-    // Prompts
-    PROMPT_NEW_PORTFOLIO_NAME_TITLE: "새 포트폴리오 생성",
-    PROMPT_NEW_PORTFOLIO_NAME_MSG: "새 포트폴리오의 이름을 입력하세요:",
-    PROMPT_RENAME_PORTFOLIO_TITLE: "이름 변경",
-    PROMPT_RENAME_PORTFOLIO_MSG: "새로운 포트폴리오 이름을 입력하세요:",
-
-    // Validation & Error Messages
-    CALCULATION_ERROR: "계산 중 오류가 발생했습니다. 입력값을 확인해주세요.",
-    VALIDATION_ERROR_PREFIX: "입력값을 확인해주세요: ",
-    SAVE_ERROR_GENERAL: "저장 중 오류가 발생했습니다.",
-    SAVE_ERROR_QUOTA: "저장 공간이 부족합니다. 불필요한 포트폴리오를 삭제해 주세요.",
-    CALC_ERROR_DECIMAL: "입력값이 너무 크거나 잘못된 형식입니다.",
-    CALC_ERROR_TYPE: "데이터 형식 오류가 발생했습니다.",
-    INVALID_FILE_STRUCTURE: "파일의 구조가 올바르지 않거나 손상되었습니다.",
-    INVESTMENT_AMOUNT_ZERO: "- 추가 투자 금액을 0보다 크게 입력해주세요.",
-    CURRENT_AMOUNT_ZERO: "- 현재 금액이 0보다 커야 리밸런싱을 계산할 수 있습니다.",
-    RATIO_SUM_NOT_100: (totalRatio) => `- 목표 비율의 합이 100%가 되어야 합니다. (현재: ${totalRatio.toFixed(1)}%)`,
-    INVALID_TRANSACTION_DATA: "- 거래 날짜, 수량, 단가를 올바르게 입력해주세요.",
-    FIXED_BUY_AMOUNT_TOO_SMALL: (name) => `- '${name}'의 고정 매수 금액이 현재가보다 작아 1주도 매수할 수 없습니다.`,
-    
-    // ARIA Labels
-    TICKER_INPUT: (name) => `${name} 티커 입력`,
-    SECTOR_INPUT: (name) => `${name} 섹터 입력`,
-    TARGET_RATIO_INPUT: (name) => `${name} 목표 비율 입력`,
-    CURRENT_PRICE_INPUT: (name) => `${name} 현재가 입력`,
-};
-
+// 설정값들을 정의하는 상수 객체
 export const CONFIG = {
-    MIN_BUYABLE_AMOUNT: 1000,
-    DEFAULT_EXCHANGE_RATE: 1300,
-    RATIO_TOLERANCE: 0.01,
-    LOCAL_STORAGE_KEY: 'portfolioCalculatorData_v5',
-    DARK_MODE_KEY: 'darkMode'
+    MIN_BUYABLE_AMOUNT: 1000, // 매수 추천 최소 금액 (이 금액 미만은 추천 목록에서 제외될 수 있음)
+    DEFAULT_EXCHANGE_RATE: 1300, // 기본 환율 값
+    RATIO_TOLERANCE: 0.01, // 목표 비율 합계가 100%에서 벗어나도 허용하는 오차 범위 (%)
+    META_KEY: 'portfolioCalculatorMeta_v1', // localStorage에 설정(활성 ID 등) 저장 시 사용할 키
+    DATA_PREFIX: 'portfolioCalculatorData_v1_', // localStorage에 개별 포트폴리오 데이터 저장 시 사용할 접두사
+    DARK_MODE_KEY: 'darkMode' // localStorage에 다크 모드 설정 저장 시 사용할 키
 };

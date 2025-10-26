@@ -1,12 +1,39 @@
-// vite.config.js
+// vite.config.js (Vitest 4.x용 단순화 버전)
 
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig({
-  base: './',
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    include: ['js/**/*.test.js'],
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+
+  return {
+    base: './',
+
+    esbuild: {
+      target: 'esnext', // # 문법 지원은 유지
+    },
+
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      include: ['js/**/*.test.js'],
+      // pool, threads, deps.optimizer 등 제거
+    },
+
+    server: {
+      proxy: {
+        '/finnhub': {
+          target: 'https://finnhub.io/api/v1',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/finnhub/, ''),
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              const url = new URL(proxyReq.path, options.target);
+              url.searchParams.set('token', env.VITE_FINNHUB_API_KEY);
+              proxyReq.path = url.pathname + url.search;
+            });
+          }
+        }
+      }
+    }
+  }
 });
