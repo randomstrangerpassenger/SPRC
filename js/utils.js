@@ -39,10 +39,10 @@ export function getRatioSum(portfolioData) {
 /**
  * @description 숫자를 통화 형식의 문자열로 변환합니다. (null, undefined, Decimal 객체 안전 처리)
  * @param {number|Decimal|string|null|undefined} amount - 변환할 금액
- * @param {string} currency - 통화 코드 ('KRW', 'USD')
+ * @param {string} currency - 통화 코드 ('krw', 'usd')
  * @returns {string} 포맷팅된 통화 문자열
  */
-export function formatCurrency(amount, currency = 'KRW') {
+export function formatCurrency(amount, currency = 'krw') {
     try {
         let num;
         if (amount === null || amount === undefined) {
@@ -57,17 +57,17 @@ export function formatCurrency(amount, currency = 'KRW') {
 
         const options = {
             style: 'currency',
-            currency: currency,
+            currency: currency.toUpperCase(), // Intl.NumberFormat requires uppercase
         };
 
-        if (currency.toUpperCase() === 'KRW') {
+        if (currency.toLowerCase() === 'krw') {
             options.minimumFractionDigits = 0;
             options.maximumFractionDigits = 0;
-        } else { // USD and others
+        } else { // usd and others
             options.minimumFractionDigits = 2;
             options.maximumFractionDigits = 2;
         }
-        return new Intl.NumberFormat(currency.toUpperCase() === 'USD' ? 'en-US' : 'ko-KR', options).format(num);
+        return new Intl.NumberFormat(currency.toLowerCase() === 'usd' ? 'en-US' : 'ko-KR', options).format(num);
     } catch (e) {
         console.error("formatCurrency error:", e);
         return String(amount); // 에러 발생 시 원본 값 문자열로 반환
