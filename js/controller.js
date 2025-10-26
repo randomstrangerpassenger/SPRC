@@ -309,11 +309,11 @@ export class PortfolioController {
     /**
      * @description 목표 비율 정규화를 처리합니다.
      */
-    async handleNormalizeRatios() { // async 추가 (state.normalizeRatios)
+    handleNormalizeRatios() {
         try {
-            const success = await this.state.normalizeRatios(); // await 추가
+            const success = this.state.normalizeRatios();
             if (!success) {
-                this.view.showToast(t('toast.noRatiosToNormalize'), "info"); // error -> info
+                this.view.showToast(t('toast.noRatiosToNormalize'), "info");
                 return;
             }
 
@@ -744,16 +744,14 @@ export class PortfolioController {
      * @description 새 거래 추가 폼 제출을 처리합니다.
      * @param {Event} e - Form Submit Event
      */
-    async handleAddNewTransaction(e) { // async 추가 (addTransaction)
+    handleAddNewTransaction(e) {
         e.preventDefault();
         const form = /** @type {HTMLFormElement} */ (e.target);
-        // --- ⬇️ [수정됨] 모달에서 stockId 가져오기 ⬇️ ---
         const modal = form.closest('#transactionModal');
         const stockId = modal?.dataset.stockId;
-        // --- ⬆️ [수정됨] ⬆️ ---
         if (!stockId) return;
 
-        // FormData 대신 직접 DOM 요소에서 값 가져오기 (더 명확함)
+        // FormData 대신 직접 DOM 요소에서 값 가져오기
         const typeInput = form.querySelector('input[name="txType"]:checked');
         const dateInput = /** @type {HTMLInputElement} */ (form.querySelector('#txDate'));
         const quantityInput = /** @type {HTMLInputElement} */ (form.querySelector('#txQuantity'));
@@ -763,18 +761,18 @@ export class PortfolioController {
 
         const type = typeInput.value === 'sell' ? 'sell' : 'buy';
         const date = dateInput.value;
-        const quantity = Number(quantityInput.value); // Number로 변환
-        const price = Number(priceInput.value);       // Number로 변환
+        const quantity = Number(quantityInput.value);
+        const price = Number(priceInput.value);
 
         const txData = { type, date, quantity, price };
         const validationResult = Validator.validateTransaction(txData);
 
         if (!validationResult.isValid) {
-            this.view.showToast(validationResult.message || '거래 정보가 유효하지 않습니다.', "error"); // i18n 키 대신 직접 메시지
+            this.view.showToast(validationResult.message || '거래 정보가 유효하지 않습니다.', "error");
             return;
         }
 
-        const success = await this.state.addTransaction(stockId, { type, date, quantity, price }); // await 추가
+        const success = this.state.addTransaction(stockId, { type, date, quantity, price });
 
         if (success) {
             const currency = this.state.getActivePortfolio()?.settings.currentCurrency;

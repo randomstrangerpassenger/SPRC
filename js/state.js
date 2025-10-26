@@ -1,10 +1,11 @@
 // @ts-check
 import { CONFIG } from './constants.js';
-// import { getRatioSum } from './utils.js'; // utils.js 제거
 import { ErrorService } from './errorService.js';
 import { Validator } from './validator.js';
-import { createDecimal, getDecimal } from './decimalLoader.js';
-import Decimal from 'decimal.js'; // 직접 임포트 유지
+import Decimal from 'decimal.js';
+
+// Decimal.js 설정 (앱 시작 시 한 번만 실행)
+Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
 /** @typedef {import('./types.js').Stock} Stock */
 // ... (다른 타입 정의 동일) ...
@@ -57,13 +58,8 @@ export class PortfolioState {
     // --- ⬆️ [추가됨] ⬆️ ---
 
 
-    // --- [수정됨] loadInitialState를 async로 변경하고 Promise.all 사용 ---
     async loadInitialState() {
         try {
-            // Decimal 라이브러리 로드를 먼저 기다림 (필수!)
-            await getDecimal();
-            console.log("Decimal library loaded for state initialization."); // 로드 확인 로그
-
             const metaJson = localStorage.getItem(CONFIG.META_KEY);
             if (metaJson) {
                 const meta = JSON.parse(metaJson);
@@ -76,33 +72,20 @@ export class PortfolioState {
             console.log(`Found ${portfolioIds.length} portfolio IDs in localStorage.`); // 로그 추가
 
             if (portfolioIds.length > 0) {
-                // Promise.all을 사용하여 모든 역직렬화를 병렬로 실행하고 기다림
-                const portfolioPromises = portfolioIds.map(async (id) => {
+                // 동기적으로 모든 포트폴리오를 역직렬화
+                portfolioIds.forEach((id) => {
                     const dataJson = localStorage.getItem(CONFIG.DATA_PREFIX + id);
                     if (dataJson) {
                         try {
                             const loadedData = JSON.parse(dataJson);
-                            // _deserializePortfolioData는 이제 async 함수
-                            const deserializedPortfolio = await this._deserializePortfolioData(loadedData);
-                            console.log(`Successfully deserialized portfolio: ${id}`); // 로그 추가
-                            return { id, portfolio: deserializedPortfolio };
+                            const deserializedPortfolio = this._deserializePortfolioData(loadedData);
+                            console.log(`Successfully deserialized portfolio: ${id}`);
+                            loadedPortfolios[id] = deserializedPortfolio;
                         } catch (parseError) {
                             console.warn(`[State] Invalid JSON or deserialization error for portfolio ID: ${id}. Skipping.`, parseError);
-                            return null; // 실패 시 null 반환
                         }
-                    }
-                     console.log(`No data found for portfolio ID: ${id}`); // 로그 추가
-                    return null; // 데이터 없을 시 null 반환
-                });
-
-                // 모든 Promise가 완료될 때까지 기다림
-                const results = await Promise.all(portfolioPromises);
-                console.log("Deserialization promises completed."); // 로그 추가
-
-                // 성공적으로 로드된 포트폴리오만 객체에 추가
-                results.forEach(result => {
-                    if (result) {
-                        loadedPortfolios[result.id] = result.portfolio;
+                    } else {
+                        console.log(`No data found for portfolio ID: ${id}`);
                     }
                 });
             }
@@ -219,64 +202,52 @@ export class PortfolioState {
 
 
     /**
-     * @description 로드 후 데이터를 일반 숫자에서 Decimal 객체로 변환합니다. (비동기)
+     * @description 로드 후 데이터를 일반 숫자에서 Decimal 객체로 변환합니다.
      * @param {any} loadedData - 로드된 데이터 (숫자 형태)
-     * @returns {Promise<Portfolio>}
+     * @returns {Portfolio}
      */
-    async _deserializePortfolioData(loadedData) {
-        // --- ⬇️ [추가됨] Decimal 로드 확인 ⬇️ ---
-        // 이 함수가 호출되기 전에 Decimal 라이브러리가 로드되었는지 확인
-        const DecimalConstructor = await getDecimal(); // 로드를 기다리거나 캐시된 생성자 가져옴
-        if (!DecimalConstructor) {
-             throw new Error("Decimal library is not loaded, cannot deserialize data.");
-        }
-        // --- ⬆️ [추가됨] ⬆️ ---
-
+    _deserializePortfolioData(loadedData) {
         // loadedData.portfolioData가 없거나 배열이 아니면 빈 배열 사용
         const portfolioDataArray = Array.isArray(loadedData.portfolioData) ? loadedData.portfolioData : [];
 
-        const portfolioData = await Promise.all(
-            portfolioDataArray.map(async (stock) => {
-                // Ensure required fields are present with default values if necessary
-                const name = stock.name || 'Untitled Stock';
-                const ticker = stock.ticker || 'TICKER';
-                const sector = stock.sector || '미분류';
-                const currentPrice = Number(stock.currentPrice) || 0;
-                const targetRatio = Number(stock.targetRatio) || 0;
-                const fixedBuyAmount = Number(stock.fixedBuyAmount) || 0;
+        const portfolioData = portfolioDataArray.map((stock) => {
+            // Ensure required fields are present with default values if necessary
+            const name = stock.name || 'Untitled Stock';
+            const ticker = stock.ticker || 'TICKER';
+            const sector = stock.sector || '미분류';
+            const currentPrice = Number(stock.currentPrice) || 0;
+            const targetRatio = Number(stock.targetRatio) || 0;
+            const fixedBuyAmount = Number(stock.fixedBuyAmount) || 0;
 
-                // stock.transactions가 없거나 배열이 아니면 빈 배열 사용
-                const transactionsArray = Array.isArray(stock.transactions) ? stock.transactions : [];
+            // stock.transactions가 없거나 배열이 아니면 빈 배열 사용
+            const transactionsArray = Array.isArray(stock.transactions) ? stock.transactions : [];
 
-                const transactions = await Promise.all(
-                    transactionsArray.map(async (tx) => {
-                        // 기본값 강화 및 타입 확인
-                        const quantityValue = tx.quantity ?? 0;
-                        const priceValue = tx.price ?? 0;
-                        return {
-                            id: tx.id || `tx-fallback-${Date.now()}-${Math.random()}`, // ID 없으면 생성
-                            type: (tx.type === 'buy' || tx.type === 'sell') ? tx.type : 'buy', // 기본값 buy
-                            date: typeof tx.date === 'string' ? tx.date : new Date().toISOString().split('T')[0], // 기본값 오늘 날짜
-                            quantity: await createDecimal(quantityValue), // createDecimal은 0 처리함
-                            price: await createDecimal(priceValue),       // createDecimal은 0 처리함
-                        };
-                    })
-                );
-
+            const transactions = transactionsArray.map((tx) => {
+                // 기본값 강화 및 타입 확인
+                const quantityValue = tx.quantity ?? 0;
+                const priceValue = tx.price ?? 0;
                 return {
-                    id: stock.id || `s-fallback-${Date.now()}-${Math.random()}`, // ID 없으면 생성
-                    name: name,
-                    ticker: ticker,
-                    sector: sector,
-                    currentPrice: currentPrice,
-                    targetRatio: targetRatio,
-                    isFixedBuyEnabled: stock.isFixedBuyEnabled || false,
-                    fixedBuyAmount: fixedBuyAmount,
-                    transactions: transactions,
-                    _sortedTransactions: this._sortTransactions(transactions) // 정렬 캐시 생성
+                    id: tx.id || `tx-fallback-${Date.now()}-${Math.random()}`,
+                    type: (tx.type === 'buy' || tx.type === 'sell') ? tx.type : 'buy',
+                    date: typeof tx.date === 'string' ? tx.date : new Date().toISOString().split('T')[0],
+                    quantity: new Decimal(quantityValue),
+                    price: new Decimal(priceValue),
                 };
-            })
-        );
+            });
+
+            return {
+                id: stock.id || `s-fallback-${Date.now()}-${Math.random()}`,
+                name: name,
+                ticker: ticker,
+                sector: sector,
+                currentPrice: currentPrice,
+                targetRatio: targetRatio,
+                isFixedBuyEnabled: stock.isFixedBuyEnabled || false,
+                fixedBuyAmount: fixedBuyAmount,
+                transactions: transactions,
+                _sortedTransactions: this._sortTransactions(transactions)
+            };
+        });
 
         // 기본 설정값 보장
         const defaultSettings = {
@@ -582,22 +553,22 @@ export class PortfolioState {
      * @description 새 거래를 추가합니다.
      * @param {string} stockId - 주식 ID
      * @param {{type: 'buy'|'sell', date: string, quantity: number | Decimal, price: number | Decimal}} txData - 거래 데이터
-     * @returns {Promise<boolean>}
+     * @returns {boolean}
      */
-    async addTransaction(stockId, txData) {
+    addTransaction(stockId, txData) {
         const stock = this.getStockById(stockId);
         if (stock) {
-             // transactions 배열이 없으면 초기화
+            // transactions 배열이 없으면 초기화
             if (!Array.isArray(stock.transactions)) {
                 stock.transactions = [];
             }
             /** @type {Stock['transactions'][number]} */
             const newTx = {
-                id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // 고유성 강화
+                id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
                 type: txData.type,
                 date: txData.date,
-                quantity: await createDecimal(txData.quantity), // createDecimal 사용
-                price: await createDecimal(txData.price),       // createDecimal 사용
+                quantity: new Decimal(txData.quantity),
+                price: new Decimal(txData.price),
             };
             stock.transactions.push(newTx);
             stock._sortedTransactions = this._sortTransactions(stock.transactions);
@@ -651,32 +622,30 @@ export class PortfolioState {
     // --- ⬆️ [수정됨] ⬆️ ---
 
     /**
-     * @description 목표 비율의 합계를 100%로 정규화합니다. (비동기 유지 - createDecimal 사용)
-     * @returns {Promise<boolean>} 정규화 성공 여부 Promise
+     * @description 목표 비율의 합계를 100%로 정규화합니다.
+     * @returns {boolean} 정규화 성공 여부
      */
-    async normalizeRatios() {
+    normalizeRatios() {
         const portfolio = this.getActivePortfolio();
         if (!portfolio || !Array.isArray(portfolio.portfolioData) || portfolio.portfolioData.length === 0) return false;
 
         const portfolioData = portfolio.portfolioData;
-        const currentSum = this.getRatioSum(); // 동기 함수 호출
+        const currentSum = this.getRatioSum();
 
-        if (currentSum.isZero() || currentSum.isNaN()) { // NaN 체크 추가
-             console.warn("Cannot normalize ratios with zero or NaN sum.");
-             return false;
+        if (currentSum.isZero() || currentSum.isNaN()) {
+            console.warn("Cannot normalize ratios with zero or NaN sum.");
+            return false;
         }
 
-        const hundred = await createDecimal(100); // 비동기
+        const hundred = new Decimal(100);
         const multiplier = hundred.div(currentSum);
 
-        let needsSave = false; // 변경 사항 확인 플래그
+        let needsSave = false;
         for (const stock of portfolioData) {
             const currentRatio = stock.targetRatio || 0;
-            // Decimal 생성 후 계산하고 다시 숫자로 변환
-            const ratioDec = await createDecimal(currentRatio); // 비동기
-            const newRatioNum = ratioDec.times(multiplier).toDecimalPlaces(2).toNumber(); // 소수점 2자리 반올림
+            const ratioDec = new Decimal(currentRatio);
+            const newRatioNum = ratioDec.times(multiplier).toDecimalPlaces(2).toNumber();
 
-            // 값이 변경되었을 때만 업데이트하고 플래그 설정
             if (stock.targetRatio !== newRatioNum) {
                 stock.targetRatio = newRatioNum;
                 needsSave = true;
@@ -684,7 +653,7 @@ export class PortfolioState {
         }
 
         if (needsSave) {
-            this.saveActivePortfolio(); // 변경 사항이 있을 때만 저장
+            this.saveActivePortfolio();
         }
         return true;
     }
