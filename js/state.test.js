@@ -7,7 +7,7 @@ import Decimal from 'decimal.js';
 
 // --- ⬇️ 핵심 수정: debounce 모킹 (즉시 실행) ⬇️ ---
 // debounce 함수가 실제 함수를 즉시 호출하도록 모킹합니다.
-vi.mock('../utils.js', async (importOriginal) => {
+vi.mock('./utils.js', async (importOriginal) => {
     const actual = await importOriginal();
     return {
         ...actual,
