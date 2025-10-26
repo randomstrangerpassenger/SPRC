@@ -120,7 +120,7 @@ export function generateSellModeResultsHTML(results, currency) {
                 <td style="text-align: center;"><strong>${targetRatioVal}%</strong></td>
                 <td style="text-align: right;">
                     <div class="${adjustmentVal.isPositive() ? 'text-sell' : 'text-buy'}">
-                        ${adjustmentVal.isPositive() ? '🔴 매도' : '🔵 매수'}: ${formatCurrency(adjustmentVal.abs(), currency)}
+                        ${adjustmentVal.isPositive() ? t('ui.sellWithIcon') : t('ui.buyWithIcon')}: ${formatCurrency(adjustmentVal.abs(), currency)}
                     </div>
                 </td>
             </tr>`;

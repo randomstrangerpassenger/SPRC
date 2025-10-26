@@ -84,6 +84,7 @@ export function debounce(func, delay = 300, immediate = false) { // immediate �
     let timeoutId;
     return function(...args) {
         const context = this; // 'this' 컨텍스트 저장
+        const callNow = immediate && !timeoutId; // 즉시 실행 조건: immediate가 true이고 타이머가 없을 때
         clearTimeout(timeoutId); // 기존 타이머 취소
         timeoutId = setTimeout(() => {
             timeoutId = null; // 타이머 완료 후 ID 초기화

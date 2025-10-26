@@ -2,6 +2,7 @@
 import { CONFIG } from './constants.js';
 import { ErrorService } from './errorService.js';
 import { Validator } from './validator.js';
+import { t } from './i18n.js';
 import Decimal from 'decimal.js';
 
 // Decimal.js 설정 (앱 시작 시 한 번만 실행)
@@ -49,7 +50,7 @@ export class PortfolioState {
              console.error("Initialization failed:", error);
              // 초기화 실패 시 복구 로직 (예: 기본 포트폴리오 강제 생성)
              if (Object.keys(this.#data.portfolios).length === 0) {
-                 this.createNewPortfolio('기본 포트폴리오');
+                 this.createNewPortfolio(t('defaults.defaultPortfolioName'));
              }
              // 에러를 다시 던져서 호출 측에서 알 수 있게 할 수도 있음
              // throw error;
@@ -233,7 +234,7 @@ export class PortfolioState {
             // Ensure required fields are present with default values if necessary
             const name = stock.name || 'Untitled Stock';
             const ticker = stock.ticker || 'TICKER';
-            const sector = stock.sector || '미분류';
+            const sector = stock.sector || t('defaults.uncategorized');
             const currentPrice = Number(stock.currentPrice) || 0;
             const targetRatio = Number(stock.targetRatio) || 0;
             const fixedBuyAmount = Number(stock.fixedBuyAmount) || 0;
@@ -342,9 +343,9 @@ export class PortfolioState {
         /** @type {Stock} */
         const defaultStock = {
             id: `s-${Date.now() + 1}`,
-            name: '새 종목',
+            name: t('defaults.newStock'),
             ticker: 'TICKER',
-            sector: '미분류',
+            sector: t('defaults.uncategorized'),
             currentPrice: 0,
             targetRatio: 100, // 기본 100%
             isFixedBuyEnabled: false,
@@ -481,9 +482,9 @@ export class PortfolioState {
             /** @type {Stock} */
             const newStock = {
                 id: `s-${Date.now()}`,
-                name: '새 종목',
+                name: t('defaults.newStock'),
                 ticker: '',
-                sector: '미분류',
+                sector: t('defaults.uncategorized'),
                 currentPrice: 0,
                 targetRatio: 0,
                 isFixedBuyEnabled: false,

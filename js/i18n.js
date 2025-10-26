@@ -16,15 +16,31 @@ const messages = {
     portfolioRenamed: "포트폴리오 이름이 변경되었습니다.",
     portfolioDeleted: "포트폴리오가 삭제되었습니다.",
     lastPortfolioDeleteError: "마지막 포트폴리오는 삭제할 수 없습니다.",
+    lastStockDeleteError: "마지막 남은 주식은 삭제할 수 없습니다.",
     transactionAdded: "거래 내역이 추가되었습니다.",
     transactionDeleted: "거래 내역이 삭제되었습니다.",
-    chartError: "차트 시각화에 실패했습니다." // 5-1에서 추가했던 문자열
+    transactionAddFailed: "거래 추가 실패.",
+    transactionDeleteFailed: "거래 삭제 실패.",
+    chartError: "차트 시각화에 실패했습니다.",
+    normalizeRatiosError: "비율 정규화 중 오류 발생",
+    calculateSuccess: "계산 완료!",
+    noTickersToFetch: "가져올 티커가 없습니다.",
+    modeChanged: "모드가 {mode} 모드로 변경되었습니다.",
+    currencyChanged: "통화 기준이 {currency}로 변경되었습니다.",
+    invalidExchangeRate: "유효하지 않은 환율입니다. 기본값으로 복원됩니다.",
+    amountInputError: "금액 입력 오류.",
+    invalidTransactionInfo: "거래 정보가 유효하지 않습니다.",
+    invalidFileType: "JSON 파일만 가져올 수 있습니다.",
+    exportSuccess: "데이터를 성공적으로 내보냈습니다.",
+    exportError: "데이터 내보내기 중 오류 발생."
   },
   modal: {
     confirmResetTitle: "데이터 초기화",
     confirmResetMsg: "현재 포트폴리오를 초기 템플릿으로 되돌리시겠습니까? 이 작업은 되돌릴 수 없습니다.",
     confirmDeletePortfolioTitle: "포트폴리오 삭제",
     confirmDeletePortfolioMsg: "정말로 '{name}' 포트폴리오를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    confirmDeleteStockTitle: "종목 삭제",
+    confirmDeleteStockMsg: "'{name}' 종목을 삭제하시겠습니까?",
     confirmDeleteTransactionTitle: "거래 내역 삭제",
     confirmDeleteTransactionMsg: "이 거래 내역을 정말로 삭제하시겠습니까?",
     confirmRatioSumWarnTitle: "목표 비율 확인",
@@ -33,6 +49,40 @@ const messages = {
     promptNewPortfolioNameMsg: "새 포트폴리오의 이름을 입력하세요:",
     promptRenamePortfolioTitle: "이름 변경",
     promptRenamePortfolioMsg: "새로운 포트폴리오 이름을 입력하세요:"
+  },
+  ui: {
+    // Table headers and labels
+    stockName: "종목명",
+    ticker: "티커",
+    sector: "섹터",
+    quantity: "수량",
+    avgBuyPrice: "평단가",
+    currentValue: "현재 평가액",
+    profitLoss: "평가 손익",
+    profitLossRate: "수익률",
+    fixedBuy: "고정 매수",
+    // Button labels
+    manage: "거래",
+    delete: "삭제",
+    fetchingPrices: "가져오는 중...",
+    updateAllPrices: "현재가 일괄 업데이트",
+    // Transaction types
+    buy: "매수",
+    sell: "매도",
+    buyWithIcon: "🔵 매수",
+    sellWithIcon: "🔴 매도",
+    // Currency symbols
+    krw: "원",
+    usd: "$",
+    // Mode names
+    addMode: "추가 매수",
+    sellMode: "매도 리밸런싱"
+  },
+  defaults: {
+    defaultPortfolioName: "기본 포트폴리오",
+    newStock: "새 종목",
+    uncategorized: "미분류",
+    unknownStock: "해당 종목"
   },
   validation: {
     calculationError: "계산 중 오류가 발생했습니다. 입력값을 확인해주세요.",

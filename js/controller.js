@@ -257,15 +257,18 @@ export class PortfolioController {
      * @param {string} stockId - 삭제할 주식 ID
      */
     async handleDeleteStock(stockId) { // async 추가 (showConfirm)
-        const stockName = this.state.getStockById(stockId)?.name || '해당 종목';
-        const confirmDelete = await this.view.showConfirm('종목 삭제', `'${stockName}' 종목을 삭제하시겠습니까?`); // confirm -> showConfirm, 메시지 수정
+        const stockName = this.state.getStockById(stockId)?.name || t('defaults.unknownStock');
+        const confirmDelete = await this.view.showConfirm(
+            t('modal.confirmDeleteStockTitle'),
+            t('modal.confirmDeleteStockMsg', { name: stockName })
+        );
         if (confirmDelete) {
             if(this.state.deleteStock(stockId)){ // deleteStock 성공 여부 확인
                 Calculator.clearPortfolioStateCache();
                 this.fullRender();
-                this.view.showToast(t('toast.transactionDeleted'), "success"); // stockDeleted -> transactionDeleted (i18n.js에 맞춰)
+                this.view.showToast(t('toast.transactionDeleted'), "success");
             } else {
-                 this.view.showToast('마지막 남은 주식은 삭제할 수 없습니다.', "error");
+                 this.view.showToast(t('toast.lastStockDeleteError'), "error");
             }
         }
     }
@@ -322,7 +325,7 @@ export class PortfolioController {
 
         } catch (error) {
              ErrorService.handle(/** @type {Error} */ (error), 'handleNormalizeRatios');
-             this.view.showToast('비율 정규화 중 오류 발생', "error"); // i18n 키 대신 직접 메시지
+             this.view.showToast(t('toast.normalizeRatiosError'), "error");
         }
     }
 
@@ -513,7 +516,7 @@ export class PortfolioController {
         this.debouncedSave();
 
         // 7. 토스트 메시지
-        this.view.showToast('계산 완료!', "success"); // i18n 키 대신 직접 메시지
+        this.view.showToast(t('toast.calculateSuccess'), "success");
     }
 
 
@@ -534,7 +537,7 @@ export class PortfolioController {
             .map(s => ({ id: s.id, ticker: s.ticker.trim() })); // ID와 함께 매핑
 
         if (tickersToFetch.length === 0) {
-            this.view.showToast('가져올 티커가 없습니다.', "info");
+            this.view.showToast(t('toast.noTickersToFetch'), "info");
             return;
         }
 
@@ -639,7 +642,8 @@ export class PortfolioController {
         this.view.updateMainModeUI(newMode); // setMainMode -> updateMainModeUI
         // this.view.toggleAdditionalAmountInputs(newMode === 'add'); // updateMainModeUI에 포함됨
         this.fullRender(); // 테이블 헤더 등 변경 위해 fullRender 호출
-        this.view.showToast(`모드가 ${newMode === 'add' ? '추가 매수' : '매도 리밸런싱'} 모드로 변경되었습니다.`, "info"); // i18n 키 대신 직접 메시지
+        const modeName = newMode === 'add' ? t('ui.addMode') : t('ui.sellMode');
+        this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
     }
 
     /**
@@ -650,7 +654,7 @@ export class PortfolioController {
         this.state.updatePortfolioSettings('currentCurrency', newCurrency);
         this.view.updateCurrencyModeUI(newCurrency); // setCurrencyMode -> updateCurrencyModeUI
         this.fullRender(); // 통화 변경 시 테이블 헤더 등 업데이트 위해 fullRender
-        this.view.showToast(`통화 기준이 ${newCurrency.toUpperCase()}로 변경되었습니다.`, "info"); // i18n 키 대신 직접 메시지
+        this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
     }
 
     /**
@@ -676,7 +680,7 @@ export class PortfolioController {
         } else {
              this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
              exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString(); // 입력 필드 값도 되돌림
-             this.view.showToast('유효하지 않은 환율입니다. 기본값으로 복원됩니다.', "error"); // i18n 키 대신 직접 메시지
+             this.view.showToast(t('toast.invalidExchangeRate'), "error");
              // 변환 로직 중단 없이 기본 환율로 계속 진행
         }
         const currentExchangeRate = this.state.getActivePortfolio()?.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
@@ -698,7 +702,7 @@ export class PortfolioController {
             }
         } catch(e) {
              console.error("Error during currency conversion:", e);
-             this.view.showToast("금액 입력 오류.", "error");
+             this.view.showToast(t('toast.amountInputError'), "error");
              // 오류 발생 시 입력값 초기화 또는 다른 처리 가능
              if (source === 'krw') additionalAmountUSDInput.value = ''; else additionalAmountInput.value = '';
              return; // 추가 처리 중단
@@ -749,7 +753,7 @@ export class PortfolioController {
         const validationResult = Validator.validateTransaction(txData);
 
         if (!validationResult.isValid) {
-            this.view.showToast(validationResult.message || '거래 정보가 유효하지 않습니다.', "error");
+            this.view.showToast(validationResult.message || t('toast.invalidTransactionInfo'), "error");
             return;
         }
 
@@ -769,7 +773,7 @@ export class PortfolioController {
             Calculator.clearPortfolioStateCache();
             this.updateUIState();
         } else {
-             this.view.showToast('거래 추가 실패.', "error");
+             this.view.showToast(t('toast.transactionAddFailed'), "error");
         }
     }
 
@@ -803,7 +807,7 @@ export class PortfolioController {
                     Calculator.clearPortfolioStateCache();
                     this.updateUIState();
                  } else {
-                     this.view.showToast('거래 삭제 실패.', "error");
+                     this.view.showToast(t('toast.transactionDeleteFailed'), "error");
                  }
             }
         }
@@ -853,7 +857,7 @@ export class PortfolioController {
 
         if (file) {
             if (file.type !== 'application/json') {
-                this.view.showToast('JSON 파일만 가져올 수 있습니다.', "error"); // i18n 키 대신 직접 메시지
+                this.view.showToast(t('toast.invalidFileType'), "error");
                 return;
             }
 
@@ -908,11 +912,11 @@ export class PortfolioController {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            this.view.showToast('데이터를 성공적으로 내보냈습니다.', "success"); // i18n 키 대신 직접 메시지
+            this.view.showToast(t('toast.exportSuccess'), "success");
 
         } catch (error) {
             ErrorService.handle(/** @type {Error} */ (error), 'handleExportData');
-            this.view.showToast('데이터 내보내기 중 오류 발생.', "error"); // i18n 키 대신 직접 메시지
+            this.view.showToast(t('toast.exportError'), "error");
         }
     }
 
