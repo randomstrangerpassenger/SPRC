@@ -5135,16 +5135,25 @@ export class PortfolioState {
              Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
                  saveablePortfolios[id] = {
                      ...portfolio,
-                     portfolioData: portfolio.portfolioData.map(stock => ({
-                         ...stock,
-                         targetRatio: stock.targetRatio.toNumber(),
-                         currentPrice: stock.currentPrice.toNumber(),
-                         fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
-                         transactions: stock.transactions.map(tx => ({
-                             ...tx,
-                             quantity: tx.quantity.toNumber(),
-                             price: tx.price.toNumber(),
-                         }))
+                     portfolioData: portfolio.portfolioData.map(stock => {
+                        // ▼▼▼▼▼ [수정된 부분] ▼▼▼▼▼
+                        // 'calculated' 속성을 분해해서 저장 대상에서 제외
+                        const { calculated, ...saveableStock } = stock;
+                        // ▲▲▲▲▲ [수정된 부분] ▲▲▲▲▲
+
+                         return {
+                             // ▼▼▼ [수정] stock 대신 saveableStock 사용
+                             ...saveableStock,
+                             targetRatio: saveableStock.targetRatio.toNumber(),
+                             currentPrice: saveableStock.currentPrice.toNumber(),
+                             fixedBuyAmount: saveableStock.fixedBuyAmount.toNumber(),
+                             transactions: saveableStock.transactions.map(tx => ({
+                                 ...tx,
+                                 quantity: tx.quantity.toNumber(),
+                                 price: tx.price.toNumber(),
+                             }))
+                             // ▲▲▲ [수정]
+                         };
                      }))
                  };
              });
@@ -5237,12 +5246,25 @@ vi.mock('dompurify', () => ({
     }
 }));
 
+// ▼▼▼▼▼ [추가된 부분] ▼▼▼▼▼
+// ErrorService가 View에 의존하여 발생하는 순환 참조 오류를 방지하기 위해 모의 처리
+vi.mock('./errorService.js', () => ({
+  ErrorService: {
+    handle: vi.fn(), // handle 함수를 모의
+  },
+  ValidationError: class extends Error {} // ValidationError 클래스도 모의
+}));
+// ▲▲▲▲▲ [추가된 부분] ▲▲▲▲▲
+
 
 describe('PortfolioState (Async)', () => {
   let state;
   let mockGet;
   let mockSet;
   let mockDel;
+  // ▼▼▼ [추가된 부분] ▼▼▼
+  let mockErrorService; 
+  // ▲▲▲ [추가된 부분] ▲▲▲
 
   beforeEach(async () => { 
     // 모의 함수 초기화
@@ -5252,6 +5274,7 @@ describe('PortfolioState (Async)', () => {
     mockGet = vi.mocked(get);
     mockSet = vi.mocked(set);
     mockDel = vi.mocked(del);
+    // mockErrorService = vi.mocked(ErrorService); // ErrorService는 임포트하지 않으므로 이 줄은 필요 없음
     
     // 기본적으로 비어있는 DB 시뮬레이션
     mockGet.mockResolvedValue(null); 
@@ -7018,6 +7041,10 @@ import { apiService } from './apiService.js';
 import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js';
 import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
 
+// ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
+import { bindEventListeners } from './eventBinder.js';
+// ▲▲▲ [추가] ▲▲▲
+
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
 /** @typedef {import('./types.js').Portfolio} Portfolio */
 /** @typedef {import('./types.js').ValidationErrorDetail} ValidationErrorDetail */
@@ -7048,6 +7075,10 @@ export class PortfolioController {
         this.view.cacheDomElements();
         this.setupInitialUI();
         this.bindControllerEvents(); 
+
+        // ▼▼▼ [추가] 실제 DOM 이벤트 바인딩 호출 ▼▼▼
+        bindEventListeners(this, this.view.dom);
+        // ▲▲▲ [추가] ▲▲▲
     }
 
     setupInitialUI() {
@@ -7216,8 +7247,17 @@ export class PortfolioController {
      }
     
     async handleSwitchPortfolio(newId) {
-        if (newId) {
-            await this.state.setActivePortfolioId(newId); 
+        // ▼▼▼ [수정] event.target 대신 newId를 받도록 수정 ▼▼▼
+        const selector = this.view.dom.portfolioSelector;
+        let targetId = newId;
+        
+        // newId가 없는 경우(eventBinder.js에서 직접 호출된 경우) event.target에서 값을 찾음
+        if (!targetId && selector instanceof HTMLSelectElement) {
+             targetId = selector.value;
+        }
+        
+        if (targetId) {
+            await this.state.setActivePortfolioId(targetId); 
             const activePortfolio = this.state.getActivePortfolio();
             if (activePortfolio) {
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
@@ -7229,6 +7269,7 @@ export class PortfolioController {
             }
             this.fullRender();
         }
+        // ▲▲▲ [수정] ▲▲▲
      }
 
 
@@ -7297,7 +7338,9 @@ export class PortfolioController {
 
     handlePortfolioBodyChange(e, _debouncedUpdate) {
         const target = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
+        // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
         const row = target.closest('div[data-id]'); 
+        // ▲▲▲ [수정] ▲▲▲
         if (!row) return;
 
         const stockId = row.dataset.id;
@@ -7373,8 +7416,10 @@ export class PortfolioController {
         const target = /** @type {HTMLElement} */ (e.target);
         const actionButton = target.closest('button[data-action]');
         if (!actionButton) return;
-
+        
+        // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
         const row = actionButton.closest('div[data-id]'); 
+        // ▲▲▲ [수정] ▲▲▲
         if (!row?.dataset.id) return;
 
         const stockId = row.dataset.id;
@@ -7714,7 +7759,7 @@ export class PortfolioController {
                  this.view.showToast(t('toast.importError'), "error");
                  fileInput.value = '';
              };
-            reader.readAsText(file);
+            reader.readText(file);
         }
      }
     handleExportData() {

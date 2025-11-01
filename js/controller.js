@@ -14,6 +14,10 @@ import { apiService } from './apiService.js';
 import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js';
 import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
 
+// ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
+import { bindEventListeners } from './eventBinder.js';
+// ▲▲▲ [추가] ▲▲▲
+
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
 /** @typedef {import('./types.js').Portfolio} Portfolio */
 /** @typedef {import('./types.js').ValidationErrorDetail} ValidationErrorDetail */
@@ -44,6 +48,10 @@ export class PortfolioController {
         this.view.cacheDomElements();
         this.setupInitialUI();
         this.bindControllerEvents(); 
+
+        // ▼▼▼ [추가] 실제 DOM 이벤트 바인딩 호출 ▼▼▼
+        bindEventListeners(this, this.view.dom);
+        // ▲▲▲ [추가] ▲▲▲
     }
 
     setupInitialUI() {
@@ -212,8 +220,17 @@ export class PortfolioController {
      }
     
     async handleSwitchPortfolio(newId) {
-        if (newId) {
-            await this.state.setActivePortfolioId(newId); 
+        // ▼▼▼ [수정] event.target 대신 newId를 받도록 수정 ▼▼▼
+        const selector = this.view.dom.portfolioSelector;
+        let targetId = newId;
+        
+        // newId가 없는 경우(eventBinder.js에서 직접 호출된 경우) event.target에서 값을 찾음
+        if (!targetId && selector instanceof HTMLSelectElement) {
+             targetId = selector.value;
+        }
+        
+        if (targetId) {
+            await this.state.setActivePortfolioId(targetId); 
             const activePortfolio = this.state.getActivePortfolio();
             if (activePortfolio) {
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
@@ -225,6 +242,7 @@ export class PortfolioController {
             }
             this.fullRender();
         }
+        // ▲▲▲ [수정] ▲▲▲
      }
 
 
@@ -293,7 +311,9 @@ export class PortfolioController {
 
     handlePortfolioBodyChange(e, _debouncedUpdate) {
         const target = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
+        // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
         const row = target.closest('div[data-id]'); 
+        // ▲▲▲ [수정] ▲▲▲
         if (!row) return;
 
         const stockId = row.dataset.id;
@@ -369,8 +389,10 @@ export class PortfolioController {
         const target = /** @type {HTMLElement} */ (e.target);
         const actionButton = target.closest('button[data-action]');
         if (!actionButton) return;
-
+        
+        // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
         const row = actionButton.closest('div[data-id]'); 
+        // ▲▲▲ [수정] ▲▲▲
         if (!row?.dataset.id) return;
 
         const stockId = row.dataset.id;
@@ -710,7 +732,7 @@ export class PortfolioController {
                  this.view.showToast(t('toast.importError'), "error");
                  fileInput.value = '';
              };
-            reader.readAsText(file);
+            reader.readText(file);
         }
      }
     handleExportData() {

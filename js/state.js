@@ -538,16 +538,25 @@ export class PortfolioState {
              Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
                  saveablePortfolios[id] = {
                      ...portfolio,
-                     portfolioData: portfolio.portfolioData.map(stock => ({
-                         ...stock,
-                         targetRatio: stock.targetRatio.toNumber(),
-                         currentPrice: stock.currentPrice.toNumber(),
-                         fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
-                         transactions: stock.transactions.map(tx => ({
-                             ...tx,
-                             quantity: tx.quantity.toNumber(),
-                             price: tx.price.toNumber(),
-                         }))
+                     portfolioData: portfolio.portfolioData.map(stock => {
+                        // ▼▼▼▼▼ [수정된 부분] ▼▼▼▼▼
+                        // 'calculated' 속성을 분해해서 저장 대상에서 제외
+                        const { calculated, ...saveableStock } = stock;
+                        // ▲▲▲▲▲ [수정된 부분] ▲▲▲▲▲
+
+                         return {
+                             // ▼▼▼ [수정] stock 대신 saveableStock 사용
+                             ...saveableStock,
+                             targetRatio: saveableStock.targetRatio.toNumber(),
+                             currentPrice: saveableStock.currentPrice.toNumber(),
+                             fixedBuyAmount: saveableStock.fixedBuyAmount.toNumber(),
+                             transactions: saveableStock.transactions.map(tx => ({
+                                 ...tx,
+                                 quantity: tx.quantity.toNumber(),
+                                 price: tx.price.toNumber(),
+                             }))
+                             // ▲▲▲ [수정]
+                         };
                      }))
                  };
              });
