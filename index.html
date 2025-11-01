@@ -10,6 +10,7 @@
 </head>
 <body>
     <div id="aria-announcer" class="visually-hidden" aria-live="assertive" aria-atomic="true"></div>
+
     <button id="darkModeToggle" class="btn dark-mode-toggle" aria-label="다크 모드 전환">🌙</button>
     <div class="container">
         <header class="header">
@@ -18,8 +19,8 @@
         </header>
 
         <main>
-            <section class="card">
-                <h2>📁 포트폴리오 관리</h2>
+            <section class="card" aria-labelledby="portfolioManagementHeading">
+                <h2 id="portfolioManagementHeading">📁 포트폴리오 관리</h2>
                 <div class="input-group">
                     <label for="portfolioSelector">현재 포트폴리오:</label>
                     <select id="portfolioSelector" class="input-group__select"></select>
@@ -31,17 +32,17 @@
                 </div>
             </section>
 
-            <section class="card">
-                <h2>⚙️ 계산 모드 선택</h2>
+            <section class="card" aria-labelledby="modeSelectionHeading">
+                <h2 id="modeSelectionHeading">⚙️ 계산 모드 선택</h2>
                 <div class="mode-selector">
                     <label for="modeAdd"><input type="radio" name="mainMode" value="add" id="modeAdd" checked> ➕ 추가 매수 모드</label>
                     <label for="modeSell"><input type="radio" name="mainMode" value="sell" id="modeSell"> ⚖️ 매도 리밸런싱 모드</label>
                 </div>
             </section>
 
-            <section class="card">
-                <h2>💼 현재 포트폴리오 설정</h2>
-                <div class="btn-controls">
+            <section class="card" aria-labelledby="portfolioSettingsHeading">
+                <h2 id="portfolioSettingsHeading">💼 현재 포트폴리오 설정</h2>
+                 <div class="btn-controls">
                     <button id="addNewStockBtn" class="btn" data-variant="green">➕ 새 종목 추가</button>
                     <button id="fetchAllPricesBtn" class="btn" data-variant="blue" style="width: 100%;">📈 현재가 모두 불러오기</button>
                     
@@ -62,6 +63,7 @@
                             <a href="#" id="importDataBtn" role="menuitem">📥 가져오기 (JSON)</a>
                         </div>
                     </div>
+
                     <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 </div>
                 <div class="table-responsive">
@@ -76,9 +78,9 @@
                 </div>
             </section>
 
-            <section id="addInvestmentCard" class="card">
-                <h2>💰 추가 투자금 계산</h2>
-                <div class="mode-selector">
+             <section id="addInvestmentCard" class="card" aria-labelledby="addInvestmentHeading">
+                <h2 id="addInvestmentHeading">💰 추가 투자금 계산</h2>
+                 <div class="mode-selector">
                     <label for="currencyKRW"><input type="radio" name="currencyMode" value="krw" id="currencyKRW" checked> 원화(KRW) 기준</label>
                     <label for="currencyUSD"><input type="radio" name="currencyMode" value="usd" id="currencyUSD"> 달러(USD) 기준</label>
                 </div>
@@ -100,9 +102,9 @@
             
             <button id="calculateBtn" class="btn" style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 25px;">계산하기</button>
             
-            <section id="resultsSection" class="hidden" aria-live="polite"></section>
-            <section id="sectorAnalysisSection" class="hidden"></section>
-            <section id="chartSection" class="card hidden">
+            <section id="resultsSection" class="hidden" aria-live="polite" role="region" aria-label="계산 결과"></section>
+            <section id="sectorAnalysisSection" class="hidden" role="region" aria-label="섹터별 분석 결과"></section>
+            <section id="chartSection" class="card hidden" role="region" aria-label="포트폴리오 시각화 차트">
                 <h2>📊 포트폴리오 시각화</h2>
                 <div>
                     <canvas id="portfolioChart"></canvas>
@@ -126,8 +128,7 @@
                             <th>날짜</th><th>종류</th><th>수량</th><th>단가</th><th>총액</th><th>작업</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionListBody"></tbody>
-                </table>
+                    <tbody id="transactionListBody"></tbody> </table>
             </div>
 
             <form id="newTransactionForm">

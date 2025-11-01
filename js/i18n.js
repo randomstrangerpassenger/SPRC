@@ -1,4 +1,4 @@
-// js/i18n.js (Updated with missing keys)
+// js/i18n.js (Updated with missing ui keys)
 // @ts-check
 
 // 1. 모든 문자열을 계층 구조로 정의합니다.
@@ -51,7 +51,7 @@ const locales = {
       promptRenamePortfolioMsg: "Enter the new portfolio name:",
       confirmDeleteStockTitle: "Delete Stock",
       confirmDeleteStockMsg: "Are you sure you want to delete '{name}'?",
-      transactionTitle: "Manage Transactions" // Added
+      transactionTitle: "Manage Transactions"
     },
     ui: {
       stockName: "Name",
@@ -75,7 +75,11 @@ const locales = {
       usd: "$",
       addMode: "Add Mode",
       sellMode: "Sell Rebalance",
-      action: "Action" // Added
+      action: "Action",
+      // --- Added missing keys ---
+      targetRatio: "Target Ratio",
+      currentPrice: "Current Price"
+      // --- Added missing keys ---
     },
     defaults: {
       defaultPortfolioName: "Default Portfolio",
@@ -119,7 +123,12 @@ const locales = {
       manageTransactions: "Manage transactions for {name}",
       deleteStock: "Delete {name}",
       deleteTransaction: "Delete transaction from {date}",
-      resultsLoaded: "Calculation results loaded."
+      resultsLoaded: "Calculation results loaded.",
+      // --- Added region labels ---
+      resultsRegion: "Calculation Results",
+      sectorAnalysisRegion: "Sector Analysis Results",
+      chartRegion: "Portfolio Visualization Chart"
+      // --- Added region labels ---
     },
     view: {
       noTransactions: "No transactions found."
@@ -145,7 +154,13 @@ const locales = {
       sectorAnalysisTitle: "🗂️ Sector Analysis",
       sector: "Sector",
       amount: "Amount",
-      ratio: "Ratio (%)"
+      ratio: "Ratio (%)",
+       // --- Added captions ---
+       sectorAnalysisCaption: "Asset distribution by sector",
+       addModeCaption: "Recommended buys for additional investment",
+       sellModeSellCaption: "Items recommended for selling",
+       sellModeBuyCaption: "Items recommended for buying with proceeds"
+       // --- Added captions ---
     },
     state: {
        noActivePortfolio: "No active portfolio.",
@@ -210,7 +225,7 @@ const locales = {
       promptNewPortfolioNameMsg: "새 포트폴리오의 이름을 입력하세요:",
       promptRenamePortfolioTitle: "이름 변경",
       promptRenamePortfolioMsg: "새로운 포트폴리오 이름을 입력하세요:",
-      transactionTitle: "거래 내역 관리" // Added
+      transactionTitle: "거래 내역 관리"
     },
     ui: {
       stockName: "종목명",
@@ -234,7 +249,11 @@ const locales = {
       usd: "$",
       addMode: "추가 매수",
       sellMode: "매도 리밸런싱",
-      action: "작업" // Added
+      action: "작업",
+      // --- Added missing keys ---
+      targetRatio: "목표 비율",
+      currentPrice: "현재가"
+      // --- Added missing keys ---
     },
     defaults: {
       defaultPortfolioName: "기본 포트폴리오",
@@ -278,7 +297,12 @@ const locales = {
       manageTransactions: "{name} 거래 관리",
       deleteStock: "{name} 삭제",
       deleteTransaction: "{date} 거래 삭제",
-      resultsLoaded: "계산 결과가 로드되었습니다."
+      resultsLoaded: "계산 결과가 로드되었습니다.",
+       // --- Added region labels ---
+       resultsRegion: "계산 결과",
+       sectorAnalysisRegion: "섹터별 분석 결과",
+       chartRegion: "포트폴리오 시각화 차트"
+       // --- Added region labels ---
     },
     view: {
       noTransactions: "거래 내역이 없습니다."
@@ -304,7 +328,13 @@ const locales = {
       sectorAnalysisTitle: "🗂️ 섹터별 분석",
       sector: "섹터",
       amount: "금액",
-      ratio: "비중"
+      ratio: "비중",
+      // --- Added captions ---
+      sectorAnalysisCaption: "섹터별 자산 분포",
+      addModeCaption: "추가 매수 추천 결과",
+      sellModeSellCaption: "매도 추천 항목",
+      sellModeBuyCaption: "매수 추천 항목 (매도 자금)"
+      // --- Added captions ---
     },
     state: {
        noActivePortfolio: "활성화된 포트폴리오가 없습니다.",
@@ -347,22 +377,17 @@ const messages = locales[currentLang] || locales.en;
  * @returns {string}
  */
 export function t(key, replacements = {}) {
-    // 'toast.dataReset' -> ['toast', 'dataReset']
     const keys = key.split('.');
-    
-    // 3. 선택된 언어의 messages 객체에서 탐색
     let message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, messages);
 
     if (typeof message !== 'string') {
-        // 4. (Fallback) 키가 없을 때 영어에서 찾아보기
-        message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, locales.en);
+        message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, locales.en); // Fallback to English
         if (typeof message !== 'string') {
              console.warn(`[i18n] Missing key in all locales: ${key}`);
-             return key; // 키가 없으면 키 자체를 반환
+             return key;
         }
     }
 
-    // {name}, {totalRatio}와 같은 플레이스홀더를 실제 값으로 대체
     return message.replace(/{(\w+)}/g, (match, placeholder) => {
         return replacements[placeholder] !== undefined
             ? String(replacements[placeholder])

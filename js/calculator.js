@@ -408,4 +408,4 @@ export class Calculator {
     static clearPortfolioStateCache() { 
         Calculator.#cache = null; 
     }
-};
+}

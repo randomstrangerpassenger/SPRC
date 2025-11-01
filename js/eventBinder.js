@@ -1,4 +1,4 @@
-// js/eventBinder.js (Updated)
+// js/eventBinder.js (Updated with Event Delegation)
 // @ts-check
 import { debounce } from './utils.js';
 /** @typedef {import('./controller.js').PortfolioController} PortfolioController */
@@ -22,7 +22,7 @@ export function bindEventListeners(controller, dom) {
     dom.normalizeRatiosBtn?.addEventListener('click', () => controller.handleNormalizeRatios());
     dom.fetchAllPricesBtn?.addEventListener('click', () => controller.handleFetchAllPrices());
 
-    // --- ⬇️ 데이터 관리 드롭다운 (A11Y 개선) ⬇️ ---
+    // 데이터 관리 드롭다운
     const dataManagementBtn = /** @type {HTMLButtonElement | null} */ (dom.dataManagementBtn);
     const dataDropdownContent = /** @type {HTMLElement | null} */ (dom.dataDropdownContent);
     const exportDataBtn = /** @type {HTMLAnchorElement | null} */ (dom.exportDataBtn);
@@ -38,15 +38,14 @@ export function bindEventListeners(controller, dom) {
     };
 
     dataManagementBtn?.addEventListener('click', (e) => {
-        e.stopPropagation(); // window 클릭 리스너와의 충돌 방지
+        e.stopPropagation();
         const isExpanded = dataManagementBtn.getAttribute('aria-expanded') === 'true';
         toggleDropdown(!isExpanded);
         if (!isExpanded && dropdownItems.length > 0) {
-            (/** @type {HTMLElement} */ (dropdownItems[0])).focus(); // 첫 번째 항목으로 포커스
+            (/** @type {HTMLElement} */ (dropdownItems[0])).focus();
         }
     });
 
-    // 드롭다운 메뉴 키보드 네비게이션
     dataDropdownContent?.addEventListener('keydown', (e) => {
         const target = /** @type {HTMLElement} */ (e.target);
         const currentIndex = Array.from(dropdownItems).indexOf(target);
@@ -64,11 +63,10 @@ export function bindEventListeners(controller, dom) {
                 break;
             case 'Escape':
                 toggleDropdown(false);
-                dataManagementBtn?.focus(); // 버튼으로 포커스 복귀
+                dataManagementBtn?.focus();
                 break;
-            case 'Tab': // Tab 키 누르면 드롭다운 닫기
+            case 'Tab':
                 toggleDropdown(false);
-                // 기본 Tab 동작 유지
                 break;
         }
     });
@@ -83,12 +81,11 @@ export function bindEventListeners(controller, dom) {
 
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        controller.handleImportData(); // 파일 선택 창 열기
+        controller.handleImportData();
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
-    // 드롭다운 외부 클릭 시 닫기
     window.addEventListener('click', (e) => {
         const target = /** @type {Node | null} */ (e.target);
         if (dataManagementBtn && dataDropdownContent?.classList.contains('show') && !dataManagementBtn.contains(target)) {
@@ -96,18 +93,13 @@ export function bindEventListeners(controller, dom) {
         }
     });
 
-    // 파일 선택 완료 시
     importFileInput?.addEventListener('change', (e) => controller.handleFileSelected(e));
-    // --- ⬆️ 데이터 관리 드롭다운 (A11Y 개선) ⬆️ ---
 
-
-    // 포트폴리오 테이블 입력 처리 (Debounce 적용)
-    const debouncedUpdate = debounce(() => controller.updateUIState(), 300);
-    dom.portfolioBody?.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, debouncedUpdate));
+    // 포트폴리오 테이블 입력 처리
+    dom.portfolioBody?.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, null));
     dom.portfolioBody?.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
 
-    // --- ⬇️ 포트폴리오 테이블 키보드 네비게이션 개선 ⬇️ ---
-    /** @type {HTMLElement | null} */
+    // 포트폴리오 테이블 키보드 네비게이션
     const portfolioBody = dom.portfolioBody;
     portfolioBody?.addEventListener('keydown', (e) => {
         const target = /** @type {HTMLElement} */ (e.target);
@@ -120,18 +112,15 @@ export function bindEventListeners(controller, dom) {
         const currentCellIndex = currentCell ? Array.from(currentRow.cells).indexOf(currentCell) : -1;
         const field = target.dataset.field;
 
-
         switch (e.key) {
             case 'Enter':
-                 // 티커 입력 후 Enter 시 거래 관리 모달
                  if (field === 'ticker') {
                     e.preventDefault();
                     const stock = controller.state.getActivePortfolio()?.portfolioData.find(s => s.id === stockId);
                     const currency = controller.state.getActivePortfolio()?.settings.currentCurrency;
                     if (stock && currency) controller.view.openTransactionModal(stock, currency, controller.state.getTransactions(stockId));
                  }
-                 // Shift + Enter: 이전 셀 이동, Enter: 다음 셀 이동
-                 else if (currentCellIndex !== -1) {
+                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLTableRowElement) { // Type guard
                     e.preventDefault();
                     const direction = e.shiftKey ? -1 : 1;
                     const nextCellIndex = (currentCellIndex + direction + currentRow.cells.length) % currentRow.cells.length;
@@ -142,13 +131,12 @@ export function bindEventListeners(controller, dom) {
                 break;
             case 'ArrowUp':
             case 'ArrowDown':
-                // 위/아래 방향키로 행 이동 (같은 필드)
                 e.preventDefault();
                 const siblingRow = (e.key === 'ArrowUp')
-                    ? currentRow.previousElementSibling?.previousElementSibling // 위 입력 행
-                    : currentRow.nextElementSibling?.nextElementSibling;      // 아래 입력 행
+                    ? currentRow.previousElementSibling?.previousElementSibling
+                    : currentRow.nextElementSibling?.nextElementSibling;
 
-                if (siblingRow && siblingRow.matches('.stock-inputs') && currentCellIndex !== -1) {
+                if (siblingRow instanceof HTMLTableRowElement && siblingRow.matches('.stock-inputs') && currentCellIndex !== -1) { // Type guard
                      const targetCell = siblingRow.cells[currentCellIndex];
                      const targetInput = /** @type {HTMLElement | null} */ (targetCell?.querySelector('input'));
                      targetInput?.focus();
@@ -156,8 +144,7 @@ export function bindEventListeners(controller, dom) {
                 break;
              case 'ArrowLeft':
              case 'ArrowRight':
-                 // 좌/우 방향키로 셀 이동 (텍스트 입력 외)
-                 if (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) {
+                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLTableRowElement) { // Type guards
                      e.preventDefault();
                      const direction = e.key === 'ArrowLeft' ? -1 : 1;
                      const nextCellIndex = (currentCellIndex + direction + currentRow.cells.length) % currentRow.cells.length;
@@ -167,7 +154,6 @@ export function bindEventListeners(controller, dom) {
                  }
                  break;
             case 'Delete':
-                // Ctrl + Delete 로 주식 삭제 (종목명 필드)
                 if (e.ctrlKey && field === 'name') {
                      e.preventDefault();
                      controller.handleDeleteStock(stockId);
@@ -179,8 +165,6 @@ export function bindEventListeners(controller, dom) {
                  break;
         }
     });
-    // --- ⬆️ 포트폴리오 테이블 키보드 네비게이션 개선 ⬆️ ---
-
 
     // 숫자 입력 필드 포커스 시 전체 선택
     dom.portfolioBody?.addEventListener('focusin', (e) => {
@@ -202,14 +186,12 @@ export function bindEventListeners(controller, dom) {
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
-        /** @type {'add' | 'sell'} */
-        const mode = target.value;
+        const mode = /** @type {'add' | 'sell'} */ (target.value);
         controller.handleMainModeChange(mode);
     }));
     dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
-        /** @type {'krw' | 'usd'} */
-        const currency = target.value;
+        const currency = /** @type {'krw' | 'usd'} */ (target.value);
         controller.handleCurrencyModeChange(currency);
     }));
 
@@ -222,12 +204,12 @@ export function bindEventListeners(controller, dom) {
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
         controller.view.toggleInputValidation(target, isValid);
-        if (isValid) debouncedConversion('krw');
+        if (isValid) debouncedConversion('krw'); // 환율 변경 시 원화 기준으로 USD 금액 재계산
     });
 
     // 추가 투자금액 관련 필드 Enter 키 처리
     const handleEnterKey = (e) => {
-        if (e.key === 'Enter' && !e.isComposing) {
+        if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && e.target.isComposing)) { // Type guard and isComposing check
             e.preventDefault();
             controller.handleCalculate();
         }
@@ -236,16 +218,58 @@ export function bindEventListeners(controller, dom) {
     dom.additionalAmountUSDInput?.addEventListener('keydown', handleEnterKey);
     dom.exchangeRateInput?.addEventListener('keydown', handleEnterKey);
 
-    // 모달 관련 이벤트
+    // --- 모달 관련 이벤트 ---
+    // 거래 내역 모달 닫기 버튼
     dom.closeModalBtn?.addEventListener('click', () => controller.view.closeTransactionModal());
-    dom.transactionModal?.addEventListener('click', (e) => {
-        if (e.target === dom.transactionModal) controller.view.closeTransactionModal();
-    });
-    dom.newTransactionForm?.addEventListener('submit', (e) => controller.handleAddNewTransaction(e));
-    dom.transactionListBody?.addEventListener('click', (e) => controller.handleTransactionListClick(e));
 
-    // 기타
+    // 새 거래 추가 폼 제출
+    dom.newTransactionForm?.addEventListener('submit', (e) => controller.handleAddNewTransaction(e));
+
+    // --- ⬇️ 수정: 이벤트 위임 방식으로 변경 ⬇️ ---
+    // console.log("Event Binding: Attempting to bind click listener to:", dom.transactionListBody); // 로그 제거
+
+    // 거래 내역 목록 내 삭제 버튼 클릭 (이벤트 위임)
+    dom.transactionModal?.addEventListener('click', (e) => {
+        const target = /** @type {HTMLElement} */ (e.target);
+        const deleteButton = target.closest('button[data-action="delete-tx"]');
+
+        // 1. 삭제 버튼이 클릭된 경우 핸들러 호출
+        if (deleteButton) {
+            console.log("!!! Delete button clicked via delegation !!!", deleteButton); // 디버깅 로그
+
+            const row = deleteButton.closest('tr[data-tx-id]');
+            const modal = deleteButton.closest('#transactionModal');
+            const stockId = modal?.dataset.stockId;
+            const txId = row?.dataset.txId;
+
+            console.log(`Delegation: stockId=${stockId}, txId=${txId}`); // ID 확인
+
+            // 2. 컨트롤러 함수에 필요한 ID 직접 전달
+            if (stockId && txId) {
+                controller.handleTransactionListClick(stockId, txId); // event 대신 ID 전달
+            }
+        }
+
+        // 3. 모달 오버레이 클릭 시 닫기 (주석 해제 및 로직 유지)
+        if (e.target === dom.transactionModal) {
+             console.log("Overlay clicked, closing modal."); // 오버레이 클릭 로그
+             controller.view.closeTransactionModal();
+        }
+    });
+
+    /* // 이전 tbody 리스너 제거
+    dom.transactionListBody?.addEventListener('click', (e) => {
+        console.log("!!! transactionListBody CLICKED !!!", e.target);
+        // controller.handleTransactionListClick(e);
+    });
+    */
+    // --- ⬆️ 수정 완료 ⬆️ ---
+
+
+    // --- 기타 ---
+    // 다크 모드 토글 버튼
     dom.darkModeToggle?.addEventListener('click', () => controller.handleToggleDarkMode());
+    // 페이지 닫기 전 자동 저장 (동기식 저장 시도)
     window.addEventListener('beforeunload', () => controller.handleSaveDataOnExit());
 
     // 키보드 네비게이션 포커스 스타일
