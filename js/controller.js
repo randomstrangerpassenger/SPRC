@@ -47,10 +47,10 @@ export class PortfolioController {
         await this.state.ensureInitialized();
         this.view.cacheDomElements();
         this.setupInitialUI();
-        this.bindControllerEvents(); 
+        this.bindControllerEvents();
 
         // ▼▼▼ [추가] 실제 DOM 이벤트 바인딩 호출 ▼▼▼
-        bindEventListeners(this, this.view.dom);
+        bindEventListeners(this.view);
         // ▲▲▲ [추가] ▲▲▲
     }
 
