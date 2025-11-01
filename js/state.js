@@ -557,7 +557,7 @@ export class PortfolioState {
                              }))
                              // ▲▲▲ [수정]
                          };
-                     })}
+                     })
                  };
              });
             await set(CONFIG.IDB_PORTFOLIOS_KEY, saveablePortfolios); 
@@ -602,3 +602,4 @@ export class PortfolioState {
             transactions: []
         };
     }
+}

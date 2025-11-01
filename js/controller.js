@@ -732,7 +732,7 @@ export class PortfolioController {
                  this.view.showToast(t('toast.importError'), "error");
                  fileInput.value = '';
              };
-            reader.readText(file);
+            reader.readAsText(file);
         }
      }
     handleExportData() {

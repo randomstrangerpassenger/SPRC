@@ -102,24 +102,24 @@ export function bindEventListeners(view) {
     importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e)); // view.emit으로 변경
 
     // 포트폴리오 테이블 입력 처리
-    dom.portfolioBody?.addEventListener('change', (e) => 
+    dom.virtualScrollWrapper?.addEventListener('change', (e) =>
         view.emit('portfolioBodyChanged', e) // view.emit으로 변경
     );
-    dom.portfolioBody?.addEventListener('click', (e) => 
+    dom.virtualScrollWrapper?.addEventListener('click', (e) =>
         view.emit('portfolioBodyClicked', e) // view.emit으로 변경
     );
 
     // 포트폴리오 테이블 키보드 네비게이션
-    const portfolioBody = dom.portfolioBody;
-    portfolioBody?.addEventListener('keydown', (e) => {
+    const virtualScrollWrapper = dom.virtualScrollWrapper;
+    virtualScrollWrapper?.addEventListener('keydown', (e) => {
         const target = /** @type {HTMLElement} */ (e.target);
         if (!target || !(target.matches('input[type="text"], input[type="number"], input[type="checkbox"]'))) return;
 
-        const currentRow = target.closest('tr[data-id]');
+        const currentRow = target.closest('div[data-id]');
         if (!currentRow?.dataset.id) return;
         const stockId = currentRow.dataset.id;
-        const currentCell = target.closest('td');
-        const currentCellIndex = currentCell ? Array.from(currentRow.cells).indexOf(currentCell) : -1;
+        const currentCell = target.closest('.virtual-cell');
+        const currentCellIndex = currentCell ? Array.from(currentRow.children).indexOf(currentCell) : -1;
         const field = target.dataset.field;
 
         switch (e.key) {
@@ -129,11 +129,11 @@ export function bindEventListeners(view) {
                     // 컨트롤러가 할 일(모달 열기)을 View에 이벤트로 알림
                     view.emit('manageStockClicked', { stockId });
                  }
-                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLTableRowElement) { // Type guard
+                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLDivElement) { // Type guard
                     e.preventDefault();
                     const direction = e.shiftKey ? -1 : 1;
-                    const nextCellIndex = (currentCellIndex + direction + currentRow.cells.length) % currentRow.cells.length;
-                    const nextCell = currentRow.cells[nextCellIndex];
+                    const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
+                    const nextCell = currentRow.children[nextCellIndex];
                     const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
                     nextInput?.focus();
                  }
@@ -145,19 +145,19 @@ export function bindEventListeners(view) {
                     ? currentRow.previousElementSibling?.previousElementSibling
                     : currentRow.nextElementSibling?.nextElementSibling;
 
-                if (siblingRow instanceof HTMLTableRowElement && siblingRow.matches('.stock-inputs') && currentCellIndex !== -1) { // Type guard
-                     const targetCell = siblingRow.cells[currentCellIndex];
+                if (siblingRow instanceof HTMLDivElement && siblingRow.matches('.virtual-row-inputs') && currentCellIndex !== -1) { // Type guard
+                     const targetCell = siblingRow.children[currentCellIndex];
                      const targetInput = /** @type {HTMLElement | null} */ (targetCell?.querySelector('input'));
                      targetInput?.focus();
                 }
                 break;
              case 'ArrowLeft':
              case 'ArrowRight':
-                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLTableRowElement) { // Type guards
+                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLDivElement) { // Type guards
                      e.preventDefault();
                      const direction = e.key === 'ArrowLeft' ? -1 : 1;
-                     const nextCellIndex = (currentCellIndex + direction + currentRow.cells.length) % currentRow.cells.length;
-                     const nextCell = currentRow.cells[nextCellIndex];
+                     const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
+                     const nextCell = currentRow.children[nextCellIndex];
                      const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
                      nextInput?.focus();
                  }
@@ -176,7 +176,7 @@ export function bindEventListeners(view) {
     });
 
     // 숫자 입력 필드 포커스 시 전체 선택
-    dom.portfolioBody?.addEventListener('focusin', (e) => {
+    dom.virtualScrollWrapper?.addEventListener('focusin', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
         if (target.tagName === 'INPUT' && target.type === 'number') {
             target.select();
