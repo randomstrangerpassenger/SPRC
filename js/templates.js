@@ -93,6 +93,85 @@ export function generateAddModeResultsHTML(results, summary, currency) {
 }
 
 /**
+ * @description '간단 계산' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
+ * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
+ * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
+ * @param {string} currency - 현재 통화 ('krw' or 'usd')
+ * @returns {string} 생성된 HTML 문자열
+ */
+export function generateSimpleModeResultsHTML(results, summary, currency) {
+    if (!results) return '';
+
+    const sortedResults = [...results].sort((a, b) => {
+        const amountA = a.finalBuyAmount ?? new Decimal(0);
+        const amountB = b.finalBuyAmount ?? new Decimal(0);
+        return amountB.comparedTo(amountA);
+    });
+
+    const resultsRows = sortedResults.map((stock, index) => {
+        const metrics = stock.calculated ?? { profitLoss: new Decimal(0), profitLossRate: new Decimal(0) };
+        const { profitLoss, profitLossRate } = metrics;
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : 'N/A';
+        const profitLossRateVal = profitLossRate?.isFinite() ? profitLossRate.toFixed(2) : 'N/A';
+        const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
+
+        return `
+            <tr class="result-row-highlight" data-delay="${index * 0.05}s">
+                <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
+                <td style="text-align: center;">${currentRatioVal}%</td>
+                <td style="text-align: right;">
+                    <div class="${profitClass}">
+                        ${profitSign}${profitLossRateVal}%
+                    </div>
+                </td>
+                <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
+            </tr>
+        `;
+    }).join('');
+
+    const buyableStocks = sortedResults.filter(s =>
+        s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
+    );
+
+    const guideContent = buyableStocks.length > 0
+        ? buyableStocks.map((s, i) => {
+            const buyRatioVal = s.buyRatio?.isFinite() ? s.buyRatio.toFixed(1) : 'N/A';
+            return `
+                <div class="guide-item">
+                    <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
+                    <span style="font-weight: bold;">(${buyRatioVal}%)</span>
+                </div>`;
+        }).join('')
+        : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+
+    return `
+        <div class="summary-grid">
+            <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
+            <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
+            <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
+        </div>
+        <div class="card">
+            <h2>🎯 간단 계산 결과 (현재 비율 유지)</h2>
+            <p style="margin-bottom: 15px; color: #666;">현재 보유 비율을 유지하면서 추가 투자금을 배분합니다.</p>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr>
+                        <th>${t('template.stock')}</th>
+                        <th>${t('template.currentRatio')}</th>
+                        <th>${t('template.profitRate')}</th>
+                        <th>${t('template.buyRecommendation')}</th>
+                    </tr></thead>
+                    <tbody>${resultsRows}</tbody>
+                </table>
+            </div>
+            <div class="guide-box guide-box--buy"><h3>${t('template.buyGuideTitle')}</h3>${guideContent}</div>
+        </div>`;
+}
+
+/**
  * @description '매도 리밸런싱' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
  * @param {(CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[]} results - 계산 결과 배열
  * @param {string} currency - 현재 통화 ('krw' or 'usd')

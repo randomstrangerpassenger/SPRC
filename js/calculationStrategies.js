@@ -127,6 +127,71 @@ export class AddRebalanceStrategy extends IRebalanceStrategy {
 }
 
 /**
+ * @description '간단 계산' 모드 전략 - 현재 비율을 유지하면서 추가 투자금 배분
+ * @implements {IRebalanceStrategy}
+ */
+export class SimpleRatioStrategy extends IRebalanceStrategy {
+    /** @type {CalculatedStock[]} */
+    #portfolioData;
+    /** @type {Decimal} */
+    #additionalInvestment;
+
+    /**
+     * @param {CalculatedStock[]} portfolioData
+     * @param {Decimal} additionalInvestment
+     */
+    constructor(portfolioData, additionalInvestment) {
+        super();
+        this.#portfolioData = portfolioData;
+        this.#additionalInvestment = additionalInvestment;
+    }
+
+    calculate() {
+        const startTime = performance.now();
+
+        const zero = new Decimal(0);
+
+        // 현재 포트폴리오 총액 계산
+        const currentTotal = this.#portfolioData.reduce(
+            (sum, s) => sum.plus(s.calculated?.currentAmount || zero),
+            zero
+        );
+
+        // 포트폴리오가 비어있으면 계산 불가
+        if (currentTotal.isZero()) {
+            const endTime = performance.now();
+            console.log(`[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
+            return { results: [] };
+        }
+
+        const results = [];
+
+        // 각 종목의 현재 비율에 따라 추가 투자금 배분
+        for (const s of this.#portfolioData) {
+            const currentAmount = s.calculated?.currentAmount || zero;
+            const currentRatio = currentAmount.div(currentTotal).times(100);
+
+            // 현재 비율만큼 추가 투자금 배분
+            const buyAmount = this.#additionalInvestment.times(currentAmount).div(currentTotal);
+
+            results.push({
+                ...s,
+                currentRatio: currentRatio,
+                finalBuyAmount: buyAmount,
+                buyRatio: this.#additionalInvestment.isZero()
+                    ? zero
+                    : buyAmount.div(this.#additionalInvestment).times(100)
+            });
+        }
+
+        const endTime = performance.now();
+        console.log(`[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+
+        return { results };
+    }
+}
+
+/**
  * @description '매도 리밸런싱' 모드 계산 전략
  * @implements {IRebalanceStrategy}
  */
@@ -144,16 +209,16 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
 
     calculate() {
         const startTime = performance.now();
-        
+
         const currentTotal = this.#portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0));
-        
+
         // ▼▼▼ [수정] totalRatio가 Decimal을 .plus()로 합산하도록 변경 ▼▼▼
         const totalRatio = this.#portfolioData.reduce(
-            (sum, s) => sum.plus(s.targetRatio || 0), 
+            (sum, s) => sum.plus(s.targetRatio || 0),
             new Decimal(0)
         );
         // ▲▲▲ [수정] ▲▲▲
-        
+
         const results = [];
         const zero = new Decimal(0);
 
@@ -162,7 +227,7 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
             console.log(`[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
             return { results: [] };
         }
-        
+
         // ▼▼▼ [수정] totalRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
         const ratioMultiplier = new Decimal(100).div(totalRatio);
         // ▲▲▲ [수정] ▲▲▲
@@ -186,10 +251,10 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
                 adjustment: adjustment
             });
         }
-        
+
         const endTime = performance.now();
         console.log(`[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        
+
         return { results };
     }
 }
