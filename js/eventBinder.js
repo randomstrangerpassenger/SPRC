@@ -194,7 +194,7 @@ export function bindEventListeners(view) {
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const mode = /** @type {'add' | 'sell'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
+        const mode = /** @type {'add' | 'sell' | 'simple'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
         view.emit('mainModeChanged', { mode }); // view.emit으로 변경
     }));
     dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
