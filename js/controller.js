@@ -546,12 +546,20 @@ export class PortfolioController {
      }
 
     async handleMainModeChange(newMode) {
-        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
+        console.log('[Controller] handleMainModeChange called with:', newMode); // 디버깅용
+        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') {
+            console.log('[Controller] Invalid mode, returning'); // 디버깅용
+            return;
+        }
+        console.log('[Controller] Updating portfolio settings...'); // 디버깅용
         await this.state.updatePortfolioSettings('mainMode', newMode);
-        this.view.updateMainModeUI(newMode); // ← 이 줄 추가!
+        console.log('[Controller] Updating UI...'); // 디버깅용
+        this.view.updateMainModeUI(newMode);
+        console.log('[Controller] Full render...'); // 디버깅용
         this.fullRender();
         const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
         this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
+        console.log('[Controller] handleMainModeChange completed'); // 디버깅용
      }
 
     async handleCurrencyModeChange(newCurrency) {
