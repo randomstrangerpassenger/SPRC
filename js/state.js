@@ -157,7 +157,7 @@ export class PortfolioState {
                         name: DOMPurify.sanitize(portfolio.name),
                         // ▲▲▲ [수정] ▲▲▲
                         settings: {
-                            mainMode: ['add', 'sell'].includes(portfolio.settings?.mainMode) ? portfolio.settings.mainMode : 'add',
+                            mainMode: ['add', 'sell', 'simple'].includes(portfolio.settings?.mainMode) ? portfolio.settings.mainMode : 'simple',
                             currentCurrency: ['krw', 'usd'].includes(portfolio.settings?.currentCurrency) ? portfolio.settings.currentCurrency : 'krw',
                             exchangeRate: typeof portfolio.settings?.exchangeRate === 'number' && portfolio.settings.exchangeRate > 0 ? portfolio.settings.exchangeRate : CONFIG.DEFAULT_EXCHANGE_RATE,
                         },
@@ -581,7 +581,7 @@ export class PortfolioState {
             id: id,
             name: name,
             settings: {
-                mainMode: 'add',
+                mainMode: 'simple',
                 currentCurrency: 'krw',
                 exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
             },

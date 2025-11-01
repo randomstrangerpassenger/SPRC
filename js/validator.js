@@ -101,7 +101,7 @@ export const Validator = {
     // ... (validateForCalculation 함수 - 이전과 동일하게 유지) ...
     /**
      * @description 리밸런싱 계산 전 전체 입력 데이터의 유효성을 검사합니다.
-     * @param {{mainMode: 'add' | 'sell', portfolioData: CalculatedStock[], additionalInvestment: Decimal}} inputs - 계산 입력값
+     * @param {{mainMode: 'add' | 'sell' | 'simple', portfolioData: CalculatedStock[], additionalInvestment: Decimal}} inputs - 계산 입력값
      * @returns {ValidationErrorDetail[]} 오류 배열 (유효하면 빈 배열)
      */
     validateForCalculation(inputs) {
@@ -109,8 +109,8 @@ export const Validator = {
         const errors = [];
         const { mainMode, portfolioData, additionalInvestment } = inputs;
 
-        // 추가 매수 모드일 때 추가 투자금액 검증
-        if (mainMode === 'add') {
+        // 추가 매수 모드 또는 간단 계산 모드일 때 추가 투자금액 검증
+        if (mainMode === 'add' || mainMode === 'simple') {
              // Use Decimal's comparison methods
              if (!additionalInvestment || additionalInvestment.isNaN() || additionalInvestment.isNegative() || additionalInvestment.isZero()) {
                  errors.push({ field: 'additionalInvestment', stockId: null, message: t('validation.investmentAmountZero') });
@@ -188,7 +188,7 @@ export const Validator = {
             if (portfolio.id !== portId || !portfolio.name || typeof portfolio.name !== 'string') return false;
             // Check settings object structure (basic)
             if (!portfolio.settings || typeof portfolio.settings !== 'object') return false;
-            if (!['add', 'sell'].includes(portfolio.settings.mainMode)) return false;
+            if (!['add', 'sell', 'simple'].includes(portfolio.settings.mainMode)) return false;
             if (!['krw', 'usd'].includes(portfolio.settings.currentCurrency)) return false;
             if (typeof portfolio.settings.exchangeRate !== 'number' || portfolio.settings.exchangeRate <= 0) return false;
 

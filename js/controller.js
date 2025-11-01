@@ -8,10 +8,10 @@ import { debounce, formatCurrency, getRatioSum } from './utils.js';
 import { CONFIG } from './constants.js';
 import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
-import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML } from './templates.js';
+import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from './templates.js';
 import Decimal from 'decimal.js';
 import { apiService } from './apiService.js';
-import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js';
+import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from './calculationStrategies.js';
 import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
 
 // ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
@@ -459,6 +459,8 @@ export class PortfolioController {
         let strategy;
         if (activePortfolio.settings.mainMode === 'add') {
             strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
+        } else if (activePortfolio.settings.mainMode === 'simple') {
+            strategy = new SimpleRatioStrategy(calculatedState.portfolioData, additionalInvestment);
         } else {
             strategy = new SellRebalanceStrategy(calculatedState.portfolioData);
         }
@@ -467,6 +469,12 @@ export class PortfolioController {
 
         const resultsHTML = activePortfolio.settings.mainMode === 'add'
              ? generateAddModeResultsHTML(rebalancingResults.results, {
+                   currentTotal: calculatedState.currentTotal,
+                   additionalInvestment: additionalInvestment,
+                   finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
+               }, activePortfolio.settings.currentCurrency)
+             : activePortfolio.settings.mainMode === 'simple'
+             ? generateSimpleModeResultsHTML(rebalancingResults.results, {
                    currentTotal: calculatedState.currentTotal,
                    additionalInvestment: additionalInvestment,
                    finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
@@ -538,10 +546,10 @@ export class PortfolioController {
      }
 
     async handleMainModeChange(newMode) {
-        if (newMode !== 'add' && newMode !== 'sell') return;
-        await this.state.updatePortfolioSettings('mainMode', newMode); 
-        this.fullRender(); 
-        const modeName = newMode === 'add' ? t('ui.addMode') : t('ui.sellMode');
+        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
+        await this.state.updatePortfolioSettings('mainMode', newMode);
+        this.fullRender();
+        const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
         this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
      }
 

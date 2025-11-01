@@ -582,7 +582,8 @@ export const PortfolioView = {
     updateMainModeUI(mainMode) {
         const addCard = this.dom.addInvestmentCard;
         const modeRadios = this.dom.mainModeSelector;
-        addCard?.classList.toggle('hidden', mainMode !== 'add');
+        // Show investment card for both 'add' and 'simple' modes
+        addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
         modeRadios?.forEach(radio => {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
         });
