@@ -548,6 +548,7 @@ export class PortfolioController {
     async handleMainModeChange(newMode) {
         if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
         await this.state.updatePortfolioSettings('mainMode', newMode);
+        this.view.updateMainModeUI(newMode); // ← 이 줄 추가!
         this.fullRender();
         const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
         this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
