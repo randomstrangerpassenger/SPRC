@@ -112,9 +112,9 @@ body.dark-mode .output-cell .label { color: #9ab; }
 #virtual-scroll-wrapper {
     position: relative;
     width: 100%;
+    min-height: 400px; /* 최소 높이 추가 */
     max-height: 60vh; /* 테이블의 최대 높이 (중요) */
     overflow-y: auto; /* 스크롤바 생성 */
-    contain: strict; /* 브라우저 렌더링 최적화 */
     border: 1px solid var(--border-color);
     border-top: none;
     border-radius: 0 0 var(--border-radius) var(--border-radius);
