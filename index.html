@@ -66,11 +66,13 @@
 
                     <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 </div>
-                <div class="table-responsive">
-                    <table id="portfolioTable" role="grid">
-                        <thead id="portfolioTableHead"></thead>
-                        <tbody id="portfolioBody"></tbody>
-                    </table>
+                
+                <div id="virtual-table-header" class="virtual-table-header" role="row">
+                    </div>
+                
+                <div id="virtual-scroll-wrapper" role="grid" aria-rowcount="-1">
+                    <div id="virtual-scroll-spacer"></div>
+                    <div id="virtual-scroll-content"></div>
                 </div>
                 <div id="ratioValidator" class="ratio-validator">
                     <strong>목표 비율 합계:</strong>

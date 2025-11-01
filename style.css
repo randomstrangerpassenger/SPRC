@@ -56,6 +56,7 @@ body {
 
 /* --- 테이블 및 반응형 개선 --- */
 .table-responsive { overflow-x: auto; } 
+/* 모달 내의 테이블 스타일은 유지 */
 table { 
     width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px; border-spacing: 0;
 }
@@ -89,6 +90,102 @@ body.dark-mode .stock-outputs {
 body.dark-mode .output-cell .label { color: #9ab; }
 .output-cell .value { font-weight: bold; font-size: 1.1rem; }
 
+/* ▼▼▼▼▼ [추가] 가상 스크롤 및 새 테이블 그리드 스타일 ▼▼▼▼▼ */
+.virtual-table-header, .virtual-row-inputs, .virtual-row-outputs {
+    display: grid;
+    /* 그리드 템플릿은 view.js에서 모드에 따라 동적으로 설정됩니다. */
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 10px; /* 좌우 패딩 */
+}
+
+.virtual-table-header {
+    background-color: var(--card-bg);
+    border-bottom: 2px solid var(--accent-color);
+    font-weight: 600;
+    padding: 12px 10px;
+    position: sticky; /* 스크롤 시 헤더가 상단에 붙도록 (선택 사항) */
+    top: 0;
+    z-index: 10;
+}
+
+#virtual-scroll-wrapper {
+    position: relative;
+    width: 100%;
+    max-height: 60vh; /* 테이블의 최대 높이 (중요) */
+    overflow-y: auto; /* 스크롤바 생성 */
+    contain: strict; /* 브라우저 렌더링 최적화 */
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+#virtual-scroll-spacer {
+    position: relative;
+    width: 100%;
+    height: 1px; /* view.js에서 총 높이로 설정됨 */
+}
+
+#virtual-scroll-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+/* 새 '행' 스타일 (div) */
+.virtual-row-inputs, .virtual-row-outputs {
+    width: 100%;
+    /* 각 행의 높이를 고정해야 계산이 가능 (중요) */
+    /* 2줄(입력+출력)이 한 세트이므로, 각 div의 높이를 설정 */
+}
+.virtual-row-inputs {
+    height: 60px; /* 입력 행 높이 고정 */
+    background-color: var(--card-bg);
+}
+.virtual-row-outputs {
+    height: 50px; /* 출력 행 높이 고정 */
+    background-color: rgba(0,0,0,0.015);
+    font-size: 0.9rem;
+}
+body.dark-mode .virtual-row-outputs {
+    background-color: rgba(255,255,255,0.03);
+}
+
+/* 그리드 셀 공통 스타일 */
+.virtual-cell {
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.virtual-cell.align-right { justify-content: flex-end; }
+.virtual-cell.align-center { justify-content: center; }
+
+/* 새 입력창 스타일 (폭 100%) */
+.virtual-cell input[type="text"],
+.virtual-cell input[type="number"],
+.virtual-cell input[type="checkbox"] {
+    width: 100%;
+    padding: 6px;
+    margin: 0;
+    text-align: center;
+    font-size: 0.95rem; /* 입력창 폰트 크기 살짝 조절 */
+}
+.virtual-cell input[type="checkbox"] { width: auto; }
+
+/* 출력 셀 스타일 (기존 .output-cell과 유사) */
+.virtual-row-outputs .output-cell .label {
+    display: block; font-size: 0.8rem; color: #6c757d; margin-bottom: 2px;
+}
+body.dark-mode .virtual-row-outputs .output-cell .label { color: #9ab; }
+.virtual-row-outputs .output-cell .value { font-weight: bold; font-size: 1.05rem; }
+
+/* ▲▲▲▲▲ [추가] ▲▲▲▲▲ */
+
+
 /* --- 입력 필드 및 버튼 --- */
 .input-group { display: flex; align-items: center; gap: 15px; margin-bottom: var(--spacing-md); flex-wrap: wrap; }
 .input-group label { font-weight: 600; min-width: 120px; }
@@ -98,7 +195,7 @@ input, .input-group__select {
     padding: 12px; border: 2px solid var(--input-border); border-radius: 8px; font-size: var(--font-size-base); 
     background: var(--input-bg); color: var(--text-color); transition: border-color 0.3s; 
 }
-#portfolioTable input[type="text"] { text-align: center; }
+/* #portfolioTable input[type="text"] { text-align: center; } <-- 가상 스크롤 CSS로 대체됨 */
 .input-group__select { flex-grow: 1; }
 input:focus, .input-group__select:focus { outline: none; border-color: var(--accent-color); }
 input:disabled { background-color: #eee; }
@@ -275,14 +372,32 @@ body.dark-mode .skeleton {
     .header h1 { font-size: 1.8rem; }
     .btn-controls { flex-direction: column; }
     .btn { width: 100%; margin-bottom: 5px; }
-    table { font-size: 0.85rem; min-width: auto; }
-    th, td { padding: 8px 4px; white-space: normal; }
+    table { font-size: 0.85rem; min-width: auto; } /* 모달 테이블 */
+    th, td { padding: 8px 4px; white-space: normal; } /* 모달 테이블 */
     .amount-input { width: 80px; }
     .input-group { flex-direction: column; align-items: flex-start; }
     .summary-grid { grid-template-columns: 1fr; }
     .mode-selector { flex-direction: column; gap: var(--spacing-sm); }
     .guide-box { padding: 15px; }
     .dark-mode-toggle { bottom: 15px; right: 15px; width: 50px; height: 50px; }
+    
+    /* ▼▼▼▼▼ [추가] 가상 테이블 모바일 스타일 ▼▼▼▼▼ */
+    .virtual-table-header, .virtual-row-inputs, .virtual-row-outputs {
+        font-size: 0.85rem;
+        padding: 0 4px;
+        /* 그리드 템플릿은 view.js에서 동적으로 설정됩니다 */
+    }
+    .virtual-row-inputs { 
+        height: 70px; /* 모바일에서 입력 행 높이 약간 증가 */
+        font-size: 0.9rem;
+    }
+    .virtual-row-outputs { height: 50px; }
+    
+    .virtual-cell .btn--small {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+    }
+    /* ▲▲▲▲▲ [추가] ▲▲▲▲▲ */
 }
 @media (max-width: 480px) {
     .header h1 { font-size: var(--font-size-lg); }

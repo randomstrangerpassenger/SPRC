@@ -1,4 +1,4 @@
-// js/controller.js (Logs removed)
+// js/controller.js (async/await + DOMPurify 적용)
 // @ts-check
 import { PortfolioState } from './state.js';
 import { PortfolioView } from './view.js';
@@ -10,7 +10,9 @@ import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
 import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML } from './templates.js';
 import Decimal from 'decimal.js';
-import { bindEventListeners } from './eventBinder.js';
+import { apiService } from './apiService.js';
+import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js';
+import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
 
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
 /** @typedef {import('./types.js').Portfolio} Portfolio */
@@ -41,7 +43,7 @@ export class PortfolioController {
         await this.state.ensureInitialized();
         this.view.cacheDomElements();
         this.setupInitialUI();
-        this.bindAppEventListeners();
+        this.bindControllerEvents(); 
     }
 
     setupInitialUI() {
@@ -64,8 +66,47 @@ export class PortfolioController {
         }
     }
 
-    bindAppEventListeners() {
-        bindEventListeners(this, this.view.dom);
+    bindControllerEvents() {
+        // Pub/Sub 패턴: View가 발행(emit)한 이벤트를 Controller가 구독(on)합니다.
+        
+        // 포트폴리오 관리
+        this.view.on('newPortfolioClicked', () => this.handleNewPortfolio());
+        this.view.on('renamePortfolioClicked', () => this.handleRenamePortfolio());
+        this.view.on('deletePortfolioClicked', () => this.handleDeletePortfolio());
+        this.view.on('portfolioSwitched', (data) => this.handleSwitchPortfolio(data.newId));
+
+        // 포트폴리오 설정
+        this.view.on('addNewStockClicked', () => this.handleAddNewStock());
+        this.view.on('resetDataClicked', () => this.handleResetData());
+        this.view.on('normalizeRatiosClicked', () => this.handleNormalizeRatios());
+        this.view.on('fetchAllPricesClicked', () => this.handleFetchAllPrices());
+
+        // 데이터 관리
+        this.view.on('exportDataClicked', () => this.handleExportData());
+        this.view.on('importDataClicked', () => this.handleImportData());
+        this.view.on('fileSelected', (e) => this.handleFileSelected(e));
+
+        // 테이블 상호작용
+        this.view.on('portfolioBodyChanged', (e) => this.handlePortfolioBodyChange(e, null));
+        this.view.on('portfolioBodyClicked', (e) => this.handlePortfolioBodyClick(e));
+        this.view.on('manageStockClicked', (data) => this.openTransactionModalByStockId(data.stockId));
+        this.view.on('deleteStockShortcut', (data) => this.handleDeleteStock(data.stockId));
+
+
+        // 계산 및 통화
+        this.view.on('calculateClicked', () => this.handleCalculate());
+        this.view.on('mainModeChanged', (data) => this.handleMainModeChange(data.mode));
+        this.view.on('currencyModeChanged', (data) => this.handleCurrencyModeChange(data.currency));
+        this.view.on('currencyConversion', (data) => this.handleCurrencyConversion(data.source));
+
+        // 모달 상호작용
+        this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
+        this.view.on('newTransactionSubmitted', (e) => this.handleAddNewTransaction(e));
+        this.view.on('transactionDeleteClicked', (data) => this.handleTransactionListClick(data.stockId, data.txId));
+        
+        // 기타
+        this.view.on('darkModeToggleClicked', () => this.handleToggleDarkMode());
+        this.view.on('pageUnloading', () => this.handleSaveDataOnExit());
     }
 
     // --- UI 렌더링 ---
@@ -108,9 +149,7 @@ export class PortfolioController {
             currentCurrency: activePortfolio.settings.currentCurrency
         });
 
-        calculatedState.portfolioData.forEach(stock => {
-            this.view.updateStockRowOutputs(stock.id, stock, activePortfolio.settings.currentCurrency, activePortfolio.settings.mainMode);
-        });
+        this.view.updateVirtualTableData(calculatedState.portfolioData);
 
         const ratioSum = getRatioSum(activePortfolio.portfolioData);
         this.view.updateRatioSum(ratioSum.toNumber());
@@ -124,9 +163,12 @@ export class PortfolioController {
 
     // --- 포트폴리오 관리 핸들러 ---
     async handleNewPortfolio() {
-        const name = await this.view.showPrompt(t('modal.promptNewPortfolioNameTitle'), t('modal.promptNewPortfolioNameMsg'));
+        let name = await this.view.showPrompt(t('modal.promptNewPortfolioNameTitle'), t('modal.promptNewPortfolioNameMsg'));
         if (name) {
-            this.state.createNewPortfolio(name);
+            // ▼▼▼ [수정] 입력값 소독 ▼▼▼
+            name = DOMPurify.sanitize(name);
+            await this.state.createNewPortfolio(name); 
+            // ▲▲▲ [수정] ▲▲▲
             this.view.renderPortfolioSelector(this.state.getAllPortfolios(), this.state.getActivePortfolio()?.id || '');
             this.fullRender();
             this.view.showToast(t('toast.portfolioCreated', { name }), "success");
@@ -136,9 +178,12 @@ export class PortfolioController {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const newName = await this.view.showPrompt(t('modal.promptRenamePortfolioTitle'), t('modal.promptRenamePortfolioMsg'), activePortfolio.name);
+        let newName = await this.view.showPrompt(t('modal.promptRenamePortfolioTitle'), t('modal.promptRenamePortfolioMsg'), activePortfolio.name);
         if (newName && newName.trim()) {
-            this.state.renamePortfolio(activePortfolio.id, newName.trim());
+            // ▼▼▼ [수정] 입력값 소독 ▼▼▼
+            newName = DOMPurify.sanitize(newName.trim());
+            await this.state.renamePortfolio(activePortfolio.id, newName); 
+            // ▲▲▲ [수정] ▲▲▲
             this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
             this.view.showToast(t('toast.portfolioRenamed'), "success");
         }
@@ -155,7 +200,7 @@ export class PortfolioController {
         const confirmDelete = await this.view.showConfirm(t('modal.confirmDeletePortfolioTitle'), t('modal.confirmDeletePortfolioMsg', { name: activePortfolio.name }));
         if (confirmDelete) {
             const deletedId = activePortfolio.id;
-            if (this.state.deletePortfolio(deletedId)) {
+            if (await this.state.deletePortfolio(deletedId)) { 
                 const newActivePortfolio = this.state.getActivePortfolio();
                 if (newActivePortfolio) {
                     this.view.renderPortfolioSelector(this.state.getAllPortfolios(), newActivePortfolio.id);
@@ -165,30 +210,27 @@ export class PortfolioController {
             }
         }
      }
-    handleSwitchPortfolio() {
-        const selector = this.view.dom.portfolioSelector;
-        if (selector instanceof HTMLSelectElement) {
-            const newId = selector.value;
-            if (newId) {
-                this.state.setActivePortfolioId(newId);
-                const activePortfolio = this.state.getActivePortfolio();
-                if (activePortfolio) {
-                    this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-                    this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                    const { exchangeRateInput } = this.view.dom;
-                    if (exchangeRateInput instanceof HTMLInputElement) {
-                        exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-                    }
+    
+    async handleSwitchPortfolio(newId) {
+        if (newId) {
+            await this.state.setActivePortfolioId(newId); 
+            const activePortfolio = this.state.getActivePortfolio();
+            if (activePortfolio) {
+                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+                const { exchangeRateInput } = this.view.dom;
+                if (exchangeRateInput instanceof HTMLInputElement) {
+                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
-                this.fullRender();
             }
+            this.fullRender();
         }
      }
 
 
     // --- 주식/데이터 관리 핸들러 ---
-    handleAddNewStock() {
-        const newStock = this.state.addNewStock();
+    async handleAddNewStock() {
+        const newStock = await this.state.addNewStock(); 
         this.fullRender();
         if (newStock) {
              this.view.focusOnNewStock(newStock.id);
@@ -201,10 +243,10 @@ export class PortfolioController {
             t('modal.confirmDeleteStockMsg', { name: stockName })
         );
         if (confirmDelete) {
-            if(this.state.deleteStock(stockId)){
+            if(await this.state.deleteStock(stockId)){ 
                 Calculator.clearPortfolioStateCache();
                 this.fullRender();
-                this.view.showToast(t('toast.transactionDeleted'), "success"); // Consider changing toast message key if needed
+                this.view.showToast(t('toast.transactionDeleted'), "success"); 
             } else {
                  this.view.showToast(t('toast.lastStockDeleteError'), "error");
             }
@@ -213,7 +255,7 @@ export class PortfolioController {
     async handleResetData() {
         const confirmReset = await this.view.showConfirm(t('modal.confirmResetTitle'), t('modal.confirmResetMsg'));
         if (confirmReset) {
-            this.state.resetData();
+            await this.state.resetData(); 
             Calculator.clearPortfolioStateCache();
             const activePortfolio = this.state.getActivePortfolio();
              if (activePortfolio) {
@@ -251,7 +293,7 @@ export class PortfolioController {
 
     handlePortfolioBodyChange(e, _debouncedUpdate) {
         const target = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
-        const row = target.closest('tr[data-id]');
+        const row = target.closest('div[data-id]'); 
         if (!row) return;
 
         const stockId = row.dataset.id;
@@ -272,12 +314,14 @@ export class PortfolioController {
             case 'isFixedBuyEnabled':
                 value = Boolean(value);
                 break;
+            // ▼▼▼ [수정] 문자열 입력 소독 ▼▼▼
             case 'sector':
             case 'name':
             case 'ticker':
             default:
-                value = String(value).trim();
+                value = DOMPurify.sanitize(String(value).trim()); // 소독 추가
                 break;
+            // ▲▲▲ [수정] ▲▲▲
         }
 
         this.view.toggleInputValidation(target, isValid);
@@ -296,15 +340,7 @@ export class PortfolioController {
             });
             activePortfolio.portfolioData = calculatedState.portfolioData;
 
-            const changedStock = calculatedState.portfolioData.find(s => s.id === stockId);
-            if (changedStock) {
-                this.view.updateStockRowOutputs(
-                    stockId,
-                    changedStock,
-                    activePortfolio.settings.currentCurrency,
-                    activePortfolio.settings.mainMode
-                );
-            }
+            this.view.updateVirtualTableData(calculatedState.portfolioData);
 
             const newRatioSum = getRatioSum(activePortfolio.portfolioData);
             this.view.updateRatioSum(newRatioSum.toNumber());
@@ -334,22 +370,26 @@ export class PortfolioController {
         const actionButton = target.closest('button[data-action]');
         if (!actionButton) return;
 
-        const row = actionButton.closest('tr[data-id]');
+        const row = actionButton.closest('div[data-id]'); 
         if (!row?.dataset.id) return;
 
         const stockId = row.dataset.id;
         const action = actionButton.dataset.action;
 
         if (action === 'manage') {
-            const stock = this.state.getStockById(stockId);
-            const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
-            if (stock && currency) {
-                this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId));
-            }
+            this.openTransactionModalByStockId(stockId);
         } else if (action === 'delete') {
             this.handleDeleteStock(stockId);
         }
      }
+     
+    openTransactionModalByStockId(stockId) {
+        const stock = this.state.getStockById(stockId);
+        const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+        if (stock && currency) {
+            this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId));
+        }
+    }
 
 
     // --- 계산 및 통화 핸들러 ---
@@ -357,17 +397,7 @@ export class PortfolioController {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
-        if (!(additionalAmountInput instanceof HTMLInputElement) || !(additionalAmountUSDInput instanceof HTMLInputElement) || !(exchangeRateInput instanceof HTMLInputElement)) {
-             console.error("DOM elements for calculation not found.");
-             return;
-        }
-
-        const additionalInvestment = this.getInvestmentAmountInKRW(
-             activePortfolio.settings.currentCurrency,
-             additionalAmountInput,
-             exchangeRateInput
-        );
+        const additionalInvestment = this.getInvestmentAmountInKRW();
 
         const inputs = {
             mainMode: activePortfolio.settings.mainMode,
@@ -403,15 +433,15 @@ export class PortfolioController {
         });
         activePortfolio.portfolioData = calculatedState.portfolioData;
 
-
-        const rebalancingResults = (activePortfolio.settings.mainMode === 'add')
-            ? Calculator.calculateAddRebalancing({
-                portfolioData: calculatedState.portfolioData,
-                additionalInvestment: additionalInvestment
-            })
-            : Calculator.calculateSellRebalancing({
-                portfolioData: calculatedState.portfolioData
-            });
+        // ▼▼▼ [수정] 전략 패턴 적용 ▼▼▼
+        let strategy;
+        if (activePortfolio.settings.mainMode === 'add') {
+            strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
+        } else {
+            strategy = new SellRebalanceStrategy(calculatedState.portfolioData);
+        }
+        const rebalancingResults = Calculator.calculateRebalancing(strategy);
+        // ▲▲▲ [수정] ▲▲▲
 
         const resultsHTML = activePortfolio.settings.mainMode === 'add'
              ? generateAddModeResultsHTML(rebalancingResults.results, {
@@ -427,7 +457,7 @@ export class PortfolioController {
      }
 
 
-     async handleFetchAllPrices() {
+    async handleFetchAllPrices() {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
             this.view.showToast(t('api.noUpdates'), "info");
@@ -450,32 +480,22 @@ export class PortfolioController {
             let failureCount = 0;
             const failedTickers = [];
 
-            const results = await Promise.allSettled(
-                tickersToFetch.map(item => this._fetchPrice(item.ticker))
-            );
+            const results = await apiService.fetchAllStockPrices(tickersToFetch);
 
-            results.forEach((result, index) => {
-                const { id, ticker } = tickersToFetch[index];
-                if (result.status === 'fulfilled') {
-                    const price = result.value;
-                    if (typeof price === 'number' && price > 0) {
-                        this.state.updateStockProperty(id, 'currentPrice', price);
-                        this.view.updateCurrentPriceInput(id, price.toFixed(2));
-                        successCount++;
-                    } else {
-                        failureCount++;
-                        failedTickers.push(ticker);
-                        console.warn(`[API] Invalid price for ${ticker}:`, price);
-                    }
+            results.forEach((result) => {
+                if (result.status === 'fulfilled' && result.value) {
+                    this.state.updateStockProperty(result.id, 'currentPrice', result.value);
+                    this.view.updateCurrentPriceInput(result.id, result.value.toFixed(2));
+                    successCount++;
                 } else {
                     failureCount++;
-                    failedTickers.push(ticker);
-                    console.error(`[API] Failed to fetch price for ${ticker}:`, result.reason);
+                    failedTickers.push(result.ticker);
+                    console.error(`[API] Failed to fetch price for ${result.ticker}:`, result.reason);
                 }
             });
 
             Calculator.clearPortfolioStateCache();
-            this.fullRender();
+            this.updateUIState(); 
 
             if (successCount === tickersToFetch.length) {
                 this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), "success");
@@ -495,50 +515,27 @@ export class PortfolioController {
         }
      }
 
-
-    async _fetchPrice(ticker) {
-         if (!ticker || ticker.trim() === '') {
-            throw new Error('Ticker is empty.');
-        }
-        const url = `/finnhub/quote?symbol=${encodeURIComponent(ticker)}`;
-        const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
-
-        if (!response.ok) {
-            let errorBody = '';
-            try { errorBody = await response.text(); } catch (_) {}
-            throw new Error(`API returned status ${response.status}. ${errorBody}`);
-        }
-        const data = await response.json();
-        const price = data.c;
-        if (typeof price !== 'number' || price <= 0) {
-             console.warn(`[API] Received invalid price for ${ticker}: ${price}`);
-            throw new Error(`Invalid or zero price received for ${ticker}: ${price}`);
-        }
-        return price;
-     }
-
-    handleMainModeChange(newMode) {
+    async handleMainModeChange(newMode) {
         if (newMode !== 'add' && newMode !== 'sell') return;
-        this.state.updatePortfolioSettings('mainMode', newMode);
-        this.view.updateMainModeUI(newMode);
-        this.fullRender();
+        await this.state.updatePortfolioSettings('mainMode', newMode); 
+        this.fullRender(); 
         const modeName = newMode === 'add' ? t('ui.addMode') : t('ui.sellMode');
         this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
      }
 
-    handleCurrencyModeChange(newCurrency) {
+    async handleCurrencyModeChange(newCurrency) {
          if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
-        this.state.updatePortfolioSettings('currentCurrency', newCurrency);
-        this.view.updateCurrencyModeUI(newCurrency);
-        this.fullRender();
+        await this.state.updatePortfolioSettings('currentCurrency', newCurrency); 
+        this.fullRender(); 
         this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
      }
 
-    handleCurrencyConversion(source) {
+    async handleCurrencyConversion(source) {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
         const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
+
          if (!(additionalAmountInput instanceof HTMLInputElement) || !(additionalAmountUSDInput instanceof HTMLInputElement) || !(exchangeRateInput instanceof HTMLInputElement)) return;
 
         const exchangeRateNum = Number(exchangeRateInput.value) || CONFIG.DEFAULT_EXCHANGE_RATE;
@@ -546,10 +543,10 @@ export class PortfolioController {
         let currentExchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE;
 
         if (isValidRate) {
-            this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum); 
             currentExchangeRate = exchangeRateNum;
         } else {
-             this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+             await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE); 
              exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString();
              this.view.showToast(t('toast.invalidExchangeRate'), "error");
         }
@@ -587,7 +584,7 @@ export class PortfolioController {
 
     // --- 거래 내역 모달 핸들러 ---
 
-    handleAddNewTransaction(e) {
+    async handleAddNewTransaction(e) {
         e.preventDefault();
         const form = /** @type {HTMLFormElement} */ (e.target);
         const modal = form.closest('#transactionModal');
@@ -614,7 +611,7 @@ export class PortfolioController {
             return;
         }
 
-        const success = this.state.addTransaction(stockId, {
+        const success = await this.state.addTransaction(stockId, { 
              type,
              date,
              quantity: Number(quantityStr),
@@ -638,35 +635,20 @@ export class PortfolioController {
      }
 
 
-    /**
-     * @description 거래 목록 내 삭제 버튼 클릭을 처리합니다. (이벤트 위임 방식 + 로그 복구)
-     * @param {string} stockId - 주식 ID (eventBinder에서 전달)
-     * @param {string} txId - 거래 ID (eventBinder에서 전달)
-     */
     async handleTransactionListClick(stockId, txId) {
-        console.log(`handleTransactionListClick received: stockId=${stockId}, txId=${txId}`); // 로그 복구
-
         if (stockId && txId) {
              const confirmDelete = await this.view.showConfirm(t('modal.confirmDeleteTransactionTitle'), t('modal.confirmDeleteTransactionMsg'));
              if(confirmDelete) {
-                 console.log("Confirmation received. Calling state.deleteTransaction..."); // 로그 복구
-                 const success = this.state.deleteTransaction(stockId, txId);
-                 console.log("state.deleteTransaction returned:", success); // 로그 복구
+                 const success = await this.state.deleteTransaction(stockId, txId); 
                  if (success) {
                     const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
                     if (currency) {
                          const transactionsBeforeRender = this.state.getTransactions(stockId);
-                         console.log("Controller: Transactions BEFORE renderTransactionList:", JSON.stringify(transactionsBeforeRender)); // 로그 복구
                          this.view.renderTransactionList(transactionsBeforeRender, currency);
-                         console.log("Controller: renderTransactionList finished."); // 로그 복구
                     }
                     this.view.showToast(t('toast.transactionDeleted'), "success");
                     Calculator.clearPortfolioStateCache();
-                    // --- ⬇️ 수정: fullRender 대신 updateUIState 호출 ⬇️ ---
-                    console.log("Controller: Calling updateUIState..."); // 로그 수정
-                    this.updateUIState(); // 부분 UI 업데이트 호출
-                    console.log("Controller: updateUIState finished."); // 로그 수정
-                    // --- ⬆️ 수정 완료 ⬆️ ---
+                    this.updateUIState();
                  } else {
                      this.view.showToast(t('toast.transactionDeleteFailed'), "error");
                  }
@@ -686,9 +668,8 @@ export class PortfolioController {
         this.fullRender();
      }
     handleSaveDataOnExit() {
-        this.state.saveActivePortfolio();
-        this.state.saveMeta();
-     }
+        console.log("Page unloading. Relaying on debounced save.");
+    }
     handleImportData() {
         const fileInput = this.view.dom.importFileInput;
         if (fileInput instanceof HTMLInputElement) fileInput.click();
@@ -705,12 +686,12 @@ export class PortfolioController {
             }
 
             const reader = new FileReader();
-            reader.onload = async (event) => {
+            reader.onload = async (event) => { 
                 try {
                     const jsonString = event.target?.result;
                     if (typeof jsonString === 'string') {
                         const loadedData = JSON.parse(jsonString);
-                        await this.state.importData(loadedData);
+                        await this.state.importData(loadedData); 
                         Calculator.clearPortfolioStateCache();
                         this.setupInitialUI();
                         this.view.showToast(t('toast.importSuccess'), "success");
@@ -755,12 +736,21 @@ export class PortfolioController {
         }
      }
 
-    getInvestmentAmountInKRW(currentCurrency, krwInput, exchangeRateInput) {
-        const usdInput = this.view.dom.additionalAmountUSDInput;
-        if (!(usdInput instanceof HTMLInputElement)) return new Decimal(0);
-
-        const amountKRWStr = krwInput.value || '0';
-        const amountUSDStr = usdInput.value || '0';
+    getInvestmentAmountInKRW() {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return new Decimal(0);
+        
+        const { currentCurrency } = activePortfolio.settings;
+        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
+        
+        if (!(additionalAmountInput instanceof HTMLInputElement) || 
+            !(additionalAmountUSDInput instanceof HTMLInputElement) || 
+            !(exchangeRateInput instanceof HTMLInputElement)) {
+            return new Decimal(0);
+        }
+        
+        const amountKRWStr = additionalAmountInput.value || '0';
+        const amountUSDStr = additionalAmountUSDInput.value || '0';
         const exchangeRateStr = exchangeRateInput.value || String(CONFIG.DEFAULT_EXCHANGE_RATE);
 
         try {

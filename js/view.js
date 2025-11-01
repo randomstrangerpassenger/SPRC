@@ -1,4 +1,4 @@
-// js/view.js (Debug logs removed from renderTransactionList)
+// js/view.js (가상 스크롤 적용)
 // @ts-check
 import { CONFIG } from './constants.js';
 import { formatCurrency, escapeHTML } from './utils.js';
@@ -7,6 +7,13 @@ import Decimal from 'decimal.js';
 
 /** @typedef {import('./types.js').Stock} Stock */
 /** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
+
+// ▼▼▼▼▼ [추가] 가상 스크롤 상수 ▼▼▼▼▼
+const ROW_INPUT_HEIGHT = 60; // .virtual-row-inputs의 height
+const ROW_OUTPUT_HEIGHT = 50; // .virtual-row-outputs의 height
+const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT; // 한 종목(2줄)의 총 높이
+const VISIBLE_ROWS_BUFFER = 5; // 화면 밖 위/아래로 미리 렌더링할 행 수
+// ▲▲▲▲▲ [추가] ▲▲▲▲▲
 
 export const PortfolioView = {
     /** @type {Record<string, HTMLElement | NodeListOf<HTMLElement> | null>} */
@@ -19,12 +26,62 @@ export const PortfolioView = {
     activeModalResolver: null,
     /** @type {HTMLElement | null} */
     lastFocusedElement: null,
+    /** @type {Object<string, Function[]>} */
+    _events: {}, // 1. 이벤트 리스너 저장소 추가
+
+    // ▼▼▼▼▼ [추가] 가상 스크롤 상태 변수 ▼▼▼▼▼
+    /** @type {CalculatedStock[]} */
+    _virtualData: [],
+    /** @type {HTMLElement | null} */
+    _scrollWrapper: null,
+    /** @type {HTMLElement | null} */
+    _scrollSpacer: null,
+    /** @type {HTMLElement | null} */
+    _scrollContent: null,
+    /** @type {number} */
+    _viewportHeight: 0,
+    /** @type {number} */
+    _renderedStartIndex: -1,
+    /** @type {number} */
+    _renderedEndIndex: -1,
+    /** @type {Function | null} */
+    _scrollHandler: null,
+    /** @type {string} */
+    _currentMainMode: 'add',
+    /** @type {string} */
+    _currentCurrency: 'krw',
+    // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+
+    // ▼▼▼▼▼ [수정] Pub/Sub 메서드 ▼▼▼▼▼
+    /**
+     * @description 추상 이벤트를 구독합니다.
+     * @param {string} event - 이벤트 이름 (예: 'calculateClicked')
+     * @param {Function} callback - 실행할 콜백 함수
+     */
+    on(event, callback) {
+        if (!this._events[event]) {
+            this._events[event] = [];
+        }
+        this._events[event].push(callback);
+    },
+
+    /**
+     * @description 추상 이벤트를 발행합니다.
+     * @param {string} event - 이벤트 이름
+     * @param {any} [data] - 전달할 데이터
+     */
+    emit(event, data) {
+        if (this._events[event]) {
+            this._events[event].forEach(callback => callback(data));
+        }
+    },
+    // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
     cacheDomElements() {
         const D = document;
         this.dom = {
             ariaAnnouncer: D.getElementById('aria-announcer'),
-            portfolioBody: D.getElementById('portfolioBody'),
+            // portfolioBody: D.getElementById('portfolioBody'), // 삭제
             resultsSection: D.getElementById('resultsSection'),
             sectorAnalysisSection: D.getElementById('sectorAnalysisSection'),
             chartSection: D.getElementById('chartSection'),
@@ -51,7 +108,7 @@ export const PortfolioView = {
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
             closeModalBtn: D.getElementById('closeModalBtn'),
-            transactionListBody: D.getElementById('transactionListBody'), // 대상 요소
+            transactionListBody: D.getElementById('transactionListBody'), 
             newTransactionForm: D.getElementById('newTransactionForm'),
             txDate: D.getElementById('txDate'),
             txQuantity: D.getElementById('txQuantity'),
@@ -60,7 +117,11 @@ export const PortfolioView = {
             newPortfolioBtn: D.getElementById('newPortfolioBtn'),
             renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
             deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
-            portfolioTableHead: D.getElementById('portfolioTableHead'),
+            // portfolioTableHead: D.getElementById('portfolioTableHead'), // 삭제
+            virtualTableHeader: D.getElementById('virtual-table-header'),
+            virtualScrollWrapper: D.getElementById('virtual-scroll-wrapper'),
+            virtualScrollSpacer: D.getElementById('virtual-scroll-spacer'),
+            virtualScrollContent: D.getElementById('virtual-scroll-content'),
             ratioValidator: D.getElementById('ratioValidator'),
             ratioSum: D.getElementById('ratioSum'),
             customModal: D.getElementById('customModal'),
@@ -70,7 +131,16 @@ export const PortfolioView = {
             customModalConfirm: D.getElementById('customModalConfirm'),
             customModalCancel: D.getElementById('customModalCancel'),
         };
-        // console.log("DOM Caching: transactionListBody found?", this.dom.transactionListBody); // 로그 제거
+        
+        this._events = {}; // 캐시 초기화 시 이벤트 리스너도 초기화
+        
+        // ▼▼▼▼▼ [추가] 가상 스크롤 래퍼 캐시 ▼▼▼▼▼
+        this._scrollWrapper = this.dom.virtualScrollWrapper;
+        this._scrollSpacer = this.dom.virtualScrollSpacer;
+        this._scrollContent = this.dom.virtualScrollContent;
+        this._viewportHeight = this._scrollWrapper ? this._scrollWrapper.clientHeight : 600;
+        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+
 
         const cancelBtn = this.dom.customModalCancel;
         const confirmBtn = this.dom.customModalConfirm;
@@ -166,12 +236,12 @@ export const PortfolioView = {
             selector.appendChild(option);
         });
     },
+
+    // ▼▼▼▼▼ [대대적 수정] createStockRowFragment (div 기반으로 변경) ▼▼▼▼▼
     createStockRowFragment(stock, currency, mainMode) {
         const fragment = document.createDocumentFragment();
-        const trInputs = document.createElement('tr');
-        trInputs.className = 'stock-inputs';
-        trInputs.dataset.id = stock.id;
-
+        
+        // --- 헬퍼 함수 ---
         const createInput = (type, field, value, placeholder = '', disabled = false, ariaLabel = '') => {
             const input = document.createElement('input');
             input.type = type;
@@ -197,7 +267,7 @@ export const PortfolioView = {
              }
             return input;
         };
-
+        
         const createCheckbox = (field, checked, ariaLabel = '') => {
             const input = document.createElement('input');
             input.type = 'checkbox';
@@ -216,42 +286,56 @@ export const PortfolioView = {
             if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
             return button;
         };
-
-        const appendCellWithContent = (row, content) => {
-            const td = row.insertCell();
-            if (typeof content === 'string') {
-                 td.textContent = content;
-            } else if (content instanceof Node) {
-                td.appendChild(content);
-            }
-            return td;
+        
+        const createCell = (className = '', align = 'left') => {
+            const cell = document.createElement('div');
+            cell.className = `virtual-cell ${className} align-${align}`;
+            return cell;
         };
 
-        appendCellWithContent(trInputs, createInput('text', 'name', stock.name, t('ui.stockName')));
-        appendCellWithContent(trInputs, createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
-        appendCellWithContent(trInputs, createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
-        appendCellWithContent(trInputs, createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
-        appendCellWithContent(trInputs, createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
+        // --- 1. 입력 행 (Inputs Row) ---
+        const divInputs = document.createElement('div');
+        divInputs.className = 'virtual-row-inputs';
+        divInputs.dataset.id = stock.id;
+        divInputs.setAttribute('role', 'row');
+        // 그리드 템플릿 설정 (CSS 대신 JS에서)
+        divInputs.style.gridTemplateColumns = this.getGridTemplate(mainMode);
 
-        if (mainMode === 'add') {
-            const fixedBuyCell = trInputs.insertCell();
-            fixedBuyCell.style.textAlign = 'center';
+        const isMobile = window.innerWidth <= 768;
+
+        // 컬럼 구성
+        divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
+        divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
+        if (!isMobile) { // 모바일이 아닐 때만 섹터 표시
+            divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
+        }
+        divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
+        if (!isMobile) { // 모바일이 아닐 때만 현재가 표시
+            divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
+        }
+        if (mainMode === 'add' && !isMobile) { // 모바일이 아닐 때만 고정 매수 표시
+            const fixedBuyCell = createCell('align-center');
             const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
             const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+            amountInput.style.width = '80px'; // 고정 매수 입력창 크기 조절
             fixedBuyCell.append(checkbox, ' ', amountInput);
+            divInputs.appendChild(fixedBuyCell);
         }
 
-        const actionCell = trInputs.insertCell();
-        actionCell.style.textAlign = 'center';
+        const actionCell = createCell('align-center');
         actionCell.append(
             createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
             ' ',
             createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
         );
+        divInputs.appendChild(actionCell);
 
-        const trOutputs = document.createElement('tr');
-        trOutputs.className = 'stock-outputs';
-        trOutputs.dataset.id = stock.id;
+        // --- 2. 출력 행 (Outputs Row) ---
+        const divOutputs = document.createElement('div');
+        divOutputs.className = 'virtual-row-outputs';
+        divOutputs.dataset.id = stock.id;
+        divOutputs.setAttribute('role', 'row');
+        divOutputs.style.gridTemplateColumns = this.getGridTemplate(mainMode); // 동일한 그리드 사용
 
         const metrics = stock.calculated ?? {
             quantity: new Decimal(0),
@@ -270,50 +354,47 @@ export const PortfolioView = {
         const profitSign = profitLoss.isPositive() ? '+' : '';
 
         const createOutputCell = (label, value, valueClass = '') => {
-            const td = document.createElement('td');
-            td.className = 'output-cell';
-            td.style.textAlign = 'right';
-            td.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
-            return td;
+            const cell = createCell('output-cell align-right');
+            cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
+            return cell;
         };
 
-        const outputColspanBase = 5;
-        const actionColSpan = 1;
-        const fixedBuyColSpan = mainMode === 'add' ? 1 : 0;
-        const totalInputCols = 5 + fixedBuyColSpan + actionColSpan;
-        const firstCellColspan = totalInputCols - outputColspanBase;
+        const firstCell = createCell(); // 첫 번째 빈 셀 (스페이서)
+        firstCell.style.gridColumn = 'span 1'; // 첫 번째 컬럼 차지
+        divOutputs.appendChild(firstCell);
 
-        appendCellWithContent(trOutputs, '');
-        if (trOutputs.cells.length > 0) {
-            trOutputs.cells[0].colSpan = firstCellColspan > 0 ? firstCellColspan : 1;
+        // 출력 행 컬럼 구성
+        divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+        if (!isMobile) { // 모바일 아닐 때
+             divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
         }
-        appendCellWithContent(trOutputs, createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
-        appendCellWithContent(trOutputs, createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
-        appendCellWithContent(trOutputs, createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
-        appendCellWithContent(trOutputs, createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
-        appendCellWithContent(trOutputs, createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
+        divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+        if (!isMobile) { // 모바일 아닐 때
+            divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
+        }
+        divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
 
-        fragment.append(trInputs, trOutputs);
+        // 액션 컬럼 스페이서
+        const lastCell = createCell();
+        divOutputs.appendChild(lastCell);
+
+        fragment.append(divInputs, divOutputs);
         return fragment;
     },
+    // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
 
+    // ▼▼▼▼▼ [수정] updateStockRowOutputs (더 이상 사용 안 함) ▼▼▼▼▼
     updateStockRowOutputs(id, stock, currency, mainMode) {
-        const portfolioBody = this.dom.portfolioBody;
-        const oldOutputRow = portfolioBody?.querySelector(`.stock-outputs[data-id="${id}"]`);
-        if (oldOutputRow) {
-             const fragment = this.createStockRowFragment(stock, currency, mainMode);
-             const newOutputRow = fragment.querySelector('.stock-outputs');
-             if(newOutputRow) {
-                 oldOutputRow.replaceWith(newOutputRow);
-             }
-        }
+        // 이 함수는 가상 스크롤에서 전체 재조정 로직(_onScroll)으로 대체됨
+        // console.warn("updateStockRowOutputs is deprecated with Virtual Scroll");
     },
+    // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
     updateAllTargetRatioInputs(portfolioData) {
-        const portfolioBody = this.dom.portfolioBody;
+        // 가상 스크롤에서는 보이는 부분만 업데이트해야 함
         portfolioData.forEach(stock => {
-            const inputRow = portfolioBody?.querySelector(`.stock-inputs[data-id="${stock.id}"]`);
-            if (!inputRow) return;
+            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`);
+            if (!inputRow) return; // 화면에 안보이면 스킵
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
             if (targetRatioInput instanceof HTMLInputElement) {
                 const ratio = stock.targetRatio instanceof Decimal ? stock.targetRatio : new Decimal(stock.targetRatio ?? 0);
@@ -323,69 +404,167 @@ export const PortfolioView = {
     },
 
     updateCurrentPriceInput(id, price) {
-        const portfolioBody = this.dom.portfolioBody;
-        const inputRow = portfolioBody?.querySelector(`.stock-inputs[data-id="${id}"]`);
-        if (!inputRow) { return; }
+        const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
+        if (!inputRow) return; // 화면에 안보이면 스킵
         const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
         if (currentPriceInput instanceof HTMLInputElement) {
             currentPriceInput.value = price;
         }
     },
-
-    renderTable(calculatedPortfolioData, currency, mainMode) {
-        this.updateTableHeader(currency, mainMode);
-        const portfolioBody = this.dom.portfolioBody;
-        if (!portfolioBody) return;
-        portfolioBody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-        calculatedPortfolioData.forEach(stock => {
-            fragment.appendChild(this.createStockRowFragment(stock, currency, mainMode));
-        });
-        portfolioBody.appendChild(fragment);
-    },
-
-    updateTableHeader(currency, mainMode) {
-        const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
-        const fixedBuyHeader = mainMode === 'add' ? `<th scope="col">${t('ui.fixedBuy')}(${currencySymbol})</th>` : '';
-        const tableHead = this.dom.portfolioTableHead;
-        if (!tableHead) return;
-        tableHead.innerHTML = `
-            <tr role="row">
-                <th scope="col" role="columnheader">${t('ui.stockName')}</th>
-                <th scope="col" role="columnheader">${t('ui.ticker')}</th>
-                <th scope="col" role="columnheader">${t('ui.sector')}</th>
-                <th scope="col" role="columnheader">${t('ui.targetRatio')}(%)</th>
-                <th scope="col" role="columnheader">${t('ui.currentPrice')}(${currencySymbol})</th>
-                ${fixedBuyHeader}
-                <th scope="col" role="columnheader">${t('ui.action')}</th>
-            </tr>`;
-    },
-
-    toggleFixedBuyColumn(show) {
-        const currencyInput = document.querySelector('input[name="currencyMode"]:checked');
-        const currency = (currencyInput instanceof HTMLInputElement ? currencyInput.value : 'krw');
-        this.updateTableHeader(currency, show ? 'add' : 'sell');
-        const portfolioBody = this.dom.portfolioBody;
-        portfolioBody?.querySelectorAll('.stock-inputs').forEach(row => {
-            if (!(row instanceof HTMLTableRowElement)) return;
-            const fixedBuyCell = row.cells[5];
-            if (fixedBuyCell && fixedBuyCell.querySelector('input[data-field="isFixedBuyEnabled"]')) {
-                 fixedBuyCell.style.display = show ? '' : 'none';
+    
+    // ▼▼▼▼▼ [추가] 가상 스크롤 헬퍼 ▼▼▼▼▼
+    getGridTemplate(mainMode) {
+        // 반응형 그리드 템플릿 반환
+        const isMobile = window.innerWidth <= 768;
+        
+        // 입력 행과 출력 행의 그리드 컬럼 수를 다르게 설정
+        if (isMobile) {
+            // 모바일: 이름 | 티커 | 목표% | 액션 (입력)
+            // 모바일: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서) (출력)
+            // -> 컬럼 수는 4개로 동일하게 맞추되, 내용만 다르게
+            return '1.5fr 1fr 1fr 1.2fr';
+        } else {
+            // 데스크탑
+            if (mainMode === 'add') {
+                // 이름 | 티커 | 섹터 | 목표% | 현재가 | 고정 | 액션 (7컬럼)
+                // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
+                return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+            } else {
+                // 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
+                // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
+                return '2fr 1fr 1fr 1fr 1fr 1.2fr';
             }
-        });
-        portfolioBody?.querySelectorAll('.stock-outputs').forEach(row => {
-             if (!(row instanceof HTMLTableRowElement)) return;
-             const firstCell = row.cells[0];
-             if (firstCell) {
-                 const outputColspanBase = 5;
-                 const actionColSpan = 1;
-                 const fixedBuyColSpan = show ? 1 : 0;
-                 const totalInputCols = 5 + fixedBuyColSpan + actionColSpan;
-                 const firstCellColspan = totalInputCols - outputColspanBase;
-                 firstCell.colSpan = firstCellColspan > 0 ? firstCellColspan : 1;
-             }
-         });
+        }
     },
+    
+    // updateTableHeader를 새 div 헤더에 맞게 수정
+    updateTableHeader(currency, mainMode) {
+        this._currentMainMode = mainMode; // 현재 모드 저장
+        this._currentCurrency = currency; // 현재 통화 저장
+        const header = this.dom.virtualTableHeader;
+        if (!header) return;
+
+        header.style.gridTemplateColumns = this.getGridTemplate(mainMode);
+        
+        const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
+        let headersHTML = '';
+        
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            headersHTML = `
+                <div class="virtual-cell">${t('ui.stockName')}</div>
+                <div class="virtual-cell">${t('ui.ticker')}</div>
+                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                <div class="virtual-cell align-center">${t('ui.action')}</div>
+            `;
+        } else {
+            headersHTML = `
+                <div class="virtual-cell">${t('ui.stockName')}</div>
+                <div class="virtual-cell">${t('ui.ticker')}</div>
+                <div class="virtual-cell">${t('ui.sector')}</div>
+                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
+                ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
+                <div class="virtual-cell align-center">${t('ui.action')}</div>
+            `;
+        }
+        header.innerHTML = headersHTML;
+    },
+
+    // ▼▼▼▼▼ [대대적 수정] renderTable (가상 스크롤 초기화 로직) ▼▼▼▼▼
+    renderTable(calculatedPortfolioData, currency, mainMode) {
+        if (!this._scrollWrapper || !this._scrollSpacer || !this._scrollContent) return;
+
+        // 1. 헤더 업데이트 (모드, 통화 저장)
+        this.updateTableHeader(currency, mainMode);
+        
+        // 2. 데이터 저장
+        this._virtualData = calculatedPortfolioData;
+        if(this.dom.virtualScrollWrapper) {
+            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
+        }
+
+        // 3. 전체 높이 설정
+        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
+        this._scrollSpacer.style.height = `${totalHeight}px`;
+        
+        // 4. 뷰포트 높이 갱신
+        this._viewportHeight = this._scrollWrapper.clientHeight;
+
+        // 5. 기존 스크롤 이벤트 리스너 제거
+        if (this._scrollHandler) {
+            this._scrollWrapper.removeEventListener('scroll', this._scrollHandler);
+        }
+
+        // 6. 스크롤 이벤트 핸들러 생성 및 바인딩
+        // _onScroll 내부에서 this가 view를 가리키도록 .bind(this) 사용
+        this._scrollHandler = this._onScroll.bind(this);
+        this._scrollWrapper.addEventListener('scroll', this._scrollHandler);
+
+        // 7. 초기 렌더링 실행
+        this._onScroll(true); // forceRedraw = true
+    },
+    
+    /**
+     * @description [NEW] 컨트롤러가 데이터를 업데이트할 때 호출
+     */
+    updateVirtualTableData(calculatedPortfolioData) {
+        this._virtualData = calculatedPortfolioData; // 데이터 교체
+        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
+        if(this._scrollSpacer) this._scrollSpacer.style.height = `${totalHeight}px`;
+        if(this.dom.virtualScrollWrapper) {
+            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
+        }
+
+        // 현재 스크롤 위치에서 강제로 다시 렌더링
+        this._onScroll(true); // forceRedraw = true
+    },
+
+    /**
+     * @description [NEW] 실제 가상 스크롤 렌더링 로직
+     * @param {boolean} [forceRedraw=false] - 강제 렌더링 여부
+     */
+    _onScroll(forceRedraw = false) {
+        if (!this._scrollWrapper || !this._scrollContent) return;
+
+        // 클래스 멤버 변수에서 현재 모드와 통화 읽기
+        const currency = this._currentCurrency;
+        const mainMode = this._currentMainMode;
+
+        const scrollTop = this._scrollWrapper.scrollTop;
+        
+        // 1. 렌더링할 인덱스 계산
+        const startIndex = Math.max(0, Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER);
+        const endIndex = Math.min(
+            this._virtualData.length, // 배열 최대 길이 넘지 않도록 수정
+            Math.ceil((scrollTop + this._viewportHeight) / ROW_PAIR_HEIGHT) + VISIBLE_ROWS_BUFFER
+        );
+
+        // 2. 이미 렌더링된 범위면 실행 취소 (강제 재조정 제외)
+        if (!forceRedraw && startIndex === this._renderedStartIndex && endIndex === this._renderedEndIndex) {
+            return;
+        }
+        
+        // 3. 새 범위 저장
+        this._renderedStartIndex = startIndex;
+        this._renderedEndIndex = endIndex;
+        
+        // 4. DOM 조각 생성
+        const fragment = document.createDocumentFragment();
+        for (let i = startIndex; i < endIndex; i++) {
+            const stock = this._virtualData[i];
+            fragment.appendChild(this.createStockRowFragment(stock, currency, mainMode));
+        }
+
+        // 5. 실제 DOM에 적용 및 Y축 위치 이동
+        this._scrollContent.innerHTML = ''; // 기존 행 삭제
+        this._scrollContent.appendChild(fragment);
+        this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+    },
+    // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
+
+    // toggleFixedBuyColumn은 더 이상 사용되지 않음
 
     updateRatioSum(totalRatio) {
         const ratioSumEl = this.dom.ratioSum;
@@ -452,38 +631,23 @@ export const PortfolioView = {
         if (this.lastFocusedElement) this.lastFocusedElement.focus();
     },
 
-    /**
-     * @description 거래 내역 목록(tbody)을 표준 DOM API를 사용하여 렌더링합니다. (디버깅 로그 제거됨)
-     * @param {import('./types.js').Transaction[]} transactions - 거래 내역 배열
-     * @param {string} currency - 현재 통화
-     * @returns {void}
-     */
     renderTransactionList(transactions, currency) {
         const listBody = this.dom.transactionListBody;
         if (!listBody) {
             console.error("View: renderTransactionList - listBody not found!");
             return;
         }
-        // console.log("View: renderTransactionList called with transactions:", JSON.stringify(transactions)); // 로그 제거
-        // console.log("View: Clearing listBody innerHTML. Current content:", listBody.innerHTML); // 로그 제거
-        listBody.innerHTML = ''; // 기존 내용 지우기
-        // console.log("View: listBody innerHTML after clearing:", listBody.innerHTML); // 로그 제거
-
-        const table = listBody.closest('table');
+        
+        listBody.innerHTML = ''; // 1. 기존 내용 지우기
 
         if (transactions.length === 0) {
-            // console.log("View: transactions array is empty. Adding 'No transactions' message."); // 로그 제거
-            if (table) {
-                const tr = table.insertRow();
-                const td = tr.insertCell();
-                td.colSpan = 6;
-                td.style.textAlign = 'center';
-                td.textContent = t('view.noTransactions');
-            }
+            const tr = listBody.insertRow(); 
+            const td = tr.insertCell();
+            td.colSpan = 6;
+            td.style.textAlign = 'center';
+            td.textContent = t('view.noTransactions');
             return;
         }
-
-        // console.log("View: Processing transactions array to build rows..."); // 로그 제거
 
         const sorted = [...transactions].sort((a, b) => {
              const dateCompare = b.date.localeCompare(a.date);
@@ -494,44 +658,41 @@ export const PortfolioView = {
         });
 
         sorted.forEach(tx => {
-            if (table) {
-                const tr = table.insertRow();
-                tr.dataset.txId = tx.id;
-                const quantityDec = tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
-                const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
-                const total = quantityDec.times(priceDec);
+            const tr = listBody.insertRow();
+            tr.dataset.txId = tx.id;
+            const quantityDec = tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
+            const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
+            const total = quantityDec.times(priceDec);
 
-                tr.insertCell().textContent = tx.date;
-                const typeTd = tr.insertCell();
-                const typeSpan = document.createElement('span');
-                typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
-                typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
-                typeTd.appendChild(typeSpan);
+            tr.insertCell().textContent = tx.date;
+            const typeTd = tr.insertCell();
+            const typeSpan = document.createElement('span');
+            typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
+            typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
+            typeTd.appendChild(typeSpan);
 
-                const qtyTd = tr.insertCell();
-                qtyTd.textContent = quantityDec.toNumber().toLocaleString();
-                qtyTd.style.textAlign = 'right';
+            const qtyTd = tr.insertCell();
+            qtyTd.textContent = quantityDec.toNumber().toLocaleString();
+            qtyTd.style.textAlign = 'right';
 
-                const priceTd = tr.insertCell();
-                priceTd.textContent = formatCurrency(priceDec, currency);
-                priceTd.style.textAlign = 'right';
+            const priceTd = tr.insertCell();
+            priceTd.textContent = formatCurrency(priceDec, currency);
+            priceTd.style.textAlign = 'right';
 
-                const totalTd = tr.insertCell();
-                totalTd.textContent = formatCurrency(total, currency);
-                totalTd.style.textAlign = 'right';
+            const totalTd = tr.insertCell();
+            totalTd.textContent = formatCurrency(total, currency);
+            totalTd.style.textAlign = 'right';
 
-                const actionTd = tr.insertCell();
-                actionTd.style.textAlign = 'center';
-                const btnDelete = document.createElement('button');
-                btnDelete.className = 'btn btn--small';
-                btnDelete.dataset.variant = 'delete';
-                btnDelete.dataset.action = 'delete-tx';
-                 btnDelete.textContent = t('ui.delete');
-                btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
-                actionTd.appendChild(btnDelete);
-            }
+            const actionTd = tr.insertCell();
+            actionTd.style.textAlign = 'center';
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn btn--small';
+            btnDelete.dataset.variant = 'delete';
+            btnDelete.dataset.action = 'delete-tx';
+             btnDelete.textContent = t('ui.delete');
+            btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
+            actionTd.appendChild(btnDelete);
         });
-         // console.log("View: Finished processing transactions."); // 로그 제거
     },
 
     displaySkeleton() {
@@ -659,14 +820,26 @@ export const PortfolioView = {
     },
 
     focusOnNewStock(stockId) {
-        const portfolioBody = this.dom.portfolioBody;
-        const inputRow = portfolioBody?.querySelector(`.stock-inputs[data-id="${stockId}"]`);
-        if (!inputRow) return;
-        const nameInput = inputRow.querySelector('input[data-field="name"]');
-        if (nameInput instanceof HTMLInputElement) {
-            nameInput.focus();
-            nameInput.select();
-        }
+        // ▼▼▼▼▼ [수정] 가상 스크롤에 맞게 수정 ▼▼▼▼▼
+        // 1. 데이터에 종목이 추가되었는지 확인
+        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+        if (stockIndex === -1 || !this._scrollWrapper) return;
+
+        // 2. 해당 종목 위치로 스크롤 이동
+        const scrollTop = stockIndex * ROW_PAIR_HEIGHT;
+        this._scrollWrapper.scrollTo({ top: scrollTop, behavior: 'smooth' });
+
+        // 3. 스크롤 애니메이션 후 포커스
+        setTimeout(() => {
+            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`);
+            if (!inputRow) return;
+            const nameInput = inputRow.querySelector('input[data-field="name"]');
+            if (nameInput instanceof HTMLInputElement) {
+                nameInput.focus();
+                nameInput.select();
+            }
+        }, 300); // 스크롤 시간 고려
+        // ▲▲▲▲▲ [수정] ▲▲▲▲▲
     },
 
     toggleFetchButton(loading) {

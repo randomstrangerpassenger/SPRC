@@ -1,26 +1,32 @@
-// js/eventBinder.js (Updated with Event Delegation)
+// js/eventBinder.js (Updated with Pub/Sub emit)
 // @ts-check
 import { debounce } from './utils.js';
-/** @typedef {import('./controller.js').PortfolioController} PortfolioController */
+/** @typedef {import('./view.js').PortfolioView} PortfolioView */ // 컨트롤러 대신 View를 임포트
 
 /**
- * @description 애플리케이션의 모든 DOM 이벤트 리스너를 컨트롤러의 핸들러 함수에 바인딩합니다.
- * @param {PortfolioController} controller - PortfolioController 인스턴스
- * @param {Record<string, HTMLElement | NodeListOf<HTMLElement> | null>} dom - 캐시된 DOM 요소 객체
+ * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
+ * @param {PortfolioView} view - PortfolioView 인스턴스
  * @returns {void}
  */
-export function bindEventListeners(controller, dom) {
+export function bindEventListeners(view) {
+    // 1. view.dom 객체를 가져옵니다.
+    const dom = view.dom;
+
+    // ▼▼▼▼▼ [수정] controller.handle...() -> view.emit('eventName') ▼▼▼▼▼
+
     // 포트폴리오 관리 버튼
-    dom.newPortfolioBtn?.addEventListener('click', () => controller.handleNewPortfolio());
-    dom.renamePortfolioBtn?.addEventListener('click', () => controller.handleRenamePortfolio());
-    dom.deletePortfolioBtn?.addEventListener('click', () => controller.handleDeletePortfolio());
-    dom.portfolioSelector?.addEventListener('change', () => controller.handleSwitchPortfolio());
+    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'));
+    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'));
+    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'));
+    dom.portfolioSelector?.addEventListener('change', (e) => 
+        view.emit('portfolioSwitched', { newId: (/** @type {HTMLSelectElement} */ (e.target)).value })
+    );
 
     // 포트폴리오 설정 버튼
-    dom.addNewStockBtn?.addEventListener('click', () => controller.handleAddNewStock());
-    dom.resetDataBtn?.addEventListener('click', () => controller.handleResetData());
-    dom.normalizeRatiosBtn?.addEventListener('click', () => controller.handleNormalizeRatios());
-    dom.fetchAllPricesBtn?.addEventListener('click', () => controller.handleFetchAllPrices());
+    dom.addNewStockBtn?.addEventListener('click', () => view.emit('addNewStockClicked'));
+    dom.resetDataBtn?.addEventListener('click', () => view.emit('resetDataClicked'));
+    dom.normalizeRatiosBtn?.addEventListener('click', () => view.emit('normalizeRatiosClicked'));
+    dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
     // 데이터 관리 드롭다운
     const dataManagementBtn = /** @type {HTMLButtonElement | null} */ (dom.dataManagementBtn);
@@ -74,14 +80,14 @@ export function bindEventListeners(controller, dom) {
 
     exportDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        controller.handleExportData();
+        view.emit('exportDataClicked'); // view.emit으로 변경
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        controller.handleImportData();
+        view.emit('importDataClicked'); // view.emit으로 변경
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
@@ -93,11 +99,15 @@ export function bindEventListeners(controller, dom) {
         }
     });
 
-    importFileInput?.addEventListener('change', (e) => controller.handleFileSelected(e));
+    importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e)); // view.emit으로 변경
 
     // 포트폴리오 테이블 입력 처리
-    dom.portfolioBody?.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, null));
-    dom.portfolioBody?.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
+    dom.portfolioBody?.addEventListener('change', (e) => 
+        view.emit('portfolioBodyChanged', e) // view.emit으로 변경
+    );
+    dom.portfolioBody?.addEventListener('click', (e) => 
+        view.emit('portfolioBodyClicked', e) // view.emit으로 변경
+    );
 
     // 포트폴리오 테이블 키보드 네비게이션
     const portfolioBody = dom.portfolioBody;
@@ -116,9 +126,8 @@ export function bindEventListeners(controller, dom) {
             case 'Enter':
                  if (field === 'ticker') {
                     e.preventDefault();
-                    const stock = controller.state.getActivePortfolio()?.portfolioData.find(s => s.id === stockId);
-                    const currency = controller.state.getActivePortfolio()?.settings.currentCurrency;
-                    if (stock && currency) controller.view.openTransactionModal(stock, currency, controller.state.getTransactions(stockId));
+                    // 컨트롤러가 할 일(모달 열기)을 View에 이벤트로 알림
+                    view.emit('manageStockClicked', { stockId });
                  }
                  else if (currentCellIndex !== -1 && currentRow instanceof HTMLTableRowElement) { // Type guard
                     e.preventDefault();
@@ -156,7 +165,7 @@ export function bindEventListeners(controller, dom) {
             case 'Delete':
                 if (e.ctrlKey && field === 'name') {
                      e.preventDefault();
-                     controller.handleDeleteStock(stockId);
+                     view.emit('deleteStockShortcut', { stockId }); // 삭제 이벤트 발행
                 }
                 break;
             case 'Escape':
@@ -175,43 +184,41 @@ export function bindEventListeners(controller, dom) {
     });
 
     // 계산 버튼
-    dom.calculateBtn?.addEventListener('click', () => controller.handleCalculate());
+    dom.calculateBtn?.addEventListener('click', () => view.emit('calculateClicked')); // view.emit으로 변경
     dom.calculateBtn?.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
-            controller.handleCalculate();
+            view.emit('calculateClicked'); // view.emit으로 변경
         }
     });
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        const mode = /** @type {'add' | 'sell'} */ (target.value);
-        controller.handleMainModeChange(mode);
+        const mode = /** @type {'add' | 'sell'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
+        view.emit('mainModeChanged', { mode }); // view.emit으로 변경
     }));
     dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        const currency = /** @type {'krw' | 'usd'} */ (target.value);
-        controller.handleCurrencyModeChange(currency);
+        const currency = /** @type {'krw' | 'usd'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
+        view.emit('currencyModeChanged', { currency }); // view.emit으로 변경
     }));
 
     // 추가 투자금액 입력 및 환율 변환
-    const debouncedConversion = debounce((source) => controller.handleCurrencyConversion(source), 300);
+    const debouncedConversion = debounce((source) => view.emit('currencyConversion', { source }), 300); // view.emit으로 변경
     dom.additionalAmountInput?.addEventListener('input', () => debouncedConversion('krw'));
     dom.additionalAmountUSDInput?.addEventListener('input', () => debouncedConversion('usd'));
     dom.exchangeRateInput?.addEventListener('input', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
-        controller.view.toggleInputValidation(target, isValid);
-        if (isValid) debouncedConversion('krw'); // 환율 변경 시 원화 기준으로 USD 금액 재계산
+        view.toggleInputValidation(target, isValid); // View 자체 검증은 유지
+        if (isValid) debouncedConversion('krw'); 
     });
 
     // 추가 투자금액 관련 필드 Enter 키 처리
     const handleEnterKey = (e) => {
         if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && e.target.isComposing)) { // Type guard and isComposing check
             e.preventDefault();
-            controller.handleCalculate();
+            view.emit('calculateClicked'); // view.emit으로 변경
         }
     };
     dom.additionalAmountInput?.addEventListener('keydown', handleEnterKey);
@@ -220,13 +227,10 @@ export function bindEventListeners(controller, dom) {
 
     // --- 모달 관련 이벤트 ---
     // 거래 내역 모달 닫기 버튼
-    dom.closeModalBtn?.addEventListener('click', () => controller.view.closeTransactionModal());
+    dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked')); // view.emit으로 변경
 
     // 새 거래 추가 폼 제출
-    dom.newTransactionForm?.addEventListener('submit', (e) => controller.handleAddNewTransaction(e));
-
-    // --- ⬇️ 수정: 이벤트 위임 방식으로 변경 ⬇️ ---
-    // console.log("Event Binding: Attempting to bind click listener to:", dom.transactionListBody); // 로그 제거
+    dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e)); // view.emit으로 변경
 
     // 거래 내역 목록 내 삭제 버튼 클릭 (이벤트 위임)
     dom.transactionModal?.addEventListener('click', (e) => {
@@ -235,42 +239,29 @@ export function bindEventListeners(controller, dom) {
 
         // 1. 삭제 버튼이 클릭된 경우 핸들러 호출
         if (deleteButton) {
-            console.log("!!! Delete button clicked via delegation !!!", deleteButton); // 디버깅 로그
-
             const row = deleteButton.closest('tr[data-tx-id]');
             const modal = deleteButton.closest('#transactionModal');
             const stockId = modal?.dataset.stockId;
             const txId = row?.dataset.txId;
 
-            console.log(`Delegation: stockId=${stockId}, txId=${txId}`); // ID 확인
-
             // 2. 컨트롤러 함수에 필요한 ID 직접 전달
             if (stockId && txId) {
-                controller.handleTransactionListClick(stockId, txId); // event 대신 ID 전달
+                // controller.handleTransactionListClick(stockId, txId) 대신 emit
+                view.emit('transactionDeleteClicked', { stockId, txId }); 
             }
         }
 
-        // 3. 모달 오버레이 클릭 시 닫기 (주석 해제 및 로직 유지)
+        // 3. 모달 오버레이 클릭 시 닫기
         if (e.target === dom.transactionModal) {
-             console.log("Overlay clicked, closing modal."); // 오버레이 클릭 로그
-             controller.view.closeTransactionModal();
+             view.emit('closeTransactionModalClicked'); // view.emit으로 변경
         }
     });
 
-    /* // 이전 tbody 리스너 제거
-    dom.transactionListBody?.addEventListener('click', (e) => {
-        console.log("!!! transactionListBody CLICKED !!!", e.target);
-        // controller.handleTransactionListClick(e);
-    });
-    */
-    // --- ⬆️ 수정 완료 ⬆️ ---
-
-
     // --- 기타 ---
     // 다크 모드 토글 버튼
-    dom.darkModeToggle?.addEventListener('click', () => controller.handleToggleDarkMode());
+    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked')); // view.emit으로 변경
     // 페이지 닫기 전 자동 저장 (동기식 저장 시도)
-    window.addEventListener('beforeunload', () => controller.handleSaveDataOnExit());
+    window.addEventListener('beforeunload', () => view.emit('pageUnloading')); // view.emit으로 변경
 
     // 키보드 네비게이션 포커스 스타일
     document.addEventListener('keydown', (e) => {

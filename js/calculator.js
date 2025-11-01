@@ -1,4 +1,4 @@
-// js/calculator.js (Updated)
+// js/calculator.js (Strategy Pattern Applied)
 // @ts-check
 import Decimal from 'decimal.js'; 
 import { CONFIG } from './constants.js';
@@ -76,11 +76,16 @@ export class Calculator {
 
             // 1. 매수/매도 수량 및 금액 합산
             for (const tx of stock.transactions) {
+                // [수정] state.js에서 이미 Decimal 객체로 변환했을 수 있으나,
+                // calculateStockMetrics는 순수 함수이므로 number도 처리
+                const txQuantity = new Decimal(tx.quantity || 0);
+                const txPrice = new Decimal(tx.price || 0);
+
                 if (tx.type === 'buy') {
-                    result.totalBuyQuantity = result.totalBuyQuantity.plus(tx.quantity);
-                    result.totalBuyAmount = result.totalBuyAmount.plus(tx.quantity.times(tx.price));
+                    result.totalBuyQuantity = result.totalBuyQuantity.plus(txQuantity);
+                    result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
                 } else if (tx.type === 'sell') {
-                    result.totalSellQuantity = result.totalSellQuantity.plus(tx.quantity);
+                    result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
                 }
             }
 
@@ -183,183 +188,38 @@ export class Calculator {
 
         return result;
     }
-
+    
+    // ▼▼▼▼▼ [신규] 전략 실행기 ▼▼▼▼▼
     /**
-     * @description '추가 매수' 모드의 리밸런싱을 계산합니다.
-     * @param {{ portfolioData: CalculatedStock[], additionalInvestment: Decimal }} options - 계산된 데이터, 추가 투자금 (현재 통화 기준)
-     * @returns {{ results: (CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[] }}
+     * @description '전략' 객체를 받아 리밸런싱 계산을 실행합니다.
+     * @param {import('./calculationStrategies.js').IRebalanceStrategy} strategy - 실행할 계산 전략 (Add or Sell)
+     * @returns {{ results: any[] }} 계산 결과
      */
+    static calculateRebalancing(strategy) {
+        // Calculator는 더 이상 'add'인지 'sell'인지 알 필요가 없습니다.
+        // 단순히 전략의 calculate 메서드를 호출합니다.
+        return strategy.calculate();
+    }
+    // ▲▲▲▲▲ [신규] ▲▲▲▲▲
+    
+
+    // ▼▼▼▼▼ [삭제] calculateAddRebalancing ▼▼▼▼▼
+    /*
     static calculateAddRebalancing({ portfolioData, additionalInvestment }) { 
-        // --- ⬇️ Performance Monitoring ⬇️ ---
-        const startTime = performance.now();
-        // --- ⬆️ Performance Monitoring ⬆️ ---
-        
-        const totalInvestment = portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0)).plus(additionalInvestment);
-        const results = [];
-
-        // 1. 목표 비율 합계 및 고정 매수 금액 합계 계산
-        let totalRatio = new Decimal(0);
-        let totalFixedBuy = new Decimal(0);
-        for (const s of portfolioData) {
-            totalRatio = totalRatio.plus(s.targetRatio || 0);
-            if (s.isFixedBuyEnabled) {
-                totalFixedBuy = totalFixedBuy.plus(s.fixedBuyAmount || 0);
-            }
-        }
-        
-        let remainingInvestment = additionalInvestment;
-        
-        // 2. 고정 매수 금액 먼저 처리 (남은 금액 업데이트)
-        /** @type {Decimal} */
-        const zero = new Decimal(0);
-        
-        for (const s of portfolioData) {
-            /** @type {Decimal} */
-            let buyAmount = zero;
-
-            if (s.isFixedBuyEnabled) {
-                const fixedAmountDec = new Decimal(s.fixedBuyAmount || 0);
-                // 추가 투자금이 충분할 때만 고정 매수 처리
-                if (remainingInvestment.greaterThanOrEqualTo(fixedAmountDec)) {
-                    buyAmount = fixedAmountDec;
-                    remainingInvestment = remainingInvestment.minus(fixedAmountDec);
-                } else {
-                    // 고정 매수 처리 불가능 (Validator에서 이미 체크됨)
-                    buyAmount = remainingInvestment;
-                    remainingInvestment = zero;
-                }
-            }
-
-            const currentAmount = s.calculated?.currentAmount || zero;
-            const currentRatio = totalInvestment.isZero() ? zero : currentAmount.div(totalInvestment).times(100);
-
-            // 초기 결과 객체 생성
-            results.push({
-                ...s,
-                currentRatio: currentRatio,
-                finalBuyAmount: buyAmount,
-                buyRatio: zero // 임시
-            });
-        }
-        
-        // 3. 목표 비율 기반 추가 배분
-        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
-
-        // 목표 금액 계산
-        const targetAmounts = results.map(s => {
-            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-            return {
-                id: s.id,
-                targetAmount: totalInvestment.times(targetRatioNormalized.div(100)),
-                currentAmount: s.calculated?.currentAmount || zero,
-                adjustmentAmount: zero // 임시
-            };
-        });
-        
-        // 4. 리밸런싱 부족분 계산
-        const adjustmentTargets = targetAmounts.map(t => {
-            const currentTotalBeforeRatioAlloc = t.currentAmount.plus(results.find(s => s.id === t.id)?.finalBuyAmount || zero);
-            const deficit = t.targetAmount.minus(currentTotalBeforeRatioAlloc);
-            return {
-                ...t,
-                deficit: deficit.greaterThan(zero) ? deficit : zero,
-            };
-        }).filter(t => t.deficit.greaterThan(zero)); // 부족분 있는 종목만
-
-        const totalDeficit = adjustmentTargets.reduce((sum, t) => sum.plus(t.deficit), zero);
-        
-        // 5. 남은 투자금 배분 (Deficit 비율에 따라)
-        if (remainingInvestment.greaterThan(zero) && totalDeficit.greaterThan(zero)) {
-            for (const target of adjustmentTargets) {
-                const ratio = target.deficit.div(totalDeficit);
-                const allocatedAmount = remainingInvestment.times(ratio);
-                
-                // 최종 매수 금액 업데이트
-                const resultItem = results.find(r => r.id === target.id);
-                if (resultItem) {
-                    resultItem.finalBuyAmount = resultItem.finalBuyAmount.plus(allocatedAmount);
-                }
-            }
-        }
-
-        // 6. 최종 비율 계산 (buyRatio)
-        const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
-
-        const finalResults = results.map(s => {
-            const buyRatio = totalBuyAmount.isZero() ? zero : s.finalBuyAmount.div(totalBuyAmount).times(100);
-            return {
-                ...s,
-                buyRatio: buyRatio,
-            };
-        });
-        
-        // --- ⬇️ Performance Monitoring ⬇️ ---
-        const endTime = performance.now();
-        console.log(`[Perf] calculateAddRebalancing for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        // --- ⬆️ Performance Monitoring ⬆️ ---
-
-        return { results: finalResults };
+        // ... (이 로직은 AddRebalanceStrategy로 이동했습니다) ...
     }
+    */
+    // ▲▲▲▲▲ [삭제] ▲▲▲▲▲
 
-    /**
-     * @description '매도 리밸런싱' 모드의 조정을 계산합니다. (현금 유입/유출은 없음)
-     * @param {{ portfolioData: CalculatedStock[] }} options - 계산된 데이터
-     * @returns {{ results: (CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[] }}
-     */
+
+    // ▼▼▼▼▼ [삭제] calculateSellRebalancing ▼▼▼▼▼
+    /*
     static calculateSellRebalancing({ portfolioData }) { 
-        // --- ⬇️ Performance Monitoring ⬇️ ---
-        const startTime = performance.now();
-        // --- ⬆️ Performance Monitoring ⬆️ ---
-        
-        const currentTotal = portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0));
-        const totalRatio = portfolioData.reduce((sum, s) => sum + (s.targetRatio || 0), 0);
-        const results = [];
-        const zero = new Decimal(0);
-
-        if (currentTotal.isZero() || totalRatio === 0) {
-            // --- ⬇️ Performance Monitoring (Aborted) ⬇️ ---
-            const endTime = performance.now();
-            console.log(`[Perf] calculateSellRebalancing (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
-            // --- ⬆️ Performance Monitoring ⬆️ ---
-            return { results: [] };
-        }
-        
-        // 정규화된 목표 비율 승수
-        const ratioMultiplier = new Decimal(100).div(totalRatio);
-
-        for (const s of portfolioData) {
-            const currentAmount = s.calculated?.currentAmount || zero;
-            
-            // 현재 비율 계산
-            const currentRatioDec = currentAmount.div(currentTotal).times(100);
-            const currentRatio = currentRatioDec.toNumber();
-
-            // 목표 비율 계산 (정규화된 목표 비율 사용)
-            const targetRatioNum = s.targetRatio || 0;
-            const targetRatioNormalized = new Decimal(targetRatioNum).times(ratioMultiplier);
-
-            // 목표 금액 계산
-            const targetAmount = currentTotal.times(targetRatioNormalized.div(100));
-
-            // 조정 금액 (매도: 양수, 매수: 음수)
-            // currentAmount - targetAmount
-            const adjustment = currentAmount.minus(targetAmount);
-
-            results.push({
-                ...s,
-                currentRatio: currentRatio,
-                targetRatioNum: targetRatioNormalized.toNumber(), // 정규화된 비율
-                adjustment: adjustment
-            });
-        }
-        
-        // --- ⬇️ Performance Monitoring ⬇️ ---
-        const endTime = performance.now();
-        console.log(`[Perf] calculateSellRebalancing for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        // --- ⬆️ Performance Monitoring ⬆️ ---
-        
-        return { results };
+        // ... (이 로직은 SellRebalanceStrategy로 이동했습니다) ...
     }
+    */
+    // ▲▲▲▲▲ [삭제] ▲▲▲▲▲
+
 
     /**
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.

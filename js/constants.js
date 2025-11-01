@@ -1,9 +1,22 @@
 // 설정값들을 정의하는 상수 객체
 export const CONFIG = {
-    MIN_BUYABLE_AMOUNT: 1000, // 매수 추천 최소 금액 (이 금액 미만은 추천 목록에서 제외될 수 있음)
-    DEFAULT_EXCHANGE_RATE: 1300, // 기본 환율 값
-    RATIO_TOLERANCE: 0.01, // 목표 비율 합계가 100%에서 벗어나도 허용하는 오차 범위 (%)
-    META_KEY: 'portfolioCalculatorMeta_v1', // localStorage에 설정(활성 ID 등) 저장 시 사용할 키
-    DATA_PREFIX: 'portfolioCalculatorData_v1_', // localStorage에 개별 포트폴리오 데이터 저장 시 사용할 접두사
-    DARK_MODE_KEY: 'darkMode' // localStorage에 다크 모드 설정 저장 시 사용할 키
+    MIN_BUYABLE_AMOUNT: 1000, 
+    DEFAULT_EXCHANGE_RATE: 1300, 
+    RATIO_TOLERANCE: 0.01, 
+    DARK_MODE_KEY: 'darkMode', // (LocalStorage에 유지)
+    
+    // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
+    IDB_META_KEY: 'portfolioMeta_v2',
+    IDB_PORTFOLIOS_KEY: 'portfolioData_v2',
+    // ▲▲▲▲▲ [신규] ▲▲▲▲▲
+
+    // ▼▼▼▼▼ [수정] 마이그레이션을 위한 레거시 LocalStorage 키 ▼▼▼▼▼
+    // (참고: LEGACY_LS_PORTFOLIOS_KEY는 state.js에서 savePortfolios가 저장하던 방식에 맞게 수정됨)
+    LEGACY_LS_META_KEY: 'portfolioCalculatorMeta_v1', 
+    LEGACY_LS_PORTFOLIOS_KEY: 'portfolioCalculatorData_v1_all',
+    // ▲▲▲▲▲ [수정] ▲▲▲▲▲
+    
+    DATA_VERSION: '2.0.0', // [신규] state.js가 참조하는 버전 키
+    
+    // DATA_PREFIX: 'portfolioCalculatorData_v1_', // (주석 처리 - 현재 state.js에서 미사용)
 };

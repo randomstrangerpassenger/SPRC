@@ -1,4 +1,4 @@
-// js/state.js (Debug logs removed)
+// js/state.js (IndexedDB + Async + DOMPurify)
 // @ts-check
 import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
@@ -6,6 +6,8 @@ import { CONFIG } from './constants.js';
 import { t } from './i18n.js';
 import { ErrorService } from './errorService.js';
 import { Validator } from './validator.js';
+import { get, set, del } from 'idb-keyval';
+import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
 
 /** @typedef {import('./types.js').Stock} Stock */
 /** @typedef {import('./types.js').Transaction} Transaction */
@@ -25,49 +27,108 @@ export class PortfolioState {
         this.#initializationPromise = this._initialize();
     }
 
+    /**
+     * @description public async 메서드로 변경
+     */
     async ensureInitialized() {
         await this.#initializationPromise;
     }
 
+    /**
+     * @description 비동기 초기화 및 LocalStorage 마이그레이션 로직
+     */
     async _initialize() {
         try {
-            const loadedMetaData = this._loadMeta();
-            const loadedPortfolios = this._loadPortfolios();
+            // 1. IndexedDB에서 데이터 로드 시도
+            let loadedMetaData = await this._loadMeta();
+            let loadedPortfolios = await this._loadPortfolios();
+
+            // 2. IDB에 데이터가 없는 경우, LocalStorage에서 마이그레이션 시도
+            if (!loadedMetaData || !loadedPortfolios || Object.keys(loadedPortfolios).length === 0) {
+                console.log("IndexedDB empty. Attempting migration from LocalStorage...");
+                const migrated = await this._migrateFromLocalStorage();
+                
+                if (migrated) {
+                    console.log("Migration successful. Reloading from IndexedDB.");
+                    loadedMetaData = await this._loadMeta();
+                    loadedPortfolios = await this._loadPortfolios();
+                }
+            }
+
+            // 3. 데이터 유효성 검사 (DOMPurify 소독 포함)
             const { meta, portfolios } = this._validateAndUpgradeData(loadedMetaData, loadedPortfolios);
 
             this.#portfolios = portfolios;
             this.#activePortfolioId = meta.activePortfolioId;
 
+            // 4. 유효한 데이터가 전혀 없으면 기본값 생성 (비동기 저장)
             if (Object.keys(this.#portfolios).length === 0 || !this.#portfolios[this.#activePortfolioId]) {
                  console.warn("No valid portfolios found or active ID invalid. Creating default portfolio.");
-                this.resetData(false);
+                await this.resetData(false); // resetData를 async로 변경
             }
-            console.log("PortfolioState initialized.");
+            
+            console.log("PortfolioState initialized (async).");
         } catch (error) {
             ErrorService.handle(/** @type {Error} */ (error), '_initialize');
             console.error("Initialization failed, resetting data.");
-            this.resetData(false);
+            await this.resetData(false); // resetData를 async로 변경
+        }
+    }
+    
+    /**
+     * @description LocalStorage -> IndexedDB 마이그레이션
+     * @returns {Promise<boolean>} 마이그레이션 성공 여부
+     */
+    async _migrateFromLocalStorage() {
+        try {
+            const lsMeta = localStorage.getItem(CONFIG.LEGACY_LS_META_KEY); 
+            const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY); 
+
+            if (lsMeta && lsPortfolios) {
+                const metaData = JSON.parse(lsMeta);
+                const portfolioData = JSON.parse(lsPortfolios);
+
+                // 1. 새 IDB 키로 데이터 쓰기
+                await set(CONFIG.IDB_META_KEY, metaData);
+                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
+
+                // 2. 마이그레이션 성공 후 레거시 LocalStorage 데이터 삭제
+                localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
+                localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
+                
+                console.log("Successfully migrated data from LocalStorage to IndexedDB.");
+                return true;
+            }
+            console.log("No legacy data found in LocalStorage to migrate.");
+            return false;
+        } catch (error) {
+            console.error("Failed to migrate from LocalStorage:", error);
+            return false;
         }
     }
 
-    _loadMeta() {
+    /**
+     * @description IDB에서 Meta 로드 (async)
+     */
+    async _loadMeta() {
         try {
-            const metaData = localStorage.getItem(CONFIG.LOCAL_STORAGE_META_KEY);
-            return metaData ? JSON.parse(metaData) : null;
+            const metaData = await get(CONFIG.IDB_META_KEY);
+            return metaData ? metaData : null;
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), '_loadMeta - JSON Parsing');
-            localStorage.removeItem(CONFIG.LOCAL_STORAGE_META_KEY);
+            ErrorService.handle(/** @type {Error} */ (error), '_loadMeta - IDB get');
             return null;
         }
     }
 
-    _loadPortfolios() {
+    /**
+     * @description IDB에서 Portfolios 로드 (async)
+     */
+    async _loadPortfolios() {
         try {
-            const portfolioData = localStorage.getItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY);
-            return portfolioData ? JSON.parse(portfolioData) : null;
+            const portfolioData = await get(CONFIG.IDB_PORTFOLIOS_KEY); 
+            return portfolioData ? portfolioData : null;
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), '_loadPortfolios - JSON Parsing');
-            localStorage.removeItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY);
+            ErrorService.handle(/** @type {Error} */ (error), '_loadPortfolios - IDB get');
             return null;
         }
     }
@@ -79,7 +140,7 @@ export class PortfolioState {
         if (loadedVersion !== currentVersion) {
             console.warn(`Data version mismatch. Loaded: ${loadedVersion}, Current: ${currentVersion}. Attempting migration/reset.`);
         }
-
+        
         const validatedPortfolios = {};
         let validatedActiveId = loadedMetaData?.activePortfolioId;
         let foundActive = false;
@@ -87,12 +148,14 @@ export class PortfolioState {
         if (loadedPortfolios && typeof loadedPortfolios === 'object') {
             Object.keys(loadedPortfolios).forEach(portId => {
                 const portfolio = loadedPortfolios[portId];
-                const newId = portId; // Keep original ID
+                const newId = portId; 
 
                 if (portfolio && typeof portfolio === 'object' && portfolio.id === portId && portfolio.name) {
                     validatedPortfolios[newId] = {
                         id: newId,
-                        name: portfolio.name,
+                        // ▼▼▼ [수정] DOMPurify.sanitize 적용 ▼▼▼
+                        name: DOMPurify.sanitize(portfolio.name),
+                        // ▲▲▲ [수정] ▲▲▲
                         settings: {
                             mainMode: ['add', 'sell'].includes(portfolio.settings?.mainMode) ? portfolio.settings.mainMode : 'add',
                             currentCurrency: ['krw', 'usd'].includes(portfolio.settings?.currentCurrency) ? portfolio.settings.currentCurrency : 'krw',
@@ -105,9 +168,11 @@ export class PortfolioState {
 
                             return {
                                 id: stock.id || `s-${nanoid()}`,
-                                name: stock.name || t('defaults.newStock'),
-                                ticker: stock.ticker || '',
-                                sector: stock.sector || '',
+                                // ▼▼▼ [수정] DOMPurify.sanitize 적용 ▼▼▼
+                                name: DOMPurify.sanitize(stock.name || t('defaults.newStock')),
+                                ticker: DOMPurify.sanitize(stock.ticker || ''),
+                                sector: DOMPurify.sanitize(stock.sector || ''),
+                                // ▲▲▲ [수정] ▲▲▲
                                 targetRatio: targetRatio.isNaN() ? new Decimal(0) : targetRatio,
                                 currentPrice: currentPrice.isNaN() ? new Decimal(0) : currentPrice,
                                 isFixedBuyEnabled: typeof stock.isFixedBuyEnabled === 'boolean' ? stock.isFixedBuyEnabled : false,
@@ -154,7 +219,8 @@ export class PortfolioState {
         };
 
         return { meta: validatedMeta, portfolios: validatedPortfolios };
-    }
+     }
+
 
     getActivePortfolio() {
         return this.#activePortfolioId ? this.#portfolios[this.#activePortfolioId] : null;
@@ -164,26 +230,26 @@ export class PortfolioState {
         return this.#portfolios;
     }
 
-    setActivePortfolioId(id) {
+    async setActivePortfolioId(id) {
         if (this.#portfolios[id]) {
             this.#activePortfolioId = id;
-            this.saveMeta();
+            await this.saveMeta(); // 비동기 저장
         } else {
             ErrorService.handle(new Error(`Portfolio with ID ${id} not found.`), 'setActivePortfolioId');
         }
     }
 
-    createNewPortfolio(name) {
+    async createNewPortfolio(name) {
         const newId = `p-${nanoid()}`;
         const newPortfolio = this._createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
         this.#activePortfolioId = newId;
-        this.savePortfolios();
-        this.saveMeta();
+        await this.savePortfolios(); // 비동기 저장
+        await this.saveMeta(); // 비동기 저장
         return newPortfolio;
     }
 
-    deletePortfolio(id) {
+    async deletePortfolio(id) {
         if (Object.keys(this.#portfolios).length <= 1) {
             console.warn("Cannot delete the last portfolio.");
             return false;
@@ -197,22 +263,22 @@ export class PortfolioState {
 
         if (this.#activePortfolioId === id) {
             this.#activePortfolioId = Object.keys(this.#portfolios)[0] || null;
-            this.saveMeta();
+            await this.saveMeta(); // 비동기 저장
         }
-        this.savePortfolios();
+        await this.savePortfolios(); // 비동기 저장
         return true;
     }
 
-    renamePortfolio(id, newName) {
+    async renamePortfolio(id, newName) {
         if (this.#portfolios[id]) {
             this.#portfolios[id].name = newName.trim();
-            this.savePortfolios();
+            await this.savePortfolios(); // 비동기 저장
         } else {
              ErrorService.handle(new Error(`Portfolio with ID ${id} not found for renaming.`), 'renamePortfolio');
         }
     }
 
-    updatePortfolioSettings(key, value) {
+    async updatePortfolioSettings(key, value) {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
@@ -225,23 +291,23 @@ export class PortfolioState {
             else {
                 activePortfolio.settings[key] = value;
             }
-            this.saveActivePortfolio();
+            await this.saveActivePortfolio(); // 비동기 저장
         }
     }
 
 
-    addNewStock() {
+    async addNewStock() {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             const newStock = this._createDefaultStock();
             activePortfolio.portfolioData.push(newStock);
-            this.saveActivePortfolio();
+            await this.saveActivePortfolio(); // 비동기 저장
             return newStock;
         }
         return null;
     }
 
-    deleteStock(stockId) {
+    async deleteStock(stockId) {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
              if (activePortfolio.portfolioData.length <= 1) {
@@ -252,7 +318,7 @@ export class PortfolioState {
             activePortfolio.portfolioData = activePortfolio.portfolioData.filter(stock => stock.id !== stockId);
 
             if (activePortfolio.portfolioData.length < initialLength) {
-                 this.saveActivePortfolio();
+                 await this.saveActivePortfolio(); // 비동기 저장
                  return true;
             } else {
                  console.warn(`Stock with ID ${stockId} not found for deletion.`);
@@ -297,7 +363,7 @@ export class PortfolioState {
         }
     }
 
-    addTransaction(stockId, transactionData) {
+    async addTransaction(stockId, transactionData) {
         const stock = this.getStockById(stockId);
         if (stock) {
             const validation = Validator.validateTransaction({
@@ -323,7 +389,7 @@ export class PortfolioState {
 
                 stock.transactions.push(newTransaction);
                 stock.transactions.sort((a, b) => a.date.localeCompare(b.date));
-                this.saveActivePortfolio();
+                await this.saveActivePortfolio(); // 비동기 저장
                 return true;
             } catch (e) {
                  ErrorService.handle(new Error(`Error converting transaction data to Decimal: ${e.message}`), 'addTransaction');
@@ -333,13 +399,13 @@ export class PortfolioState {
         return false;
     }
 
-    deleteTransaction(stockId, transactionId) {
+    async deleteTransaction(stockId, transactionId) {
         const stock = this.getStockById(stockId);
         if (stock) {
             const initialLength = stock.transactions.length;
             stock.transactions = stock.transactions.filter(tx => tx.id !== transactionId);
             if (stock.transactions.length < initialLength) {
-                 this.saveActivePortfolio();
+                 await this.saveActivePortfolio(); // 비동기 저장
                  return true;
             } else {
                  console.warn(`State: Transaction ID ${transactionId} not found for stock ${stockId}.`);
@@ -351,15 +417,9 @@ export class PortfolioState {
     }
 
 
-    /**
-     * @description 특정 주식의 모든 거래 내역을 반환합니다. (로그 제거됨)
-     * @param {string} stockId - 주식 ID
-     * @returns {Transaction[]} 거래 내역 배열 (없으면 빈 배열)
-     */
     getTransactions(stockId) {
         const stock = this.getStockById(stockId);
         const transactions = stock ? [...stock.transactions] : []; // Return a copy
-        // console.log(`State: getTransactions for ${stockId} returning:`, JSON.stringify(transactions)); // 로그 제거
         return transactions;
     }
 
@@ -405,13 +465,13 @@ export class PortfolioState {
         return true;
     }
 
-    resetData(save = true) {
+    async resetData(save = true) {
         const defaultPortfolio = this._createDefaultPortfolio(`p-${nanoid()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
         if (save) {
-            this.savePortfolios();
-            this.saveMeta();
+            await this.savePortfolios(); // 비동기 저장
+            await this.saveMeta(); // 비동기 저장
         }
         console.log("Data reset to default.");
     }
@@ -446,6 +506,7 @@ export class PortfolioState {
             throw new Error("Imported data structure is invalid.");
          }
 
+        // ▼▼▼ [수정] _validateAndUpgradeData가 소독을 처리 ▼▼▼
         const { meta, portfolios } = this._validateAndUpgradeData(importedData.meta, importedData.portfolios);
 
         this.#portfolios = portfolios;
@@ -453,25 +514,25 @@ export class PortfolioState {
 
         if (Object.keys(this.#portfolios).length === 0 || !this.#portfolios[this.#activePortfolioId]) {
             console.warn("Imported data resulted in no valid portfolios. Resetting to default.");
-            this.resetData(false);
+            await this.resetData(false); // 비동기 리셋
         }
 
-        this.savePortfolios();
-        this.saveMeta();
+        await this.savePortfolios(); // 비동기 저장
+        await this.saveMeta(); // 비동기 저장
         console.log("Data imported successfully.");
     }
 
 
-    saveMeta() {
+    async saveMeta() {
         try {
             const metaData = { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION };
-            localStorage.setItem(CONFIG.LOCAL_STORAGE_META_KEY, JSON.stringify(metaData));
+            await set(CONFIG.IDB_META_KEY, metaData); 
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta');
+            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta - IDB set');
         }
     }
 
-    savePortfolios() {
+    async savePortfolios() {
         try {
              const saveablePortfolios = {};
              Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
@@ -490,18 +551,18 @@ export class PortfolioState {
                      }))
                  };
              });
-            localStorage.setItem(CONFIG.LOCAL_STORAGE_PORTFOLIOS_KEY, JSON.stringify(saveablePortfolios));
+            await set(CONFIG.IDB_PORTFOLIOS_KEY, saveablePortfolios); 
         } catch (error) {
              if (error instanceof DOMException && error.name === 'QuotaExceededError') {
                  ErrorService.handle(error, 'savePortfolios - Quota Exceeded');
              } else {
-                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios');
+                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios - IDB set');
              }
         }
     }
 
-    saveActivePortfolio() {
-        this.savePortfolios();
+    async saveActivePortfolio() {
+        await this.savePortfolios();
     }
 
     // --- Private Helper Methods ---
