@@ -280,17 +280,21 @@ export class PortfolioState {
 
     async updatePortfolioSettings(key, value) {
         const activePortfolio = this.getActivePortfolio();
+        console.log(`[DEBUG] updatePortfolioSettings called: key=${key}, value=${value}`);
         if (activePortfolio) {
             if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
                  activePortfolio.settings[key] = CONFIG.DEFAULT_EXCHANGE_RATE;
             } else if (key === 'mainMode' && !['add', 'sell', 'simple'].includes(/** @type {string} */(value))) {
+                 console.log(`[DEBUG] Invalid mainMode detected: ${value}, resetting to 'add'`);
                  activePortfolio.settings[key] = 'add';
             } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(/** @type {string} */(value))) {
                  activePortfolio.settings[key] = 'krw';
             }
             else {
+                console.log(`[DEBUG] Setting ${key} = ${value}`);
                 activePortfolio.settings[key] = value;
             }
+            console.log(`[DEBUG] After update, mainMode = ${activePortfolio.settings.mainMode}`);
             await this.saveActivePortfolio(); // 비동기 저장
         }
     }
