@@ -283,7 +283,7 @@ export class PortfolioState {
         if (activePortfolio) {
             if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
                  activePortfolio.settings[key] = CONFIG.DEFAULT_EXCHANGE_RATE;
-            } else if (key === 'mainMode' && !['add', 'sell'].includes(/** @type {string} */(value))) {
+            } else if (key === 'mainMode' && !['add', 'sell', 'simple'].includes(/** @type {string} */(value))) {
                  activePortfolio.settings[key] = 'add';
             } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(/** @type {string} */(value))) {
                  activePortfolio.settings[key] = 'krw';
