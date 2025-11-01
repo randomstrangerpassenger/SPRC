@@ -35,10 +35,12 @@
   "dependencies": {
     "chart.js": "^4.5.1",
     "decimal.js": "^10.6.0",
+    "dompurify": "^3.1.5",
     "idb-keyval": "^6.2.1",
-    "dompurify": "^3.1.5"
+    "nanoid": "^5.1.6"
   }
 }
+
 ```
 
 ---
