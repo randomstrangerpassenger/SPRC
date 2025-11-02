@@ -240,7 +240,7 @@ export const PortfolioView = {
     // ▼▼▼▼▼ [대대적 수정] createStockRowFragment (div 기반으로 변경) ▼▼▼▼▼
     createStockRowFragment(stock, currency, mainMode) {
         const fragment = document.createDocumentFragment();
-        
+
         // --- 헬퍼 함수 ---
         const createInput = (type, field, value, placeholder = '', disabled = false, ariaLabel = '') => {
             const input = document.createElement('input');
@@ -267,7 +267,7 @@ export const PortfolioView = {
              }
             return input;
         };
-        
+
         const createCheckbox = (field, checked, ariaLabel = '') => {
             const input = document.createElement('input');
             input.type = 'checkbox';
@@ -286,7 +286,7 @@ export const PortfolioView = {
             if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
             return button;
         };
-        
+
         const createCell = (className = '', align = 'left') => {
             const cell = document.createElement('div');
             cell.className = `virtual-cell ${className} align-${align}`;
@@ -306,13 +306,19 @@ export const PortfolioView = {
         // 컬럼 구성
         divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
         divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
-        if (!isMobile) { // 모바일이 아닐 때만 섹터 표시
-            divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
+
+        // 간단 계산 모드에서는 섹터, 목표 비율, 고정 매수 필드 숨김
+        if (mainMode !== 'simple') {
+            if (!isMobile) { // 모바일이 아닐 때만 섹터 표시
+                divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
+            }
+            divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
         }
-        divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
+
         if (!isMobile) { // 모바일이 아닐 때만 현재가 표시
             divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
         }
+
         if (mainMode === 'add' && !isMobile) { // 모바일이 아닐 때만 고정 매수 표시
             const fixedBuyCell = createCell('align-center');
             const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
@@ -364,15 +370,23 @@ export const PortfolioView = {
         divOutputs.appendChild(firstCell);
 
         // 출력 행 컬럼 구성
-        divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
-        if (!isMobile) { // 모바일 아닐 때
-             divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+        if (mainMode === 'simple') {
+            // 간단 모드: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서)
+            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
+        } else {
+            // 일반 모드
+            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+            if (!isMobile) { // 모바일 아닐 때
+                divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+            }
+            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+            if (!isMobile) { // 모바일 아닐 때
+                divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
+            }
+            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
         }
-        divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
-        if (!isMobile) { // 모바일 아닐 때
-            divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
-        }
-        divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
 
         // 액션 컬럼 스페이서
         const lastCell = createCell();
@@ -416,7 +430,7 @@ export const PortfolioView = {
     getGridTemplate(mainMode) {
         // 반응형 그리드 템플릿 반환
         const isMobile = window.innerWidth <= 768;
-        
+
         // 입력 행과 출력 행의 그리드 컬럼 수를 다르게 설정
         if (isMobile) {
             // 모바일: 이름 | 티커 | 목표% | 액션 (입력)
@@ -429,8 +443,12 @@ export const PortfolioView = {
                 // 이름 | 티커 | 섹터 | 목표% | 현재가 | 고정 | 액션 (7컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
                 return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+            } else if (mainMode === 'simple') {
+                // 간단 모드: 이름 | 티커 | 현재가 | 액션 (4컬럼)
+                // 간단 모드: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서) (4컬럼으로 맞춤)
+                return '2fr 1fr 1fr 1.2fr';
             } else {
-                // 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
+                // 매도 리밸런싱: 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
                 return '2fr 1fr 1fr 1fr 1fr 1.2fr';
             }
@@ -445,29 +463,39 @@ export const PortfolioView = {
         if (!header) return;
 
         header.style.gridTemplateColumns = this.getGridTemplate(mainMode);
-        
+
         const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
         let headersHTML = '';
-        
+
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {
             headersHTML = `
                 <div class="virtual-cell">${t('ui.stockName')}</div>
                 <div class="virtual-cell">${t('ui.ticker')}</div>
-                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                <div class="virtual-cell align-right">${mainMode === 'simple' ? t('ui.currentPrice') : t('ui.targetRatio')}${mainMode === 'simple' ? '(' + currencySymbol + ')' : '(%)'}</div>
                 <div class="virtual-cell align-center">${t('ui.action')}</div>
             `;
         } else {
-            headersHTML = `
-                <div class="virtual-cell">${t('ui.stockName')}</div>
-                <div class="virtual-cell">${t('ui.ticker')}</div>
-                <div class="virtual-cell">${t('ui.sector')}</div>
-                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
-                ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
-                <div class="virtual-cell align-center">${t('ui.action')}</div>
-            `;
+            if (mainMode === 'simple') {
+                // 간단 모드: 이름 | 티커 | 현재가 | 액션
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            } else {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell">${t('ui.sector')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
+                    ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            }
         }
         header.innerHTML = headersHTML;
     },
@@ -582,8 +610,14 @@ export const PortfolioView = {
     updateMainModeUI(mainMode) {
         const addCard = this.dom.addInvestmentCard;
         const modeRadios = this.dom.mainModeSelector;
+        const ratioValidator = this.dom.ratioValidator;
+
         // Show investment card for both 'add' and 'simple' modes
         addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
+
+        // Hide ratio validator in simple mode (no target ratio needed)
+        ratioValidator?.classList.toggle('hidden', mainMode === 'simple');
+
         modeRadios?.forEach(radio => {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
         });
