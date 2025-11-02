@@ -349,6 +349,13 @@ export class PortfolioController {
 
         if (isValid) {
             this.state.updateStockProperty(stockId, field, value);
+
+            // manualAmount는 간단 모드 전용 필드로, 입력 시 테이블 재렌더링 불필요
+            if (field === 'manualAmount') {
+                this.debouncedSave();
+                return; // 재렌더링 건너뛰기
+            }
+
             Calculator.clearPortfolioStateCache();
 
             const activePortfolio = this.state.getActivePortfolio();
