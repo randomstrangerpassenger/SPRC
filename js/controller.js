@@ -622,18 +622,58 @@ export class PortfolioController {
         if (!stockId) return;
 
         const typeInput = form.querySelector('input[name="txType"]:checked');
+        const inputModeInput = form.querySelector('input[name="inputMode"]:checked');
         const dateInput = /** @type {HTMLInputElement} */ (form.querySelector('#txDate'));
         const quantityInput = /** @type {HTMLInputElement} */ (form.querySelector('#txQuantity'));
+        const totalAmountInput = /** @type {HTMLInputElement} */ (form.querySelector('#txTotalAmount'));
         const priceInput = /** @type {HTMLInputElement} */ (form.querySelector('#txPrice'));
 
-        if (!typeInput || !dateInput || !quantityInput || !priceInput) return;
+        if (!typeInput || !dateInput || !priceInput) return;
 
         const type = (typeInput instanceof HTMLInputElement && typeInput.value === 'sell') ? 'sell' : 'buy';
+        const inputMode = (inputModeInput instanceof HTMLInputElement) ? inputModeInput.value : 'quantity';
         const date = dateInput.value;
-        const quantityStr = quantityInput.value;
         const priceStr = priceInput.value;
 
-        const txData = { type, date, quantity: quantityStr, price: priceStr };
+        let finalQuantity;
+
+        if (inputMode === 'amount') {
+            // 금액 입력 모드: 총 금액 / 단가 = 수량 (Decimal.js로 정밀 계산)
+            if (!totalAmountInput || !totalAmountInput.value) {
+                this.view.showToast(t('toast.invalidTransactionInfo'), "error");
+                return;
+            }
+
+            const totalAmountStr = totalAmountInput.value;
+
+            try {
+                const totalAmountDec = new Decimal(totalAmountStr);
+                const priceDec = new Decimal(priceStr);
+
+                if (priceDec.isZero() || priceDec.isNegative()) {
+                    this.view.showToast('단가는 0보다 커야 합니다.', "error");
+                    return;
+                }
+
+                // 수량 = 총 금액 / 단가
+                const quantityDec = totalAmountDec.div(priceDec);
+                finalQuantity = quantityDec.toNumber();
+            } catch (error) {
+                this.view.showToast('금액 또는 단가 입력이 올바르지 않습니다.', "error");
+                return;
+            }
+        } else {
+            // 수량 입력 모드: 기존 방식
+            if (!quantityInput || !quantityInput.value) {
+                this.view.showToast(t('toast.invalidTransactionInfo'), "error");
+                return;
+            }
+
+            const quantityStr = quantityInput.value;
+            finalQuantity = Number(quantityStr);
+        }
+
+        const txData = { type, date, quantity: String(finalQuantity), price: priceStr };
         const validationResult = Validator.validateTransaction(txData);
 
         if (!validationResult.isValid) {
@@ -641,10 +681,10 @@ export class PortfolioController {
             return;
         }
 
-        const success = await this.state.addTransaction(stockId, { 
+        const success = await this.state.addTransaction(stockId, {
              type,
              date,
-             quantity: Number(quantityStr),
+             quantity: finalQuantity,
              price: Number(priceStr)
         });
 
@@ -655,6 +695,23 @@ export class PortfolioController {
             }
             form.reset();
             dateInput.valueAsDate = new Date();
+
+            // 입력 모드를 수량 입력으로 리셋
+            const inputModeQuantity = form.querySelector('#inputModeQuantity');
+            if (inputModeQuantity instanceof HTMLInputElement) {
+                inputModeQuantity.checked = true;
+                // UI 토글
+                const quantityInputGroup = document.getElementById('quantityInputGroup');
+                const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
+                const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
+
+                if (quantityInputGroup) quantityInputGroup.style.display = '';
+                if (totalAmountInputGroup) totalAmountInputGroup.style.display = 'none';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'none';
+                if (quantityInput) quantityInput.required = true;
+                if (totalAmountInput) totalAmountInput.required = false;
+            }
+
             this.view.showToast(t('toast.transactionAdded'), "success");
 
             Calculator.clearPortfolioStateCache();

@@ -140,19 +140,30 @@
                     <label><input type="radio" name="txType" value="buy" checked> 매수</label>
                     <label><input type="radio" name="txType" value="sell"> 매도</label>
                 </div>
+                <div class="mode-selector" style="margin-bottom: 15px;">
+                    <label><input type="radio" name="inputMode" value="quantity" id="inputModeQuantity" checked> 수량 입력</label>
+                    <label><input type="radio" name="inputMode" value="amount" id="inputModeAmount"> 금액 입력</label>
+                </div>
                 <div class="input-grid">
                     <div class="input-group-vertical">
                         <label for="txDate">날짜</label>
                         <input type="date" id="txDate" required>
                     </div>
-                    <div class="input-group-vertical">
+                    <div class="input-group-vertical" id="quantityInputGroup">
                         <label for="txQuantity">수량</label>
-                        <input type="number" id="txQuantity" placeholder="예: 10" min="0" step="any" required>
+                        <input type="number" id="txQuantity" placeholder="예: 10" min="0" step="any">
+                    </div>
+                    <div class="input-group-vertical" id="totalAmountInputGroup" style="display: none;">
+                        <label for="txTotalAmount">총 금액</label>
+                        <input type="number" id="txTotalAmount" placeholder="예: 1500000" min="0" step="any">
                     </div>
                     <div class="input-group-vertical">
                         <label for="txPrice">단가</label>
                         <input type="number" id="txPrice" placeholder="예: 150000" min="0" step="any" required>
                     </div>
+                </div>
+                <div id="calculatedQuantityDisplay" style="margin-top: 10px; padding: 10px; background-color: rgba(0, 123, 255, 0.1); border-radius: 5px; display: none;">
+                    <strong>계산된 수량:</strong> <span id="calculatedQuantityValue">0</span>
                 </div>
                 <button type="submit" class="btn" data-variant="blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
             </form>
