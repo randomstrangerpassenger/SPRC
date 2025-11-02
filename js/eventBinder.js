@@ -232,6 +232,66 @@ export function bindEventListeners(view) {
     // 새 거래 추가 폼 제출
     dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e)); // view.emit으로 변경
 
+    // 입력 방식 전환 (수량 입력 vs 금액 입력)
+    const inputModeQuantity = document.getElementById('inputModeQuantity');
+    const inputModeAmount = document.getElementById('inputModeAmount');
+    const quantityInputGroup = document.getElementById('quantityInputGroup');
+    const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
+    const txQuantityInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txQuantity'));
+    const txTotalAmountInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txTotalAmount'));
+    const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
+
+    const toggleInputMode = () => {
+        const isQuantityMode = inputModeQuantity instanceof HTMLInputElement && inputModeQuantity.checked;
+
+        if (quantityInputGroup && totalAmountInputGroup && txQuantityInput && txTotalAmountInput) {
+            if (isQuantityMode) {
+                // 수량 입력 모드
+                quantityInputGroup.style.display = '';
+                totalAmountInputGroup.style.display = 'none';
+                txQuantityInput.required = true;
+                txTotalAmountInput.required = false;
+                txTotalAmountInput.value = '';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'none';
+            } else {
+                // 금액 입력 모드
+                quantityInputGroup.style.display = 'none';
+                totalAmountInputGroup.style.display = '';
+                txQuantityInput.required = false;
+                txTotalAmountInput.required = true;
+                txQuantityInput.value = '';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'block';
+            }
+        }
+    };
+
+    inputModeQuantity?.addEventListener('change', toggleInputMode);
+    inputModeAmount?.addEventListener('change', toggleInputMode);
+
+    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산
+    const calculateQuantityFromAmount = () => {
+        const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
+        if (!isAmountMode) return;
+
+        const txPriceInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txPrice'));
+        const calculatedQuantityValue = document.getElementById('calculatedQuantityValue');
+
+        if (txTotalAmountInput && txPriceInput && calculatedQuantityValue) {
+            const totalAmount = parseFloat(txTotalAmountInput.value) || 0;
+            const price = parseFloat(txPriceInput.value) || 0;
+
+            if (price > 0 && totalAmount > 0) {
+                const quantity = totalAmount / price;
+                calculatedQuantityValue.textContent = quantity.toFixed(8);
+            } else {
+                calculatedQuantityValue.textContent = '0';
+            }
+        }
+    };
+
+    txTotalAmountInput?.addEventListener('input', calculateQuantityFromAmount);
+    document.getElementById('txPrice')?.addEventListener('input', calculateQuantityFromAmount);
+
     // 거래 내역 목록 내 삭제 버튼 클릭 (이벤트 위임)
     dom.transactionModal?.addEventListener('click', (e) => {
         const target = /** @type {HTMLElement} */ (e.target);
