@@ -329,11 +329,20 @@ export const PortfolioView = {
         }
 
         const actionCell = createCell('align-center');
-        actionCell.append(
-            createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
-            ' ',
-            createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
-        );
+        if (mainMode === 'simple') {
+            // 간단 모드: 금액 입력칸만 표시
+            const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
+            manualAmountInput.style.width = '100%';
+            manualAmountInput.style.textAlign = 'right';
+            actionCell.appendChild(manualAmountInput);
+        } else {
+            // 일반 모드: 거래 내역 관리 및 삭제 버튼
+            actionCell.append(
+                createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
+                ' ',
+                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+            );
+        }
         divInputs.appendChild(actionCell);
 
         // --- 2. 출력 행 (Outputs Row) ---
@@ -371,10 +380,8 @@ export const PortfolioView = {
 
         // 출력 행 컬럼 구성
         if (mainMode === 'simple') {
-            // 간단 모드: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서)
-            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
-            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
-            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
+            // 간단 모드에서는 출력 행을 완전히 숨김 (보유 금액을 입력칸에서 바로 입력하므로)
+            divOutputs.style.display = 'none';
         } else {
             // 일반 모드
             divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
@@ -474,16 +481,16 @@ export const PortfolioView = {
                 <div class="virtual-cell">${t('ui.stockName')}</div>
                 <div class="virtual-cell">${t('ui.ticker')}</div>
                 <div class="virtual-cell align-right">${mainMode === 'simple' ? t('ui.currentPrice') : t('ui.targetRatio')}${mainMode === 'simple' ? '(' + currencySymbol + ')' : '(%)'}</div>
-                <div class="virtual-cell align-center">${t('ui.action')}</div>
+                <div class="virtual-cell align-center">${mainMode === 'simple' ? '보유 금액(' + currencySymbol + ')' : t('ui.action')}</div>
             `;
         } else {
             if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 현재가 | 액션
+                // 간단 모드: 이름 | 티커 | 현재가 | 보유 금액
                 headersHTML = `
                     <div class="virtual-cell">${t('ui.stockName')}</div>
                     <div class="virtual-cell">${t('ui.ticker')}</div>
                     <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
-                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
                 `;
             } else {
                 headersHTML = `

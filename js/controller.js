@@ -327,6 +327,7 @@ export class PortfolioController {
             case 'targetRatio':
             case 'currentPrice':
             case 'fixedBuyAmount':
+            case 'manualAmount':
                 const validationResult = Validator.validateNumericInput(value);
                 isValid = validationResult.isValid;
                 if(isValid) value = validationResult.value ?? 0;
