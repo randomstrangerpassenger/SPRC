@@ -103,30 +103,23 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
     if (!results) return '';
 
     const sortedResults = [...results].sort((a, b) => {
-        const amountA = a.finalBuyAmount ?? new Decimal(0);
-        const amountB = b.finalBuyAmount ?? new Decimal(0);
-        return amountB.comparedTo(amountA);
+        const ratioA = a.currentRatio ?? new Decimal(0);
+        const ratioB = b.currentRatio ?? new Decimal(0);
+        return ratioB.comparedTo(ratioA);
     });
 
     const resultsRows = sortedResults.map((stock, index) => {
-        const metrics = stock.calculated ?? { profitLoss: new Decimal(0), profitLossRate: new Decimal(0) };
-        const { profitLoss, profitLossRate } = metrics;
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
+        const metrics = stock.calculated ?? { currentAmount: new Decimal(0) };
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
 
-        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : 'N/A';
-        const profitLossRateVal = profitLossRate?.isFinite() ? profitLossRate.toFixed(2) : 'N/A';
+        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : '0.0';
         const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
         return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
-                <td style="text-align: center;">${currentRatioVal}%</td>
-                <td style="text-align: right;">
-                    <div class="${profitClass}">
-                        ${profitSign}${profitLossRateVal}%
-                    </div>
-                </td>
+                <td style="text-align: right;">${formatCurrency(currentAmount, currency)}</td>
+                <td style="text-align: center;"><strong>${currentRatioVal}%</strong></td>
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
             </tr>
         `;
@@ -138,11 +131,11 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
 
     const guideContent = buyableStocks.length > 0
         ? buyableStocks.map((s, i) => {
-            const buyRatioVal = s.buyRatio?.isFinite() ? s.buyRatio.toFixed(1) : 'N/A';
+            const currentRatioVal = s.currentRatio?.isFinite() ? s.currentRatio.toFixed(1) : '0.0';
             return `
                 <div class="guide-item">
                     <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
-                    <span style="font-weight: bold;">(${buyRatioVal}%)</span>
+                    <span style="font-weight: bold; color: #666;">(현재 비율: ${currentRatioVal}%)</span>
                 </div>`;
         }).join('')
         : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
@@ -154,20 +147,27 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
             <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
         </div>
         <div class="card">
-            <h2>🎯 간단 계산 결과 (현재 비율 유지)</h2>
-            <p style="margin-bottom: 15px; color: #666;">현재 보유 비율을 유지하면서 추가 투자금을 배분합니다.</p>
+            <h2>🎯 간단 계산 결과</h2>
+            <p style="margin-bottom: 15px; color: #666; font-size: 1.05em;">
+                <strong>현재 포트폴리오 비율을 그대로 유지</strong>하면서 추가 투자금을 배분합니다.<br>
+                별도의 목표 비율 설정 없이, 현재 보유 중인 비율대로 투자합니다.
+            </p>
             <div class="table-responsive">
                 <table>
                     <thead><tr>
                         <th>${t('template.stock')}</th>
-                        <th>${t('template.currentRatio')}</th>
-                        <th>${t('template.profitRate')}</th>
-                        <th>${t('template.buyRecommendation')}</th>
+                        <th>현재 평가액</th>
+                        <th>현재 비율</th>
+                        <th>추가 구매 금액</th>
                     </tr></thead>
                     <tbody>${resultsRows}</tbody>
                 </table>
             </div>
-            <div class="guide-box guide-box--buy"><h3>${t('template.buyGuideTitle')}</h3>${guideContent}</div>
+            <div class="guide-box guide-box--buy">
+                <h3>💰 추가 구매 가이드</h3>
+                <p style="margin-bottom: 10px; color: #666;">현재 비율을 유지하기 위해 다음과 같이 구매하세요:</p>
+                ${guideContent}
+            </div>
         </div>`;
 }
 
