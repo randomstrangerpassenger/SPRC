@@ -444,18 +444,16 @@ export class PortfolioController {
             return;
         }
 
-        // 간단 계산 모드에서는 목표 비율 검증 건너뛰기 (현재 비율을 그대로 사용)
-        if (activePortfolio.settings.mainMode !== 'simple') {
-            const totalRatio = getRatioSum(inputs.portfolioData);
-            if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
-                const proceed = await this.view.showConfirm(
-                    t('modal.confirmRatioSumWarnTitle'),
-                    t('modal.confirmRatioSumWarnMsg', { totalRatio: totalRatio.toFixed(1) })
-                );
-                if (!proceed) {
-                    this.view.hideResults();
-                    return;
-                }
+        // 목표 비율 검증 (모든 모드에서 수행)
+        const totalRatio = getRatioSum(inputs.portfolioData);
+        if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
+            const proceed = await this.view.showConfirm(
+                t('modal.confirmRatioSumWarnTitle'),
+                t('modal.confirmRatioSumWarnMsg', { totalRatio: totalRatio.toFixed(1) })
+            );
+            if (!proceed) {
+                this.view.hideResults();
+                return;
             }
         }
 
