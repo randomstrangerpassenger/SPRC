@@ -127,7 +127,7 @@ export class AddRebalanceStrategy extends IRebalanceStrategy {
 }
 
 /**
- * @description '간단 계산' 모드 전략 - 현재 비율을 유지하면서 추가 투자금 배분
+ * @description '간단 계산' 모드 전략 - 목표 비율에 맞춰 추가 투자금 배분 (거래 내역 없이 금액만 입력)
  * @implements {IRebalanceStrategy}
  */
 export class SimpleRatioStrategy extends IRebalanceStrategy {
@@ -162,26 +162,42 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
             zero
         );
 
+        const totalInvestment = currentTotal.plus(this.#additionalInvestment);
+
         // 포트폴리오가 비어있으면 계산 불가
-        if (currentTotal.isZero()) {
+        if (totalInvestment.isZero()) {
             const endTime = performance.now();
             console.log(`[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
             return { results: [] };
         }
 
+        // 목표 비율 합계 계산
+        let totalRatio = this.#portfolioData.reduce(
+            (sum, s) => sum.plus(s.targetRatio || 0),
+            zero
+        );
+
+        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
+
         const results = [];
 
-        // 각 종목의 현재 비율에 따라 추가 투자금 배분
+        // 각 종목의 목표 비율에 따라 추가 투자금 배분
         for (const s of this.#portfolioData) {
             // 간단 모드에서는 manualAmount를 우선 사용
             const currentAmount = s.manualAmount != null
                 ? new Decimal(s.manualAmount)
                 : (s.calculated?.currentAmount || zero);
 
-            const currentRatio = currentAmount.div(currentTotal).times(100);
+            const currentRatio = currentTotal.isZero() ? zero : currentAmount.div(currentTotal).times(100);
 
-            // 현재 비율만큼 추가 투자금 배분
-            const buyAmount = this.#additionalInvestment.times(currentAmount).div(currentTotal);
+            // 목표 비율 정규화
+            const targetRatioNormalized = (s.targetRatio || zero).times(ratioMultiplier);
+
+            // 목표 금액 계산
+            const targetAmount = totalInvestment.times(targetRatioNormalized.div(100));
+
+            // 추가 구매 금액 = 목표 금액 - 현재 금액
+            const buyAmount = Decimal.max(zero, targetAmount.minus(currentAmount));
 
             results.push({
                 ...s,

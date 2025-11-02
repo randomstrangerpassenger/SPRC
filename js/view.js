@@ -307,15 +307,17 @@ export const PortfolioView = {
         divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
         divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
 
-        // 간단 계산 모드에서는 섹터, 목표 비율, 고정 매수 필드 숨김
-        if (mainMode !== 'simple') {
-            if (!isMobile) { // 모바일이 아닐 때만 섹터 표시
-                divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
-            }
-            divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
+        // 간단 계산 모드에서는 섹터, 고정 매수 필드만 숨김 (목표비중은 유지)
+        if (mainMode !== 'simple' && !isMobile) {
+            // 섹터는 간단 모드가 아닐 때만 표시
+            divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
         }
 
-        if (!isMobile) { // 모바일이 아닐 때만 현재가 표시
+        // 목표 비율은 모든 모드에서 표시
+        divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
+
+        if (!isMobile && mainMode !== 'simple') {
+            // 현재가는 간단 모드가 아닐 때만 표시
             divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
         }
 
@@ -451,9 +453,8 @@ export const PortfolioView = {
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
                 return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
             } else if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 현재가 | 액션 (4컬럼)
-                // 간단 모드: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서) (4컬럼으로 맞춤)
-                return '2fr 1fr 1fr 1.2fr';
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 (4컬럼)
+                return '2fr 1fr 1fr 1.5fr';
             } else {
                 // 매도 리밸런싱: 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
@@ -480,16 +481,16 @@ export const PortfolioView = {
             headersHTML = `
                 <div class="virtual-cell">${t('ui.stockName')}</div>
                 <div class="virtual-cell">${t('ui.ticker')}</div>
-                <div class="virtual-cell align-right">${mainMode === 'simple' ? t('ui.currentPrice') : t('ui.targetRatio')}${mainMode === 'simple' ? '(' + currencySymbol + ')' : '(%)'}</div>
+                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
                 <div class="virtual-cell align-center">${mainMode === 'simple' ? '보유 금액(' + currencySymbol + ')' : t('ui.action')}</div>
             `;
         } else {
             if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 현재가 | 보유 금액
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액
                 headersHTML = `
                     <div class="virtual-cell">${t('ui.stockName')}</div>
                     <div class="virtual-cell">${t('ui.ticker')}</div>
-                    <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
                     <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
                 `;
             } else {
@@ -617,13 +618,9 @@ export const PortfolioView = {
     updateMainModeUI(mainMode) {
         const addCard = this.dom.addInvestmentCard;
         const modeRadios = this.dom.mainModeSelector;
-        const ratioValidator = this.dom.ratioValidator;
 
         // Show investment card for both 'add' and 'simple' modes
         addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
-
-        // Hide ratio validator in simple mode (no target ratio needed)
-        ratioValidator?.classList.toggle('hidden', mainMode === 'simple');
 
         modeRadios?.forEach(radio => {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;

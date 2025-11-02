@@ -113,13 +113,15 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
         const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
 
         const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : '0.0';
+        const targetRatioVal = typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : (stock.targetRatio?.toFixed(1) ?? '0.0');
         const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
         return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
                 <td style="text-align: right;">${formatCurrency(currentAmount, currency)}</td>
-                <td style="text-align: center;"><strong>${currentRatioVal}%</strong></td>
+                <td style="text-align: center;">${currentRatioVal}%</td>
+                <td style="text-align: center;"><strong>${targetRatioVal}%</strong></td>
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
             </tr>
         `;
@@ -149,8 +151,8 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
         <div class="card">
             <h2>🎯 간단 계산 결과</h2>
             <p style="margin-bottom: 15px; color: #666; font-size: 1.05em;">
-                <strong>현재 포트폴리오 비율을 그대로 유지</strong>하면서 추가 투자금을 배분합니다.<br>
-                별도의 목표 비율 설정 없이, 현재 보유 중인 비율대로 투자합니다.
+                <strong>목표 비율에 맞춰</strong> 추가 투자금을 배분합니다.<br>
+                거래 내역 없이 간단하게 현재 보유 금액만 입력하여 리밸런싱할 수 있습니다.
             </p>
             <div class="table-responsive">
                 <table>
@@ -158,6 +160,7 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
                         <th>${t('template.stock')}</th>
                         <th>현재 평가액</th>
                         <th>현재 비율</th>
+                        <th>목표 비율</th>
                         <th>추가 구매 금액</th>
                     </tr></thead>
                     <tbody>${resultsRows}</tbody>
@@ -165,7 +168,7 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
             </div>
             <div class="guide-box guide-box--buy">
                 <h3>💰 추가 구매 가이드</h3>
-                <p style="margin-bottom: 10px; color: #666;">현재 비율을 유지하기 위해 다음과 같이 구매하세요:</p>
+                <p style="margin-bottom: 10px; color: #666;">목표 비율에 맞추기 위해 다음과 같이 구매하세요:</p>
                 ${guideContent}
             </div>
         </div>`;
