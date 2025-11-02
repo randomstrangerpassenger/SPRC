@@ -151,9 +151,14 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
 
         const zero = new Decimal(0);
 
-        // 현재 포트폴리오 총액 계산
+        // 간단 모드에서는 manualAmount를 사용 (거래 내역 대신 직접 입력한 금액)
         const currentTotal = this.#portfolioData.reduce(
-            (sum, s) => sum.plus(s.calculated?.currentAmount || zero),
+            (sum, s) => {
+                const amount = s.manualAmount != null
+                    ? new Decimal(s.manualAmount)
+                    : (s.calculated?.currentAmount || zero);
+                return sum.plus(amount);
+            },
             zero
         );
 
@@ -168,7 +173,11 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
 
         // 각 종목의 현재 비율에 따라 추가 투자금 배분
         for (const s of this.#portfolioData) {
-            const currentAmount = s.calculated?.currentAmount || zero;
+            // 간단 모드에서는 manualAmount를 우선 사용
+            const currentAmount = s.manualAmount != null
+                ? new Decimal(s.manualAmount)
+                : (s.calculated?.currentAmount || zero);
+
             const currentRatio = currentAmount.div(currentTotal).times(100);
 
             // 현재 비율만큼 추가 투자금 배분
@@ -180,7 +189,12 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
                 finalBuyAmount: buyAmount,
                 buyRatio: this.#additionalInvestment.isZero()
                     ? zero
-                    : buyAmount.div(this.#additionalInvestment).times(100)
+                    : buyAmount.div(this.#additionalInvestment).times(100),
+                // 계산에 사용한 실제 금액을 calculated에도 반영
+                calculated: {
+                    ...s.calculated,
+                    currentAmount: currentAmount
+                }
             });
         }
 

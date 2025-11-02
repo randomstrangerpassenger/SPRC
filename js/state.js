@@ -603,7 +603,8 @@ export class PortfolioState {
             currentPrice: new Decimal(0), // Use Decimal
             isFixedBuyEnabled: false,
             fixedBuyAmount: new Decimal(0), // Use Decimal
-            transactions: []
+            transactions: [],
+            manualAmount: 0 // 간단 모드용 수동 입력 금액
         };
     }
 }

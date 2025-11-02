@@ -24,6 +24,7 @@
  * @property {Transaction[]} transactions - 거래 내역 배열
  * @property {boolean} isFixedBuyEnabled - 고정 매수 활성화 여부
  * @property {number} fixedBuyAmount - 고정 매수 금액
+ * @property {number} [manualAmount] - 간단 모드용 수동 입력 금액 (선택 사항)
  */
 
 /**
