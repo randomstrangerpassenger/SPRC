@@ -539,10 +539,21 @@ export class PortfolioController {
 
             const results = await apiService.fetchAllStockPrices(tickersToFetch);
 
+            // Get current currency and exchange rate for conversion
+            const exchangeRate = activePortfolio.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const currentCurrency = activePortfolio.currentCurrency || 'krw';
+
             results.forEach((result) => {
                 if (result.status === 'fulfilled' && result.value) {
-                    this.state.updateStockProperty(result.id, 'currentPrice', result.value);
-                    this.view.updateCurrentPriceInput(result.id, result.value.toFixed(2));
+                    let price = result.value; // This is in USD from Finnhub API
+
+                    // Convert USD price to KRW if current currency is KRW
+                    if (currentCurrency === 'krw') {
+                        price = price * exchangeRate;
+                    }
+
+                    this.state.updateStockProperty(result.id, 'currentPrice', price);
+                    this.view.updateCurrentPriceInput(result.id, price.toFixed(2));
                     successCount++;
                 } else {
                     failureCount++;
@@ -581,11 +592,39 @@ export class PortfolioController {
      }
 
     async handleCurrencyModeChange(newCurrency) {
-         if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
-        await this.state.updatePortfolioSettings('currentCurrency', newCurrency); 
-        this.fullRender(); 
+        if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
+
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const oldCurrency = activePortfolio.currentCurrency || 'krw';
+
+        // If currency is actually changing, convert all existing currentPrice values
+        if (oldCurrency !== newCurrency) {
+            const exchangeRate = activePortfolio.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+
+            activePortfolio.portfolioData.forEach(stock => {
+                if (stock.currentPrice && stock.currentPrice > 0) {
+                    let newPrice = stock.currentPrice;
+
+                    // Convert from old currency to new currency
+                    if (oldCurrency === 'usd' && newCurrency === 'krw') {
+                        // USD to KRW
+                        newPrice = stock.currentPrice * exchangeRate;
+                    } else if (oldCurrency === 'krw' && newCurrency === 'usd') {
+                        // KRW to USD
+                        newPrice = stock.currentPrice / exchangeRate;
+                    }
+
+                    this.state.updateStockProperty(stock.id, 'currentPrice', newPrice);
+                }
+            });
+        }
+
+        await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
+        this.fullRender();
         this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
-     }
+    }
 
     async handleCurrencyConversion(source) {
         const activePortfolio = this.state.getActivePortfolio();
