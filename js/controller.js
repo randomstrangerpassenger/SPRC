@@ -66,9 +66,12 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput } = this.view.dom;
+            const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+            }
+            if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
 
             this.fullRender();
@@ -107,6 +110,7 @@ export class PortfolioController {
         this.view.on('mainModeChanged', (data) => this.handleMainModeChange(data.mode));
         this.view.on('currencyModeChanged', (data) => this.handleCurrencyModeChange(data.currency));
         this.view.on('currencyConversion', (data) => this.handleCurrencyConversion(data.source));
+        this.view.on('portfolioExchangeRateChanged', (data) => this.handlePortfolioExchangeRateChange(data.rate));
 
         // 모달 상호작용
         this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
@@ -236,9 +240,12 @@ export class PortfolioController {
             if (activePortfolio) {
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                const { exchangeRateInput } = this.view.dom;
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
                 if (exchangeRateInput instanceof HTMLInputElement) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
             }
             this.fullRender();
@@ -281,9 +288,12 @@ export class PortfolioController {
                 this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                const { exchangeRateInput } = this.view.dom;
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
                 if (exchangeRateInput instanceof HTMLInputElement) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
              }
             this.fullRender();
@@ -676,6 +686,22 @@ export class PortfolioController {
              if (source === 'krw') additionalAmountUSDInput.value = ''; else additionalAmountInput.value = '';
         }
      }
+
+    async handlePortfolioExchangeRateChange(rate) {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const exchangeRateNum = Number(rate);
+        const isValidRate = !isNaN(exchangeRateNum) && exchangeRateNum > 0;
+
+        if (isValidRate) {
+            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            this.debouncedSave();
+        } else {
+            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+            this.view.showToast(t('toast.invalidExchangeRate'), "error");
+        }
+    }
 
 
     // --- 거래 내역 모달 핸들러 ---

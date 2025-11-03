@@ -225,6 +225,41 @@ export function bindEventListeners(view) {
     dom.additionalAmountUSDInput?.addEventListener('keydown', handleEnterKey);
     dom.exchangeRateInput?.addEventListener('keydown', handleEnterKey);
 
+    // 포트폴리오 환율 설정
+    dom.portfolioExchangeRateInput?.addEventListener('input', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        const rate = parseFloat(target.value);
+        const isValid = !isNaN(rate) && rate > 0;
+        view.toggleInputValidation(target, isValid);
+        if (isValid) {
+            // 두 환율 입력란 동기화
+            if (dom.exchangeRateInput instanceof HTMLInputElement) {
+                dom.exchangeRateInput.value = target.value;
+            }
+            // 포트폴리오 설정 업데이트
+            view.emit('portfolioExchangeRateChanged', { rate });
+            // 추가 투자금 재계산 (USD 모드인 경우)
+            debouncedConversion('krw');
+        }
+    });
+
+    // 추가 투자금 섹션의 환율 변경 시 포트폴리오 환율과 동기화
+    const originalExchangeRateHandler = dom.exchangeRateInput;
+    if (originalExchangeRateHandler) {
+        originalExchangeRateHandler.addEventListener('input', (e) => {
+            const target = /** @type {HTMLInputElement} */ (e.target);
+            const rate = parseFloat(target.value);
+            if (!isNaN(rate) && rate > 0) {
+                // 포트폴리오 환율 입력란과 동기화
+                if (dom.portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    dom.portfolioExchangeRateInput.value = target.value;
+                }
+                // 포트폴리오 설정 업데이트
+                view.emit('portfolioExchangeRateChanged', { rate });
+            }
+        });
+    }
+
     // --- 모달 관련 이벤트 ---
     // 거래 내역 모달 닫기 버튼
     dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked')); // view.emit으로 변경

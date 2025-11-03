@@ -89,6 +89,7 @@ export const PortfolioView = {
             additionalAmountInput: D.getElementById('additionalAmount'),
             additionalAmountUSDInput: D.getElementById('additionalAmountUSD'),
             exchangeRateInput: D.getElementById('exchangeRate'),
+            portfolioExchangeRateInput: D.getElementById('portfolioExchangeRate'),
             mainModeSelector: D.querySelectorAll('input[name="mainMode"]'),
             currencyModeSelector: D.querySelectorAll('input[name="currencyMode"]'),
             exchangeRateGroup: D.getElementById('exchangeRateGroup'),
