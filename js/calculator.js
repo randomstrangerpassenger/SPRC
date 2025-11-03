@@ -62,7 +62,7 @@ export class Calculator {
             const result = {
                 totalBuyQuantity: new Decimal(0),
                 totalSellQuantity: new Decimal(0),
-                netQuantity: new Decimal(0),
+                quantity: new Decimal(0),
                 totalBuyAmount: new Decimal(0),
                 currentAmount: new Decimal(0),
                 currentAmountUSD: new Decimal(0),
@@ -90,18 +90,18 @@ export class Calculator {
             }
 
             // 2. 순 보유 수량
-            result.netQuantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); 
+            result.quantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); 
 
             // 3. 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
             if (result.totalBuyQuantity.greaterThan(0)) {
                 result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
             }
 
-            // 4. 현재 가치 (netQuantity * currentPrice)
-            result.currentAmount = result.netQuantity.times(currentPrice);
+            // 4. 현재 가치 (quantity * currentPrice)
+            result.currentAmount = result.quantity.times(currentPrice);
 
-            // 5. 손익 계산 (currentAmount - (netQuantity * avgBuyPrice))
-            const originalCostOfHolding = result.netQuantity.times(result.avgBuyPrice);
+            // 5. 손익 계산 (currentAmount - (quantity * avgBuyPrice))
+            const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
             result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
 
             // 6. 손익률
@@ -117,7 +117,7 @@ export class Calculator {
             ErrorService.handle(/** @type {Error} */ (error), 'calculateStockMetrics');
             // 에러 발생 시 기본값 반환
             return {
-                totalBuyQuantity: new Decimal(0), totalSellQuantity: new Decimal(0), netQuantity: new Decimal(0),
+                totalBuyQuantity: new Decimal(0), totalSellQuantity: new Decimal(0), quantity: new Decimal(0),
                 totalBuyAmount: new Decimal(0), currentAmount: new Decimal(0), currentAmountUSD: new Decimal(0), currentAmountKRW: new Decimal(0),
                 avgBuyPrice: new Decimal(0), profitLoss: new Decimal(0), profitLossRate: new Decimal(0),
             };

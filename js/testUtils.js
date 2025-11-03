@@ -39,7 +39,6 @@ export function createMockCalculatedStock({
             profitLossRate: profitLossRate,
             totalBuyQuantity: new Decimal(quantity),
             totalSellQuantity: new Decimal(0),
-            netQuantity: new Decimal(quantity),
             totalBuyAmount: totalBuyAmount,
             currentAmountUSD: new Decimal(0),
             currentAmountKRW: new Decimal(0),

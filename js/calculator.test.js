@@ -17,8 +17,8 @@ describe('Calculator.calculateStockMetrics (동기)', () => {
             ], isFixedBuyEnabled: false, fixedBuyAmount: 0
         };
         // @ts-ignore
-        const result = Calculator.calculateStockMetrics(stock); 
-        expect(result.netQuantity.toString()).toBe('20');
+        const result = Calculator.calculateStockMetrics(stock);
+        expect(result.quantity.toString()).toBe('20');
         expect(result.avgBuyPrice.toString()).toBe('110');
         expect(result.currentAmount.toString()).toBe('3000'); 
         expect(result.profitLoss.toString()).toBe('800'); 
@@ -33,8 +33,8 @@ describe('Calculator.calculateStockMetrics (동기)', () => {
             ], isFixedBuyEnabled: false, fixedBuyAmount: 0
         };
          // @ts-ignore
-        const result = Calculator.calculateStockMetrics(stock); 
-        expect(result.netQuantity.toString()).toBe('5');
+        const result = Calculator.calculateStockMetrics(stock);
+        expect(result.quantity.toString()).toBe('5');
         expect(result.avgBuyPrice.toString()).toBe('100'); 
         expect(result.currentAmount.toString()).toBe('1000'); 
         expect(result.profitLoss.toString()).toBe('500'); 
@@ -92,8 +92,8 @@ describe('Calculator Edge Cases (동기)', () => {
             };
             // @ts-ignore
             const result = Calculator.calculateStockMetrics(stock);
-            
-            expect(result.netQuantity.toString()).toBe('0'); 
+
+            expect(result.quantity.toString()).toBe('0');
             expect(result.avgBuyPrice.toString()).toBe('100'); 
             expect(result.currentAmount.toString()).toBe('0'); 
             expect(result.profitLoss.toString()).toBe('0'); 
