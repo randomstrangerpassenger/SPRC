@@ -882,7 +882,7 @@ export const PortfolioView = {
         });
     },
 
-    displayChart(Chart, labels, data, title) {
+    displayChart(labels, data, title) {
         const chartEl = this.dom.chartSection;
         const canvas = this.dom.portfolioChart;
         if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;

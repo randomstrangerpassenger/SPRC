@@ -122,10 +122,7 @@ export class Calculator {
                 avgBuyPrice: new Decimal(0), profitLoss: new Decimal(0), profitLossRate: new Decimal(0),
             };
         } finally {
-            // --- ⬇️ Performance Monitoring ⬇️ ---
-            const endTime = performance.now();
-            console.log(`[Perf] calculateStockMetrics (${stock.name || stock.id}) took ${(endTime - startTime).toFixed(2)} ms`);
-            // --- ⬆️ Performance Monitoring ⬆️ ---
+
         }
     }
 
@@ -142,10 +139,7 @@ export class Calculator {
         const cacheKey = _generatePortfolioKey(portfolioData);
 
         if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
-             // --- ⬇️ Performance Monitoring (Cache Hit) ⬇️ ---
-            const endTime = performance.now();
-            console.log(`[Perf] calculatePortfolioState (Cache Hit) took ${(endTime - startTime).toFixed(2)} ms`);
-            // --- ⬆️ Performance Monitoring ⬆️ ---
+
             return Calculator.#cache.result;
         }
 
@@ -181,10 +175,7 @@ export class Calculator {
         // 캐시 업데이트
         Calculator.#cache = { key: cacheKey, result: result }; 
 
-        // --- ⬇️ Performance Monitoring (Cache Miss) ⬇️ ---
-        const endTime = performance.now();
-        console.log(`[Perf] calculatePortfolioState (Cache Miss) for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        // --- ⬆️ Performance Monitoring ⬆️ ---
+
 
         return result;
     }

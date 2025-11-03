@@ -3,7 +3,10 @@
 import { PortfolioState } from './state.js';
 import { PortfolioView } from './view.js';
 import { PortfolioController } from './controller.js';
-import Chart from 'chart.js/auto'; // Chart.js import 추가
+import { Chart, DoughnutController, ArcElement, Legend, Title, Tooltip } from 'chart.js';
+
+// Chart.js의 필요한 구성 요소만 등록
+Chart.register(DoughnutController, ArcElement, Legend, Title, Tooltip);
 
 try {
     const state = new PortfolioState();

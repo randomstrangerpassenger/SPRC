@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
 
     esbuild: {
       target: 'esnext', // # 문법 지원은 유지
+      drop: ['console', 'debugger'],
     },
 
     test: {
