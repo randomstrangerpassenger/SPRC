@@ -177,36 +177,36 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
             zero
         );
 
-        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
-
+        // ===== 1단계: 고정 매수 금액 먼저 할당 =====
+        let remainingInvestment = this.#additionalInvestment;
         const results = [];
 
-        // 각 종목의 목표 비율에 따라 추가 투자금 배분
         for (const s of this.#portfolioData) {
-            // 간단 모드에서는 manualAmount를 우선 사용
             const currentAmount = s.manualAmount != null
                 ? new Decimal(s.manualAmount)
                 : (s.calculated?.currentAmount || zero);
 
+            let buyAmount = zero;
+
+            // 고정 매수가 활성화되어 있으면 먼저 할당
+            if (s.isFixedBuyEnabled) {
+                const fixedAmountDec = new Decimal(s.fixedBuyAmount || 0);
+                if (remainingInvestment.greaterThanOrEqualTo(fixedAmountDec)) {
+                    buyAmount = fixedAmountDec;
+                    remainingInvestment = remainingInvestment.minus(fixedAmountDec);
+                } else {
+                    buyAmount = remainingInvestment;
+                    remainingInvestment = zero;
+                }
+            }
+
             const currentRatio = currentTotal.isZero() ? zero : currentAmount.div(currentTotal).times(100);
-
-            // 목표 비율 정규화
-            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-
-            // 목표 금액 계산
-            const targetAmount = totalInvestment.times(targetRatioNormalized.div(100));
-
-            // 추가 구매 금액 = 목표 금액 - 현재 금액
-            const buyAmount = Decimal.max(zero, targetAmount.minus(currentAmount));
 
             results.push({
                 ...s,
                 currentRatio: currentRatio,
                 finalBuyAmount: buyAmount,
-                buyRatio: this.#additionalInvestment.isZero()
-                    ? zero
-                    : buyAmount.div(this.#additionalInvestment).times(100),
-                // 계산에 사용한 실제 금액을 calculated에도 반영
+                buyRatio: zero,
                 calculated: {
                     ...s.calculated,
                     currentAmount: currentAmount
@@ -214,10 +214,50 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
             });
         }
 
+        // ===== 2단계: 남은 투자금을 목표 비율 deficit에 따라 배분 =====
+        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
+
+        const targetAmounts = results.map(s => {
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
+            const currentAmount = s.calculated?.currentAmount || zero;
+            return {
+                id: s.id,
+                targetAmount: totalInvestment.times(targetRatioNormalized.div(100)),
+                currentAmount: currentAmount,
+                adjustmentAmount: zero
+            };
+        });
+
+        const adjustmentTargets = targetAmounts.map(t => {
+            const currentTotalBeforeRatioAlloc = t.currentAmount.plus(results.find(s => s.id === t.id)?.finalBuyAmount || zero);
+            const deficit = t.targetAmount.minus(currentTotalBeforeRatioAlloc);
+            return { ...t, deficit: deficit.greaterThan(zero) ? deficit : zero };
+        }).filter(t => t.deficit.greaterThan(zero));
+
+        const totalDeficit = adjustmentTargets.reduce((sum, t) => sum.plus(t.deficit), zero);
+
+        if (remainingInvestment.greaterThan(zero) && totalDeficit.greaterThan(zero)) {
+            for (const target of adjustmentTargets) {
+                const ratio = target.deficit.div(totalDeficit);
+                const allocatedAmount = remainingInvestment.times(ratio);
+                const resultItem = results.find(r => r.id === target.id);
+                if (resultItem) {
+                    resultItem.finalBuyAmount = resultItem.finalBuyAmount.plus(allocatedAmount);
+                }
+            }
+        }
+
+        // buyRatio 계산
+        const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
+        const finalResults = results.map(s => ({
+            ...s,
+            buyRatio: totalBuyAmount.isZero() ? zero : s.finalBuyAmount.div(totalBuyAmount).times(100),
+        }));
+
         const endTime = performance.now();
         console.log(`[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
 
-        return { results };
+        return { results: finalResults };
     }
 }
 

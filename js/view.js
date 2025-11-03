@@ -321,17 +321,8 @@ export const PortfolioView = {
             divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
         }
 
-        if (mainMode === 'add' && !isMobile) { // 모바일이 아닐 때만 고정 매수 표시
-            const fixedBuyCell = createCell('align-center');
-            const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
-            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
-            amountInput.style.width = '80px'; // 고정 매수 입력창 크기 조절
-            fixedBuyCell.append(checkbox, ' ', amountInput);
-            divInputs.appendChild(fixedBuyCell);
-        }
-
         if (mainMode === 'simple') {
-            // 간단 모드: 금액 입력칸과 삭제 버튼
+            // 간단 모드: 보유 금액 입력칸 + 고정 매수 필드 + 삭제 버튼
             const amountCell = createCell('align-right');
             const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
             manualAmountInput.style.width = '100%';
@@ -339,12 +330,32 @@ export const PortfolioView = {
             amountCell.appendChild(manualAmountInput);
             divInputs.appendChild(amountCell);
 
+            // 고정 매수 필드 추가 (간단 모드)
+            if (!isMobile) {
+                const fixedBuyCell = createCell('align-center');
+                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
+                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+                amountInput.style.width = '80px';
+                fixedBuyCell.append(checkbox, ' ', amountInput);
+                divInputs.appendChild(fixedBuyCell);
+            }
+
             const deleteCell = createCell('align-center');
             deleteCell.appendChild(
                 createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
             );
             divInputs.appendChild(deleteCell);
         } else {
+            // 추가 매수 모드: 고정 매수 필드 표시
+            if (mainMode === 'add' && !isMobile) {
+                const fixedBuyCell = createCell('align-center');
+                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
+                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+                amountInput.style.width = '80px';
+                fixedBuyCell.append(checkbox, ' ', amountInput);
+                divInputs.appendChild(fixedBuyCell);
+            }
+
             // 일반 모드: 거래 내역 관리 및 삭제 버튼
             const actionCell = createCell('align-center');
             actionCell.append(
@@ -465,8 +476,8 @@ export const PortfolioView = {
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
                 return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
             } else if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제 (5컬럼)
-                return '2fr 1fr 1fr 1.5fr 0.8fr';
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 고정 매수 | 삭제 (6컬럼)
+                return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
             } else {
                 // 매도 리밸런싱: 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
@@ -508,12 +519,13 @@ export const PortfolioView = {
             }
         } else {
             if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 고정 매수 | 삭제
                 headersHTML = `
                     <div class="virtual-cell">${t('ui.stockName')}</div>
                     <div class="virtual-cell">${t('ui.ticker')}</div>
                     <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
                     <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>
                     <div class="virtual-cell align-center">${t('ui.action')}</div>
                 `;
             } else {

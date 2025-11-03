@@ -140,8 +140,8 @@ export const Validator = {
              // --- ⬆️ 수정 ⬆️ ---
 
 
-            // 고정 매수 관련 검증 (추가 매수 모드에서만)
-            if (mainMode === 'add' && stock.isFixedBuyEnabled) {
+            // 고정 매수 관련 검증 (추가 매수 모드 및 간단 계산 모드에서)
+            if ((mainMode === 'add' || mainMode === 'simple') && stock.isFixedBuyEnabled) {
                 const fixedAmount = new Decimal(stock.fixedBuyAmount || 0);
                 // currentPrice는 위에서 Decimal로 변환됨
 
@@ -161,8 +161,8 @@ export const Validator = {
              }
         });
 
-         // 추가 매수 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
-         if (mainMode === 'add' && !additionalInvestment.isNaN() && totalFixedBuyAmount.greaterThan(additionalInvestment)) {
+         // 추가 매수 모드 및 간단 계산 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
+         if ((mainMode === 'add' || mainMode === 'simple') && !additionalInvestment.isNaN() && totalFixedBuyAmount.greaterThan(additionalInvestment)) {
              errors.push({ field: 'fixedBuyAmount', stockId: null, message: t('validation.fixedBuyTotalExceeds') });
          }
 
