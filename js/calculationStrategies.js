@@ -83,8 +83,8 @@ export class AddRebalanceStrategy extends IRebalanceStrategy {
         
         const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
         const targetAmounts = results.map(s => {
-            // ▼▼▼ [수정] s.targetRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
-            const targetRatioNormalized = (s.targetRatio || new Decimal(0)).times(ratioMultiplier);
+            // ▼▼▼ [수정] s.targetRatio를 Decimal로 변환 ▼▼▼
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
             // ▲▲▲ [수정] ▲▲▲
             return {
                 id: s.id,
@@ -191,7 +191,7 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
             const currentRatio = currentTotal.isZero() ? zero : currentAmount.div(currentTotal).times(100);
 
             // 목표 비율 정규화
-            const targetRatioNormalized = (s.targetRatio || zero).times(ratioMultiplier);
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
 
             // 목표 금액 계산
             const targetAmount = totalInvestment.times(targetRatioNormalized.div(100));
@@ -267,8 +267,8 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
             const currentRatioDec = currentAmount.div(currentTotal).times(100);
             const currentRatio = currentRatioDec.toNumber();
 
-            // ▼▼▼ [수정] s.targetRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
-            const targetRatioNormalized = (s.targetRatio || new Decimal(0)).times(ratioMultiplier);
+            // ▼▼▼ [수정] s.targetRatio를 Decimal로 변환 ▼▼▼
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
             // ▲▲▲ [수정] ▲▲▲
 
             const targetAmount = currentTotal.times(targetRatioNormalized.div(100));
