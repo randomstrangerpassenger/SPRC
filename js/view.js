@@ -330,22 +330,30 @@ export const PortfolioView = {
             divInputs.appendChild(fixedBuyCell);
         }
 
-        const actionCell = createCell('align-center');
         if (mainMode === 'simple') {
-            // 간단 모드: 금액 입력칸만 표시
+            // 간단 모드: 금액 입력칸과 삭제 버튼
+            const amountCell = createCell('align-right');
             const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
             manualAmountInput.style.width = '100%';
             manualAmountInput.style.textAlign = 'right';
-            actionCell.appendChild(manualAmountInput);
+            amountCell.appendChild(manualAmountInput);
+            divInputs.appendChild(amountCell);
+
+            const deleteCell = createCell('align-center');
+            deleteCell.appendChild(
+                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+            );
+            divInputs.appendChild(deleteCell);
         } else {
             // 일반 모드: 거래 내역 관리 및 삭제 버튼
+            const actionCell = createCell('align-center');
             actionCell.append(
                 createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
                 ' ',
                 createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
             );
+            divInputs.appendChild(actionCell);
         }
-        divInputs.appendChild(actionCell);
 
         // --- 2. 출력 행 (Outputs Row) ---
         const divOutputs = document.createElement('div');
@@ -442,6 +450,10 @@ export const PortfolioView = {
 
         // 입력 행과 출력 행의 그리드 컬럼 수를 다르게 설정
         if (isMobile) {
+            if (mainMode === 'simple') {
+                // 모바일 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제 (5컬럼)
+                return '1.5fr 1fr 1fr 1fr 0.8fr';
+            }
             // 모바일: 이름 | 티커 | 목표% | 액션 (입력)
             // 모바일: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서) (출력)
             // -> 컬럼 수는 4개로 동일하게 맞추되, 내용만 다르게
@@ -453,8 +465,8 @@ export const PortfolioView = {
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
                 return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
             } else if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 (4컬럼)
-                return '2fr 1fr 1fr 1.5fr';
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제 (5컬럼)
+                return '2fr 1fr 1fr 1.5fr 0.8fr';
             } else {
                 // 매도 리밸런싱: 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
@@ -478,20 +490,31 @@ export const PortfolioView = {
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {
-            headersHTML = `
-                <div class="virtual-cell">${t('ui.stockName')}</div>
-                <div class="virtual-cell">${t('ui.ticker')}</div>
-                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                <div class="virtual-cell align-center">${mainMode === 'simple' ? '보유 금액(' + currencySymbol + ')' : t('ui.action')}</div>
-            `;
-        } else {
             if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액
                 headersHTML = `
                     <div class="virtual-cell">${t('ui.stockName')}</div>
                     <div class="virtual-cell">${t('ui.ticker')}</div>
                     <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
                     <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            } else {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            }
+        } else {
+            if (mainMode === 'simple') {
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
                 `;
             } else {
                 headersHTML = `
