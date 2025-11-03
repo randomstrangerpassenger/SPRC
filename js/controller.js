@@ -540,7 +540,7 @@ export class PortfolioController {
             const results = await apiService.fetchAllStockPrices(tickersToFetch);
 
             // Get current currency and exchange rate for conversion
-            const exchangeRate = activePortfolio.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
             const currentCurrency = activePortfolio.currentCurrency || 'krw';
 
             results.forEach((result) => {
@@ -601,7 +601,7 @@ export class PortfolioController {
 
         // If currency is actually changing, convert all existing currentPrice values
         if (oldCurrency !== newCurrency) {
-            const exchangeRate = activePortfolio.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
 
             activePortfolio.portfolioData.forEach(stock => {
                 if (stock.currentPrice && stock.currentPrice > 0) {
