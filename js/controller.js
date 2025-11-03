@@ -13,6 +13,7 @@ import Decimal from 'decimal.js';
 import { apiService } from './apiService.js';
 import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from './calculationStrategies.js';
 import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
+import Chart from 'chart.js/auto'; // ▼▼▼ [추가] Chart.js 임포트 ▼▼▼
 
 // ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
 import { bindEventListeners } from './eventBinder.js';
@@ -493,6 +494,21 @@ export class PortfolioController {
              : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
 
         this.view.displayResults(resultsHTML);
+
+        // ▼▼▼ [추가] 차트 표시 ▼▼▼
+        const chartLabels = rebalancingResults.results.map(r => r.stock.name);
+        const chartData = rebalancingResults.results.map(r => {
+            const ratio = r.stock.targetRatio instanceof Decimal ? r.stock.targetRatio : new Decimal(r.stock.targetRatio ?? 0);
+            return ratio.toNumber();
+        });
+        const chartTitle = activePortfolio.settings.mainMode === 'simple'
+            ? '포트폴리오 목표 비율 (간단 계산 모드)'
+            : activePortfolio.settings.mainMode === 'add'
+            ? '포트폴리오 목표 비율 (추가 매수 모드)'
+            : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
+        this.view.displayChart(Chart, chartLabels, chartData, chartTitle);
+        // ▲▲▲ [추가] ▲▲▲
+
         this.debouncedSave();
         this.view.showToast(t('toast.calculateSuccess'), "success");
      }
