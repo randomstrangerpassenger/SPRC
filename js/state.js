@@ -549,15 +549,16 @@ export class PortfolioState {
                         // ▲▲▲▲▲ [수정된 부분] ▲▲▲▲▲
 
                          return {
-                             // ▼▼▼ [수정] stock 대신 saveableStock 사용
+                             // ▼▼▼ [수정] stock 대신 saveableStock 사용, Decimal 체크 추가
                              ...saveableStock,
-                             targetRatio: saveableStock.targetRatio.toNumber(),
-                             currentPrice: saveableStock.currentPrice.toNumber(),
-                             fixedBuyAmount: saveableStock.fixedBuyAmount.toNumber(),
+                             targetRatio: saveableStock.targetRatio instanceof Decimal ? saveableStock.targetRatio.toNumber() : Number(saveableStock.targetRatio ?? 0),
+                             currentPrice: saveableStock.currentPrice instanceof Decimal ? saveableStock.currentPrice.toNumber() : Number(saveableStock.currentPrice ?? 0),
+                             fixedBuyAmount: saveableStock.fixedBuyAmount instanceof Decimal ? saveableStock.fixedBuyAmount.toNumber() : Number(saveableStock.fixedBuyAmount ?? 0),
+                             manualAmount: saveableStock.manualAmount instanceof Decimal ? saveableStock.manualAmount.toNumber() : Number(saveableStock.manualAmount ?? 0),
                              transactions: saveableStock.transactions.map(tx => ({
                                  ...tx,
-                                 quantity: tx.quantity.toNumber(),
-                                 price: tx.price.toNumber(),
+                                 quantity: tx.quantity instanceof Decimal ? tx.quantity.toNumber() : Number(tx.quantity ?? 0),
+                                 price: tx.price instanceof Decimal ? tx.price.toNumber() : Number(tx.price ?? 0),
                              }))
                              // ▲▲▲ [수정]
                          };
