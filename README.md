@@ -4,6 +4,65 @@
 
 ## 최근 업데이트
 
+### [2025-11-03] 간단 계산 모드 스크롤 시 입력값 초기화 문제 해결
+
+#### 문제 상황
+간단 계산 모드에서 보유 금액 입력칸에 숫자를 입력하고 스크롤을 내리면 입력했던 값이 모두 초기화되는 문제가 있었습니다.
+
+#### 원인 분석
+- 가상 스크롤(Virtual Scroll) 사용으로 성능 최적화를 위해 보이는 영역만 렌더링
+- 스크롤 시 DOM이 재생성되면서 입력 중인 값이 손실됨
+- `change` 이벤트는 input이 포커스를 잃을 때만 발생하므로, 입력 중 스크롤 시 값이 state에 저장되지 않음
+- 재렌더링 시 이전 state 값으로 input이 생성되어 사용자가 입력한 값이 사라짐
+
+#### 해결 방법
+
+**1. 스크롤 재렌더링 전 입력값 보존 (`js/view.js`)**
+```javascript
+// _onScroll 함수에서 재렌더링 전 현재 DOM의 모든 입력값을 _virtualData에 저장
+const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+currentInputRows.forEach(row => {
+    // 각 input 필드의 현재 값을 읽어서 _virtualData에 반영
+    const inputs = row.querySelectorAll('input[data-field]');
+    inputs.forEach(input => {
+        this._virtualData[stockIndex][field] = value;
+    });
+});
+```
+
+**2. Change 이벤트 시 virtualData 동기화 (`js/controller.js`)**
+```javascript
+// manualAmount 변경 시 state뿐만 아니라 view의 _virtualData도 업데이트
+if (field === 'manualAmount') {
+    this.view.updateStockInVirtualData(stockId, field, value);
+    this.debouncedSave();
+    return;
+}
+```
+
+**3. 단일 속성 업데이트 메서드 추가 (`js/view.js`)**
+```javascript
+// 재렌더링 없이 특정 종목의 속성만 _virtualData에서 업데이트
+updateStockInVirtualData(stockId, field, value) {
+    const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+    if (stockIndex !== -1) {
+        this._virtualData[stockIndex][field] = value;
+    }
+}
+```
+
+#### 기술적 개선
+- **입력값 손실 방지**: 스크롤로 인한 DOM 재생성 전에 사용자 입력값을 데이터 모델에 저장
+- **성능 유지**: 재렌더링을 건너뛰면서도 데이터 동기화 보장
+- **일관성 보장**: state와 virtualData 간 동기화로 데이터 일관성 유지
+
+#### 결과
+- 사용자가 입력 중인 값이 스크롤 시에도 유지됨
+- 입력 후 바로 스크롤해도 값이 보존됨
+- 성능 저하 없이 사용자 경험 개선
+
+---
+
 ### [2025-11-02] 간단 계산 모드 대폭 간소화
 
 #### 변경 배경
