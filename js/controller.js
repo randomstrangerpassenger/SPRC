@@ -352,6 +352,8 @@ export class PortfolioController {
 
             // manualAmount는 간단 모드 전용 필드로, 입력 시 테이블 재렌더링 불필요
             if (field === 'manualAmount') {
+                // 하지만 _virtualData는 업데이트하여 스크롤 시 값이 유지되도록 함
+                this.view.updateStockInVirtualData(stockId, field, value);
                 this.debouncedSave();
                 return; // 재렌더링 건너뛰기
             }

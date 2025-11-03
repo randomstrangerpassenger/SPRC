@@ -558,6 +558,19 @@ export const PortfolioView = {
     },
 
     /**
+     * @description [NEW] 특정 종목의 속성을 _virtualData에서 업데이트 (재렌더링 없이)
+     * @param {string} stockId - 종목 ID
+     * @param {string} field - 업데이트할 필드명
+     * @param {any} value - 새 값
+     */
+    updateStockInVirtualData(stockId, field, value) {
+        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+        if (stockIndex !== -1) {
+            this._virtualData[stockIndex][field] = value;
+        }
+    },
+
+    /**
      * @description [NEW] 실제 가상 스크롤 렌더링 로직
      * @param {boolean} [forceRedraw=false] - 강제 렌더링 여부
      */
@@ -569,7 +582,7 @@ export const PortfolioView = {
         const mainMode = this._currentMainMode;
 
         const scrollTop = this._scrollWrapper.scrollTop;
-        
+
         // 1. 렌더링할 인덱스 계산
         const startIndex = Math.max(0, Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER);
         const endIndex = Math.min(
@@ -581,11 +594,44 @@ export const PortfolioView = {
         if (!forceRedraw && startIndex === this._renderedStartIndex && endIndex === this._renderedEndIndex) {
             return;
         }
-        
+
+        // ▼▼▼▼▼ [추가] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 ▼▼▼▼▼
+        // 스크롤로 인해 DOM이 사라지기 전에 사용자가 입력 중인 값을 보존
+        const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        currentInputRows.forEach(row => {
+            const stockId = row.dataset.id;
+            if (!stockId) return;
+
+            const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+            if (stockIndex === -1) return;
+
+            // 모든 입력 필드의 현재 값을 읽어서 _virtualData에 반영
+            const inputs = row.querySelectorAll('input[data-field]');
+            inputs.forEach(input => {
+                if (!(input instanceof HTMLInputElement)) return;
+                const field = input.dataset.field;
+                if (!field) return;
+
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else if (input.type === 'number') {
+                    // 숫자 필드는 parseFloat으로 변환
+                    value = parseFloat(input.value) || 0;
+                } else {
+                    value = input.value;
+                }
+
+                // _virtualData 업데이트
+                this._virtualData[stockIndex][field] = value;
+            });
+        });
+        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+
         // 3. 새 범위 저장
         this._renderedStartIndex = startIndex;
         this._renderedEndIndex = endIndex;
-        
+
         // 4. DOM 조각 생성
         const fragment = document.createDocumentFragment();
         for (let i = startIndex; i < endIndex; i++) {
