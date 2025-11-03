@@ -40,7 +40,6 @@
     "nanoid": "^5.1.6"
   }
 }
-
 ```
 
 ---
@@ -62,7 +61,8 @@
         "chart.js": "^4.5.1",
         "decimal.js": "^10.6.0",
         "dompurify": "^3.1.5",
-        "idb-keyval": "^6.2.1"
+        "idb-keyval": "^6.2.1",
+        "nanoid": "^5.1.6"
       },
       "devDependencies": {
         "jsdom": "^24.1.0",
@@ -1732,10 +1732,9 @@
       "license": "MIT"
     },
     "node_modules/nanoid": {
-      "version": "3.3.11",
-      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz",
-      "integrity": "sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==",
-      "dev": true,
+      "version": "5.1.6",
+      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-5.1.6.tgz",
+      "integrity": "sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==",
       "funding": [
         {
           "type": "github",
@@ -1744,10 +1743,10 @@
       ],
       "license": "MIT",
       "bin": {
-        "nanoid": "bin/nanoid.cjs"
+        "nanoid": "bin/nanoid.js"
       },
       "engines": {
-        "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
+        "node": "^18 || >=20"
       }
     },
     "node_modules/nwsapi": {
@@ -1824,6 +1823,25 @@
       },
       "engines": {
         "node": "^10 || ^12 || >=14"
+      }
+    },
+    "node_modules/postcss/node_modules/nanoid": {
+      "version": "3.3.11",
+      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz",
+      "integrity": "sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "bin": {
+        "nanoid": "bin/nanoid.cjs"
+      },
+      "engines": {
+        "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
       }
     },
     "node_modules/psl": {
@@ -2468,7 +2486,8 @@ pnpm-debug.log*
             <section class="card" aria-labelledby="modeSelectionHeading">
                 <h2 id="modeSelectionHeading">⚙️ 계산 모드 선택</h2>
                 <div class="mode-selector">
-                    <label for="modeAdd"><input type="radio" name="mainMode" value="add" id="modeAdd" checked> ➕ 추가 매수 모드</label>
+                    <label for="modeSimple"><input type="radio" name="mainMode" value="simple" id="modeSimple" checked> 🎯 간단 계산 모드</label>
+                    <label for="modeAdd"><input type="radio" name="mainMode" value="add" id="modeAdd"> ➕ 추가 매수 모드</label>
                     <label for="modeSell"><input type="radio" name="mainMode" value="sell" id="modeSell"> ⚖️ 매도 리밸런싱 모드</label>
                 </div>
             </section>
@@ -2478,7 +2497,12 @@ pnpm-debug.log*
                  <div class="btn-controls">
                     <button id="addNewStockBtn" class="btn" data-variant="green">➕ 새 종목 추가</button>
                     <button id="fetchAllPricesBtn" class="btn" data-variant="blue" style="width: 100%;">📈 현재가 모두 불러오기</button>
-                    
+
+                    <div id="portfolioExchangeRateGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="portfolioExchangeRate">💱 환율 (1 USD = ? KRW):</label>
+                        <input type="number" id="portfolioExchangeRate" placeholder="예: 1300" min="0.01" step="0.01" value="1300">
+                    </div>
+
                     <button id="resetDataBtn" class="btn" data-variant="orange">🔄 초기화</button>
                     <button id="normalizeRatiosBtn" class="btn" data-variant="blue">⚖️ 비율 자동 맞춤(100%)</button>
                     
@@ -2572,19 +2596,30 @@ pnpm-debug.log*
                     <label><input type="radio" name="txType" value="buy" checked> 매수</label>
                     <label><input type="radio" name="txType" value="sell"> 매도</label>
                 </div>
+                <div class="mode-selector" style="margin-bottom: 15px;">
+                    <label><input type="radio" name="inputMode" value="quantity" id="inputModeQuantity" checked> 수량 입력</label>
+                    <label><input type="radio" name="inputMode" value="amount" id="inputModeAmount"> 금액 입력</label>
+                </div>
                 <div class="input-grid">
                     <div class="input-group-vertical">
                         <label for="txDate">날짜</label>
                         <input type="date" id="txDate" required>
                     </div>
-                    <div class="input-group-vertical">
+                    <div class="input-group-vertical" id="quantityInputGroup">
                         <label for="txQuantity">수량</label>
-                        <input type="number" id="txQuantity" placeholder="예: 10" min="0" step="any" required>
+                        <input type="number" id="txQuantity" placeholder="예: 10" min="0" step="any">
+                    </div>
+                    <div class="input-group-vertical" id="totalAmountInputGroup" style="display: none;">
+                        <label for="txTotalAmount">총 금액</label>
+                        <input type="number" id="txTotalAmount" placeholder="예: 1500000" min="0" step="any">
                     </div>
                     <div class="input-group-vertical">
                         <label for="txPrice">단가</label>
                         <input type="number" id="txPrice" placeholder="예: 150000" min="0" step="any" required>
                     </div>
+                </div>
+                <div id="calculatedQuantityDisplay" style="margin-top: 10px; padding: 10px; background-color: rgba(0, 123, 255, 0.1); border-radius: 5px; display: none;">
+                    <strong>계산된 수량:</strong> <span id="calculatedQuantityValue">0</span>
                 </div>
                 <button type="submit" class="btn" data-variant="blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
             </form>
@@ -2727,9 +2762,9 @@ body.dark-mode .output-cell .label { color: #9ab; }
 #virtual-scroll-wrapper {
     position: relative;
     width: 100%;
+    min-height: 400px; /* 최소 높이 추가 */
     max-height: 60vh; /* 테이블의 최대 높이 (중요) */
     overflow-y: auto; /* 스크롤바 생성 */
-    contain: strict; /* 브라우저 렌더링 최적화 */
     border: 1px solid var(--border-color);
     border-top: none;
     border-radius: 0 0 var(--border-radius) var(--border-radius);
@@ -3330,6 +3365,7 @@ try {
  * @property {Transaction[]} transactions - 거래 내역 배열
  * @property {boolean} isFixedBuyEnabled - 고정 매수 활성화 여부
  * @property {number} fixedBuyAmount - 고정 매수 금액
+ * @property {number} [manualAmount] - 간단 모드용 수동 입력 금액 (선택 사항)
  */
 
 /**
@@ -3426,7 +3462,7 @@ export class Calculator {
             const result = {
                 totalBuyQuantity: new Decimal(0),
                 totalSellQuantity: new Decimal(0),
-                netQuantity: new Decimal(0),
+                quantity: new Decimal(0),
                 totalBuyAmount: new Decimal(0),
                 currentAmount: new Decimal(0),
                 currentAmountUSD: new Decimal(0),
@@ -3454,18 +3490,18 @@ export class Calculator {
             }
 
             // 2. 순 보유 수량
-            result.netQuantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); 
+            result.quantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); 
 
             // 3. 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
             if (result.totalBuyQuantity.greaterThan(0)) {
                 result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
             }
 
-            // 4. 현재 가치 (netQuantity * currentPrice)
-            result.currentAmount = result.netQuantity.times(currentPrice);
+            // 4. 현재 가치 (quantity * currentPrice)
+            result.currentAmount = result.quantity.times(currentPrice);
 
-            // 5. 손익 계산 (currentAmount - (netQuantity * avgBuyPrice))
-            const originalCostOfHolding = result.netQuantity.times(result.avgBuyPrice);
+            // 5. 손익 계산 (currentAmount - (quantity * avgBuyPrice))
+            const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
             result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
 
             // 6. 손익률
@@ -3481,7 +3517,7 @@ export class Calculator {
             ErrorService.handle(/** @type {Error} */ (error), 'calculateStockMetrics');
             // 에러 발생 시 기본값 반환
             return {
-                totalBuyQuantity: new Decimal(0), totalSellQuantity: new Decimal(0), netQuantity: new Decimal(0),
+                totalBuyQuantity: new Decimal(0), totalSellQuantity: new Decimal(0), quantity: new Decimal(0),
                 totalBuyAmount: new Decimal(0), currentAmount: new Decimal(0), currentAmountUSD: new Decimal(0), currentAmountKRW: new Decimal(0),
                 avgBuyPrice: new Decimal(0), profitLoss: new Decimal(0), profitLossRate: new Decimal(0),
             };
@@ -3946,8 +3982,8 @@ export class AddRebalanceStrategy extends IRebalanceStrategy {
         
         const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
         const targetAmounts = results.map(s => {
-            // ▼▼▼ [수정] s.targetRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
-            const targetRatioNormalized = (s.targetRatio || new Decimal(0)).times(ratioMultiplier);
+            // ▼▼▼ [수정] s.targetRatio를 Decimal로 변환 ▼▼▼
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
             // ▲▲▲ [수정] ▲▲▲
             return {
                 id: s.id,
@@ -3990,6 +4026,141 @@ export class AddRebalanceStrategy extends IRebalanceStrategy {
 }
 
 /**
+ * @description '간단 계산' 모드 전략 - 목표 비율에 맞춰 추가 투자금 배분 (거래 내역 없이 금액만 입력)
+ * @implements {IRebalanceStrategy}
+ */
+export class SimpleRatioStrategy extends IRebalanceStrategy {
+    /** @type {CalculatedStock[]} */
+    #portfolioData;
+    /** @type {Decimal} */
+    #additionalInvestment;
+
+    /**
+     * @param {CalculatedStock[]} portfolioData
+     * @param {Decimal} additionalInvestment
+     */
+    constructor(portfolioData, additionalInvestment) {
+        super();
+        this.#portfolioData = portfolioData;
+        this.#additionalInvestment = additionalInvestment;
+    }
+
+    calculate() {
+        const startTime = performance.now();
+
+        const zero = new Decimal(0);
+
+        // 간단 모드에서는 manualAmount를 사용 (거래 내역 대신 직접 입력한 금액)
+        const currentTotal = this.#portfolioData.reduce(
+            (sum, s) => {
+                const amount = s.manualAmount != null
+                    ? new Decimal(s.manualAmount)
+                    : (s.calculated?.currentAmount || zero);
+                return sum.plus(amount);
+            },
+            zero
+        );
+
+        const totalInvestment = currentTotal.plus(this.#additionalInvestment);
+
+        // 포트폴리오가 비어있으면 계산 불가
+        if (totalInvestment.isZero()) {
+            const endTime = performance.now();
+            console.log(`[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
+            return { results: [] };
+        }
+
+        // 목표 비율 합계 계산
+        let totalRatio = this.#portfolioData.reduce(
+            (sum, s) => sum.plus(s.targetRatio || 0),
+            zero
+        );
+
+        // ===== 1단계: 고정 매수 금액 먼저 할당 =====
+        let remainingInvestment = this.#additionalInvestment;
+        const results = [];
+
+        for (const s of this.#portfolioData) {
+            const currentAmount = s.manualAmount != null
+                ? new Decimal(s.manualAmount)
+                : (s.calculated?.currentAmount || zero);
+
+            let buyAmount = zero;
+
+            // 고정 매수가 활성화되어 있으면 먼저 할당
+            if (s.isFixedBuyEnabled) {
+                const fixedAmountDec = new Decimal(s.fixedBuyAmount || 0);
+                if (remainingInvestment.greaterThanOrEqualTo(fixedAmountDec)) {
+                    buyAmount = fixedAmountDec;
+                    remainingInvestment = remainingInvestment.minus(fixedAmountDec);
+                } else {
+                    buyAmount = remainingInvestment;
+                    remainingInvestment = zero;
+                }
+            }
+
+            const currentRatio = currentTotal.isZero() ? zero : currentAmount.div(currentTotal).times(100);
+
+            results.push({
+                ...s,
+                currentRatio: currentRatio,
+                finalBuyAmount: buyAmount,
+                buyRatio: zero,
+                calculated: {
+                    ...s.calculated,
+                    currentAmount: currentAmount
+                }
+            });
+        }
+
+        // ===== 2단계: 남은 투자금을 목표 비율 deficit에 따라 배분 =====
+        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
+
+        const targetAmounts = results.map(s => {
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
+            const currentAmount = s.calculated?.currentAmount || zero;
+            return {
+                id: s.id,
+                targetAmount: totalInvestment.times(targetRatioNormalized.div(100)),
+                currentAmount: currentAmount,
+                adjustmentAmount: zero
+            };
+        });
+
+        const adjustmentTargets = targetAmounts.map(t => {
+            const currentTotalBeforeRatioAlloc = t.currentAmount.plus(results.find(s => s.id === t.id)?.finalBuyAmount || zero);
+            const deficit = t.targetAmount.minus(currentTotalBeforeRatioAlloc);
+            return { ...t, deficit: deficit.greaterThan(zero) ? deficit : zero };
+        }).filter(t => t.deficit.greaterThan(zero));
+
+        const totalDeficit = adjustmentTargets.reduce((sum, t) => sum.plus(t.deficit), zero);
+
+        if (remainingInvestment.greaterThan(zero) && totalDeficit.greaterThan(zero)) {
+            for (const target of adjustmentTargets) {
+                const ratio = target.deficit.div(totalDeficit);
+                const allocatedAmount = remainingInvestment.times(ratio);
+                const resultItem = results.find(r => r.id === target.id);
+                if (resultItem) {
+                    resultItem.finalBuyAmount = resultItem.finalBuyAmount.plus(allocatedAmount);
+                }
+            }
+        }
+
+        // buyRatio 계산
+        const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
+        const finalResults = results.map(s => ({
+            ...s,
+            buyRatio: totalBuyAmount.isZero() ? zero : s.finalBuyAmount.div(totalBuyAmount).times(100),
+        }));
+
+        const endTime = performance.now();
+        console.log(`[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+
+        return { results: finalResults };
+    }
+}
+
+/**
  * @description '매도 리밸런싱' 모드 계산 전략
  * @implements {IRebalanceStrategy}
  */
@@ -4007,16 +4178,16 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
 
     calculate() {
         const startTime = performance.now();
-        
+
         const currentTotal = this.#portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0));
-        
+
         // ▼▼▼ [수정] totalRatio가 Decimal을 .plus()로 합산하도록 변경 ▼▼▼
         const totalRatio = this.#portfolioData.reduce(
-            (sum, s) => sum.plus(s.targetRatio || 0), 
+            (sum, s) => sum.plus(s.targetRatio || 0),
             new Decimal(0)
         );
         // ▲▲▲ [수정] ▲▲▲
-        
+
         const results = [];
         const zero = new Decimal(0);
 
@@ -4025,7 +4196,7 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
             console.log(`[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
             return { results: [] };
         }
-        
+
         // ▼▼▼ [수정] totalRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
         const ratioMultiplier = new Decimal(100).div(totalRatio);
         // ▲▲▲ [수정] ▲▲▲
@@ -4035,8 +4206,8 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
             const currentRatioDec = currentAmount.div(currentTotal).times(100);
             const currentRatio = currentRatioDec.toNumber();
 
-            // ▼▼▼ [수정] s.targetRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
-            const targetRatioNormalized = (s.targetRatio || new Decimal(0)).times(ratioMultiplier);
+            // ▼▼▼ [수정] s.targetRatio를 Decimal로 변환 ▼▼▼
+            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
             // ▲▲▲ [수정] ▲▲▲
 
             const targetAmount = currentTotal.times(targetRatioNormalized.div(100));
@@ -4049,10 +4220,10 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
                 adjustment: adjustment
             });
         }
-        
+
         const endTime = performance.now();
         console.log(`[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        
+
         return { results };
     }
 }
@@ -4104,7 +4275,6 @@ export function createMockCalculatedStock({
             profitLossRate: profitLossRate,
             totalBuyQuantity: new Decimal(quantity),
             totalSellQuantity: new Decimal(0),
-            netQuantity: new Decimal(quantity),
             totalBuyAmount: totalBuyAmount,
             currentAmountUSD: new Decimal(0),
             currentAmountKRW: new Decimal(0),
@@ -4242,6 +4412,88 @@ export function generateAddModeResultsHTML(results, summary, currency) {
                 </table>
             </div>
             <div class="guide-box guide-box--buy"><h3>${t('template.buyGuideTitle')}</h3>${guideContent}</div>
+        </div>`;
+}
+
+/**
+ * @description '간단 계산' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
+ * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
+ * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
+ * @param {string} currency - 현재 통화 ('krw' or 'usd')
+ * @returns {string} 생성된 HTML 문자열
+ */
+export function generateSimpleModeResultsHTML(results, summary, currency) {
+    if (!results) return '';
+
+    const sortedResults = [...results].sort((a, b) => {
+        const ratioA = a.currentRatio ?? new Decimal(0);
+        const ratioB = b.currentRatio ?? new Decimal(0);
+        return ratioB.comparedTo(ratioA);
+    });
+
+    const resultsRows = sortedResults.map((stock, index) => {
+        const metrics = stock.calculated ?? { currentAmount: new Decimal(0) };
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+
+        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : '0.0';
+        const targetRatioVal = typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : (stock.targetRatio?.toFixed(1) ?? '0.0');
+        const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
+
+        return `
+            <tr class="result-row-highlight" data-delay="${index * 0.05}s">
+                <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
+                <td style="text-align: right;">${formatCurrency(currentAmount, currency)}</td>
+                <td style="text-align: center;">${currentRatioVal}%</td>
+                <td style="text-align: center;"><strong>${targetRatioVal}%</strong></td>
+                <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
+            </tr>
+        `;
+    }).join('');
+
+    const buyableStocks = sortedResults.filter(s =>
+        s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
+    );
+
+    const guideContent = buyableStocks.length > 0
+        ? buyableStocks.map((s, i) => {
+            const currentRatioVal = s.currentRatio?.isFinite() ? s.currentRatio.toFixed(1) : '0.0';
+            return `
+                <div class="guide-item">
+                    <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
+                    <span style="font-weight: bold; color: #666;">(현재 비율: ${currentRatioVal}%)</span>
+                </div>`;
+        }).join('')
+        : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+
+    return `
+        <div class="summary-grid">
+            <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
+            <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
+            <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
+        </div>
+        <div class="card">
+            <h2>🎯 간단 계산 결과</h2>
+            <p style="margin-bottom: 15px; color: #666; font-size: 1.05em;">
+                <strong>목표 비율에 맞춰</strong> 추가 투자금을 배분합니다.<br>
+                거래 내역 없이 간단하게 현재 보유 금액만 입력하여 리밸런싱할 수 있습니다.
+            </p>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr>
+                        <th>${t('template.stock')}</th>
+                        <th>현재 평가액</th>
+                        <th>현재 비율</th>
+                        <th>목표 비율</th>
+                        <th>추가 구매 금액</th>
+                    </tr></thead>
+                    <tbody>${resultsRows}</tbody>
+                </table>
+            </div>
+            <div class="guide-box guide-box--buy">
+                <h3>💰 추가 구매 가이드</h3>
+                <p style="margin-bottom: 10px; color: #666;">목표 비율에 맞추기 위해 다음과 같이 구매하세요:</p>
+                ${guideContent}
+            </div>
         </div>`;
 }
 
@@ -4468,7 +4720,7 @@ export const Validator = {
     // ... (validateForCalculation 함수 - 이전과 동일하게 유지) ...
     /**
      * @description 리밸런싱 계산 전 전체 입력 데이터의 유효성을 검사합니다.
-     * @param {{mainMode: 'add' | 'sell', portfolioData: CalculatedStock[], additionalInvestment: Decimal}} inputs - 계산 입력값
+     * @param {{mainMode: 'add' | 'sell' | 'simple', portfolioData: CalculatedStock[], additionalInvestment: Decimal}} inputs - 계산 입력값
      * @returns {ValidationErrorDetail[]} 오류 배열 (유효하면 빈 배열)
      */
     validateForCalculation(inputs) {
@@ -4476,8 +4728,8 @@ export const Validator = {
         const errors = [];
         const { mainMode, portfolioData, additionalInvestment } = inputs;
 
-        // 추가 매수 모드일 때 추가 투자금액 검증
-        if (mainMode === 'add') {
+        // 추가 매수 모드 또는 간단 계산 모드일 때 추가 투자금액 검증
+        if (mainMode === 'add' || mainMode === 'simple') {
              // Use Decimal's comparison methods
              if (!additionalInvestment || additionalInvestment.isNaN() || additionalInvestment.isNegative() || additionalInvestment.isZero()) {
                  errors.push({ field: 'additionalInvestment', stockId: null, message: t('validation.investmentAmountZero') });
@@ -4507,8 +4759,8 @@ export const Validator = {
              // --- ⬆️ 수정 ⬆️ ---
 
 
-            // 고정 매수 관련 검증 (추가 매수 모드에서만)
-            if (mainMode === 'add' && stock.isFixedBuyEnabled) {
+            // 고정 매수 관련 검증 (추가 매수 모드 및 간단 계산 모드에서)
+            if ((mainMode === 'add' || mainMode === 'simple') && stock.isFixedBuyEnabled) {
                 const fixedAmount = new Decimal(stock.fixedBuyAmount || 0);
                 // currentPrice는 위에서 Decimal로 변환됨
 
@@ -4528,8 +4780,8 @@ export const Validator = {
              }
         });
 
-         // 추가 매수 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
-         if (mainMode === 'add' && !additionalInvestment.isNaN() && totalFixedBuyAmount.greaterThan(additionalInvestment)) {
+         // 추가 매수 모드 및 간단 계산 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
+         if ((mainMode === 'add' || mainMode === 'simple') && !additionalInvestment.isNaN() && totalFixedBuyAmount.greaterThan(additionalInvestment)) {
              errors.push({ field: 'fixedBuyAmount', stockId: null, message: t('validation.fixedBuyTotalExceeds') });
          }
 
@@ -4555,7 +4807,7 @@ export const Validator = {
             if (portfolio.id !== portId || !portfolio.name || typeof portfolio.name !== 'string') return false;
             // Check settings object structure (basic)
             if (!portfolio.settings || typeof portfolio.settings !== 'object') return false;
-            if (!['add', 'sell'].includes(portfolio.settings.mainMode)) return false;
+            if (!['add', 'sell', 'simple'].includes(portfolio.settings.mainMode)) return false;
             if (!['krw', 'usd'].includes(portfolio.settings.currentCurrency)) return false;
             if (typeof portfolio.settings.exchangeRate !== 'number' || portfolio.settings.exchangeRate <= 0) return false;
 
@@ -4756,7 +5008,7 @@ export class PortfolioState {
                         name: DOMPurify.sanitize(portfolio.name),
                         // ▲▲▲ [수정] ▲▲▲
                         settings: {
-                            mainMode: ['add', 'sell'].includes(portfolio.settings?.mainMode) ? portfolio.settings.mainMode : 'add',
+                            mainMode: ['add', 'sell', 'simple'].includes(portfolio.settings?.mainMode) ? portfolio.settings.mainMode : 'simple',
                             currentCurrency: ['krw', 'usd'].includes(portfolio.settings?.currentCurrency) ? portfolio.settings.currentCurrency : 'krw',
                             exchangeRate: typeof portfolio.settings?.exchangeRate === 'number' && portfolio.settings.exchangeRate > 0 ? portfolio.settings.exchangeRate : CONFIG.DEFAULT_EXCHANGE_RATE,
                         },
@@ -4879,17 +5131,21 @@ export class PortfolioState {
 
     async updatePortfolioSettings(key, value) {
         const activePortfolio = this.getActivePortfolio();
+        console.log(`[DEBUG] updatePortfolioSettings called: key=${key}, value=${value}`);
         if (activePortfolio) {
             if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
                  activePortfolio.settings[key] = CONFIG.DEFAULT_EXCHANGE_RATE;
-            } else if (key === 'mainMode' && !['add', 'sell'].includes(/** @type {string} */(value))) {
+            } else if (key === 'mainMode' && !['add', 'sell', 'simple'].includes(/** @type {string} */(value))) {
+                 console.log(`[DEBUG] Invalid mainMode detected: ${value}, resetting to 'add'`);
                  activePortfolio.settings[key] = 'add';
             } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(/** @type {string} */(value))) {
                  activePortfolio.settings[key] = 'krw';
             }
             else {
+                console.log(`[DEBUG] Setting ${key} = ${value}`);
                 activePortfolio.settings[key] = value;
             }
+            console.log(`[DEBUG] After update, mainMode = ${activePortfolio.settings.mainMode}`);
             await this.saveActivePortfolio(); // 비동기 저장
         }
     }
@@ -5144,19 +5400,20 @@ export class PortfolioState {
                         // ▲▲▲▲▲ [수정된 부분] ▲▲▲▲▲
 
                          return {
-                             // ▼▼▼ [수정] stock 대신 saveableStock 사용
+                             // ▼▼▼ [수정] stock 대신 saveableStock 사용, Decimal 체크 추가
                              ...saveableStock,
-                             targetRatio: saveableStock.targetRatio.toNumber(),
-                             currentPrice: saveableStock.currentPrice.toNumber(),
-                             fixedBuyAmount: saveableStock.fixedBuyAmount.toNumber(),
+                             targetRatio: saveableStock.targetRatio instanceof Decimal ? saveableStock.targetRatio.toNumber() : Number(saveableStock.targetRatio ?? 0),
+                             currentPrice: saveableStock.currentPrice instanceof Decimal ? saveableStock.currentPrice.toNumber() : Number(saveableStock.currentPrice ?? 0),
+                             fixedBuyAmount: saveableStock.fixedBuyAmount instanceof Decimal ? saveableStock.fixedBuyAmount.toNumber() : Number(saveableStock.fixedBuyAmount ?? 0),
+                             manualAmount: saveableStock.manualAmount instanceof Decimal ? saveableStock.manualAmount.toNumber() : Number(saveableStock.manualAmount ?? 0),
                              transactions: saveableStock.transactions.map(tx => ({
                                  ...tx,
-                                 quantity: tx.quantity.toNumber(),
-                                 price: tx.price.toNumber(),
+                                 quantity: tx.quantity instanceof Decimal ? tx.quantity.toNumber() : Number(tx.quantity ?? 0),
+                                 price: tx.price instanceof Decimal ? tx.price.toNumber() : Number(tx.price ?? 0),
                              }))
                              // ▲▲▲ [수정]
                          };
-                     }))
+                     })
                  };
              });
             await set(CONFIG.IDB_PORTFOLIOS_KEY, saveablePortfolios); 
@@ -5180,7 +5437,7 @@ export class PortfolioState {
             id: id,
             name: name,
             settings: {
-                mainMode: 'add',
+                mainMode: 'simple',
                 currentCurrency: 'krw',
                 exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
             },
@@ -5198,7 +5455,8 @@ export class PortfolioState {
             currentPrice: new Decimal(0), // Use Decimal
             isFixedBuyEnabled: false,
             fixedBuyAmount: new Decimal(0), // Use Decimal
-            transactions: []
+            transactions: [],
+            manualAmount: 0 // 간단 모드용 수동 입력 금액
         };
     }
 }
@@ -5816,29 +6074,35 @@ export function t(key, replacements = {}) {
 ## `js/eventBinder.js`
 
 ```javascript
-// js/eventBinder.js (Updated with Event Delegation)
+// js/eventBinder.js (Updated with Pub/Sub emit)
 // @ts-check
 import { debounce } from './utils.js';
-/** @typedef {import('./controller.js').PortfolioController} PortfolioController */
+/** @typedef {import('./view.js').PortfolioView} PortfolioView */ // 컨트롤러 대신 View를 임포트
 
 /**
- * @description 애플리케이션의 모든 DOM 이벤트 리스너를 컨트롤러의 핸들러 함수에 바인딩합니다.
- * @param {PortfolioController} controller - PortfolioController 인스턴스
- * @param {Record<string, HTMLElement | NodeListOf<HTMLElement> | null>} dom - 캐시된 DOM 요소 객체
+ * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
+ * @param {PortfolioView} view - PortfolioView 인스턴스
  * @returns {void}
  */
-export function bindEventListeners(controller, dom) {
+export function bindEventListeners(view) {
+    // 1. view.dom 객체를 가져옵니다.
+    const dom = view.dom;
+
+    // ▼▼▼▼▼ [수정] controller.handle...() -> view.emit('eventName') ▼▼▼▼▼
+
     // 포트폴리오 관리 버튼
-    dom.newPortfolioBtn?.addEventListener('click', () => controller.handleNewPortfolio());
-    dom.renamePortfolioBtn?.addEventListener('click', () => controller.handleRenamePortfolio());
-    dom.deletePortfolioBtn?.addEventListener('click', () => controller.handleDeletePortfolio());
-    dom.portfolioSelector?.addEventListener('change', () => controller.handleSwitchPortfolio());
+    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'));
+    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'));
+    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'));
+    dom.portfolioSelector?.addEventListener('change', (e) => 
+        view.emit('portfolioSwitched', { newId: (/** @type {HTMLSelectElement} */ (e.target)).value })
+    );
 
     // 포트폴리오 설정 버튼
-    dom.addNewStockBtn?.addEventListener('click', () => controller.handleAddNewStock());
-    dom.resetDataBtn?.addEventListener('click', () => controller.handleResetData());
-    dom.normalizeRatiosBtn?.addEventListener('click', () => controller.handleNormalizeRatios());
-    dom.fetchAllPricesBtn?.addEventListener('click', () => controller.handleFetchAllPrices());
+    dom.addNewStockBtn?.addEventListener('click', () => view.emit('addNewStockClicked'));
+    dom.resetDataBtn?.addEventListener('click', () => view.emit('resetDataClicked'));
+    dom.normalizeRatiosBtn?.addEventListener('click', () => view.emit('normalizeRatiosClicked'));
+    dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
     // 데이터 관리 드롭다운
     const dataManagementBtn = /** @type {HTMLButtonElement | null} */ (dom.dataManagementBtn);
@@ -5892,14 +6156,14 @@ export function bindEventListeners(controller, dom) {
 
     exportDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        controller.handleExportData();
+        view.emit('exportDataClicked'); // view.emit으로 변경
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        controller.handleImportData();
+        view.emit('importDataClicked'); // view.emit으로 변경
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
@@ -5911,38 +6175,41 @@ export function bindEventListeners(controller, dom) {
         }
     });
 
-    importFileInput?.addEventListener('change', (e) => controller.handleFileSelected(e));
+    importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e)); // view.emit으로 변경
 
     // 포트폴리오 테이블 입력 처리
-    dom.portfolioBody?.addEventListener('change', (e) => controller.handlePortfolioBodyChange(e, null));
-    dom.portfolioBody?.addEventListener('click', (e) => controller.handlePortfolioBodyClick(e));
+    dom.virtualScrollWrapper?.addEventListener('change', (e) =>
+        view.emit('portfolioBodyChanged', e) // view.emit으로 변경
+    );
+    dom.virtualScrollWrapper?.addEventListener('click', (e) =>
+        view.emit('portfolioBodyClicked', e) // view.emit으로 변경
+    );
 
     // 포트폴리오 테이블 키보드 네비게이션
-    const portfolioBody = dom.portfolioBody;
-    portfolioBody?.addEventListener('keydown', (e) => {
+    const virtualScrollWrapper = dom.virtualScrollWrapper;
+    virtualScrollWrapper?.addEventListener('keydown', (e) => {
         const target = /** @type {HTMLElement} */ (e.target);
         if (!target || !(target.matches('input[type="text"], input[type="number"], input[type="checkbox"]'))) return;
 
-        const currentRow = target.closest('tr[data-id]');
+        const currentRow = target.closest('div[data-id]');
         if (!currentRow?.dataset.id) return;
         const stockId = currentRow.dataset.id;
-        const currentCell = target.closest('td');
-        const currentCellIndex = currentCell ? Array.from(currentRow.cells).indexOf(currentCell) : -1;
+        const currentCell = target.closest('.virtual-cell');
+        const currentCellIndex = currentCell ? Array.from(currentRow.children).indexOf(currentCell) : -1;
         const field = target.dataset.field;
 
         switch (e.key) {
             case 'Enter':
                  if (field === 'ticker') {
                     e.preventDefault();
-                    const stock = controller.state.getActivePortfolio()?.portfolioData.find(s => s.id === stockId);
-                    const currency = controller.state.getActivePortfolio()?.settings.currentCurrency;
-                    if (stock && currency) controller.view.openTransactionModal(stock, currency, controller.state.getTransactions(stockId));
+                    // 컨트롤러가 할 일(모달 열기)을 View에 이벤트로 알림
+                    view.emit('manageStockClicked', { stockId });
                  }
-                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLTableRowElement) { // Type guard
+                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLDivElement) { // Type guard
                     e.preventDefault();
                     const direction = e.shiftKey ? -1 : 1;
-                    const nextCellIndex = (currentCellIndex + direction + currentRow.cells.length) % currentRow.cells.length;
-                    const nextCell = currentRow.cells[nextCellIndex];
+                    const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
+                    const nextCell = currentRow.children[nextCellIndex];
                     const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
                     nextInput?.focus();
                  }
@@ -5954,19 +6221,19 @@ export function bindEventListeners(controller, dom) {
                     ? currentRow.previousElementSibling?.previousElementSibling
                     : currentRow.nextElementSibling?.nextElementSibling;
 
-                if (siblingRow instanceof HTMLTableRowElement && siblingRow.matches('.stock-inputs') && currentCellIndex !== -1) { // Type guard
-                     const targetCell = siblingRow.cells[currentCellIndex];
+                if (siblingRow instanceof HTMLDivElement && siblingRow.matches('.virtual-row-inputs') && currentCellIndex !== -1) { // Type guard
+                     const targetCell = siblingRow.children[currentCellIndex];
                      const targetInput = /** @type {HTMLElement | null} */ (targetCell?.querySelector('input'));
                      targetInput?.focus();
                 }
                 break;
              case 'ArrowLeft':
              case 'ArrowRight':
-                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLTableRowElement) { // Type guards
+                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLDivElement) { // Type guards
                      e.preventDefault();
                      const direction = e.key === 'ArrowLeft' ? -1 : 1;
-                     const nextCellIndex = (currentCellIndex + direction + currentRow.cells.length) % currentRow.cells.length;
-                     const nextCell = currentRow.cells[nextCellIndex];
+                     const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
+                     const nextCell = currentRow.children[nextCellIndex];
                      const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
                      nextInput?.focus();
                  }
@@ -5974,7 +6241,7 @@ export function bindEventListeners(controller, dom) {
             case 'Delete':
                 if (e.ctrlKey && field === 'name') {
                      e.preventDefault();
-                     controller.handleDeleteStock(stockId);
+                     view.emit('deleteStockShortcut', { stockId }); // 삭제 이벤트 발행
                 }
                 break;
             case 'Escape':
@@ -5985,7 +6252,7 @@ export function bindEventListeners(controller, dom) {
     });
 
     // 숫자 입력 필드 포커스 시 전체 선택
-    dom.portfolioBody?.addEventListener('focusin', (e) => {
+    dom.virtualScrollWrapper?.addEventListener('focusin', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
         if (target.tagName === 'INPUT' && target.type === 'number') {
             target.select();
@@ -5993,58 +6260,148 @@ export function bindEventListeners(controller, dom) {
     });
 
     // 계산 버튼
-    dom.calculateBtn?.addEventListener('click', () => controller.handleCalculate());
+    dom.calculateBtn?.addEventListener('click', () => view.emit('calculateClicked')); // view.emit으로 변경
     dom.calculateBtn?.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
-            controller.handleCalculate();
+            view.emit('calculateClicked'); // view.emit으로 변경
         }
     });
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        const mode = /** @type {'add' | 'sell'} */ (target.value);
-        controller.handleMainModeChange(mode);
+        const mode = /** @type {'add' | 'sell' | 'simple'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
+        view.emit('mainModeChanged', { mode }); // view.emit으로 변경
     }));
     dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        const currency = /** @type {'krw' | 'usd'} */ (target.value);
-        controller.handleCurrencyModeChange(currency);
+        const currency = /** @type {'krw' | 'usd'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
+        view.emit('currencyModeChanged', { currency }); // view.emit으로 변경
     }));
 
     // 추가 투자금액 입력 및 환율 변환
-    const debouncedConversion = debounce((source) => controller.handleCurrencyConversion(source), 300);
+    const debouncedConversion = debounce((source) => view.emit('currencyConversion', { source }), 300); // view.emit으로 변경
     dom.additionalAmountInput?.addEventListener('input', () => debouncedConversion('krw'));
     dom.additionalAmountUSDInput?.addEventListener('input', () => debouncedConversion('usd'));
     dom.exchangeRateInput?.addEventListener('input', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
-        controller.view.toggleInputValidation(target, isValid);
-        if (isValid) debouncedConversion('krw'); // 환율 변경 시 원화 기준으로 USD 금액 재계산
+        view.toggleInputValidation(target, isValid); // View 자체 검증은 유지
+        if (isValid) debouncedConversion('krw'); 
     });
 
     // 추가 투자금액 관련 필드 Enter 키 처리
     const handleEnterKey = (e) => {
         if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && e.target.isComposing)) { // Type guard and isComposing check
             e.preventDefault();
-            controller.handleCalculate();
+            view.emit('calculateClicked'); // view.emit으로 변경
         }
     };
     dom.additionalAmountInput?.addEventListener('keydown', handleEnterKey);
     dom.additionalAmountUSDInput?.addEventListener('keydown', handleEnterKey);
     dom.exchangeRateInput?.addEventListener('keydown', handleEnterKey);
 
+    // 포트폴리오 환율 설정
+    dom.portfolioExchangeRateInput?.addEventListener('input', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        const rate = parseFloat(target.value);
+        const isValid = !isNaN(rate) && rate > 0;
+        view.toggleInputValidation(target, isValid);
+        if (isValid) {
+            // 두 환율 입력란 동기화
+            if (dom.exchangeRateInput instanceof HTMLInputElement) {
+                dom.exchangeRateInput.value = target.value;
+            }
+            // 포트폴리오 설정 업데이트
+            view.emit('portfolioExchangeRateChanged', { rate });
+            // 추가 투자금 재계산 (USD 모드인 경우)
+            debouncedConversion('krw');
+        }
+    });
+
+    // 추가 투자금 섹션의 환율 변경 시 포트폴리오 환율과 동기화
+    const originalExchangeRateHandler = dom.exchangeRateInput;
+    if (originalExchangeRateHandler) {
+        originalExchangeRateHandler.addEventListener('input', (e) => {
+            const target = /** @type {HTMLInputElement} */ (e.target);
+            const rate = parseFloat(target.value);
+            if (!isNaN(rate) && rate > 0) {
+                // 포트폴리오 환율 입력란과 동기화
+                if (dom.portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    dom.portfolioExchangeRateInput.value = target.value;
+                }
+                // 포트폴리오 설정 업데이트
+                view.emit('portfolioExchangeRateChanged', { rate });
+            }
+        });
+    }
+
     // --- 모달 관련 이벤트 ---
     // 거래 내역 모달 닫기 버튼
-    dom.closeModalBtn?.addEventListener('click', () => controller.view.closeTransactionModal());
+    dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked')); // view.emit으로 변경
 
     // 새 거래 추가 폼 제출
-    dom.newTransactionForm?.addEventListener('submit', (e) => controller.handleAddNewTransaction(e));
+    dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e)); // view.emit으로 변경
 
-    // --- ⬇️ 수정: 이벤트 위임 방식으로 변경 ⬇️ ---
-    // console.log("Event Binding: Attempting to bind click listener to:", dom.transactionListBody); // 로그 제거
+    // 입력 방식 전환 (수량 입력 vs 금액 입력)
+    const inputModeQuantity = document.getElementById('inputModeQuantity');
+    const inputModeAmount = document.getElementById('inputModeAmount');
+    const quantityInputGroup = document.getElementById('quantityInputGroup');
+    const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
+    const txQuantityInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txQuantity'));
+    const txTotalAmountInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txTotalAmount'));
+    const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
+
+    const toggleInputMode = () => {
+        const isQuantityMode = inputModeQuantity instanceof HTMLInputElement && inputModeQuantity.checked;
+
+        if (quantityInputGroup && totalAmountInputGroup && txQuantityInput && txTotalAmountInput) {
+            if (isQuantityMode) {
+                // 수량 입력 모드
+                quantityInputGroup.style.display = '';
+                totalAmountInputGroup.style.display = 'none';
+                txQuantityInput.required = true;
+                txTotalAmountInput.required = false;
+                txTotalAmountInput.value = '';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'none';
+            } else {
+                // 금액 입력 모드
+                quantityInputGroup.style.display = 'none';
+                totalAmountInputGroup.style.display = '';
+                txQuantityInput.required = false;
+                txTotalAmountInput.required = true;
+                txQuantityInput.value = '';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'block';
+            }
+        }
+    };
+
+    inputModeQuantity?.addEventListener('change', toggleInputMode);
+    inputModeAmount?.addEventListener('change', toggleInputMode);
+
+    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산
+    const calculateQuantityFromAmount = () => {
+        const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
+        if (!isAmountMode) return;
+
+        const txPriceInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txPrice'));
+        const calculatedQuantityValue = document.getElementById('calculatedQuantityValue');
+
+        if (txTotalAmountInput && txPriceInput && calculatedQuantityValue) {
+            const totalAmount = parseFloat(txTotalAmountInput.value) || 0;
+            const price = parseFloat(txPriceInput.value) || 0;
+
+            if (price > 0 && totalAmount > 0) {
+                const quantity = totalAmount / price;
+                calculatedQuantityValue.textContent = quantity.toFixed(8);
+            } else {
+                calculatedQuantityValue.textContent = '0';
+            }
+        }
+    };
+
+    txTotalAmountInput?.addEventListener('input', calculateQuantityFromAmount);
+    document.getElementById('txPrice')?.addEventListener('input', calculateQuantityFromAmount);
 
     // 거래 내역 목록 내 삭제 버튼 클릭 (이벤트 위임)
     dom.transactionModal?.addEventListener('click', (e) => {
@@ -6053,42 +6410,29 @@ export function bindEventListeners(controller, dom) {
 
         // 1. 삭제 버튼이 클릭된 경우 핸들러 호출
         if (deleteButton) {
-            console.log("!!! Delete button clicked via delegation !!!", deleteButton); // 디버깅 로그
-
             const row = deleteButton.closest('tr[data-tx-id]');
             const modal = deleteButton.closest('#transactionModal');
             const stockId = modal?.dataset.stockId;
             const txId = row?.dataset.txId;
 
-            console.log(`Delegation: stockId=${stockId}, txId=${txId}`); // ID 확인
-
             // 2. 컨트롤러 함수에 필요한 ID 직접 전달
             if (stockId && txId) {
-                controller.handleTransactionListClick(stockId, txId); // event 대신 ID 전달
+                // controller.handleTransactionListClick(stockId, txId) 대신 emit
+                view.emit('transactionDeleteClicked', { stockId, txId }); 
             }
         }
 
-        // 3. 모달 오버레이 클릭 시 닫기 (주석 해제 및 로직 유지)
+        // 3. 모달 오버레이 클릭 시 닫기
         if (e.target === dom.transactionModal) {
-             console.log("Overlay clicked, closing modal."); // 오버레이 클릭 로그
-             controller.view.closeTransactionModal();
+             view.emit('closeTransactionModalClicked'); // view.emit으로 변경
         }
     });
 
-    /* // 이전 tbody 리스너 제거
-    dom.transactionListBody?.addEventListener('click', (e) => {
-        console.log("!!! transactionListBody CLICKED !!!", e.target);
-        // controller.handleTransactionListClick(e);
-    });
-    */
-    // --- ⬆️ 수정 완료 ⬆️ ---
-
-
     // --- 기타 ---
     // 다크 모드 토글 버튼
-    dom.darkModeToggle?.addEventListener('click', () => controller.handleToggleDarkMode());
+    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked')); // view.emit으로 변경
     // 페이지 닫기 전 자동 저장 (동기식 저장 시도)
-    window.addEventListener('beforeunload', () => controller.handleSaveDataOnExit());
+    window.addEventListener('beforeunload', () => view.emit('pageUnloading')); // view.emit으로 변경
 
     // 키보드 네비게이션 포커스 스타일
     document.addEventListener('keydown', (e) => {
@@ -6107,7 +6451,7 @@ export function bindEventListeners(controller, dom) {
 ## `js/view.js`
 
 ```javascript
-/// js/view.js (가상 스크롤 적용)
+// js/view.js (가상 스크롤 적용)
 // @ts-check
 import { CONFIG } from './constants.js';
 import { formatCurrency, escapeHTML } from './utils.js';
@@ -6198,6 +6542,7 @@ export const PortfolioView = {
             additionalAmountInput: D.getElementById('additionalAmount'),
             additionalAmountUSDInput: D.getElementById('additionalAmountUSD'),
             exchangeRateInput: D.getElementById('exchangeRate'),
+            portfolioExchangeRateInput: D.getElementById('portfolioExchangeRate'),
             mainModeSelector: D.querySelectorAll('input[name="mainMode"]'),
             currencyModeSelector: D.querySelectorAll('input[name="currencyMode"]'),
             exchangeRateGroup: D.getElementById('exchangeRateGroup'),
@@ -6349,7 +6694,7 @@ export const PortfolioView = {
     // ▼▼▼▼▼ [대대적 수정] createStockRowFragment (div 기반으로 변경) ▼▼▼▼▼
     createStockRowFragment(stock, currency, mainMode) {
         const fragment = document.createDocumentFragment();
-        
+
         // --- 헬퍼 함수 ---
         const createInput = (type, field, value, placeholder = '', disabled = false, ariaLabel = '') => {
             const input = document.createElement('input');
@@ -6376,7 +6721,7 @@ export const PortfolioView = {
              }
             return input;
         };
-        
+
         const createCheckbox = (field, checked, ariaLabel = '') => {
             const input = document.createElement('input');
             input.type = 'checkbox';
@@ -6395,7 +6740,7 @@ export const PortfolioView = {
             if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
             return button;
         };
-        
+
         const createCell = (className = '', align = 'left') => {
             const cell = document.createElement('div');
             cell.className = `virtual-cell ${className} align-${align}`;
@@ -6415,29 +6760,65 @@ export const PortfolioView = {
         // 컬럼 구성
         divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
         divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
-        if (!isMobile) { // 모바일이 아닐 때만 섹터 표시
+
+        // 간단 계산 모드에서는 섹터, 고정 매수 필드만 숨김 (목표비중은 유지)
+        if (mainMode !== 'simple' && !isMobile) {
+            // 섹터는 간단 모드가 아닐 때만 표시
             divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
         }
+
+        // 목표 비율은 모든 모드에서 표시
         divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
-        if (!isMobile) { // 모바일이 아닐 때만 현재가 표시
+
+        if (!isMobile && mainMode !== 'simple') {
+            // 현재가는 간단 모드가 아닐 때만 표시
             divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
         }
-        if (mainMode === 'add' && !isMobile) { // 모바일이 아닐 때만 고정 매수 표시
-            const fixedBuyCell = createCell('align-center');
-            const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
-            const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
-            amountInput.style.width = '80px'; // 고정 매수 입력창 크기 조절
-            fixedBuyCell.append(checkbox, ' ', amountInput);
-            divInputs.appendChild(fixedBuyCell);
-        }
 
-        const actionCell = createCell('align-center');
-        actionCell.append(
-            createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
-            ' ',
-            createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
-        );
-        divInputs.appendChild(actionCell);
+        if (mainMode === 'simple') {
+            // 간단 모드: 보유 금액 입력칸 + 고정 매수 필드 + 삭제 버튼
+            const amountCell = createCell('align-right');
+            const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
+            manualAmountInput.style.width = '100%';
+            manualAmountInput.style.textAlign = 'right';
+            amountCell.appendChild(manualAmountInput);
+            divInputs.appendChild(amountCell);
+
+            // 고정 매수 필드 추가 (간단 모드)
+            if (!isMobile) {
+                const fixedBuyCell = createCell('align-center');
+                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
+                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+                amountInput.style.width = '80px';
+                fixedBuyCell.append(checkbox, ' ', amountInput);
+                divInputs.appendChild(fixedBuyCell);
+            }
+
+            const deleteCell = createCell('align-center');
+            deleteCell.appendChild(
+                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+            );
+            divInputs.appendChild(deleteCell);
+        } else {
+            // 추가 매수 모드: 고정 매수 필드 표시
+            if (mainMode === 'add' && !isMobile) {
+                const fixedBuyCell = createCell('align-center');
+                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
+                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+                amountInput.style.width = '80px';
+                fixedBuyCell.append(checkbox, ' ', amountInput);
+                divInputs.appendChild(fixedBuyCell);
+            }
+
+            // 일반 모드: 거래 내역 관리 및 삭제 버튼
+            const actionCell = createCell('align-center');
+            actionCell.append(
+                createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
+                ' ',
+                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+            );
+            divInputs.appendChild(actionCell);
+        }
 
         // --- 2. 출력 행 (Outputs Row) ---
         const divOutputs = document.createElement('div');
@@ -6473,15 +6854,21 @@ export const PortfolioView = {
         divOutputs.appendChild(firstCell);
 
         // 출력 행 컬럼 구성
-        divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
-        if (!isMobile) { // 모바일 아닐 때
-             divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+        if (mainMode === 'simple') {
+            // 간단 모드에서는 출력 행을 완전히 숨김 (보유 금액을 입력칸에서 바로 입력하므로)
+            divOutputs.style.display = 'none';
+        } else {
+            // 일반 모드
+            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+            if (!isMobile) { // 모바일 아닐 때
+                divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+            }
+            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+            if (!isMobile) { // 모바일 아닐 때
+                divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
+            }
+            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
         }
-        divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
-        if (!isMobile) { // 모바일 아닐 때
-            divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
-        }
-        divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
 
         // 액션 컬럼 스페이서
         const lastCell = createCell();
@@ -6525,9 +6912,13 @@ export const PortfolioView = {
     getGridTemplate(mainMode) {
         // 반응형 그리드 템플릿 반환
         const isMobile = window.innerWidth <= 768;
-        
+
         // 입력 행과 출력 행의 그리드 컬럼 수를 다르게 설정
         if (isMobile) {
+            if (mainMode === 'simple') {
+                // 모바일 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제 (5컬럼)
+                return '1.5fr 1fr 1fr 1fr 0.8fr';
+            }
             // 모바일: 이름 | 티커 | 목표% | 액션 (입력)
             // 모바일: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서) (출력)
             // -> 컬럼 수는 4개로 동일하게 맞추되, 내용만 다르게
@@ -6538,8 +6929,11 @@ export const PortfolioView = {
                 // 이름 | 티커 | 섹터 | 목표% | 현재가 | 고정 | 액션 (7컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
                 return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+            } else if (mainMode === 'simple') {
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 고정 매수 | 삭제 (6컬럼)
+                return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
             } else {
-                // 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
+                // 매도 리밸런싱: 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
                 // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
                 return '2fr 1fr 1fr 1fr 1fr 1.2fr';
             }
@@ -6554,29 +6948,51 @@ export const PortfolioView = {
         if (!header) return;
 
         header.style.gridTemplateColumns = this.getGridTemplate(mainMode);
-        
+
         const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
         let headersHTML = '';
-        
+
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {
-            headersHTML = `
-                <div class="virtual-cell">${t('ui.stockName')}</div>
-                <div class="virtual-cell">${t('ui.ticker')}</div>
-                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                <div class="virtual-cell align-center">${t('ui.action')}</div>
-            `;
+            if (mainMode === 'simple') {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            } else {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            }
         } else {
-            headersHTML = `
-                <div class="virtual-cell">${t('ui.stockName')}</div>
-                <div class="virtual-cell">${t('ui.ticker')}</div>
-                <div class="virtual-cell">${t('ui.sector')}</div>
-                <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
-                ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
-                <div class="virtual-cell align-center">${t('ui.action')}</div>
-            `;
+            if (mainMode === 'simple') {
+                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 고정 매수 | 삭제
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            } else {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell">${t('ui.sector')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
+                    ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            }
         }
         header.innerHTML = headersHTML;
     },
@@ -6631,6 +7047,19 @@ export const PortfolioView = {
     },
 
     /**
+     * @description [NEW] 특정 종목의 속성을 _virtualData에서 업데이트 (재렌더링 없이)
+     * @param {string} stockId - 종목 ID
+     * @param {string} field - 업데이트할 필드명
+     * @param {any} value - 새 값
+     */
+    updateStockInVirtualData(stockId, field, value) {
+        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+        if (stockIndex !== -1) {
+            this._virtualData[stockIndex][field] = value;
+        }
+    },
+
+    /**
      * @description [NEW] 실제 가상 스크롤 렌더링 로직
      * @param {boolean} [forceRedraw=false] - 강제 렌더링 여부
      */
@@ -6642,7 +7071,7 @@ export const PortfolioView = {
         const mainMode = this._currentMainMode;
 
         const scrollTop = this._scrollWrapper.scrollTop;
-        
+
         // 1. 렌더링할 인덱스 계산
         const startIndex = Math.max(0, Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER);
         const endIndex = Math.min(
@@ -6654,11 +7083,44 @@ export const PortfolioView = {
         if (!forceRedraw && startIndex === this._renderedStartIndex && endIndex === this._renderedEndIndex) {
             return;
         }
-        
+
+        // ▼▼▼▼▼ [추가] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 ▼▼▼▼▼
+        // 스크롤로 인해 DOM이 사라지기 전에 사용자가 입력 중인 값을 보존
+        const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        currentInputRows.forEach(row => {
+            const stockId = row.dataset.id;
+            if (!stockId) return;
+
+            const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+            if (stockIndex === -1) return;
+
+            // 모든 입력 필드의 현재 값을 읽어서 _virtualData에 반영
+            const inputs = row.querySelectorAll('input[data-field]');
+            inputs.forEach(input => {
+                if (!(input instanceof HTMLInputElement)) return;
+                const field = input.dataset.field;
+                if (!field) return;
+
+                let value;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else if (input.type === 'number') {
+                    // 숫자 필드는 parseFloat으로 변환
+                    value = parseFloat(input.value) || 0;
+                } else {
+                    value = input.value;
+                }
+
+                // _virtualData 업데이트
+                this._virtualData[stockIndex][field] = value;
+            });
+        });
+        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+
         // 3. 새 범위 저장
         this._renderedStartIndex = startIndex;
         this._renderedEndIndex = endIndex;
-        
+
         // 4. DOM 조각 생성
         const fragment = document.createDocumentFragment();
         for (let i = startIndex; i < endIndex; i++) {
@@ -6691,7 +7153,10 @@ export const PortfolioView = {
     updateMainModeUI(mainMode) {
         const addCard = this.dom.addInvestmentCard;
         const modeRadios = this.dom.mainModeSelector;
-        addCard?.classList.toggle('hidden', mainMode !== 'add');
+
+        // Show investment card for both 'add' and 'simple' modes
+        addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
+
         modeRadios?.forEach(radio => {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
         });
@@ -7037,11 +7502,12 @@ import { debounce, formatCurrency, getRatioSum } from './utils.js';
 import { CONFIG } from './constants.js';
 import { ErrorService, ValidationError } from './errorService.js';
 import { t } from './i18n.js';
-import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML } from './templates.js';
+import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from './templates.js';
 import Decimal from 'decimal.js';
 import { apiService } from './apiService.js';
-import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js';
+import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from './calculationStrategies.js';
 import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
+import Chart from 'chart.js/auto'; // ▼▼▼ [추가] Chart.js 임포트 ▼▼▼
 
 // ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
 import { bindEventListeners } from './eventBinder.js';
@@ -7076,10 +7542,10 @@ export class PortfolioController {
         await this.state.ensureInitialized();
         this.view.cacheDomElements();
         this.setupInitialUI();
-        this.bindControllerEvents(); 
+        this.bindControllerEvents();
 
         // ▼▼▼ [추가] 실제 DOM 이벤트 바인딩 호출 ▼▼▼
-        bindEventListeners(this, this.view.dom);
+        bindEventListeners(this.view);
         // ▲▲▲ [추가] ▲▲▲
     }
 
@@ -7094,9 +7560,12 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput } = this.view.dom;
+            const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+            }
+            if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
 
             this.fullRender();
@@ -7135,6 +7604,7 @@ export class PortfolioController {
         this.view.on('mainModeChanged', (data) => this.handleMainModeChange(data.mode));
         this.view.on('currencyModeChanged', (data) => this.handleCurrencyModeChange(data.currency));
         this.view.on('currencyConversion', (data) => this.handleCurrencyConversion(data.source));
+        this.view.on('portfolioExchangeRateChanged', (data) => this.handlePortfolioExchangeRateChange(data.rate));
 
         // 모달 상호작용
         this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
@@ -7264,9 +7734,12 @@ export class PortfolioController {
             if (activePortfolio) {
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                const { exchangeRateInput } = this.view.dom;
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
                 if (exchangeRateInput instanceof HTMLInputElement) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
             }
             this.fullRender();
@@ -7309,9 +7782,12 @@ export class PortfolioController {
                 this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                const { exchangeRateInput } = this.view.dom;
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
                 if (exchangeRateInput instanceof HTMLInputElement) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
              }
             this.fullRender();
@@ -7356,6 +7832,7 @@ export class PortfolioController {
             case 'targetRatio':
             case 'currentPrice':
             case 'fixedBuyAmount':
+            case 'manualAmount':
                 const validationResult = Validator.validateNumericInput(value);
                 isValid = validationResult.isValid;
                 if(isValid) value = validationResult.value ?? 0;
@@ -7377,6 +7854,15 @@ export class PortfolioController {
 
         if (isValid) {
             this.state.updateStockProperty(stockId, field, value);
+
+            // manualAmount는 간단 모드 전용 필드로, 입력 시 테이블 재렌더링 불필요
+            if (field === 'manualAmount') {
+                // 하지만 _virtualData는 업데이트하여 스크롤 시 값이 유지되도록 함
+                this.view.updateStockInVirtualData(stockId, field, value);
+                this.debouncedSave();
+                return; // 재렌더링 건너뛰기
+            }
+
             Calculator.clearPortfolioStateCache();
 
             const activePortfolio = this.state.getActivePortfolio();
@@ -7465,6 +7951,7 @@ export class PortfolioController {
             return;
         }
 
+        // 목표 비율 검증 (모든 모드에서 수행)
         const totalRatio = getRatioSum(inputs.portfolioData);
         if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
             const proceed = await this.view.showConfirm(
@@ -7488,6 +7975,8 @@ export class PortfolioController {
         let strategy;
         if (activePortfolio.settings.mainMode === 'add') {
             strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
+        } else if (activePortfolio.settings.mainMode === 'simple') {
+            strategy = new SimpleRatioStrategy(calculatedState.portfolioData, additionalInvestment);
         } else {
             strategy = new SellRebalanceStrategy(calculatedState.portfolioData);
         }
@@ -7500,9 +7989,30 @@ export class PortfolioController {
                    additionalInvestment: additionalInvestment,
                    finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
                }, activePortfolio.settings.currentCurrency)
+             : activePortfolio.settings.mainMode === 'simple'
+             ? generateSimpleModeResultsHTML(rebalancingResults.results, {
+                   currentTotal: calculatedState.currentTotal,
+                   additionalInvestment: additionalInvestment,
+                   finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
+               }, activePortfolio.settings.currentCurrency)
              : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
 
         this.view.displayResults(resultsHTML);
+
+        // ▼▼▼ [추가] 차트 표시 ▼▼▼
+        const chartLabels = rebalancingResults.results.map(r => r.stock.name);
+        const chartData = rebalancingResults.results.map(r => {
+            const ratio = r.stock.targetRatio instanceof Decimal ? r.stock.targetRatio : new Decimal(r.stock.targetRatio ?? 0);
+            return ratio.toNumber();
+        });
+        const chartTitle = activePortfolio.settings.mainMode === 'simple'
+            ? '포트폴리오 목표 비율 (간단 계산 모드)'
+            : activePortfolio.settings.mainMode === 'add'
+            ? '포트폴리오 목표 비율 (추가 매수 모드)'
+            : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
+        this.view.displayChart(Chart, chartLabels, chartData, chartTitle);
+        // ▲▲▲ [추가] ▲▲▲
+
         this.debouncedSave();
         this.view.showToast(t('toast.calculateSuccess'), "success");
      }
@@ -7533,10 +8043,21 @@ export class PortfolioController {
 
             const results = await apiService.fetchAllStockPrices(tickersToFetch);
 
+            // Get current currency and exchange rate for conversion
+            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const currentCurrency = activePortfolio.currentCurrency || 'krw';
+
             results.forEach((result) => {
                 if (result.status === 'fulfilled' && result.value) {
-                    this.state.updateStockProperty(result.id, 'currentPrice', result.value);
-                    this.view.updateCurrentPriceInput(result.id, result.value.toFixed(2));
+                    let price = result.value; // This is in USD from Finnhub API
+
+                    // Convert USD price to KRW if current currency is KRW
+                    if (currentCurrency === 'krw') {
+                        price = price * exchangeRate;
+                    }
+
+                    this.state.updateStockProperty(result.id, 'currentPrice', price);
+                    this.view.updateCurrentPriceInput(result.id, price.toFixed(2));
                     successCount++;
                 } else {
                     failureCount++;
@@ -7567,19 +8088,47 @@ export class PortfolioController {
      }
 
     async handleMainModeChange(newMode) {
-        if (newMode !== 'add' && newMode !== 'sell') return;
-        await this.state.updatePortfolioSettings('mainMode', newMode); 
-        this.fullRender(); 
-        const modeName = newMode === 'add' ? t('ui.addMode') : t('ui.sellMode');
+        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
+        await this.state.updatePortfolioSettings('mainMode', newMode);
+        this.fullRender();
+        const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
         this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
      }
 
     async handleCurrencyModeChange(newCurrency) {
-         if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
-        await this.state.updatePortfolioSettings('currentCurrency', newCurrency); 
-        this.fullRender(); 
+        if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
+
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const oldCurrency = activePortfolio.currentCurrency || 'krw';
+
+        // If currency is actually changing, convert all existing currentPrice values
+        if (oldCurrency !== newCurrency) {
+            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+
+            activePortfolio.portfolioData.forEach(stock => {
+                if (stock.currentPrice && stock.currentPrice > 0) {
+                    let newPrice = stock.currentPrice;
+
+                    // Convert from old currency to new currency
+                    if (oldCurrency === 'usd' && newCurrency === 'krw') {
+                        // USD to KRW
+                        newPrice = stock.currentPrice * exchangeRate;
+                    } else if (oldCurrency === 'krw' && newCurrency === 'usd') {
+                        // KRW to USD
+                        newPrice = stock.currentPrice / exchangeRate;
+                    }
+
+                    this.state.updateStockProperty(stock.id, 'currentPrice', newPrice);
+                }
+            });
+        }
+
+        await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
+        this.fullRender();
         this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
-     }
+    }
 
     async handleCurrencyConversion(source) {
         const activePortfolio = this.state.getActivePortfolio();
@@ -7632,6 +8181,22 @@ export class PortfolioController {
         }
      }
 
+    async handlePortfolioExchangeRateChange(rate) {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const exchangeRateNum = Number(rate);
+        const isValidRate = !isNaN(exchangeRateNum) && exchangeRateNum > 0;
+
+        if (isValidRate) {
+            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            this.debouncedSave();
+        } else {
+            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+            this.view.showToast(t('toast.invalidExchangeRate'), "error");
+        }
+    }
+
 
     // --- 거래 내역 모달 핸들러 ---
 
@@ -7643,18 +8208,58 @@ export class PortfolioController {
         if (!stockId) return;
 
         const typeInput = form.querySelector('input[name="txType"]:checked');
+        const inputModeInput = form.querySelector('input[name="inputMode"]:checked');
         const dateInput = /** @type {HTMLInputElement} */ (form.querySelector('#txDate'));
         const quantityInput = /** @type {HTMLInputElement} */ (form.querySelector('#txQuantity'));
+        const totalAmountInput = /** @type {HTMLInputElement} */ (form.querySelector('#txTotalAmount'));
         const priceInput = /** @type {HTMLInputElement} */ (form.querySelector('#txPrice'));
 
-        if (!typeInput || !dateInput || !quantityInput || !priceInput) return;
+        if (!typeInput || !dateInput || !priceInput) return;
 
         const type = (typeInput instanceof HTMLInputElement && typeInput.value === 'sell') ? 'sell' : 'buy';
+        const inputMode = (inputModeInput instanceof HTMLInputElement) ? inputModeInput.value : 'quantity';
         const date = dateInput.value;
-        const quantityStr = quantityInput.value;
         const priceStr = priceInput.value;
 
-        const txData = { type, date, quantity: quantityStr, price: priceStr };
+        let finalQuantity;
+
+        if (inputMode === 'amount') {
+            // 금액 입력 모드: 총 금액 / 단가 = 수량 (Decimal.js로 정밀 계산)
+            if (!totalAmountInput || !totalAmountInput.value) {
+                this.view.showToast(t('toast.invalidTransactionInfo'), "error");
+                return;
+            }
+
+            const totalAmountStr = totalAmountInput.value;
+
+            try {
+                const totalAmountDec = new Decimal(totalAmountStr);
+                const priceDec = new Decimal(priceStr);
+
+                if (priceDec.isZero() || priceDec.isNegative()) {
+                    this.view.showToast('단가는 0보다 커야 합니다.', "error");
+                    return;
+                }
+
+                // 수량 = 총 금액 / 단가
+                const quantityDec = totalAmountDec.div(priceDec);
+                finalQuantity = quantityDec.toNumber();
+            } catch (error) {
+                this.view.showToast('금액 또는 단가 입력이 올바르지 않습니다.', "error");
+                return;
+            }
+        } else {
+            // 수량 입력 모드: 기존 방식
+            if (!quantityInput || !quantityInput.value) {
+                this.view.showToast(t('toast.invalidTransactionInfo'), "error");
+                return;
+            }
+
+            const quantityStr = quantityInput.value;
+            finalQuantity = Number(quantityStr);
+        }
+
+        const txData = { type, date, quantity: String(finalQuantity), price: priceStr };
         const validationResult = Validator.validateTransaction(txData);
 
         if (!validationResult.isValid) {
@@ -7662,10 +8267,10 @@ export class PortfolioController {
             return;
         }
 
-        const success = await this.state.addTransaction(stockId, { 
+        const success = await this.state.addTransaction(stockId, {
              type,
              date,
-             quantity: Number(quantityStr),
+             quantity: finalQuantity,
              price: Number(priceStr)
         });
 
@@ -7676,6 +8281,23 @@ export class PortfolioController {
             }
             form.reset();
             dateInput.valueAsDate = new Date();
+
+            // 입력 모드를 수량 입력으로 리셋
+            const inputModeQuantity = form.querySelector('#inputModeQuantity');
+            if (inputModeQuantity instanceof HTMLInputElement) {
+                inputModeQuantity.checked = true;
+                // UI 토글
+                const quantityInputGroup = document.getElementById('quantityInputGroup');
+                const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
+                const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
+
+                if (quantityInputGroup) quantityInputGroup.style.display = '';
+                if (totalAmountInputGroup) totalAmountInputGroup.style.display = 'none';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'none';
+                if (quantityInput) quantityInput.required = true;
+                if (totalAmountInput) totalAmountInput.required = false;
+            }
+
             this.view.showToast(t('toast.transactionAdded'), "success");
 
             Calculator.clearPortfolioStateCache();
@@ -7761,7 +8383,7 @@ export class PortfolioController {
                  this.view.showToast(t('toast.importError'), "error");
                  fileInput.value = '';
              };
-            reader.readText(file);
+            reader.readAsText(file);
         }
      }
     handleExportData() {
@@ -7991,8 +8613,16 @@ describe('PortfolioController', () => {
       cacheKey: 'mock-key'
     });
     vi.mocked(mockCalculator.calculateSectorAnalysis).mockReturnValue([]);
-    vi.mocked(mockCalculator.calculateRebalancing).mockReturnValue({ results: [] });
     
+    // ▼▼▼▼▼ [수정된 부분] ▼▼▼▼▼
+    // 'mockReturnValue' 대신 'mockImplementation'을 사용하여
+    // Calculator.calculateRebalancing이 strategy.calculate()를 호출하도록 수정
+    vi.mocked(mockCalculator.calculateRebalancing).mockImplementation((strategy) => {
+      // 전달받은 strategy의 calculate()를 수동으로 호출해줍니다.
+      return strategy.calculate();
+    });
+    // ▲▲▲▲▲ [수정 완료] ▲▲▲▲▲
+
     // 4. [삭제] 오류를 유발하는 mockClear 블록 삭제
 
     // 5. 컨트롤러 생성 (이때 bindControllerEvents가 호출됨)
@@ -8157,8 +8787,8 @@ describe('Calculator.calculateStockMetrics (동기)', () => {
             ], isFixedBuyEnabled: false, fixedBuyAmount: 0
         };
         // @ts-ignore
-        const result = Calculator.calculateStockMetrics(stock); 
-        expect(result.netQuantity.toString()).toBe('20');
+        const result = Calculator.calculateStockMetrics(stock);
+        expect(result.quantity.toString()).toBe('20');
         expect(result.avgBuyPrice.toString()).toBe('110');
         expect(result.currentAmount.toString()).toBe('3000'); 
         expect(result.profitLoss.toString()).toBe('800'); 
@@ -8173,8 +8803,8 @@ describe('Calculator.calculateStockMetrics (동기)', () => {
             ], isFixedBuyEnabled: false, fixedBuyAmount: 0
         };
          // @ts-ignore
-        const result = Calculator.calculateStockMetrics(stock); 
-        expect(result.netQuantity.toString()).toBe('5');
+        const result = Calculator.calculateStockMetrics(stock);
+        expect(result.quantity.toString()).toBe('5');
         expect(result.avgBuyPrice.toString()).toBe('100'); 
         expect(result.currentAmount.toString()).toBe('1000'); 
         expect(result.profitLoss.toString()).toBe('500'); 
@@ -8232,8 +8862,8 @@ describe('Calculator Edge Cases (동기)', () => {
             };
             // @ts-ignore
             const result = Calculator.calculateStockMetrics(stock);
-            
-            expect(result.netQuantity.toString()).toBe('0'); 
+
+            expect(result.quantity.toString()).toBe('0');
             expect(result.avgBuyPrice.toString()).toBe('100'); 
             expect(result.currentAmount.toString()).toBe('0'); 
             expect(result.profitLoss.toString()).toBe('0'); 
