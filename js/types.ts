@@ -41,8 +41,21 @@ export type MainMode = 'add' | 'sell';
 export type Currency = 'krw' | 'usd';
 
 export interface PortfolioSettings {
-    mainMode: MainMode; // 계산 모드
-    currentCurrency: Currency; // 통화
+    mainMode: MainMode;
+    currentCurrency: Currency;
+    exchangeRate: number;
+}
+
+export interface Portfolio {
+    id: string;
+    name: string;
+    portfolioData: Stock[];
+    settings: PortfolioSettings;
+}
+
+export interface MetaState {
+    activePortfolioId: string;
+    version: string;
 }
 
 export interface PortfolioData {
@@ -62,4 +75,13 @@ export interface ValidationErrorDetail {
     field: string;
     stockId: string | null;
     message: string;
+}
+
+// API types
+export interface FetchStockResult {
+    id: string;
+    ticker: string;
+    status: 'fulfilled' | 'rejected';
+    value?: number;
+    reason?: string;
 }

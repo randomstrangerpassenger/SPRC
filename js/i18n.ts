@@ -1,5 +1,7 @@
-// js/i18n.js (Updated with missing ui keys)
-// @ts-check
+// js/i18n.ts (Updated with missing ui keys)
+
+type Lang = 'en' | 'ko';
+type Replacements = Record<string, string | number>;
 
 // 1. 모든 문자열을 계층 구조로 정의합니다.
 const locales = {
@@ -355,10 +357,9 @@ const locales = {
 
 /**
  * @description 브라우저 언어 설정을 감지하여 'en' 또는 'ko'를 반환합니다.
- * @returns {'en' | 'ko'}
  */
-function getBrowserLanguage() {
-    const lang = navigator.language || navigator.userLanguage;
+function getBrowserLanguage(): Lang {
+    const lang = (navigator as any).language || (navigator as any).userLanguage;
     if (lang.toLowerCase().startsWith('ko')) {
         return 'ko';
     }
@@ -367,9 +368,8 @@ function getBrowserLanguage() {
 
 /**
  * @description localStorage에서 저장된 언어를 로드하거나 브라우저 언어 감지
- * @returns {'en' | 'ko'}
  */
-function getStoredLanguage() {
+function getStoredLanguage(): Lang {
     const storedLang = localStorage.getItem('sprc_language');
     if (storedLang === 'ko' || storedLang === 'en') {
         return storedLang;
@@ -378,14 +378,13 @@ function getStoredLanguage() {
 }
 
 // 2. 현재 언어 설정 (localStorage 우선, 없으면 브라우저 언어)
-let currentLang = getStoredLanguage();
-let messages = locales[currentLang] || locales.en;
+let currentLang: Lang = getStoredLanguage();
+let messages: any = locales[currentLang] || locales.en;
 
 /**
  * @description 언어 변경 및 localStorage 저장
- * @param {'en' | 'ko'} newLang - 새 언어 코드
  */
-export function setLanguage(newLang) {
+export function setLanguage(newLang: Lang): void {
     if (newLang !== 'en' && newLang !== 'ko') {
         console.warn(`[i18n] Unsupported language: ${newLang}`);
         return;
@@ -398,32 +397,33 @@ export function setLanguage(newLang) {
 
 /**
  * @description 현재 언어 코드 반환
- * @returns {'en' | 'ko'}
  */
-export function getCurrentLanguage() {
+export function getCurrentLanguage(): Lang {
     return currentLang;
 }
 
-
 /**
  * 키와 대체값을 기반으로 메시지 문자열을 반환합니다.
- * @param {string} key - 점으로 구분된 메시지 키 (예: 'toast.dataReset')
- * @param {Record<string, string | number>} [replacements] - {name}, {totalRatio} 등을 대체할 값
- * @returns {string}
  */
-export function t(key, replacements = {}) {
+export function t(key: string, replacements: Replacements = {}): string {
     const keys = key.split('.');
-    let message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, messages);
+    let message: any = keys.reduce(
+        (obj: any, k: string) => (obj && obj[k] !== undefined ? obj[k] : key),
+        messages
+    );
 
     if (typeof message !== 'string') {
-        message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, locales.en); // Fallback to English
+        message = keys.reduce(
+            (obj: any, k: string) => (obj && obj[k] !== undefined ? obj[k] : key),
+            locales.en
+        ); // Fallback to English
         if (typeof message !== 'string') {
-             console.warn(`[i18n] Missing key in all locales: ${key}`);
-             return key;
+            console.warn(`[i18n] Missing key in all locales: ${key}`);
+            return key;
         }
     }
 
-    return message.replace(/{(\w+)}/g, (match, placeholder) => {
+    return message.replace(/{(\w+)}/g, (match: string, placeholder: string) => {
         return replacements[placeholder] !== undefined
             ? String(replacements[placeholder])
             : match;
