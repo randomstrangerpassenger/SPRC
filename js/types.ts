@@ -50,3 +50,16 @@ export interface PortfolioData {
     portfolioData: Stock[]; // 주식 데이터 배열
     settings: PortfolioSettings;
 }
+
+// Validation types
+export interface ValidationResult {
+    isValid: boolean;
+    value?: string | number;
+    message?: string;
+}
+
+export interface ValidationErrorDetail {
+    field: string;
+    stockId: string | null;
+    message: string;
+}
