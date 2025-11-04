@@ -1,4 +1,4 @@
-// vite.config.js (Vitest 4.x용 단순화 버전)
+// vite.config.ts (Vitest 4.x용 단순화 버전)
 
 import { defineConfig, loadEnv } from 'vite';
 
@@ -17,12 +17,9 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom',
       include: ['js/**/*.test.js', 'js/**/*.test.ts'],
-      // --- ⬇️ [추가된 부분] ⬇️ ---
       esbuild: {
         target: 'esnext', // 테스트 환경에서도 esnext 문법(예: #)을 사용하도록 설정
       },
-      // --- ⬆️ [추가된 부분] ⬆️ ---
-      // pool, threads, deps.optimizer 등 제거
     },
 
     server: {
@@ -41,5 +38,5 @@ export default defineConfig(({ mode }) => {
         }
       }
     }
-  }
+  };
 });

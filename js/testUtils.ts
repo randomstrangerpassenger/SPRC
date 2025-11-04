@@ -1,21 +1,21 @@
-// js/testUtils.js
-// @ts-check
+// js/testUtils.ts
 import Decimal from 'decimal.js';
+import type { CalculatedStock, Portfolio } from './types';
 
 /**
  * @description 테스트용으로 완벽하게 계산된 CalculatedStock 객체를 생성합니다.
- * @param {string} id
- * @param {string} name
- * @param {string} ticker
- * @param {number} targetRatio - 목표 비율 (%)
- * @param {number} currentPrice - 현재가
- * @param {number} quantity - 보유 수량
- * @param {number} avgBuyPrice - 평단가
- * @returns {import('./types.js').CalculatedStock}
  */
 export function createMockCalculatedStock({
     id, name, ticker, targetRatio, currentPrice, quantity, avgBuyPrice
-}) {
+}: {
+    id: string;
+    name: string;
+    ticker: string;
+    targetRatio: number;
+    currentPrice: number;
+    quantity: number;
+    avgBuyPrice: number;
+}): CalculatedStock {
     const currentAmount = new Decimal(currentPrice).times(quantity);
     const totalBuyAmount = new Decimal(avgBuyPrice).times(quantity);
     const profitLoss = currentAmount.minus(totalBuyAmount);
@@ -26,10 +26,10 @@ export function createMockCalculatedStock({
         name: name,
         ticker: ticker,
         sector: 'Test Sector',
-        targetRatio: new Decimal(targetRatio),
-        currentPrice: new Decimal(currentPrice),
+        targetRatio: targetRatio,
+        currentPrice: currentPrice,
         isFixedBuyEnabled: false,
-        fixedBuyAmount: new Decimal(0),
+        fixedBuyAmount: 0,
         transactions: [], // 테스트 편의를 위해 transactions는 비워둠
         calculated: {
             quantity: new Decimal(quantity),
@@ -37,11 +37,6 @@ export function createMockCalculatedStock({
             currentAmount: currentAmount,
             profitLoss: profitLoss,
             profitLossRate: profitLossRate,
-            totalBuyQuantity: new Decimal(quantity),
-            totalSellQuantity: new Decimal(0),
-            totalBuyAmount: totalBuyAmount,
-            currentAmountUSD: new Decimal(0),
-            currentAmountKRW: new Decimal(0),
         },
     };
 }
@@ -68,7 +63,7 @@ export const MOCK_STOCK_2 = createMockCalculatedStock({
     avgBuyPrice: 250
 }); // 현재가: 4000
 
-export const MOCK_PORTFOLIO_1 = {
+export const MOCK_PORTFOLIO_1: Portfolio = {
     id: 'p-default',
     name: '기본 포트폴리오',
     settings: {
