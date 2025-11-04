@@ -365,9 +365,44 @@ function getBrowserLanguage() {
     return 'en'; // 기본값
 }
 
-// 2. 현재 언어 설정
-const currentLang = getBrowserLanguage();
-const messages = locales[currentLang] || locales.en;
+/**
+ * @description localStorage에서 저장된 언어를 로드하거나 브라우저 언어 감지
+ * @returns {'en' | 'ko'}
+ */
+function getStoredLanguage() {
+    const storedLang = localStorage.getItem('sprc_language');
+    if (storedLang === 'ko' || storedLang === 'en') {
+        return storedLang;
+    }
+    return getBrowserLanguage();
+}
+
+// 2. 현재 언어 설정 (localStorage 우선, 없으면 브라우저 언어)
+let currentLang = getStoredLanguage();
+let messages = locales[currentLang] || locales.en;
+
+/**
+ * @description 언어 변경 및 localStorage 저장
+ * @param {'en' | 'ko'} newLang - 새 언어 코드
+ */
+export function setLanguage(newLang) {
+    if (newLang !== 'en' && newLang !== 'ko') {
+        console.warn(`[i18n] Unsupported language: ${newLang}`);
+        return;
+    }
+    currentLang = newLang;
+    messages = locales[currentLang] || locales.en;
+    localStorage.setItem('sprc_language', newLang);
+    console.log(`[i18n] Language changed to ${newLang}`);
+}
+
+/**
+ * @description 현재 언어 코드 반환
+ * @returns {'en' | 'ko'}
+ */
+export function getCurrentLanguage() {
+    return currentLang;
+}
 
 
 /**

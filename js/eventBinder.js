@@ -7,18 +7,22 @@ import Decimal from 'decimal.js';
 /**
  * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
  * @param {PortfolioView} view - PortfolioView 인스턴스
- * @returns {void}
+ * @returns {AbortController} 이벤트 리스너 정리를 위한 AbortController
  */
 export function bindEventListeners(view) {
+    // AbortController 생성 (메모리 누수 방지)
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     // 1. view.dom 객체를 가져옵니다.
     const dom = view.dom;
 
     // ▼▼▼▼▼ [수정] controller.handle...() -> view.emit('eventName') ▼▼▼▼▼
 
-    // 포트폴리오 관리 버튼
-    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'));
-    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'));
-    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'));
+    // 포트폴리오 관리 버튼 (AbortController signal 적용)
+    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'), { signal });
+    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'), { signal });
+    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'), { signal });
     dom.portfolioSelector?.addEventListener('change', (e) => 
         view.emit('portfolioSwitched', { newId: (/** @type {HTMLSelectElement} */ (e.target)).value })
     );
@@ -360,17 +364,20 @@ export function bindEventListeners(view) {
 
     // --- 기타 ---
     // 다크 모드 토글 버튼
-    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked')); // view.emit으로 변경
-    // 페이지 닫기 전 자동 저장 (동기식 저장 시도)
-    window.addEventListener('beforeunload', () => view.emit('pageUnloading')); // view.emit으로 변경
+    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked'), { signal });
+    // 페이지 닫기 전 자동 저장 (beforeunload는 signal 미적용 - 브라우저 이벤트)
+    window.addEventListener('beforeunload', () => view.emit('pageUnloading'));
 
     // 키보드 네비게이션 포커스 스타일
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
             document.body.classList.add('keyboard-nav');
         }
-    });
+    }, { signal });
     document.addEventListener('mousedown', () => {
         document.body.classList.remove('keyboard-nav');
-    });
+    }, { signal });
+
+    // AbortController 반환 (메모리 누수 방지용 cleanup)
+    return abortController;
 }

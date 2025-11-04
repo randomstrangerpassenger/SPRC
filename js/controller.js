@@ -32,6 +32,8 @@ export class PortfolioController {
     debouncedSave;
     /** @type {string | null} */
     #lastCalculationKey = null;
+    /** @type {AbortController | null} */
+    #eventAbortController = null;
 
     /**
      * @param {PortfolioState} state
@@ -50,15 +52,41 @@ export class PortfolioController {
         this.setupInitialUI();
         this.bindControllerEvents();
 
-        // ▼▼▼ [추가] 실제 DOM 이벤트 바인딩 호출 ▼▼▼
-        bindEventListeners(this.view);
-        // ▲▲▲ [추가] ▲▲▲
+        // 이벤트 바인딩 및 AbortController 저장 (메모리 누수 방지)
+        this.#eventAbortController = bindEventListeners(this.view);
+    }
+
+    /**
+     * @description 이벤트 리스너 정리 (메모리 누수 방지)
+     */
+    cleanup() {
+        if (this.#eventAbortController) {
+            this.#eventAbortController.abort();
+            this.#eventAbortController = null;
+            console.log('[Controller] Event listeners cleaned up');
+        }
     }
 
     setupInitialUI() {
-        if (localStorage.getItem(CONFIG.DARK_MODE_KEY) === 'true') {
+        // prefers-color-scheme 감지 (localStorage 설정이 없을 경우 시스템 테마 사용)
+        const storedDarkMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
+        if (storedDarkMode === 'true') {
             document.body.classList.add('dark-mode');
+        } else if (storedDarkMode === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // localStorage에 설정이 없으면 시스템 테마 사용
+            document.body.classList.add('dark-mode');
+            localStorage.setItem(CONFIG.DARK_MODE_KEY, 'true');
         }
+
+        // 시스템 테마 변경 감지 (실시간)
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            // 사용자가 수동으로 설정하지 않은 경우에만 시스템 테마 따라가기
+            const storedMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
+            if (storedMode === null) {
+                document.body.classList.toggle('dark-mode', e.matches);
+            }
+        });
+    }
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {
@@ -346,14 +374,22 @@ export class PortfolioController {
             case 'isFixedBuyEnabled':
                 value = Boolean(value);
                 break;
-            // ▼▼▼ [수정] 문자열 입력 소독 ▼▼▼
-            case 'sector':
-            case 'name':
             case 'ticker':
-            default:
-                value = DOMPurify.sanitize(String(value).trim()); // 소독 추가
+                // 티커: 정규식 필터링 (대문자, 숫자, ., - 만 허용)
+                const tickerResult = Validator.validateTicker(value);
+                isValid = tickerResult.isValid;
+                if(isValid) value = tickerResult.value ?? '';
                 break;
-            // ▲▲▲ [수정] ▲▲▲
+            case 'name':
+            case 'sector':
+                // 자유 텍스트: 길이 제한 + DOMPurify
+                const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
+                isValid = textResult.isValid;
+                if(isValid) value = DOMPurify.sanitize(textResult.value ?? '');
+                break;
+            default:
+                value = DOMPurify.sanitize(String(value).trim());
+                break;
         }
 
         this.view.toggleInputValidation(target, isValid);
