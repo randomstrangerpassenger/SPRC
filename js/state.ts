@@ -1,5 +1,4 @@
-// js/state.js (Refactored with DataStore separation)
-// @ts-check
+// js/state.ts (Refactored with DataStore separation)
 import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.js';
@@ -7,21 +6,13 @@ import { t } from './i18n.js';
 import { ErrorService } from './errorService.js';
 import { Validator } from './validator.js';
 import DOMPurify from 'dompurify';
-import { DataStore } from './dataStore.js'; // ▼▼▼ [신규] DataStore 임포트 ▼▼▼
-
-/** @typedef {import('./types.js').Stock} Stock */
-/** @typedef {import('./types.js').Transaction} Transaction */
-/** @typedef {import('./types.js').Portfolio} Portfolio */
-/** @typedef {import('./types.js').PortfolioSettings} PortfolioSettings */
-/** @typedef {import('./types.js').MetaState} MetaState */
+import { DataStore } from './dataStore.js';
+import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.js';
 
 export class PortfolioState {
-    /** @type {Record<string, Portfolio>} */
-    #portfolios = {};
-    /** @type {string | null} */
-    #activePortfolioId = null;
-    /** @type {Promise<void> | null} */
-    #initializationPromise = null;
+    #portfolios: Record<string, Portfolio> = {};
+    #activePortfolioId: string | null = null;
+    #initializationPromise: Promise<void> | null = null;
 
     constructor() {
         this.#initializationPromise = this._initialize();
@@ -30,14 +21,14 @@ export class PortfolioState {
     /**
      * @description public async 메서드로 변경
      */
-    async ensureInitialized() {
+    async ensureInitialized(): Promise<void> {
         await this.#initializationPromise;
     }
 
     /**
      * @description 비동기 초기화 및 LocalStorage 마이그레이션 로직
      */
-    async _initialize() {
+    async _initialize(): Promise<void> {
         try {
             // 1. IndexedDB에서 데이터 로드 시도
             let loadedMetaData = await this._loadMeta();
@@ -77,27 +68,29 @@ export class PortfolioState {
     
     /**
      * @description LocalStorage -> IndexedDB 마이그레이션 (DataStore 위임)
-     * @returns {Promise<boolean>} 마이그레이션 성공 여부
      */
-    async _migrateFromLocalStorage() {
+    async _migrateFromLocalStorage(): Promise<boolean> {
         return await DataStore.migrateFromLocalStorage();
     }
 
     /**
      * @description IDB에서 Meta 로드 (DataStore 위임)
      */
-    async _loadMeta() {
+    async _loadMeta(): Promise<MetaState | null> {
         return await DataStore.loadMeta();
     }
 
     /**
      * @description IDB에서 Portfolios 로드 (DataStore 위임)
      */
-    async _loadPortfolios() {
+    async _loadPortfolios(): Promise<Record<string, Portfolio> | null> {
         return await DataStore.loadPortfolios();
     }
 
-     _validateAndUpgradeData(loadedMetaData, loadedPortfolios) {
+     _validateAndUpgradeData(
+        loadedMetaData: MetaState | null,
+        loadedPortfolios: Record<string, Portfolio> | null
+    ): { meta: MetaState; portfolios: Record<string, Portfolio> } {
         const currentVersion = CONFIG.DATA_VERSION;
         const loadedVersion = loadedMetaData?.version;
 
@@ -186,15 +179,15 @@ export class PortfolioState {
      }
 
 
-    getActivePortfolio() {
+    getActivePortfolio(): Portfolio | null {
         return this.#activePortfolioId ? this.#portfolios[this.#activePortfolioId] : null;
     }
 
-    getAllPortfolios() {
+    getAllPortfolios(): Record<string, Portfolio> {
         return this.#portfolios;
     }
 
-    async setActivePortfolioId(id) {
+    async setActivePortfolioId(id: string): Promise<void> {
         if (this.#portfolios[id]) {
             this.#activePortfolioId = id;
             await this.saveMeta(); // 비동기 저장
@@ -203,7 +196,7 @@ export class PortfolioState {
         }
     }
 
-    async createNewPortfolio(name) {
+    async createNewPortfolio(name: string): Promise<Portfolio> {
         const newId = `p-${nanoid()}`;
         const newPortfolio = this._createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
@@ -213,7 +206,7 @@ export class PortfolioState {
         return newPortfolio;
     }
 
-    async deletePortfolio(id) {
+    async deletePortfolio(id: string): Promise<boolean> {
         if (Object.keys(this.#portfolios).length <= 1) {
             console.warn("Cannot delete the last portfolio.");
             return false;
@@ -233,7 +226,7 @@ export class PortfolioState {
         return true;
     }
 
-    async renamePortfolio(id, newName) {
+    async renamePortfolio(id: string, newName: string): Promise<void> {
         if (this.#portfolios[id]) {
             this.#portfolios[id].name = newName.trim();
             await this.savePortfolios(); // 비동기 저장
@@ -242,7 +235,7 @@ export class PortfolioState {
         }
     }
 
-    async updatePortfolioSettings(key, value) {
+    async updatePortfolioSettings(key: keyof PortfolioSettings, value: any): Promise<void> {
         const activePortfolio = this.getActivePortfolio();
         console.log(`[DEBUG] updatePortfolioSettings called: key=${key}, value=${value}`);
         if (activePortfolio) {
@@ -264,7 +257,7 @@ export class PortfolioState {
     }
 
 
-    async addNewStock() {
+    async addNewStock(): Promise<Stock | null> {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             const newStock = this._createDefaultStock();
@@ -275,7 +268,7 @@ export class PortfolioState {
         return null;
     }
 
-    async deleteStock(stockId) {
+    async deleteStock(stockId: string): Promise<boolean> {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
              if (activePortfolio.portfolioData.length <= 1) {
@@ -296,12 +289,12 @@ export class PortfolioState {
         return false;
     }
 
-    getStockById(stockId) {
+    getStockById(stockId: string): Stock | undefined {
         const activePortfolio = this.getActivePortfolio();
         return activePortfolio?.portfolioData.find(s => s.id === stockId);
     }
 
-    updateStockProperty(stockId, field, value) {
+    updateStockProperty(stockId: string, field: string, value: any): void {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             const stockIndex = activePortfolio.portfolioData.findIndex(s => s.id === stockId);
@@ -311,19 +304,15 @@ export class PortfolioState {
                      try {
                          const decimalValue = new Decimal(value ?? 0);
                          if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
-                          // @ts-ignore
-                         stock[field] = decimalValue;
+                         (stock as any)[field] = decimalValue;
                      } catch (e) {
                          ErrorService.handle(new Error(`Invalid numeric value for ${field}: ${value}`), 'updateStockProperty');
-                          // @ts-ignore
-                         stock[field] = new Decimal(0);
+                         (stock as any)[field] = new Decimal(0);
                      }
                  } else if (field === 'isFixedBuyEnabled') {
-                      // @ts-ignore
-                     stock[field] = Boolean(value);
-                 } else if (typeof stock[field] !== 'undefined') {
-                      // @ts-ignore
-                     stock[field] = value;
+                     (stock as any)[field] = Boolean(value);
+                 } else if (typeof (stock as any)[field] !== 'undefined') {
+                     (stock as any)[field] = value;
                  } else {
                       console.warn(`Attempted to update non-existent property '${field}' on stock ${stockId}`);
                  }
@@ -331,7 +320,7 @@ export class PortfolioState {
         }
     }
 
-    async addTransaction(stockId, transactionData) {
+    async addTransaction(stockId: string, transactionData: Partial<Transaction>): Promise<boolean> {
         const stock = this.getStockById(stockId);
         if (stock) {
             const validation = Validator.validateTransaction({
@@ -367,7 +356,7 @@ export class PortfolioState {
         return false;
     }
 
-    async deleteTransaction(stockId, transactionId) {
+    async deleteTransaction(stockId: string, transactionId: string): Promise<boolean> {
         const stock = this.getStockById(stockId);
         if (stock) {
             const initialLength = stock.transactions.length;
@@ -385,13 +374,13 @@ export class PortfolioState {
     }
 
 
-    getTransactions(stockId) {
+    getTransactions(stockId: string): Transaction[] {
         const stock = this.getStockById(stockId);
         const transactions = stock ? [...stock.transactions] : []; // Return a copy
         return transactions;
     }
 
-    normalizeRatios() {
+    normalizeRatios(): boolean {
         const activePortfolio = this.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) return false;
 
@@ -433,7 +422,7 @@ export class PortfolioState {
         return true;
     }
 
-    async resetData(save = true) {
+    async resetData(save: boolean = true): Promise<void> {
         const defaultPortfolio = this._createDefaultPortfolio(`p-${nanoid()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
@@ -444,7 +433,7 @@ export class PortfolioState {
         console.log("Data reset to default.");
     }
 
-    exportData() {
+    exportData(): { meta: MetaState; portfolios: Record<string, any> } {
          const exportablePortfolios = {};
          Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
              exportablePortfolios[id] = {
@@ -469,7 +458,7 @@ export class PortfolioState {
         };
     }
 
-    async importData(importedData) {
+    async importData(importedData: any): Promise<void> {
          if (!Validator.isDataStructureValid(importedData)) {
             throw new Error("Imported data structure is invalid.");
          }
@@ -491,16 +480,16 @@ export class PortfolioState {
     }
 
 
-    async saveMeta() {
+    async saveMeta(): Promise<void> {
         try {
-            const metaData = { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION };
+            const metaData: MetaState = { activePortfolioId: this.#activePortfolioId || '', version: CONFIG.DATA_VERSION };
             await DataStore.saveMeta(metaData); // DataStore 사용
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta');
+            ErrorService.handle(error as Error, 'saveMeta');
         }
     }
 
-    async savePortfolios() {
+    async savePortfolios(): Promise<void> {
         try {
              const saveablePortfolios = {};
              Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
@@ -530,18 +519,18 @@ export class PortfolioState {
              if (error instanceof DOMException && error.name === 'QuotaExceededError') {
                  ErrorService.handle(error, 'savePortfolios - Quota Exceeded');
              } else {
-                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios');
+                 ErrorService.handle(error as Error, 'savePortfolios');
              }
         }
     }
 
-    async saveActivePortfolio() {
+    async saveActivePortfolio(): Promise<void> {
         await this.savePortfolios();
     }
 
     // --- Private Helper Methods ---
 
-    _createDefaultPortfolio(id, name = t('defaults.defaultPortfolioName')) {
+    _createDefaultPortfolio(id: string, name: string = t('defaults.defaultPortfolioName')): Portfolio {
         return {
             id: id,
             name: name,
@@ -554,7 +543,7 @@ export class PortfolioState {
         };
     }
 
-    _createDefaultStock() {
+    _createDefaultStock(): Stock {
         return {
             id: `s-${nanoid()}`,
             name: t('defaults.newStock'),

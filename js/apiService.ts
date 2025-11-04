@@ -1,12 +1,9 @@
-// @ts-check
+import type { FetchStockResult } from './types.js';
 
 /**
  * @description 단일 주식의 현재가를 Finnhub API(Vite 프록시 경유)에서 가져옵니다.
- * @param {string} ticker - 가져올 주식의 티커
- * @returns {Promise<number>} 현재가
- * @throws {Error} - API 호출 실패 또는 티커가 유효하지 않을 경우
  */
-async function fetchStockPrice(ticker) {
+async function fetchStockPrice(ticker: string): Promise<number> {
     if (!ticker || ticker.trim() === '') {
         throw new Error('Ticker is empty.');
     }
@@ -24,10 +21,10 @@ async function fetchStockPrice(ticker) {
             if (errorData.c === 0 && errorData.d === null) {
                 throw new Error(`Invalid ticker or no data found for ${ticker}`);
             }
-            errorBody = errorData.error || await response.text();
+            errorBody = errorData.error || (await response.text());
         } catch (e) {
             // response.json() 자체가 실패할 때 (예: 404, 500)
-            errorBody = (e instanceof Error) ? e.message : await response.text();
+            errorBody = e instanceof Error ? e.message : await response.text();
         }
         throw new Error(`API returned status ${response.status} for ${ticker}. ${errorBody}`);
     }
@@ -43,12 +40,12 @@ async function fetchStockPrice(ticker) {
     return price;
 }
 
-// 여러 종목의 가격을 병렬로 가져옵니다.
 /**
- * @param {{id: string, ticker: string}[]} tickersToFetch 
- * @returns {Promise<{id: string, ticker: string, status: 'fulfilled' | 'rejected', value?: number, reason?: string}[]>}
+ * @description 여러 종목의 가격을 병렬로 가져옵니다.
  */
-async function fetchAllStockPrices(tickersToFetch) {
+async function fetchAllStockPrices(
+    tickersToFetch: { id: string; ticker: string }[]
+): Promise<FetchStockResult[]> {
     const results = await Promise.allSettled(
         tickersToFetch.map(async (item) => {
             const price = await fetchStockPrice(item.ticker);
@@ -63,15 +60,18 @@ async function fetchAllStockPrices(tickersToFetch) {
             return {
                 id: result.value.id,
                 ticker: result.value.ticker,
-                status: 'fulfilled',
-                value: result.value.price
+                status: 'fulfilled' as const,
+                value: result.value.price,
             };
         } else {
             return {
                 id: id,
                 ticker: ticker,
-                status: 'rejected',
-                reason: (result.reason instanceof Error) ? result.reason.message : String(result.reason)
+                status: 'rejected' as const,
+                reason:
+                    result.reason instanceof Error
+                        ? result.reason.message
+                        : String(result.reason),
             };
         }
     });
@@ -79,5 +79,5 @@ async function fetchAllStockPrices(tickersToFetch) {
 
 export const apiService = {
     fetchStockPrice,
-    fetchAllStockPrices
+    fetchAllStockPrices,
 };

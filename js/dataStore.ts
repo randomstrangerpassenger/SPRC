@@ -1,13 +1,8 @@
-// js/dataStore.js - IndexedDB 저장/로드 전담
-// @ts-check
+// js/dataStore.ts - IndexedDB 저장/로드 전담
 import { get, set, del } from 'idb-keyval';
 import { CONFIG } from './constants.js';
 import { ErrorService } from './errorService.js';
-
-/**
- * @typedef {import('./types.js').Portfolio} Portfolio
- * @typedef {import('./types.js').MetaState} MetaState
- */
+import type { Portfolio, MetaState } from './types.js';
 
 /**
  * @description IndexedDB 저장/로드 및 마이그레이션을 담당하는 클래스
@@ -15,65 +10,60 @@ import { ErrorService } from './errorService.js';
 export class DataStore {
     /**
      * @description Meta 데이터 로드
-     * @returns {Promise<MetaState | null>}
      */
-    static async loadMeta() {
+    static async loadMeta(): Promise<MetaState | null> {
         try {
-            const metaData = await get(CONFIG.IDB_META_KEY);
+            const metaData = await get<MetaState>(CONFIG.IDB_META_KEY);
             return metaData || null;
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'DataStore.loadMeta');
+            ErrorService.handle(error as Error, 'DataStore.loadMeta');
             return null;
         }
     }
 
     /**
      * @description Meta 데이터 저장
-     * @param {MetaState} metaData
-     * @returns {Promise<void>}
      */
-    static async saveMeta(metaData) {
+    static async saveMeta(metaData: MetaState): Promise<void> {
         try {
             await set(CONFIG.IDB_META_KEY, metaData);
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'DataStore.saveMeta');
+            ErrorService.handle(error as Error, 'DataStore.saveMeta');
             throw error;
         }
     }
 
     /**
      * @description 포트폴리오 데이터 로드
-     * @returns {Promise<Record<string, Portfolio> | null>}
      */
-    static async loadPortfolios() {
+    static async loadPortfolios(): Promise<Record<string, Portfolio> | null> {
         try {
-            const portfolioData = await get(CONFIG.IDB_PORTFOLIOS_KEY);
+            const portfolioData = await get<Record<string, Portfolio>>(
+                CONFIG.IDB_PORTFOLIOS_KEY
+            );
             return portfolioData || null;
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'DataStore.loadPortfolios');
+            ErrorService.handle(error as Error, 'DataStore.loadPortfolios');
             return null;
         }
     }
 
     /**
      * @description 포트폴리오 데이터 저장
-     * @param {Record<string, Portfolio>} portfolios
-     * @returns {Promise<void>}
      */
-    static async savePortfolios(portfolios) {
+    static async savePortfolios(portfolios: Record<string, Portfolio>): Promise<void> {
         try {
             await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolios);
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'DataStore.savePortfolios');
+            ErrorService.handle(error as Error, 'DataStore.savePortfolios');
             throw error;
         }
     }
 
     /**
      * @description LocalStorage에서 IndexedDB로 마이그레이션
-     * @returns {Promise<boolean>} 마이그레이션 성공 여부
      */
-    static async migrateFromLocalStorage() {
+    static async migrateFromLocalStorage(): Promise<boolean> {
         try {
             const lsMeta = localStorage.getItem(CONFIG.LEGACY_LS_META_KEY);
             const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
@@ -90,7 +80,9 @@ export class DataStore {
                 localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
                 localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
 
-                console.log('[DataStore] Successfully migrated from LocalStorage to IndexedDB');
+                console.log(
+                    '[DataStore] Successfully migrated from LocalStorage to IndexedDB'
+                );
                 return true;
             }
 
@@ -98,22 +90,21 @@ export class DataStore {
             return false;
         } catch (error) {
             console.error('[DataStore] Migration failed:', error);
-            ErrorService.handle(/** @type {Error} */ (error), 'DataStore.migrateFromLocalStorage');
+            ErrorService.handle(error as Error, 'DataStore.migrateFromLocalStorage');
             return false;
         }
     }
 
     /**
      * @description 모든 데이터 삭제
-     * @returns {Promise<void>}
      */
-    static async clearAll() {
+    static async clearAll(): Promise<void> {
         try {
             await del(CONFIG.IDB_META_KEY);
             await del(CONFIG.IDB_PORTFOLIOS_KEY);
             console.log('[DataStore] All data cleared');
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'DataStore.clearAll');
+            ErrorService.handle(error as Error, 'DataStore.clearAll');
             throw error;
         }
     }

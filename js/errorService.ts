@@ -1,38 +1,29 @@
-// @ts-check
 import { t } from './i18n.js';
 
 /**
  * @description 유효성 검사 오류를 나타내는 커스텀 에러 클래스
  */
 export class ValidationError extends Error {
-    /**
-     * @param {string} message - 오류 메시지
-     */
-    constructor(message) {
+    constructor(message: string) {
         super(message);
         this.name = 'ValidationError';
     }
 }
 
 export const ErrorService = {
-    /** @type {import('./view.js').PortfolioView | null} */
-    _viewInstance: null,
+    _viewInstance: null as any | null,
 
     /**
      * @description View 인스턴스를 설정합니다.
-     * @param {import('./view.js').PortfolioView} view - PortfolioView 인스턴스
      */
-    setViewInstance(view) {
+    setViewInstance(view: any): void {
         this._viewInstance = view;
     },
 
     /**
      * @description 중앙 집중식 에러 핸들러. 콘솔에 에러를 기록하고 사용자에게 토스트 메시지를 표시합니다.
-     * @param {Error} error - 발생한 에러 객체
-     * @param {string} [context='General'] - 에러가 발생한 컨텍스트(함수명 등)
-     * @returns {void}
      */
-    handle(error, context = 'General') {
+    handle(error: Error, context: string = 'General'): void {
         console.error(`Error in ${context}:`, error);
 
         // 기본 오류 메시지
@@ -41,15 +32,20 @@ export const ErrorService = {
         // 오류 타입에 따라 사용자 메시지 구체화
         if (error instanceof ValidationError) {
             userMessage = `${t('validation.validationErrorPrefix')}\n${error.message}`;
-        } else if (error.name === 'QuotaExceededError') { // LocalStorage quota exceeded
+        } else if (error.name === 'QuotaExceededError') {
+            // LocalStorage quota exceeded
             userMessage = t('validation.saveErrorQuota');
-        } else if (error.name === 'SecurityError') { // LocalStorage access denied
+        } else if (error.name === 'SecurityError') {
+            // LocalStorage access denied
             userMessage = t('validation.saveErrorSecurity');
-        } else if (error.name === 'DecimalError') { // Decimal.js 관련 오류
+        } else if (error.name === 'DecimalError') {
+            // Decimal.js 관련 오류
             userMessage = t('validation.calcErrorDecimal');
-        } else if (error.message.includes("structure")) { // 파일 구조 관련 오류 (import 시)
+        } else if (error.message.includes('structure')) {
+            // 파일 구조 관련 오류 (import 시)
             userMessage = t('validation.invalidFileStructure');
-        } else if (context.includes('save') || context.includes('Save')) { // 저장 관련 컨텍스트
+        } else if (context.includes('save') || context.includes('Save')) {
+            // 저장 관련 컨텍스트
             userMessage = t('validation.saveErrorGeneral');
         }
 
@@ -59,5 +55,5 @@ export const ErrorService = {
         } else {
             console.warn('[ErrorService] View instance not set. Cannot show toast.');
         }
-    }
+    },
 };
