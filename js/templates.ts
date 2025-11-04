@@ -1,21 +1,50 @@
-// js/templates.js
-// @ts-check
+// js/templates.ts
 import { escapeHTML, formatCurrency } from './utils.js';
 import { CONFIG } from './constants.js';
 import { t } from './i18n.js';
 import Decimal from 'decimal.js';
+import type { CalculatedStock, Currency } from './types.js';
 
-/** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
-/** @typedef {import('decimal.js').Decimal} Decimal */
+// Add mode result stock type
+export interface AddModeResultStock extends CalculatedStock {
+    currentRatio: Decimal;
+    finalBuyAmount: Decimal;
+    buyRatio: Decimal;
+}
+
+// Sell mode result stock type
+export interface SellModeResultStock extends CalculatedStock {
+    currentRatio: number;
+    targetRatioNum: number;
+    adjustment: Decimal;
+}
+
+// Summary type for add mode results
+export interface AddModeSummary {
+    currentTotal: Decimal;
+    additionalInvestment: Decimal;
+    finalTotal: Decimal;
+}
+
+// Sector analysis data type
+export interface SectorData {
+    sector: string;
+    amount: Decimal;
+    percentage: Decimal;
+}
 
 /**
  * @description '추가 매수' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
- * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param results - 계산 결과 배열
+ * @param summary - 요약 정보 객체
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateAddModeResultsHTML(results, summary, currency) {
+export function generateAddModeResultsHTML(
+    results: AddModeResultStock[],
+    summary: AddModeSummary,
+    currency: Currency
+): string {
     if (!results) return ''; // Null check for results
 
     const sortedResults = [...results].sort((a, b) => {
@@ -24,21 +53,31 @@ export function generateAddModeResultsHTML(results, summary, currency) {
         const amountB = b.finalBuyAmount ?? new Decimal(0);
         return amountB.comparedTo(amountA);
     });
-    const resultsRows = sortedResults.map((stock, index) => {
-        // Ensure calculated exists
-        const metrics = stock.calculated ?? { profitLoss: new Decimal(0), profitLossRate: new Decimal(0) };
-        const { profitLoss, profitLossRate } = metrics;
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
+    const resultsRows = sortedResults
+        .map((stock, index) => {
+            // Ensure calculated exists
+            const metrics = stock.calculated ?? {
+                profitLoss: new Decimal(0),
+                profitLossRate: new Decimal(0),
+            };
+            const { profitLoss, profitLossRate } = metrics;
+            const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+            const profitSign = profitLoss.isPositive() ? '+' : '';
 
-        // Ensure ratios exist and handle potential NaN/Infinity from division
-        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : 'N/A';
-        const targetRatioVal = typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : 'N/A';
-        const profitLossRateVal = profitLossRate?.isFinite() ? profitLossRate.toFixed(2) : 'N/A';
-        const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
+            // Ensure ratios exist and handle potential NaN/Infinity from division
+            const currentRatioVal = stock.currentRatio?.isFinite()
+                ? stock.currentRatio.toFixed(1)
+                : 'N/A';
+            const targetRatioVal =
+                typeof stock.targetRatio === 'number'
+                    ? stock.targetRatio.toFixed(1)
+                    : 'N/A';
+            const profitLossRateVal = profitLossRate?.isFinite()
+                ? profitLossRate.toFixed(2)
+                : 'N/A';
+            const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
-
-        return `
+            return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
                 <td style="text-align: center;">${currentRatioVal}%</td>
@@ -51,22 +90,28 @@ export function generateAddModeResultsHTML(results, summary, currency) {
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
 
     // Filter buyable stocks using Decimal comparison method
-    const buyableStocks = sortedResults.filter(s =>
-        s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT) // Use greaterThan()
+    const buyableStocks = sortedResults.filter(
+        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT) // Use greaterThan()
     );
-    const guideContent = buyableStocks.length > 0
-        ? buyableStocks.map((s, i) => {
-            const buyRatioVal = s.buyRatio?.isFinite() ? s.buyRatio.toFixed(1) : 'N/A';
-            return `
+    const guideContent =
+        buyableStocks.length > 0
+            ? buyableStocks
+                  .map((s, i) => {
+                      const buyRatioVal = s.buyRatio?.isFinite()
+                          ? s.buyRatio.toFixed(1)
+                          : 'N/A';
+                      return `
                 <div class="guide-item">
                     <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
                     <span style="font-weight: bold;">(${buyRatioVal}%)</span>
                 </div>`;
-             }).join('')
-        : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+                  })
+                  .join('')
+            : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
     return `
         <div class="summary-grid">
@@ -94,12 +139,16 @@ export function generateAddModeResultsHTML(results, summary, currency) {
 
 /**
  * @description '간단 계산' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
- * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param results - 계산 결과 배열
+ * @param summary - 요약 정보 객체
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateSimpleModeResultsHTML(results, summary, currency) {
+export function generateSimpleModeResultsHTML(
+    results: AddModeResultStock[],
+    summary: AddModeSummary,
+    currency: Currency
+): string {
     if (!results) return '';
 
     const sortedResults = [...results].sort((a, b) => {
@@ -108,15 +157,24 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
         return ratioB.comparedTo(ratioA);
     });
 
-    const resultsRows = sortedResults.map((stock, index) => {
-        const metrics = stock.calculated ?? { currentAmount: new Decimal(0) };
-        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+    const resultsRows = sortedResults
+        .map((stock, index) => {
+            const metrics = stock.calculated ?? { currentAmount: new Decimal(0) };
+            const currentAmount =
+                metrics.currentAmount instanceof Decimal
+                    ? metrics.currentAmount
+                    : new Decimal(metrics.currentAmount ?? 0);
 
-        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : '0.0';
-        const targetRatioVal = typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : (stock.targetRatio?.toFixed(1) ?? '0.0');
-        const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
+            const currentRatioVal = stock.currentRatio?.isFinite()
+                ? stock.currentRatio.toFixed(1)
+                : '0.0';
+            const targetRatioVal =
+                typeof stock.targetRatio === 'number'
+                    ? stock.targetRatio.toFixed(1)
+                    : (stock.targetRatio?.toFixed(1) ?? '0.0');
+            const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
-        return `
+            return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
                 <td style="text-align: right;">${formatCurrency(currentAmount, currency)}</td>
@@ -125,22 +183,28 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
 
-    const buyableStocks = sortedResults.filter(s =>
-        s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
+    const buyableStocks = sortedResults.filter(
+        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
     );
 
-    const guideContent = buyableStocks.length > 0
-        ? buyableStocks.map((s, i) => {
-            const currentRatioVal = s.currentRatio?.isFinite() ? s.currentRatio.toFixed(1) : '0.0';
-            return `
+    const guideContent =
+        buyableStocks.length > 0
+            ? buyableStocks
+                  .map((s, i) => {
+                      const currentRatioVal = s.currentRatio?.isFinite()
+                          ? s.currentRatio.toFixed(1)
+                          : '0.0';
+                      return `
                 <div class="guide-item">
                     <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
                     <span style="font-weight: bold; color: #666;">(현재 비율: ${currentRatioVal}%)</span>
                 </div>`;
-        }).join('')
-        : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+                  })
+                  .join('')
+            : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
     return `
         <div class="summary-grid">
@@ -176,11 +240,14 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
 
 /**
  * @description '매도 리밸런싱' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {(CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[]} results - 계산 결과 배열
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param results - 계산 결과 배열
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateSellModeResultsHTML(results, currency) {
+export function generateSellModeResultsHTML(
+    results: SellModeResultStock[],
+    currency: Currency
+): string {
     if (!results) return ''; // Null check for results
     // Sort results safely checking for adjustment property
     const sortedResults = [...results].sort((a, b) => {
@@ -189,13 +256,20 @@ export function generateSellModeResultsHTML(results, currency) {
         return adjB.comparedTo(adjA);
     });
 
-    const resultsRows = sortedResults.map((s, index) => {
-        // Use default values if properties might be missing/NaN
-        const currentRatioVal = typeof s.currentRatio === 'number' && isFinite(s.currentRatio) ? s.currentRatio.toFixed(1) : 'N/A';
-        const targetRatioVal = typeof s.targetRatioNum === 'number' && isFinite(s.targetRatioNum) ? s.targetRatioNum.toFixed(1) : 'N/A';
-        const adjustmentVal = s.adjustment ?? new Decimal(0);
+    const resultsRows = sortedResults
+        .map((s, index) => {
+            // Use default values if properties might be missing/NaN
+            const currentRatioVal =
+                typeof s.currentRatio === 'number' && isFinite(s.currentRatio)
+                    ? s.currentRatio.toFixed(1)
+                    : 'N/A';
+            const targetRatioVal =
+                typeof s.targetRatioNum === 'number' && isFinite(s.targetRatioNum)
+                    ? s.targetRatioNum.toFixed(1)
+                    : 'N/A';
+            const adjustmentVal = s.adjustment ?? new Decimal(0);
 
-        return `
+            return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(s.name)}</strong><br><span class="ticker">${escapeHTML(s.ticker)}</span></td>
                 <td style="text-align: center;">${currentRatioVal}%</td>
@@ -206,21 +280,33 @@ export function generateSellModeResultsHTML(results, currency) {
                     </div>
                 </td>
             </tr>`;
-        }).join('');
+        })
+        .join('');
 
     const totalSell = results.reduce((sum, s) => {
         return s.adjustment?.isPositive() ? sum.plus(s.adjustment) : sum;
     }, new Decimal(0));
-    const stocksToSell = sortedResults.filter(s => s.adjustment?.isPositive());
-    const stocksToBuy = sortedResults.filter(s => s.adjustment?.isNegative()); // isNegative includes zero implicitly, filter < 0 if needed
+    const stocksToSell = sortedResults.filter((s) => s.adjustment?.isPositive());
+    const stocksToBuy = sortedResults.filter((s) => s.adjustment?.isNegative()); // isNegative includes zero implicitly, filter < 0 if needed
 
-    const sellGuide = stocksToSell.length > 0
-        ? stocksToSell.map((s, i) => `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment, currency)} 매도</div>`).join('')
-        : `<p>${t('template.noItemsToSell')}</p>`;
-    const buyGuide = stocksToBuy.length > 0
-        ? stocksToBuy.map((s, i) => `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment?.abs(), currency)} 매수</div>`).join('')
-        : `<p>${t('template.noItemsToBuy')}</p>`;
-
+    const sellGuide =
+        stocksToSell.length > 0
+            ? stocksToSell
+                  .map(
+                      (s, i) =>
+                          `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment, currency)} 매도</div>`
+                  )
+                  .join('')
+            : `<p>${t('template.noItemsToSell')}</p>`;
+    const buyGuide =
+        stocksToBuy.length > 0
+            ? stocksToBuy
+                  .map(
+                      (s, i) =>
+                          `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment?.abs(), currency)} 매수</div>`
+                  )
+                  .join('')
+            : `<p>${t('template.noItemsToBuy')}</p>`;
 
     return `
         <div class="summary-grid">
@@ -246,26 +332,32 @@ export function generateSellModeResultsHTML(results, currency) {
 
 /**
  * @description 섹터 분석 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {{ sector: string, amount: Decimal, percentage: Decimal }[]} sectorData - 섹터 분석 결과 배열
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param sectorData - 섹터 분석 결과 배열
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateSectorAnalysisHTML(sectorData, currency) {
+export function generateSectorAnalysisHTML(
+    sectorData: SectorData[],
+    currency: Currency
+): string {
     if (!sectorData || sectorData.length === 0) {
         return '';
     }
 
-    const rows = sectorData.map(data => {
-         // Ensure percentage is valid before formatting
-         const percentageVal = data.percentage?.isFinite() ? data.percentage.toFixed(2) : 'N/A';
-         return `
+    const rows = sectorData
+        .map((data) => {
+            // Ensure percentage is valid before formatting
+            const percentageVal = data.percentage?.isFinite()
+                ? data.percentage.toFixed(2)
+                : 'N/A';
+            return `
             <tr>
                 <td>${escapeHTML(data.sector)}</td>
                 <td style="text-align: right;">${formatCurrency(data.amount, currency)}</td>
                 <td style="text-align: right;">${percentageVal}%</td>
             </tr>`;
-        }).join('');
-
+        })
+        .join('');
 
     return `
         <div class="card">
