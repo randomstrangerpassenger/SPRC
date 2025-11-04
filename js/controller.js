@@ -86,7 +86,6 @@ export class PortfolioController {
                 document.body.classList.toggle('dark-mode', e.matches);
             }
         });
-    }
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {

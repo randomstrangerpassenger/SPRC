@@ -1,5 +1,4 @@
 // @ts-check
-import { PortfolioView } from './view.js';
 import { t } from './i18n.js';
 
 /**
@@ -16,6 +15,17 @@ export class ValidationError extends Error {
 }
 
 export const ErrorService = {
+    /** @type {import('./view.js').PortfolioView | null} */
+    _viewInstance: null,
+
+    /**
+     * @description View 인스턴스를 설정합니다.
+     * @param {import('./view.js').PortfolioView} view - PortfolioView 인스턴스
+     */
+    setViewInstance(view) {
+        this._viewInstance = view;
+    },
+
     /**
      * @description 중앙 집중식 에러 핸들러. 콘솔에 에러를 기록하고 사용자에게 토스트 메시지를 표시합니다.
      * @param {Error} error - 발생한 에러 객체
@@ -43,7 +53,11 @@ export const ErrorService = {
             userMessage = t('validation.saveErrorGeneral');
         }
 
-        // 사용자에게 토스트 메시지 표시
-        PortfolioView.showToast(userMessage, 'error');
+        // 사용자에게 토스트 메시지 표시 (view 인스턴스가 설정된 경우에만)
+        if (this._viewInstance) {
+            this._viewInstance.showToast(userMessage, 'error');
+        } else {
+            console.warn('[ErrorService] View instance not set. Cannot show toast.');
+        }
     }
 };
