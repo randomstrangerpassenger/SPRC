@@ -369,10 +369,47 @@ export class PortfolioController {
                 return; // 재렌더링 건너뛰기
             }
 
-            Calculator.clearPortfolioStateCache();
-
             const activePortfolio = this.state.getActivePortfolio();
             if (!activePortfolio) return;
+
+            // ▼▼▼ [최적화] 현재가 변경 시 부분 업데이트 ▼▼▼
+            if (field === 'currentPrice') {
+                // 해당 주식만 재계산
+                const stock = activePortfolio.portfolioData.find(s => s.id === stockId);
+                if (stock) {
+                    const calculatedMetrics = Calculator.calculateStockMetrics(stock);
+
+                    // 환율 변환 적용
+                    const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
+                    if (activePortfolio.settings.currentCurrency === 'krw') {
+                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
+                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
+                    } else {
+                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
+                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
+                    }
+
+                    // 화면 업데이트 (해당 행만)
+                    this.view.updateSingleStockRow(stockId, calculatedMetrics);
+
+                    // 섹터 분석은 전체 재계산 필요
+                    Calculator.clearPortfolioStateCache();
+                    const calculatedState = Calculator.calculatePortfolioState({
+                        portfolioData: activePortfolio.portfolioData,
+                        exchangeRate: activePortfolio.settings.exchangeRate,
+                        currentCurrency: activePortfolio.settings.currentCurrency
+                    });
+                    const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+                    this.view.displaySectorAnalysis(generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency));
+                }
+
+                this.debouncedSave();
+                return;
+            }
+            // ▲▲▲ [최적화] ▲▲▲
+
+            // 기타 필드 변경 시 전체 재계산 (기존 방식)
+            Calculator.clearPortfolioStateCache();
 
             const calculatedState = Calculator.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
@@ -557,9 +594,11 @@ export class PortfolioController {
                 if (result.status === 'fulfilled' && result.value) {
                     let price = result.value; // This is in USD from Finnhub API
 
-                    // Convert USD price to KRW if current currency is KRW
+                    // Convert USD price to KRW if current currency is KRW using Decimal.js
                     if (currentCurrency === 'krw') {
-                        price = price * exchangeRate;
+                        const priceDec = new Decimal(price);
+                        const exchangeRateDec = new Decimal(exchangeRate);
+                        price = priceDec.times(exchangeRateDec).toNumber();
                     }
 
                     this.state.updateStockProperty(result.id, 'currentPrice', price);
@@ -596,9 +635,13 @@ export class PortfolioController {
     async handleMainModeChange(newMode) {
         if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
         await this.state.updatePortfolioSettings('mainMode', newMode);
-        this.fullRender();
-        const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
-        this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
+
+        // requestAnimationFrame을 사용하여 상태 업데이트가 완전히 반영된 후 렌더링
+        requestAnimationFrame(() => {
+            this.fullRender();
+            const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
+            this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
+        });
      }
 
     async handleCurrencyModeChange(newCurrency) {
@@ -612,18 +655,22 @@ export class PortfolioController {
         // If currency is actually changing, convert all existing currentPrice values
         if (oldCurrency !== newCurrency) {
             const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const exchangeRateDec = new Decimal(exchangeRate);
 
             activePortfolio.portfolioData.forEach(stock => {
                 if (stock.currentPrice && stock.currentPrice > 0) {
-                    let newPrice = stock.currentPrice;
+                    const currentPriceDec = new Decimal(stock.currentPrice);
+                    let newPrice;
 
-                    // Convert from old currency to new currency
+                    // Convert from old currency to new currency using Decimal.js
                     if (oldCurrency === 'usd' && newCurrency === 'krw') {
                         // USD to KRW
-                        newPrice = stock.currentPrice * exchangeRate;
+                        newPrice = currentPriceDec.times(exchangeRateDec).toNumber();
                     } else if (oldCurrency === 'krw' && newCurrency === 'usd') {
                         // KRW to USD
-                        newPrice = stock.currentPrice / exchangeRate;
+                        newPrice = currentPriceDec.div(exchangeRateDec).toNumber();
+                    } else {
+                        newPrice = stock.currentPrice; // No conversion needed
                     }
 
                     this.state.updateStockProperty(stock.id, 'currentPrice', newPrice);

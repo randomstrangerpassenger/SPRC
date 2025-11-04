@@ -1,6 +1,7 @@
 // js/eventBinder.js (Updated with Pub/Sub emit)
 // @ts-check
 import { debounce } from './utils.js';
+import Decimal from 'decimal.js';
 /** @typedef {import('./view.js').PortfolioView} PortfolioView */ // 컨트롤러 대신 View를 임포트
 
 /**
@@ -303,7 +304,7 @@ export function bindEventListeners(view) {
     inputModeQuantity?.addEventListener('change', toggleInputMode);
     inputModeAmount?.addEventListener('change', toggleInputMode);
 
-    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산
+    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산 (Decimal.js 사용)
     const calculateQuantityFromAmount = () => {
         const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
         if (!isAmountMode) return;
@@ -312,14 +313,19 @@ export function bindEventListeners(view) {
         const calculatedQuantityValue = document.getElementById('calculatedQuantityValue');
 
         if (txTotalAmountInput && txPriceInput && calculatedQuantityValue) {
-            const totalAmount = parseFloat(txTotalAmountInput.value) || 0;
-            const price = parseFloat(txPriceInput.value) || 0;
+            try {
+                const totalAmount = txTotalAmountInput.value ? new Decimal(txTotalAmountInput.value) : new Decimal(0);
+                const price = txPriceInput.value ? new Decimal(txPriceInput.value) : new Decimal(0);
 
-            if (price > 0 && totalAmount > 0) {
-                const quantity = totalAmount / price;
-                calculatedQuantityValue.textContent = quantity.toFixed(8);
-            } else {
+                if (price.greaterThan(0) && totalAmount.greaterThan(0)) {
+                    const quantity = totalAmount.div(price);
+                    calculatedQuantityValue.textContent = quantity.toFixed(8);
+                } else {
+                    calculatedQuantityValue.textContent = '0';
+                }
+            } catch (error) {
                 calculatedQuantityValue.textContent = '0';
+                console.error('Error calculating quantity from amount:', error);
             }
         }
     };

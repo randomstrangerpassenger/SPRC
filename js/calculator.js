@@ -29,7 +29,9 @@ function _generateStockKey(stock) {
  * @returns {string} 캐시 키
  */
 function _generatePortfolioKey(portfolioData) {
-    return portfolioData.map(_generateStockKey).join('|');
+    // 주식 ID 기준으로 정렬하여 배열 순서와 무관하게 일관된 캐시 키 생성
+    const sortedData = [...portfolioData].sort((a, b) => a.id.localeCompare(b.id));
+    return sortedData.map(_generateStockKey).join('|');
 }
 
 /**

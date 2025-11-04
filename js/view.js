@@ -607,6 +607,85 @@ export const PortfolioView = {
     },
 
     /**
+     * @description [NEW] 특정 종목의 계산된 데이터를 업데이트하고 화면에 보이는 경우에만 DOM 업데이트
+     * @param {string} stockId - 종목 ID
+     * @param {any} calculatedData - 재계산된 데이터
+     */
+    updateSingleStockRow(stockId, calculatedData) {
+        // 1. _virtualData 업데이트
+        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+        if (stockIndex === -1) return;
+
+        this._virtualData[stockIndex] = { ...this._virtualData[stockIndex], calculated: calculatedData };
+
+        // 2. 화면에 보이는 범위인지 확인
+        if (stockIndex < this._renderedStartIndex || stockIndex >= this._renderedEndIndex) {
+            // 화면에 안 보이면 DOM 업데이트 불필요
+            return;
+        }
+
+        // 3. 화면에 보이면 출력 행만 업데이트
+        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
+        if (!outputRow || this._currentMainMode === 'simple') return; // 간단 모드는 출력 행이 숨겨짐
+
+        const currency = this._currentCurrency;
+        const metrics = calculatedData ?? {
+            quantity: new Decimal(0),
+            avgBuyPrice: new Decimal(0),
+            currentAmount: new Decimal(0),
+            profitLoss: new Decimal(0),
+            profitLossRate: new Decimal(0)
+        };
+
+        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
+        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
+        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        const isMobile = window.innerWidth <= 768;
+
+        // 출력 셀 업데이트
+        const cells = outputRow.querySelectorAll('.output-cell');
+        let cellIndex = 0;
+
+        // 첫 번째 셀은 스페이서이므로 건너뜀
+        if (cells[cellIndex]) cellIndex++;
+
+        // 수량
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
+            cellIndex++;
+        }
+
+        // 평균 매입가 (모바일 아닐 때)
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 현재 가치
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 손익 (모바일 아닐 때)
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 손익률
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
+        }
+    },
+
+    /**
      * @description [NEW] 실제 가상 스크롤 렌더링 로직
      * @param {boolean} [forceRedraw=false] - 강제 렌더링 여부
      */
@@ -631,9 +710,11 @@ export const PortfolioView = {
             return;
         }
 
-        // ▼▼▼▼▼ [추가] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 ▼▼▼▼▼
+        // ▼▼▼▼▼ [수정] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 (IME 안전) ▼▼▼▼▼
         // 스크롤로 인해 DOM이 사라지기 전에 사용자가 입력 중인 값을 보존
         const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        const activeElement = document.activeElement;
+
         currentInputRows.forEach(row => {
             const stockId = row.dataset.id;
             if (!stockId) return;
@@ -645,6 +726,12 @@ export const PortfolioView = {
             const inputs = row.querySelectorAll('input[data-field]');
             inputs.forEach(input => {
                 if (!(input instanceof HTMLInputElement)) return;
+
+                // IME 조합 중이거나 현재 포커스된 필드는 건너뛰기 (입력 중단 방지)
+                if (input === activeElement || input.isComposing) {
+                    return;
+                }
+
                 const field = input.dataset.field;
                 if (!field) return;
 
@@ -662,7 +749,7 @@ export const PortfolioView = {
                 this._virtualData[stockIndex][field] = value;
             });
         });
-        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+        // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
         // 3. 새 범위 저장
         this._renderedStartIndex = startIndex;
@@ -676,8 +763,8 @@ export const PortfolioView = {
         }
 
         // 5. 실제 DOM에 적용 및 Y축 위치 이동
-        this._scrollContent.innerHTML = ''; // 기존 행 삭제
-        this._scrollContent.appendChild(fragment);
+        // replaceChildren()를 사용하여 기존 행 삭제 및 새 행 추가 (innerHTML보다 효율적)
+        this._scrollContent.replaceChildren(fragment);
         this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
     },
     // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
