@@ -1,15 +1,14 @@
-// js/eventBinder.js (Updated with Pub/Sub emit)
-// @ts-check
-import { debounce } from './utils.js';
+// js/eventBinder.ts (Updated with Pub/Sub emit)
+import { debounce } from './utils';
 import Decimal from 'decimal.js';
-/** @typedef {import('./view.js').PortfolioView} PortfolioView */ // 컨트롤러 대신 View를 임포트
+import type { PortfolioView } from './view';
 
 /**
  * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
- * @param {PortfolioView} view - PortfolioView 인스턴스
- * @returns {AbortController} 이벤트 리스너 정리를 위한 AbortController
+ * @param view - PortfolioView 인스턴스
+ * @returns 이벤트 리스너 정리를 위한 AbortController
  */
-export function bindEventListeners(view) {
+export function bindEventListeners(view: PortfolioView): AbortController {
     // AbortController 생성 (메모리 누수 방지)
     const abortController = new AbortController();
     const { signal } = abortController;
@@ -23,8 +22,8 @@ export function bindEventListeners(view) {
     dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'), { signal });
     dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'), { signal });
     dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'), { signal });
-    dom.portfolioSelector?.addEventListener('change', (e) => 
-        view.emit('portfolioSwitched', { newId: (/** @type {HTMLSelectElement} */ (e.target)).value })
+    dom.portfolioSelector?.addEventListener('change', (e) =>
+        view.emit('portfolioSwitched', { newId: (e.target as HTMLSelectElement).value })
     );
 
     // 포트폴리오 설정 버튼
@@ -34,14 +33,14 @@ export function bindEventListeners(view) {
     dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
     // 데이터 관리 드롭다운
-    const dataManagementBtn = /** @type {HTMLButtonElement | null} */ (dom.dataManagementBtn);
-    const dataDropdownContent = /** @type {HTMLElement | null} */ (dom.dataDropdownContent);
-    const exportDataBtn = /** @type {HTMLAnchorElement | null} */ (dom.exportDataBtn);
-    const importDataBtn = /** @type {HTMLAnchorElement | null} */ (dom.importDataBtn);
-    const importFileInput = /** @type {HTMLInputElement | null} */ (dom.importFileInput);
+    const dataManagementBtn = dom.dataManagementBtn as HTMLButtonElement | null;
+    const dataDropdownContent = dom.dataDropdownContent as HTMLElement | null;
+    const exportDataBtn = dom.exportDataBtn as HTMLAnchorElement | null;
+    const importDataBtn = dom.importDataBtn as HTMLAnchorElement | null;
+    const importFileInput = dom.importFileInput as HTMLInputElement | null;
     const dropdownItems = dataDropdownContent?.querySelectorAll('a[role="menuitem"]') ?? [];
 
-    const toggleDropdown = (show) => {
+    const toggleDropdown = (show: boolean): void => {
         if (dataDropdownContent && dataManagementBtn) {
             dataDropdownContent.classList.toggle('show', show);
             dataManagementBtn.setAttribute('aria-expanded', String(show));
@@ -53,24 +52,24 @@ export function bindEventListeners(view) {
         const isExpanded = dataManagementBtn.getAttribute('aria-expanded') === 'true';
         toggleDropdown(!isExpanded);
         if (!isExpanded && dropdownItems.length > 0) {
-            (/** @type {HTMLElement} */ (dropdownItems[0])).focus();
+            (dropdownItems[0] as HTMLElement).focus();
         }
     });
 
     dataDropdownContent?.addEventListener('keydown', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const target = e.target as HTMLElement;
         const currentIndex = Array.from(dropdownItems).indexOf(target);
 
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
                 const nextIndex = (currentIndex + 1) % dropdownItems.length;
-                (/** @type {HTMLElement} */ (dropdownItems[nextIndex])).focus();
+                (dropdownItems[nextIndex] as HTMLElement).focus();
                 break;
             case 'ArrowUp':
                 e.preventDefault();
                 const prevIndex = (currentIndex - 1 + dropdownItems.length) % dropdownItems.length;
-                (/** @type {HTMLElement} */ (dropdownItems[prevIndex])).focus();
+                (dropdownItems[prevIndex] as HTMLElement).focus();
                 break;
             case 'Escape':
                 toggleDropdown(false);
@@ -85,47 +84,47 @@ export function bindEventListeners(view) {
 
     exportDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        view.emit('exportDataClicked'); // view.emit으로 변경
+        view.emit('exportDataClicked');
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        view.emit('importDataClicked'); // view.emit으로 변경
+        view.emit('importDataClicked');
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
     window.addEventListener('click', (e) => {
-        const target = /** @type {Node | null} */ (e.target);
+        const target = e.target as Node | null;
         if (dataManagementBtn && dataDropdownContent?.classList.contains('show') && !dataManagementBtn.contains(target)) {
             toggleDropdown(false);
         }
     });
 
-    importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e)); // view.emit으로 변경
+    importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e));
 
     // 포트폴리오 테이블 입력 처리
     dom.virtualScrollWrapper?.addEventListener('change', (e) =>
-        view.emit('portfolioBodyChanged', e) // view.emit으로 변경
+        view.emit('portfolioBodyChanged', e)
     );
     dom.virtualScrollWrapper?.addEventListener('click', (e) =>
-        view.emit('portfolioBodyClicked', e) // view.emit으로 변경
+        view.emit('portfolioBodyClicked', e)
     );
 
     // 포트폴리오 테이블 키보드 네비게이션
     const virtualScrollWrapper = dom.virtualScrollWrapper;
     virtualScrollWrapper?.addEventListener('keydown', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const target = e.target as HTMLElement;
         if (!target || !(target.matches('input[type="text"], input[type="number"], input[type="checkbox"]'))) return;
 
-        const currentRow = target.closest('div[data-id]');
+        const currentRow = target.closest('div[data-id]') as HTMLDivElement | null;
         if (!currentRow?.dataset.id) return;
         const stockId = currentRow.dataset.id;
         const currentCell = target.closest('.virtual-cell');
         const currentCellIndex = currentCell ? Array.from(currentRow.children).indexOf(currentCell) : -1;
-        const field = target.dataset.field;
+        const field = (target as HTMLInputElement).dataset.field;
 
         switch (e.key) {
             case 'Enter':
@@ -134,12 +133,12 @@ export function bindEventListeners(view) {
                     // 컨트롤러가 할 일(모달 열기)을 View에 이벤트로 알림
                     view.emit('manageStockClicked', { stockId });
                  }
-                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLDivElement) { // Type guard
+                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLDivElement) {
                     e.preventDefault();
                     const direction = e.shiftKey ? -1 : 1;
                     const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
                     const nextCell = currentRow.children[nextCellIndex];
-                    const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
+                    const nextInput = nextCell?.querySelector('input') as HTMLElement | null;
                     nextInput?.focus();
                  }
                 break;
@@ -150,27 +149,27 @@ export function bindEventListeners(view) {
                     ? currentRow.previousElementSibling?.previousElementSibling
                     : currentRow.nextElementSibling?.nextElementSibling;
 
-                if (siblingRow instanceof HTMLDivElement && siblingRow.matches('.virtual-row-inputs') && currentCellIndex !== -1) { // Type guard
+                if (siblingRow instanceof HTMLDivElement && siblingRow.matches('.virtual-row-inputs') && currentCellIndex !== -1) {
                      const targetCell = siblingRow.children[currentCellIndex];
-                     const targetInput = /** @type {HTMLElement | null} */ (targetCell?.querySelector('input'));
+                     const targetInput = targetCell?.querySelector('input') as HTMLElement | null;
                      targetInput?.focus();
                 }
                 break;
              case 'ArrowLeft':
              case 'ArrowRight':
-                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLDivElement) { // Type guards
+                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLDivElement) {
                      e.preventDefault();
                      const direction = e.key === 'ArrowLeft' ? -1 : 1;
                      const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
                      const nextCell = currentRow.children[nextCellIndex];
-                     const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
+                     const nextInput = nextCell?.querySelector('input') as HTMLElement | null;
                      nextInput?.focus();
                  }
                  break;
             case 'Delete':
                 if (e.ctrlKey && field === 'name') {
                      e.preventDefault();
-                     view.emit('deleteStockShortcut', { stockId }); // 삭제 이벤트 발행
+                     view.emit('deleteStockShortcut', { stockId });
                 }
                 break;
             case 'Escape':
@@ -182,48 +181,48 @@ export function bindEventListeners(view) {
 
     // 숫자 입력 필드 포커스 시 전체 선택
     dom.virtualScrollWrapper?.addEventListener('focusin', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
+        const target = e.target as HTMLInputElement;
         if (target.tagName === 'INPUT' && target.type === 'number') {
             target.select();
         }
     });
 
     // 계산 버튼
-    dom.calculateBtn?.addEventListener('click', () => view.emit('calculateClicked')); // view.emit으로 변경
+    dom.calculateBtn?.addEventListener('click', () => view.emit('calculateClicked'));
     dom.calculateBtn?.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
-            view.emit('calculateClicked'); // view.emit으로 변경
+            view.emit('calculateClicked');
         }
     });
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const mode = /** @type {'add' | 'sell' | 'simple'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
-        view.emit('mainModeChanged', { mode }); // view.emit으로 변경
+        const mode = (e.target as HTMLInputElement).value as 'add' | 'sell' | 'simple';
+        view.emit('mainModeChanged', { mode });
     }));
     dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const currency = /** @type {'krw' | 'usd'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
-        view.emit('currencyModeChanged', { currency }); // view.emit으로 변경
+        const currency = (e.target as HTMLInputElement).value as 'krw' | 'usd';
+        view.emit('currencyModeChanged', { currency });
     }));
 
     // 추가 투자금액 입력 및 환율 변환
-    const debouncedConversion = debounce((source) => view.emit('currencyConversion', { source }), 300); // view.emit으로 변경
+    const debouncedConversion = debounce((source: 'krw' | 'usd') => view.emit('currencyConversion', { source }), 300);
     dom.additionalAmountInput?.addEventListener('input', () => debouncedConversion('krw'));
     dom.additionalAmountUSDInput?.addEventListener('input', () => debouncedConversion('usd'));
     dom.exchangeRateInput?.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
+        const target = e.target as HTMLInputElement;
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
-        view.toggleInputValidation(target, isValid); // View 자체 검증은 유지
-        if (isValid) debouncedConversion('krw'); 
+        view.toggleInputValidation(target, isValid);
+        if (isValid) debouncedConversion('krw');
     });
 
     // 추가 투자금액 관련 필드 Enter 키 처리
-    const handleEnterKey = (e) => {
-        if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && e.target.isComposing)) { // Type guard and isComposing check
+    const handleEnterKey = (e: KeyboardEvent): void => {
+        if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && (e.target as any).isComposing)) {
             e.preventDefault();
-            view.emit('calculateClicked'); // view.emit으로 변경
+            view.emit('calculateClicked');
         }
     };
     dom.additionalAmountInput?.addEventListener('keydown', handleEnterKey);
@@ -232,7 +231,7 @@ export function bindEventListeners(view) {
 
     // 포트폴리오 환율 설정
     dom.portfolioExchangeRateInput?.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
+        const target = e.target as HTMLInputElement;
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
         view.toggleInputValidation(target, isValid);
@@ -252,7 +251,7 @@ export function bindEventListeners(view) {
     const originalExchangeRateHandler = dom.exchangeRateInput;
     if (originalExchangeRateHandler) {
         originalExchangeRateHandler.addEventListener('input', (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
+            const target = e.target as HTMLInputElement;
             const rate = parseFloat(target.value);
             if (!isNaN(rate) && rate > 0) {
                 // 포트폴리오 환율 입력란과 동기화
@@ -267,21 +266,21 @@ export function bindEventListeners(view) {
 
     // --- 모달 관련 이벤트 ---
     // 거래 내역 모달 닫기 버튼
-    dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked')); // view.emit으로 변경
+    dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked'));
 
     // 새 거래 추가 폼 제출
-    dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e)); // view.emit으로 변경
+    dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e));
 
     // 입력 방식 전환 (수량 입력 vs 금액 입력)
     const inputModeQuantity = document.getElementById('inputModeQuantity');
     const inputModeAmount = document.getElementById('inputModeAmount');
     const quantityInputGroup = document.getElementById('quantityInputGroup');
     const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
-    const txQuantityInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txQuantity'));
-    const txTotalAmountInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txTotalAmount'));
+    const txQuantityInput = document.getElementById('txQuantity') as HTMLInputElement | null;
+    const txTotalAmountInput = document.getElementById('txTotalAmount') as HTMLInputElement | null;
     const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
 
-    const toggleInputMode = () => {
+    const toggleInputMode = (): void => {
         const isQuantityMode = inputModeQuantity instanceof HTMLInputElement && inputModeQuantity.checked;
 
         if (quantityInputGroup && totalAmountInputGroup && txQuantityInput && txTotalAmountInput) {
@@ -309,11 +308,11 @@ export function bindEventListeners(view) {
     inputModeAmount?.addEventListener('change', toggleInputMode);
 
     // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산 (Decimal.js 사용)
-    const calculateQuantityFromAmount = () => {
+    const calculateQuantityFromAmount = (): void => {
         const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
         if (!isAmountMode) return;
 
-        const txPriceInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txPrice'));
+        const txPriceInput = document.getElementById('txPrice') as HTMLInputElement | null;
         const calculatedQuantityValue = document.getElementById('calculatedQuantityValue');
 
         if (txTotalAmountInput && txPriceInput && calculatedQuantityValue) {
@@ -339,26 +338,25 @@ export function bindEventListeners(view) {
 
     // 거래 내역 목록 내 삭제 버튼 클릭 (이벤트 위임)
     dom.transactionModal?.addEventListener('click', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const target = e.target as HTMLElement;
         const deleteButton = target.closest('button[data-action="delete-tx"]');
 
         // 1. 삭제 버튼이 클릭된 경우 핸들러 호출
         if (deleteButton) {
-            const row = deleteButton.closest('tr[data-tx-id]');
-            const modal = deleteButton.closest('#transactionModal');
+            const row = deleteButton.closest('tr[data-tx-id]') as HTMLTableRowElement | null;
+            const modal = deleteButton.closest('#transactionModal') as HTMLElement | null;
             const stockId = modal?.dataset.stockId;
             const txId = row?.dataset.txId;
 
             // 2. 컨트롤러 함수에 필요한 ID 직접 전달
             if (stockId && txId) {
-                // controller.handleTransactionListClick(stockId, txId) 대신 emit
-                view.emit('transactionDeleteClicked', { stockId, txId }); 
+                view.emit('transactionDeleteClicked', { stockId, txId });
             }
         }
 
         // 3. 모달 오버레이 클릭 시 닫기
         if (e.target === dom.transactionModal) {
-             view.emit('closeTransactionModalClicked'); // view.emit으로 변경
+             view.emit('closeTransactionModalClicked');
         }
     });
 
