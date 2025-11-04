@@ -1,23 +1,28 @@
 // js/eventBinder.js (Updated with Pub/Sub emit)
 // @ts-check
 import { debounce } from './utils.js';
+import Decimal from 'decimal.js';
 /** @typedef {import('./view.js').PortfolioView} PortfolioView */ // 컨트롤러 대신 View를 임포트
 
 /**
  * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
  * @param {PortfolioView} view - PortfolioView 인스턴스
- * @returns {void}
+ * @returns {AbortController} 이벤트 리스너 정리를 위한 AbortController
  */
 export function bindEventListeners(view) {
+    // AbortController 생성 (메모리 누수 방지)
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     // 1. view.dom 객체를 가져옵니다.
     const dom = view.dom;
 
     // ▼▼▼▼▼ [수정] controller.handle...() -> view.emit('eventName') ▼▼▼▼▼
 
-    // 포트폴리오 관리 버튼
-    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'));
-    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'));
-    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'));
+    // 포트폴리오 관리 버튼 (AbortController signal 적용)
+    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'), { signal });
+    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'), { signal });
+    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'), { signal });
     dom.portfolioSelector?.addEventListener('change', (e) => 
         view.emit('portfolioSwitched', { newId: (/** @type {HTMLSelectElement} */ (e.target)).value })
     );
@@ -303,7 +308,7 @@ export function bindEventListeners(view) {
     inputModeQuantity?.addEventListener('change', toggleInputMode);
     inputModeAmount?.addEventListener('change', toggleInputMode);
 
-    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산
+    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산 (Decimal.js 사용)
     const calculateQuantityFromAmount = () => {
         const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
         if (!isAmountMode) return;
@@ -312,14 +317,19 @@ export function bindEventListeners(view) {
         const calculatedQuantityValue = document.getElementById('calculatedQuantityValue');
 
         if (txTotalAmountInput && txPriceInput && calculatedQuantityValue) {
-            const totalAmount = parseFloat(txTotalAmountInput.value) || 0;
-            const price = parseFloat(txPriceInput.value) || 0;
+            try {
+                const totalAmount = txTotalAmountInput.value ? new Decimal(txTotalAmountInput.value) : new Decimal(0);
+                const price = txPriceInput.value ? new Decimal(txPriceInput.value) : new Decimal(0);
 
-            if (price > 0 && totalAmount > 0) {
-                const quantity = totalAmount / price;
-                calculatedQuantityValue.textContent = quantity.toFixed(8);
-            } else {
+                if (price.greaterThan(0) && totalAmount.greaterThan(0)) {
+                    const quantity = totalAmount.div(price);
+                    calculatedQuantityValue.textContent = quantity.toFixed(8);
+                } else {
+                    calculatedQuantityValue.textContent = '0';
+                }
+            } catch (error) {
                 calculatedQuantityValue.textContent = '0';
+                console.error('Error calculating quantity from amount:', error);
             }
         }
     };
@@ -354,17 +364,20 @@ export function bindEventListeners(view) {
 
     // --- 기타 ---
     // 다크 모드 토글 버튼
-    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked')); // view.emit으로 변경
-    // 페이지 닫기 전 자동 저장 (동기식 저장 시도)
-    window.addEventListener('beforeunload', () => view.emit('pageUnloading')); // view.emit으로 변경
+    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked'), { signal });
+    // 페이지 닫기 전 자동 저장 (beforeunload는 signal 미적용 - 브라우저 이벤트)
+    window.addEventListener('beforeunload', () => view.emit('pageUnloading'));
 
     // 키보드 네비게이션 포커스 스타일
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
             document.body.classList.add('keyboard-nav');
         }
-    });
+    }, { signal });
     document.addEventListener('mousedown', () => {
         document.body.classList.remove('keyboard-nav');
-    });
+    }, { signal });
+
+    // AbortController 반환 (메모리 누수 방지용 cleanup)
+    return abortController;
 }

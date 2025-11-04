@@ -15,44 +15,55 @@ const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT; // 한 종목(2줄
 const VISIBLE_ROWS_BUFFER = 5; // 화면 밖 위/아래로 미리 렌더링할 행 수
 // ▲▲▲▲▲ [추가] ▲▲▲▲▲
 
-export const PortfolioView = {
+/**
+ * @class PortfolioView
+ * @description 포트폴리오 UI를 담당하는 View 클래스
+ */
+export class PortfolioView {
     /** @type {Record<string, HTMLElement | NodeListOf<HTMLElement> | null>} */
-    dom: {},
+    dom = {};
     /** @type {import('chart.js').Chart | null} */
-    chartInstance: null,
+    chartInstance = null;
     /** @type {IntersectionObserver | null} */
-    currentObserver: null,
+    currentObserver = null;
     /** @type {((value: any) => void) | null} */
-    activeModalResolver: null,
+    activeModalResolver = null;
     /** @type {HTMLElement | null} */
-    lastFocusedElement: null,
+    lastFocusedElement = null;
     /** @type {Object<string, Function[]>} */
-    _events: {}, // 1. 이벤트 리스너 저장소 추가
+    _events = {};
 
-    // ▼▼▼▼▼ [추가] 가상 스크롤 상태 변수 ▼▼▼▼▼
+    // ▼▼▼▼▼ 가상 스크롤 상태 변수 ▼▼▼▼▼
     /** @type {CalculatedStock[]} */
-    _virtualData: [],
+    _virtualData = [];
     /** @type {HTMLElement | null} */
-    _scrollWrapper: null,
+    _scrollWrapper = null;
     /** @type {HTMLElement | null} */
-    _scrollSpacer: null,
+    _scrollSpacer = null;
     /** @type {HTMLElement | null} */
-    _scrollContent: null,
+    _scrollContent = null;
     /** @type {number} */
-    _viewportHeight: 0,
+    _viewportHeight = 0;
     /** @type {number} */
-    _renderedStartIndex: -1,
+    _renderedStartIndex = -1;
     /** @type {number} */
-    _renderedEndIndex: -1,
+    _renderedEndIndex = -1;
     /** @type {Function | null} */
-    _scrollHandler: null,
+    _scrollHandler = null;
     /** @type {string} */
-    _currentMainMode: 'add',
+    _currentMainMode = 'add';
     /** @type {string} */
-    _currentCurrency: 'krw',
-    // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+    _currentCurrency = 'krw';
+    // ▲▲▲▲▲ ▲▲▲▲▲
 
-    // ▼▼▼▼▼ [수정] Pub/Sub 메서드 ▼▼▼▼▼
+    /**
+     * @constructor
+     * @description View 초기화
+     */
+    constructor() {
+        // 초기화는 cacheDomElements()에서 수행
+    }
+
     /**
      * @description 추상 이벤트를 구독합니다.
      * @param {string} event - 이벤트 이름 (예: 'calculateClicked')
@@ -63,7 +74,7 @@ export const PortfolioView = {
             this._events[event] = [];
         }
         this._events[event].push(callback);
-    },
+    }
 
     /**
      * @description 추상 이벤트를 발행합니다.
@@ -74,7 +85,7 @@ export const PortfolioView = {
         if (this._events[event]) {
             this._events[event].forEach(callback => callback(data));
         }
-    },
+    }
     // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
     cacheDomElements() {
@@ -149,7 +160,7 @@ export const PortfolioView = {
         cancelBtn?.addEventListener('click', () => this._handleCustomModal(false));
         confirmBtn?.addEventListener('click', () => this._handleCustomModal(true));
         customModalEl?.addEventListener('keydown', (e) => { if (e.key === 'Escape') this._handleCustomModal(false); });
-    },
+    }
 
     announce(message, politeness = 'polite') {
         const announcer = this.dom.ariaAnnouncer;
@@ -160,13 +171,13 @@ export const PortfolioView = {
                 announcer.textContent = message;
             }, 100);
         }
-    },
+    }
     async showConfirm(title, message) {
         return this._showModal({ title, message, type: 'confirm' });
-    },
+    }
     async showPrompt(title, message, defaultValue = '') {
         return this._showModal({ title, message, defaultValue, type: 'prompt' });
-    },
+    }
     _showModal(options) {
         return new Promise((resolve) => {
             this.lastFocusedElement = /** @type {HTMLElement} */ (document.activeElement);
@@ -197,7 +208,7 @@ export const PortfolioView = {
                 confirmBtnEl.focus();
             }
         });
-    },
+    }
     _handleCustomModal(confirmed) {
         if (!this.activeModalResolver) return;
         const inputEl = this.dom.customModalInput;
@@ -209,7 +220,7 @@ export const PortfolioView = {
         if (this.lastFocusedElement) this.lastFocusedElement.focus();
         this.activeModalResolver = null;
         this.lastFocusedElement = null;
-    },
+    }
     _trapFocus(element) {
         if (!element) return;
         const focusableEls = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
@@ -224,7 +235,7 @@ export const PortfolioView = {
                 if (document.activeElement === lastFocusableEl) { firstFocusableEl.focus(); e.preventDefault(); }
             }
         });
-    },
+    }
     renderPortfolioSelector(portfolios, activeId) {
         const selector = this.dom.portfolioSelector;
         if (!(selector instanceof HTMLSelectElement)) return;
@@ -236,7 +247,7 @@ export const PortfolioView = {
             option.selected = (id === activeId);
             selector.appendChild(option);
         });
-    },
+    }
 
     // ▼▼▼▼▼ [대대적 수정] createStockRowFragment (div 기반으로 변경) ▼▼▼▼▼
     createStockRowFragment(stock, currency, mainMode) {
@@ -423,14 +434,14 @@ export const PortfolioView = {
 
         fragment.append(divInputs, divOutputs);
         return fragment;
-    },
+    }
     // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
 
     // ▼▼▼▼▼ [수정] updateStockRowOutputs (더 이상 사용 안 함) ▼▼▼▼▼
     updateStockRowOutputs(id, stock, currency, mainMode) {
         // 이 함수는 가상 스크롤에서 전체 재조정 로직(_onScroll)으로 대체됨
         // console.warn("updateStockRowOutputs is deprecated with Virtual Scroll");
-    },
+    }
     // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
     updateAllTargetRatioInputs(portfolioData) {
@@ -444,7 +455,7 @@ export const PortfolioView = {
                 targetRatioInput.value = ratio.toFixed(2);
             }
         });
-    },
+    }
 
     updateCurrentPriceInput(id, price) {
         const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
@@ -453,7 +464,7 @@ export const PortfolioView = {
         if (currentPriceInput instanceof HTMLInputElement) {
             currentPriceInput.value = price;
         }
-    },
+    }
     
     // ▼▼▼▼▼ [추가] 가상 스크롤 헬퍼 ▼▼▼▼▼
     getGridTemplate(mainMode) {
@@ -485,7 +496,7 @@ export const PortfolioView = {
                 return '2fr 1fr 1fr 1fr 1fr 1.2fr';
             }
         }
-    },
+    }
     
     // updateTableHeader를 새 div 헤더에 맞게 수정
     updateTableHeader(currency, mainMode) {
@@ -542,7 +553,7 @@ export const PortfolioView = {
             }
         }
         header.innerHTML = headersHTML;
-    },
+    }
 
     // ▼▼▼▼▼ [대대적 수정] renderTable (가상 스크롤 초기화 로직) ▼▼▼▼▼
     renderTable(calculatedPortfolioData, currency, mainMode) {
@@ -576,7 +587,7 @@ export const PortfolioView = {
 
         // 7. 초기 렌더링 실행
         this._onScroll(true); // forceRedraw = true
-    },
+    }
     
     /**
      * @description [NEW] 컨트롤러가 데이터를 업데이트할 때 호출
@@ -591,7 +602,7 @@ export const PortfolioView = {
 
         // 현재 스크롤 위치에서 강제로 다시 렌더링
         this._onScroll(true); // forceRedraw = true
-    },
+    }
 
     /**
      * @description [NEW] 특정 종목의 속성을 _virtualData에서 업데이트 (재렌더링 없이)
@@ -604,7 +615,86 @@ export const PortfolioView = {
         if (stockIndex !== -1) {
             this._virtualData[stockIndex][field] = value;
         }
-    },
+    }
+
+    /**
+     * @description [NEW] 특정 종목의 계산된 데이터를 업데이트하고 화면에 보이는 경우에만 DOM 업데이트
+     * @param {string} stockId - 종목 ID
+     * @param {any} calculatedData - 재계산된 데이터
+     */
+    updateSingleStockRow(stockId, calculatedData) {
+        // 1. _virtualData 업데이트
+        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+        if (stockIndex === -1) return;
+
+        this._virtualData[stockIndex] = { ...this._virtualData[stockIndex], calculated: calculatedData };
+
+        // 2. 화면에 보이는 범위인지 확인
+        if (stockIndex < this._renderedStartIndex || stockIndex >= this._renderedEndIndex) {
+            // 화면에 안 보이면 DOM 업데이트 불필요
+            return;
+        }
+
+        // 3. 화면에 보이면 출력 행만 업데이트
+        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
+        if (!outputRow || this._currentMainMode === 'simple') return; // 간단 모드는 출력 행이 숨겨짐
+
+        const currency = this._currentCurrency;
+        const metrics = calculatedData ?? {
+            quantity: new Decimal(0),
+            avgBuyPrice: new Decimal(0),
+            currentAmount: new Decimal(0),
+            profitLoss: new Decimal(0),
+            profitLossRate: new Decimal(0)
+        };
+
+        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
+        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
+        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        const isMobile = window.innerWidth <= 768;
+
+        // 출력 셀 업데이트
+        const cells = outputRow.querySelectorAll('.output-cell');
+        let cellIndex = 0;
+
+        // 첫 번째 셀은 스페이서이므로 건너뜀
+        if (cells[cellIndex]) cellIndex++;
+
+        // 수량
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
+            cellIndex++;
+        }
+
+        // 평균 매입가 (모바일 아닐 때)
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 현재 가치
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 손익 (모바일 아닐 때)
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 손익률
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
+        }
+    }
 
     /**
      * @description [NEW] 실제 가상 스크롤 렌더링 로직
@@ -631,9 +721,11 @@ export const PortfolioView = {
             return;
         }
 
-        // ▼▼▼▼▼ [추가] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 ▼▼▼▼▼
+        // ▼▼▼▼▼ [수정] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 (IME 안전) ▼▼▼▼▼
         // 스크롤로 인해 DOM이 사라지기 전에 사용자가 입력 중인 값을 보존
         const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        const activeElement = document.activeElement;
+
         currentInputRows.forEach(row => {
             const stockId = row.dataset.id;
             if (!stockId) return;
@@ -645,6 +737,12 @@ export const PortfolioView = {
             const inputs = row.querySelectorAll('input[data-field]');
             inputs.forEach(input => {
                 if (!(input instanceof HTMLInputElement)) return;
+
+                // IME 조합 중이거나 현재 포커스된 필드는 건너뛰기 (입력 중단 방지)
+                if (input === activeElement || input.isComposing) {
+                    return;
+                }
+
                 const field = input.dataset.field;
                 if (!field) return;
 
@@ -662,7 +760,7 @@ export const PortfolioView = {
                 this._virtualData[stockIndex][field] = value;
             });
         });
-        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+        // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
         // 3. 새 범위 저장
         this._renderedStartIndex = startIndex;
@@ -676,10 +774,10 @@ export const PortfolioView = {
         }
 
         // 5. 실제 DOM에 적용 및 Y축 위치 이동
-        this._scrollContent.innerHTML = ''; // 기존 행 삭제
-        this._scrollContent.appendChild(fragment);
+        // replaceChildren()를 사용하여 기존 행 삭제 및 새 행 추가 (innerHTML보다 효율적)
+        this._scrollContent.replaceChildren(fragment);
         this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
-    },
+    }
     // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
 
     // toggleFixedBuyColumn은 더 이상 사용되지 않음
@@ -695,7 +793,7 @@ export const PortfolioView = {
         } else if (totalRatio > 0) {
             ratioValidatorEl.classList.add('invalid');
         }
-    },
+    }
 
     updateMainModeUI(mainMode) {
         const addCard = this.dom.addInvestmentCard;
@@ -708,7 +806,7 @@ export const PortfolioView = {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
         });
         this.hideResults();
-    },
+    }
 
     updateCurrencyModeUI(currencyMode) {
         const isUsdMode = currencyMode === 'usd';
@@ -722,7 +820,7 @@ export const PortfolioView = {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === currencyMode;
         });
         if (!isUsdMode && usdInput instanceof HTMLInputElement) usdInput.value = '';
-    },
+    }
 
     openTransactionModal(stock, currency, transactions) {
         this.lastFocusedElement = /** @type {HTMLElement} */ (document.activeElement);
@@ -740,7 +838,7 @@ export const PortfolioView = {
         this._trapFocus(modal);
         const closeBtn = this.dom.closeModalBtn;
         if (closeBtn instanceof HTMLButtonElement) closeBtn.focus();
-    },
+    }
 
     closeTransactionModal() {
         const modal = this.dom.transactionModal;
@@ -750,7 +848,7 @@ export const PortfolioView = {
         if(form instanceof HTMLFormElement) form.reset();
         modal.removeAttribute('data-stock-id');
         if (this.lastFocusedElement) this.lastFocusedElement.focus();
-    },
+    }
 
     renderTransactionList(transactions, currency) {
         const listBody = this.dom.transactionListBody;
@@ -814,7 +912,7 @@ export const PortfolioView = {
             btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
             actionTd.appendChild(btnDelete);
         });
-    },
+    }
 
     displaySkeleton() {
         const skeletonHTML = `...`; // 생략
@@ -823,20 +921,20 @@ export const PortfolioView = {
         resultsEl.innerHTML = skeletonHTML;
         resultsEl.classList.remove('hidden');
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    },
+    }
 
     cleanupObserver() {
         if (this.currentObserver) { this.currentObserver.disconnect(); this.currentObserver = null; }
-    },
+    }
 
     destroyChart() {
         if (this.chartInstance) { this.chartInstance.destroy(); this.chartInstance = null; }
-    },
+    }
 
     cleanup() {
         this.cleanupObserver();
         this.destroyChart();
-    },
+    }
 
     hideResults() {
         const resultsEl = this.dom.resultsSection;
@@ -846,7 +944,7 @@ export const PortfolioView = {
         if (sectorEl) { sectorEl.innerHTML = ''; sectorEl.classList.add('hidden'); }
         if (chartEl) { chartEl.classList.add('hidden'); }
         this.cleanupObserver();
-    },
+    }
 
     displayResults(html) {
         requestAnimationFrame(() => {
@@ -871,7 +969,7 @@ export const PortfolioView = {
             }, { threshold: 0.1 });
             rows.forEach((row) => this.currentObserver?.observe(row));
         });
-    },
+    }
 
     displaySectorAnalysis(html) {
          requestAnimationFrame(() => {
@@ -880,7 +978,7 @@ export const PortfolioView = {
             sectorEl.innerHTML = html;
             sectorEl.classList.remove('hidden');
         });
-    },
+    }
 
     displayChart(labels, data, title) {
         const chartEl = this.dom.chartSection;
@@ -919,13 +1017,13 @@ export const PortfolioView = {
                 });
             }
         }
-    },
+    }
 
     toggleInputValidation(inputElement, isValid, errorMessage = '') {
         if (!inputElement) return;
         inputElement.classList.toggle('input-invalid', !isValid);
         inputElement.setAttribute('aria-invalid', String(!isValid));
-    },
+    }
 
 
     showToast(message, type = 'info') {
@@ -938,7 +1036,7 @@ export const PortfolioView = {
         toast.innerHTML = message.replace(/\n/g, '<br>');
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
-    },
+    }
 
     focusOnNewStock(stockId) {
         // ▼▼▼▼▼ [수정] 가상 스크롤에 맞게 수정 ▼▼▼▼▼
@@ -961,7 +1059,7 @@ export const PortfolioView = {
             }
         }, 300); // 스크롤 시간 고려
         // ▲▲▲▲▲ [수정] ▲▲▲▲▲
-    },
+    }
 
     toggleFetchButton(loading) {
         const btn = this.dom.fetchAllPricesBtn;
@@ -975,4 +1073,4 @@ export const PortfolioView = {
             btn.removeAttribute('aria-busy');
         }
     }
-}; // End of PortfolioView object
+} // End of PortfolioView class

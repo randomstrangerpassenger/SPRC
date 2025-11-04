@@ -10,32 +10,73 @@ import Decimal from 'decimal.js';
 
 export const Validator = {
     /**
+     * @description 티커 심볼 검증 및 정규화 (대문자, 숫자, ., - 만 허용)
+     * @param {string | null | undefined} value - 검증할 티커
+     * @returns {{isValid: boolean, value?: string, message?: string}} 검증 결과
+     */
+    validateTicker(value) {
+        const trimmedValue = String(value ?? '').trim();
+        if (trimmedValue === '') {
+            return { isValid: true, value: '' }; // 빈 티커 허용
+        }
+
+        // 대문자, 숫자, ., - 만 허용하고 나머지 제거
+        const sanitized = trimmedValue.toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+
+        // 길이 제한 (일반적으로 티커는 1-10자)
+        if (sanitized.length > 10) {
+            return { isValid: false, message: 'Ticker too long (max 10 characters)' };
+        }
+
+        return { isValid: true, value: sanitized };
+    },
+
+    /**
+     * @description 자유 텍스트 검증 (길이 제한만 적용, DOMPurify는 controller에서 처리)
+     * @param {string | null | undefined} value - 검증할 텍스트
+     * @param {number} maxLength - 최대 길이
+     * @returns {{isValid: boolean, value?: string, message?: string}} 검증 결과
+     */
+    validateText(value, maxLength = 100) {
+        const trimmedValue = String(value ?? '').trim();
+        if (trimmedValue.length > maxLength) {
+            return { isValid: false, message: `Text too long (max ${maxLength} characters)` };
+        }
+        return { isValid: true, value: trimmedValue };
+    },
+
+    /**
      * @description 숫자 입력값을 검증하고, 유효하면 숫자 타입으로 변환하여 반환합니다.
      * @param {string | number | null | undefined} value - 검증할 값
+     * @param {number} [max=1e15] - 최대값 (기본: 1000조)
      * @returns {{isValid: boolean, value?: number, message?: string}} 검증 결과
      */
-    validateNumericInput(value) {
-        // --- ⬇️ 재수정: 빈 문자열, null, undefined 체크 강화 ⬇️ ---
-        const trimmedValue = String(value ?? '').trim(); // null/undefined를 빈 문자열로 처리 후 trim
+    validateNumericInput(value, max = 1e15) {
+        const trimmedValue = String(value ?? '').trim();
         if (trimmedValue === '') {
              return { isValid: false, message: t('validation.invalidNumber') };
         }
-        // --- ⬆️ 재수정 ⬆️ ---
 
-        const num = Number(trimmedValue); // Use trimmed value for conversion
+        const num = Number(trimmedValue);
         if (isNaN(num)) {
             return { isValid: false, message: t('validation.invalidNumber') };
         }
         if (num < 0) {
             return { isValid: false, message: t('validation.negativeNumber') };
         }
+
+        // 최대값 제한
+        if (num > max) {
+            return { isValid: false, message: `Number too large (max ${max.toExponential()})` };
+        }
+
         // Check for excessively large numbers or precision issues using Decimal.js
         try {
-            const decValue = new Decimal(trimmedValue); // Use trimmed value
+            const decValue = new Decimal(trimmedValue);
             if (!decValue.isFinite()) {
                  throw new Error('Number is not finite');
             }
-            if (!isFinite(num)){ // Check standard JS finiteness too
+            if (!isFinite(num)){
                  throw new Error('Number is too large for standard JS number');
             }
         } catch (e) {

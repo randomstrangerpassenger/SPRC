@@ -1,4 +1,4 @@
-// js/state.js (IndexedDB + Async + DOMPurify)
+// js/state.js (Refactored with DataStore separation)
 // @ts-check
 import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
@@ -6,8 +6,8 @@ import { CONFIG } from './constants.js';
 import { t } from './i18n.js';
 import { ErrorService } from './errorService.js';
 import { Validator } from './validator.js';
-import { get, set, del } from 'idb-keyval';
-import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
+import DOMPurify from 'dompurify';
+import { DataStore } from './dataStore.js'; // ▼▼▼ [신규] DataStore 임포트 ▼▼▼
 
 /** @typedef {import('./types.js').Stock} Stock */
 /** @typedef {import('./types.js').Transaction} Transaction */
@@ -76,61 +76,25 @@ export class PortfolioState {
     }
     
     /**
-     * @description LocalStorage -> IndexedDB 마이그레이션
+     * @description LocalStorage -> IndexedDB 마이그레이션 (DataStore 위임)
      * @returns {Promise<boolean>} 마이그레이션 성공 여부
      */
     async _migrateFromLocalStorage() {
-        try {
-            const lsMeta = localStorage.getItem(CONFIG.LEGACY_LS_META_KEY); 
-            const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY); 
-
-            if (lsMeta && lsPortfolios) {
-                const metaData = JSON.parse(lsMeta);
-                const portfolioData = JSON.parse(lsPortfolios);
-
-                // 1. 새 IDB 키로 데이터 쓰기
-                await set(CONFIG.IDB_META_KEY, metaData);
-                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
-
-                // 2. 마이그레이션 성공 후 레거시 LocalStorage 데이터 삭제
-                localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
-                localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
-                
-                console.log("Successfully migrated data from LocalStorage to IndexedDB.");
-                return true;
-            }
-            console.log("No legacy data found in LocalStorage to migrate.");
-            return false;
-        } catch (error) {
-            console.error("Failed to migrate from LocalStorage:", error);
-            return false;
-        }
+        return await DataStore.migrateFromLocalStorage();
     }
 
     /**
-     * @description IDB에서 Meta 로드 (async)
+     * @description IDB에서 Meta 로드 (DataStore 위임)
      */
     async _loadMeta() {
-        try {
-            const metaData = await get(CONFIG.IDB_META_KEY);
-            return metaData ? metaData : null;
-        } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), '_loadMeta - IDB get');
-            return null;
-        }
+        return await DataStore.loadMeta();
     }
 
     /**
-     * @description IDB에서 Portfolios 로드 (async)
+     * @description IDB에서 Portfolios 로드 (DataStore 위임)
      */
     async _loadPortfolios() {
-        try {
-            const portfolioData = await get(CONFIG.IDB_PORTFOLIOS_KEY); 
-            return portfolioData ? portfolioData : null;
-        } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), '_loadPortfolios - IDB get');
-            return null;
-        }
+        return await DataStore.loadPortfolios();
     }
 
      _validateAndUpgradeData(loadedMetaData, loadedPortfolios) {
@@ -530,9 +494,9 @@ export class PortfolioState {
     async saveMeta() {
         try {
             const metaData = { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION };
-            await set(CONFIG.IDB_META_KEY, metaData); 
+            await DataStore.saveMeta(metaData); // DataStore 사용
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta - IDB set');
+            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta');
         }
     }
 
@@ -543,13 +507,10 @@ export class PortfolioState {
                  saveablePortfolios[id] = {
                      ...portfolio,
                      portfolioData: portfolio.portfolioData.map(stock => {
-                        // ▼▼▼▼▼ [수정된 부분] ▼▼▼▼▼
                         // 'calculated' 속성을 분해해서 저장 대상에서 제외
                         const { calculated, ...saveableStock } = stock;
-                        // ▲▲▲▲▲ [수정된 부분] ▲▲▲▲▲
 
                          return {
-                             // ▼▼▼ [수정] stock 대신 saveableStock 사용, Decimal 체크 추가
                              ...saveableStock,
                              targetRatio: saveableStock.targetRatio instanceof Decimal ? saveableStock.targetRatio.toNumber() : Number(saveableStock.targetRatio ?? 0),
                              currentPrice: saveableStock.currentPrice instanceof Decimal ? saveableStock.currentPrice.toNumber() : Number(saveableStock.currentPrice ?? 0),
@@ -560,17 +521,16 @@ export class PortfolioState {
                                  quantity: tx.quantity instanceof Decimal ? tx.quantity.toNumber() : Number(tx.quantity ?? 0),
                                  price: tx.price instanceof Decimal ? tx.price.toNumber() : Number(tx.price ?? 0),
                              }))
-                             // ▲▲▲ [수정]
                          };
                      })
                  };
              });
-            await set(CONFIG.IDB_PORTFOLIOS_KEY, saveablePortfolios); 
+            await DataStore.savePortfolios(saveablePortfolios); // DataStore 사용
         } catch (error) {
              if (error instanceof DOMException && error.name === 'QuotaExceededError') {
                  ErrorService.handle(error, 'savePortfolios - Quota Exceeded');
              } else {
-                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios - IDB set');
+                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios');
              }
         }
     }

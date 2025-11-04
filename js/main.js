@@ -1,8 +1,9 @@
-// js/main.js (수정 후)
+// js/main.js (Class-based View)
 // @ts-check
 import { PortfolioState } from './state.js';
 import { PortfolioView } from './view.js';
 import { PortfolioController } from './controller.js';
+import { ErrorService } from './errorService.js';
 import { Chart, DoughnutController, ArcElement, Legend, Title, Tooltip } from 'chart.js';
 
 // Chart.js의 필요한 구성 요소만 등록
@@ -10,12 +11,14 @@ Chart.register(DoughnutController, ArcElement, Legend, Title, Tooltip);
 
 try {
     const state = new PortfolioState();
-    // PortfolioView는 객체 리터럴이므로 new 키워드 없이 사용
-    const view = PortfolioView;
-    // --- ⬇️ 수정: new PortfolioController 생성만 수행 ⬇️ ---
+    // PortfolioView는 클래스이므로 new 키워드로 인스턴스화
+    const view = new PortfolioView();
+
+    // ErrorService에 view 인스턴스 설정 (에러 토스트 메시지 표시를 위해)
+    ErrorService.setViewInstance(view);
+
+    // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
-    // app.init(); // <-- 제거 (init 메소드 없음, initialize는 생성자에서 호출됨)
-    // --- ⬆️ 수정 ⬆️ ---
 
     // Make Chart globally available or pass it where needed (e.g., to View)
     // If View needs Chart, consider passing it during initialization or directly
