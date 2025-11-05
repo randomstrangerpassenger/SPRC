@@ -1,0 +1,92 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "다크 모드 전환" [ref=e2] [cursor=pointer]: 🌙
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - heading "📊 포트폴리오 리밸런싱 계산기" [level=1] [ref=e5]
+      - paragraph [ref=e6]: 목표 비율에 맞춰 포트폴리오를 조정하는 최적의 방법을 계산합니다.
+    - main [ref=e7]:
+      - region "📁 포트폴리오 관리" [ref=e8]:
+        - heading "📁 포트폴리오 관리" [level=2] [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]: "현재 포트폴리오:"
+          - combobox "현재 포트폴리오:" [ref=e12]:
+            - option "Default Portfolio" [selected]
+        - generic [ref=e13]:
+          - button "➕ 새로 만들기" [ref=e14] [cursor=pointer]
+          - button "✏️ 이름 변경" [ref=e15] [cursor=pointer]
+          - button "🗑️ 삭제" [ref=e16] [cursor=pointer]
+      - region "⚙️ 계산 모드 선택" [ref=e17]:
+        - heading "⚙️ 계산 모드 선택" [level=2] [ref=e18]
+        - generic [ref=e19]:
+          - generic [ref=e20] [cursor=pointer]:
+            - radio "🎯 간단 계산 모드" [checked] [ref=e21]
+            - text: 🎯 간단 계산 모드
+          - generic [ref=e22] [cursor=pointer]:
+            - radio "➕ 추가 매수 모드" [ref=e23]
+            - text: ➕ 추가 매수 모드
+          - generic [ref=e24] [cursor=pointer]:
+            - radio "⚖️ 매도 리밸런싱 모드" [ref=e25]
+            - text: ⚖️ 매도 리밸런싱 모드
+      - region "💼 현재 포트폴리오 설정" [ref=e26]:
+        - heading "💼 현재 포트폴리오 설정" [level=2] [ref=e27]
+        - generic [ref=e28]:
+          - button "➕ 새 종목 추가" [ref=e29] [cursor=pointer]
+          - button "📈 현재가 모두 불러오기" [ref=e30] [cursor=pointer]
+          - generic [ref=e31]:
+            - generic [ref=e32]: "💱 환율 (1 USD = ? KRW):"
+            - spinbutton "💱 환율 (1 USD = ? KRW):" [ref=e33]: "1300"
+          - button "🔄 초기화" [ref=e34] [cursor=pointer]
+          - button "⚖️ 비율 자동 맞춤(100%)" [ref=e35] [cursor=pointer]
+          - button "💾 데이터 관리" [ref=e37] [cursor=pointer]
+        - row "Name Ticker Target Ratio(%) 보유 금액(KRW) Fixed Buy(KRW) Action" [ref=e38]:
+          - generic [ref=e39]: Name
+          - generic [ref=e40]: Ticker
+          - generic [ref=e41]: Target Ratio(%)
+          - generic [ref=e42]: 보유 금액(KRW)
+          - generic [ref=e43]: Fixed Buy(KRW)
+          - generic [ref=e44]: Action
+        - grid [ref=e45]:
+          - row "New Stock Enable fixed buy amount Delete New Stock" [ref=e48]:
+            - textbox "Name" [ref=e50]: New Stock
+            - textbox "New Stock ticker input" [ref=e52]:
+              - /placeholder: Ticker
+            - spinbutton "New Stock target ratio input" [ref=e54]: "0.00"
+            - spinbutton "New Stock 보유 금액" [ref=e56]: "0"
+            - generic [ref=e57]:
+              - checkbox "Enable fixed buy amount" [ref=e58]
+              - spinbutton "Fixed buy amount" [disabled] [ref=e59]: "0"
+            - button "Delete New Stock" [ref=e61] [cursor=pointer]: Delete
+        - generic [ref=e62]:
+          - strong [ref=e63]: "목표 비율 합계:"
+          - generic [ref=e64]: 0.0%
+      - region "💰 추가 투자금 계산" [ref=e65]:
+        - heading "💰 추가 투자금 계산" [level=2] [ref=e66]
+        - generic [ref=e67]:
+          - generic [ref=e68] [cursor=pointer]:
+            - radio "원화(KRW) 기준" [checked] [ref=e69]
+            - text: 원화(KRW) 기준
+          - generic [ref=e70] [cursor=pointer]:
+            - radio "달러(USD) 기준" [ref=e71]
+            - text: 달러(USD) 기준
+        - generic [ref=e72]:
+          - generic [ref=e73]: "추가 투자 금액:"
+          - spinbutton "추가 투자 금액:" [ref=e74]
+      - button "계산하기" [ref=e75] [cursor=pointer]
+      - region "섹터별 분석 결과" [ref=e76]:
+        - generic [ref=e77]:
+          - heading "🗂️ Sector Analysis" [level=2] [ref=e78]
+          - table [ref=e80]:
+            - rowgroup [ref=e81]:
+              - row "Sector Amount Ratio (%)" [ref=e82]:
+                - columnheader "Sector" [ref=e83]
+                - columnheader "Amount" [ref=e84]
+                - columnheader "Ratio (%)" [ref=e85]
+            - rowgroup [ref=e86]:
+              - row "Unclassified ₩0 0.00%" [ref=e87]:
+                - cell "Unclassified" [ref=e88]
+                - cell "₩0" [ref=e89]
+                - cell "0.00%" [ref=e90]
+```
