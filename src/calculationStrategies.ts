@@ -1,6 +1,6 @@
 // js/calculationStrategies.ts (DRY 원칙 적용)
 import Decimal from 'decimal.js';
-import type { CalculatedStock } from './types.js';
+import type { CalculatedStock } from './types.ts';
 
 // ==================== 공통 유틸리티 함수 ====================
 
