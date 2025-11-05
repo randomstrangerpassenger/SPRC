@@ -1,6 +1,7 @@
 // src/calculationStrategies.ts (DRY 원칙 적용)
 import Decimal from 'decimal.js';
 import type { CalculatedStock } from './types.ts';
+import { DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';
 
 // ==================== 공통 유틸리티 함수 ====================
 
@@ -8,14 +9,14 @@ import type { CalculatedStock } from './types.ts';
  * @description 포트폴리오의 목표 비율 합계 계산
  */
 function calculateTotalRatio(portfolioData: CalculatedStock[]): Decimal {
-    return portfolioData.reduce((sum, s) => sum.plus(s.targetRatio || 0), new Decimal(0));
+    return portfolioData.reduce((sum, s) => sum.plus(s.targetRatio || 0), DECIMAL_ZERO);
 }
 
 /**
  * @description 목표 비율을 100%로 정규화하기 위한 계수 계산
  */
 function calculateRatioMultiplier(totalRatio: Decimal): Decimal {
-    return totalRatio.isZero() ? new Decimal(0) : new Decimal(100).div(totalRatio);
+    return totalRatio.isZero() ? DECIMAL_ZERO : DECIMAL_HUNDRED.div(totalRatio);
 }
 
 /**
@@ -26,7 +27,7 @@ function allocateFixedBuyAmounts(
     additionalInvestment: Decimal,
     results: any[]
 ): Decimal {
-    const zero = new Decimal(0);
+    const zero = DECIMAL_ZERO;
     let remainingInvestment = additionalInvestment;
 
     for (const s of portfolioData) {
@@ -60,7 +61,7 @@ function distributeRemainingInvestment(
     remainingInvestment: Decimal,
     ratioMultiplier: Decimal
 ): void {
-    const zero = new Decimal(0);
+    const zero = DECIMAL_ZERO;
 
     const targetAmounts = results.map((s) => {
         const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
@@ -119,7 +120,7 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
 
     calculate(): { results: any[] } {
         const startTime = performance.now();
-        const zero = new Decimal(0);
+        const zero = DECIMAL_ZERO;
 
         // 현재 총 자산 + 추가 투자금 = 총 투자금
         const currentTotal = this.#portfolioData.reduce(
@@ -137,7 +138,7 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
             const currentAmount = s.calculated?.currentAmount || zero;
             const currentRatio = totalInvestment.isZero()
                 ? zero
-                : currentAmount.div(totalInvestment).times(100);
+                : currentAmount.div(totalInvestment).times(DECIMAL_HUNDRED);
             return {
                 ...s,
                 currentRatio: currentRatio,
@@ -195,7 +196,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
 
     calculate(): { results: any[] } {
         const startTime = performance.now();
-        const zero = new Decimal(0);
+        const zero = DECIMAL_ZERO;
 
         // 간단 모드에서는 manualAmount를 사용 (거래 내역 대신 직접 입력한 금액)
         const currentTotal = this.#portfolioData.reduce((sum, s) => {
@@ -231,7 +232,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
                     : s.calculated?.currentAmount || zero;
             const currentRatio = currentTotal.isZero()
                 ? zero
-                : currentAmount.div(currentTotal).times(100);
+                : currentAmount.div(currentTotal).times(DECIMAL_HUNDRED);
 
             return {
                 ...s,
@@ -266,7 +267,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
             ...s,
             buyRatio: totalBuyAmount.isZero()
                 ? zero
-                : s.finalBuyAmount.div(totalBuyAmount).times(100),
+                : s.finalBuyAmount.div(totalBuyAmount).times(DECIMAL_HUNDRED),
         }));
 
         if (import.meta.env.DEV) {
@@ -292,7 +293,7 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 
     calculate(): { results: any[] } {
         const startTime = performance.now();
-        const zero = new Decimal(0);
+        const zero = DECIMAL_ZERO;
 
         const currentTotal = this.#portfolioData.reduce(
             (sum, s) => sum.plus(s.calculated?.currentAmount || zero),
@@ -317,11 +318,11 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 
         const results = this.#portfolioData.map((s) => {
             const currentAmount = s.calculated?.currentAmount || zero;
-            const currentRatioDec = currentAmount.div(currentTotal).times(100);
+            const currentRatioDec = currentAmount.div(currentTotal).times(DECIMAL_HUNDRED);
             const currentRatio = currentRatioDec.toNumber();
 
             const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-            const targetAmount = currentTotal.times(targetRatioNormalized.div(100));
+            const targetAmount = currentTotal.times(targetRatioNormalized.div(DECIMAL_HUNDRED));
             const adjustment = currentAmount.minus(targetAmount);
 
             return {

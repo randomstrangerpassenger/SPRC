@@ -1,5 +1,5 @@
 // js/state.ts (Refactored with DataStore separation)
-import { nanoid } from 'nanoid';
+import { generateId } from './utils';  // ===== [Phase 3.4 최적화] generateId 제거 =====
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
@@ -124,7 +124,7 @@ export class PortfolioState {
                              const fixedBuyAmount = new Decimal(stock.fixedBuyAmount ?? 0);
 
                             return {
-                                id: stock.id || `s-${nanoid()}`,
+                                id: stock.id || `s-${generateId()}`,
                                 // ▼▼▼ [수정] DOMPurify.sanitize 적용 ▼▼▼
                                 name: DOMPurify.sanitize(stock.name || t('defaults.newStock')),
                                 ticker: DOMPurify.sanitize(stock.ticker || ''),
@@ -138,7 +138,7 @@ export class PortfolioState {
                                     const quantity = new Decimal(tx.quantity ?? 0);
                                     const price = new Decimal(tx.price ?? 0);
                                     return {
-                                        id: tx.id || `tx-${nanoid()}`,
+                                        id: tx.id || `tx-${generateId()}`,
                                         type: tx.type === 'sell' ? 'sell' : 'buy',
                                         date: typeof tx.date === 'string' ? tx.date : new Date().toISOString().slice(0, 10),
                                         quantity: quantity.isNaN() ? new Decimal(0) : quantity,
@@ -197,7 +197,7 @@ export class PortfolioState {
     }
 
     async createNewPortfolio(name: string): Promise<Portfolio> {
-        const newId = `p-${nanoid()}`;
+        const newId = `p-${generateId()}`;
         const newPortfolio = this._createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
         this.#activePortfolioId = newId;
@@ -336,7 +336,7 @@ export class PortfolioState {
             try {
                 const newTransaction = {
                     ...transactionData,
-                    id: `tx-${nanoid()}`,
+                    id: `tx-${generateId()}`,
                      quantity: new Decimal(transactionData.quantity),
                      price: new Decimal(transactionData.price)
                 };
@@ -423,7 +423,7 @@ export class PortfolioState {
     }
 
     async resetData(save: boolean = true): Promise<void> {
-        const defaultPortfolio = this._createDefaultPortfolio(`p-${nanoid()}`);
+        const defaultPortfolio = this._createDefaultPortfolio(`p-${generateId()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
         if (save) {
@@ -545,7 +545,7 @@ export class PortfolioState {
 
     _createDefaultStock(): Stock {
         return {
-            id: `s-${nanoid()}`,
+            id: `s-${generateId()}`,
             name: t('defaults.newStock'),
             ticker: '',
             sector: '',

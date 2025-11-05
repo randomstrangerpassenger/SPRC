@@ -1,3 +1,15 @@
+import Decimal from 'decimal.js';
+
+// ===== [Phase 1.3 최적화] Decimal 상수 캐싱 =====
+/**
+ * @description 자주 사용되는 Decimal 상수
+ * - 매번 new Decimal()을 호출하는 대신 이 상수를 재사용
+ */
+export const DECIMAL_ZERO = new Decimal(0);
+export const DECIMAL_ONE = new Decimal(1);
+export const DECIMAL_HUNDRED = new Decimal(100);
+// ===== [Phase 1.3 최적화 끝] =====
+
 // 설정값들을 정의하는 상수 객체
 export const CONFIG = {
     MIN_BUYABLE_AMOUNT: 1000,

@@ -6,6 +6,40 @@
 import Decimal from 'decimal.js';
 import type { Currency } from './types';
 
+// ===== [Phase 1.2 최적화] Intl.NumberFormat 캐싱 =====
+/**
+ * @description NumberFormat 인스턴스 캐시
+ * - 키: locale + JSON.stringify(options)
+ * - 값: Intl.NumberFormat 인스턴스
+ */
+const numberFormatCache = new Map<string, Intl.NumberFormat>();
+const MAX_CACHE_SIZE = 50;
+
+/**
+ * @description 캐시된 NumberFormat 인스턴스 가져오기
+ * @param locale - 로케일
+ * @param options - NumberFormat 옵션
+ * @returns Intl.NumberFormat 인스턴스
+ */
+function getCachedNumberFormat(locale: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+    const cacheKey = `${locale}:${JSON.stringify(options)}`;
+
+    let formatter = numberFormatCache.get(cacheKey);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(locale, options);
+
+        // 캐시 크기 제한 (LRU 방식 대신 간단하게 전체 클리어)
+        if (numberFormatCache.size >= MAX_CACHE_SIZE) {
+            numberFormatCache.clear();
+        }
+
+        numberFormatCache.set(cacheKey, formatter);
+    }
+
+    return formatter;
+}
+// ===== [Phase 1.2 최적화 끝] =====
+
 /**
  * @description 현재 언어 설정 가져오기
  * @returns 'ko' | 'en'
@@ -58,7 +92,7 @@ export function formatNumber(
         if (isNaN(num)) num = 0;
     }
 
-    return new Intl.NumberFormat(locale, {
+    return getCachedNumberFormat(locale, {
         minimumFractionDigits: fractionDigits,
         maximumFractionDigits: fractionDigits
     }).format(num);
@@ -87,7 +121,7 @@ export function formatPercent(
         if (isNaN(num)) num = 0;
     }
 
-    return new Intl.NumberFormat(locale, {
+    return getCachedNumberFormat(locale, {
         style: 'percent',
         minimumFractionDigits: fractionDigits,
         maximumFractionDigits: fractionDigits
@@ -131,7 +165,7 @@ export function formatCurrencyEnhanced(
             options.maximumFractionDigits = 2;
         }
 
-        return new Intl.NumberFormat(locale, options).format(num);
+        return getCachedNumberFormat(locale, options).format(num);
     } catch (e) {
         console.error('formatCurrencyEnhanced error:', e);
         return String(amount);
@@ -163,7 +197,7 @@ export function formatCompactNumber(
 
     // Intl.NumberFormat의 notation: 'compact'는 일부 브라우저에서만 지원
     try {
-        return new Intl.NumberFormat(locale, {
+        return getCachedNumberFormat(locale, {
             notation: 'compact' as any, // TypeScript 버전에 따라 type assertion 필요
             minimumFractionDigits: 0,
             maximumFractionDigits: fractionDigits

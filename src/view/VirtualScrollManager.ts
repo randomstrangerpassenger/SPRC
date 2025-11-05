@@ -27,6 +27,10 @@ export class VirtualScrollManager {
     private _currentMainMode: 'add' | 'sell' | 'simple' = 'add';
     private _currentCurrency: 'krw' | 'usd' = 'krw';
 
+    // ===== [Phase 2.1 최적화] DOM 참조 캐싱 =====
+    private _rowCache: Map<string, { inputRow: HTMLElement | null; outputRow: HTMLElement | null }> = new Map();
+    // ===== [Phase 2.1 최적화 끝] =====
+
     constructor(dom: any) {
         this.dom = dom;
         this.initializeScrollElements();
@@ -391,7 +395,17 @@ export class VirtualScrollManager {
             return;
         }
 
-        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
+        // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+        let outputRow = this._rowCache.get(stockId)?.outputRow;
+        if (!outputRow) {
+            // 캐시 미스 시 querySelector 사용하고 캐시에 저장
+            outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`) as HTMLElement | null;
+            if (outputRow) {
+                const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`) as HTMLElement | null;
+                this._rowCache.set(stockId, { inputRow, outputRow });
+            }
+        }
+        // ===== [Phase 2.1 최적화 끝] =====
         if (!outputRow || this._currentMainMode === 'simple') return;
 
         const currency = this._currentCurrency;
@@ -504,6 +518,10 @@ export class VirtualScrollManager {
         this._renderedStartIndex = startIndex;
         this._renderedEndIndex = endIndex;
 
+        // ===== [Phase 2.1 최적화] 캐시 클리어 및 재구성 =====
+        this._rowCache.clear();
+        // ===== [Phase 2.1 최적화 끝] =====
+
         const fragment = document.createDocumentFragment();
         for (let i = startIndex; i < endIndex; i++) {
             const stock = this._virtualData[i];
@@ -512,6 +530,17 @@ export class VirtualScrollManager {
 
         this._scrollContent.replaceChildren(fragment);
         this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+
+        // ===== [Phase 2.1 최적화] 렌더링 후 캐시 채우기 =====
+        for (let i = startIndex; i < endIndex; i++) {
+            const stock = this._virtualData[i];
+            const inputRow = this._scrollContent.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`) as HTMLElement | null;
+            const outputRow = this._scrollContent.querySelector(`.virtual-row-outputs[data-id="${stock.id}"]`) as HTMLElement | null;
+            if (inputRow || outputRow) {
+                this._rowCache.set(stock.id, { inputRow, outputRow });
+            }
+        }
+        // ===== [Phase 2.1 최적화 끝] =====
     }
 
     /**
@@ -520,7 +549,16 @@ export class VirtualScrollManager {
      */
     updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
         portfolioData.forEach((stock) => {
-            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`);
+            // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+            let inputRow = this._rowCache.get(stock.id)?.inputRow;
+            if (!inputRow) {
+                inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`) as HTMLElement | null;
+                if (inputRow) {
+                    const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stock.id}"]`) as HTMLElement | null;
+                    this._rowCache.set(stock.id, { inputRow, outputRow });
+                }
+            }
+            // ===== [Phase 2.1 최적화 끝] =====
             if (!inputRow) return;
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
@@ -537,7 +575,16 @@ export class VirtualScrollManager {
      * @param price - 가격
      */
     updateCurrentPriceInput(id: string, price: string): void {
-        const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
+        // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+        let inputRow = this._rowCache.get(id)?.inputRow;
+        if (!inputRow) {
+            inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`) as HTMLElement | null;
+            if (inputRow) {
+                const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${id}"]`) as HTMLElement | null;
+                this._rowCache.set(id, { inputRow, outputRow });
+            }
+        }
+        // ===== [Phase 2.1 최적화 끝] =====
         if (!inputRow) return;
 
         const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');

@@ -110,6 +110,38 @@ export class StockManager {
             const activePortfolio = this.state.getActivePortfolio();
             if (!activePortfolio) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
+            // ===== [Phase 1.1 최적화] 메타데이터 필드는 재계산 없이 DOM만 업데이트 =====
+            if (field === 'name' || field === 'ticker') {
+                // 이름과 티커 변경은 계산에 영향을 주지 않으므로 가상 스크롤 데이터만 업데이트
+                this.view.updateStockInVirtualData(stockId, field, value);
+                this.debouncedSave();
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            }
+
+            if (field === 'sector') {
+                // 섹터 변경은 섹터 분석만 재계산하고 가상 스크롤 데이터만 업데이트
+                this.view.updateStockInVirtualData(stockId, field, value);
+
+                // 섹터 분석만 재계산 (전체 계산 상태는 이미 캐시되어 있음)
+                Calculator.clearPortfolioStateCache();
+                const calculatedState = Calculator.calculatePortfolioState({
+                    portfolioData: activePortfolio.portfolioData,
+                    exchangeRate: activePortfolio.settings.exchangeRate,
+                    currentCurrency: activePortfolio.settings.currentCurrency
+                });
+                const newSectorData = Calculator.calculateSectorAnalysis(
+                    calculatedState.portfolioData,
+                    activePortfolio.settings.currentCurrency
+                );
+                this.view.displaySectorAnalysis(
+                    generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+                );
+
+                this.debouncedSave();
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            }
+            // ===== [Phase 1.1 최적화 끝] =====
+
             // currentPrice 변경 시 부분 업데이트 (최적화)
             if (field === 'currentPrice') {
                 const stock = activePortfolio.portfolioData.find((s) => s.id === stockId);

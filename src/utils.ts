@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 import type { Stock, Currency } from './types.ts';
 // Import enhanced i18n formatters
 import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
+import { DECIMAL_ZERO } from './constants';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
@@ -24,7 +25,7 @@ export function escapeHTML(str: string | number | null | undefined): string {
  * @returns 목표 비율 합계
  */
 export function getRatioSum(portfolioData: Stock[]): Decimal {
-    let sum = new Decimal(0);
+    let sum = DECIMAL_ZERO;
     if (!Array.isArray(portfolioData)) return sum;
 
     for (const s of portfolioData) {
@@ -72,6 +73,18 @@ export function debounce<T extends (...args: any[]) => any>(
         }, delay);
         if (callNow) func.apply(context, args); // 즉시 실행 조건 충족 시 바로 실행
     };
+}
+
+/**
+ * @description 고유 ID를 생성합니다. (nanoid 대체)
+ * @returns 고유 ID 문자열
+ */
+export function generateId(): string {
+    // ===== [Phase 3.4 최적화] nanoid 대체 =====
+    // nanoid를 간단한 유틸 함수로 교체하여 번들 크기 감소
+    // Date.now()와 Math.random()을 조합하여 충분히 고유한 ID 생성
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    // ===== [Phase 3.4 최적화 끝] =====
 }
 
 // Re-export enhanced formatters for convenience
