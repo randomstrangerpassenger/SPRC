@@ -3,10 +3,11 @@ import { PortfolioState } from './state.ts';
 import { PortfolioView } from './view.ts';
 import { PortfolioController } from './controller.ts';
 import { ErrorService } from './errorService.ts';
-import { Chart, DoughnutController, ArcElement, Legend, Title, Tooltip } from 'chart.js';
 
-// Chart.js의 필요한 구성 요소만 등록
-Chart.register(DoughnutController, ArcElement, Legend, Title, Tooltip);
+// ===== [Phase 3.1 최적화] Chart.js 지연 로딩 =====
+// Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
+// (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
+// ===== [Phase 3.1 최적화 끝] =====
 
 try {
     const state = new PortfolioState();
@@ -18,11 +19,6 @@ try {
 
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
-
-    // Make Chart globally available or pass it where needed (e.g., to View)
-    // If View needs Chart, consider passing it during initialization or directly
-    // For simplicity, let's assume View can access the global Chart object for now
-    // (A better approach might be dependency injection)
 
     console.log("Application setup complete.");
 } catch (error) {

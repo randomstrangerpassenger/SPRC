@@ -1,0 +1,114 @@
+// src/view/DOMHelpers.ts
+/**
+ * @description DOM 요소 생성을 위한 헬퍼 함수들
+ */
+
+import { t } from '../i18n';
+import Decimal from 'decimal.js';
+
+/**
+ * @description Input 요소를 생성합니다.
+ */
+export function createInput(
+    type: string,
+    field: string,
+    value: any,
+    placeholder: string = '',
+    disabled: boolean = false,
+    ariaLabel: string = ''
+): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = type;
+    input.dataset.field = field;
+
+    let displayValue = '';
+    if (value instanceof Decimal) {
+        const decimalPlaces = field === 'fixedBuyAmount' ? 0 : 2;
+        displayValue = value.toFixed(decimalPlaces);
+    } else {
+        const defaultValue =
+            field === 'fixedBuyAmount' ? '0' : field === 'targetRatio' || field === 'currentPrice' ? '0.00' : '';
+        displayValue = String(value ?? defaultValue);
+    }
+
+    input.value = displayValue;
+    if (placeholder) input.placeholder = placeholder;
+    input.disabled = disabled;
+    if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+
+    if (type === 'number') {
+        input.min = '0';
+        if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
+    }
+    if (type === 'text') {
+        input.style.textAlign = 'center';
+    }
+
+    return input;
+}
+
+/**
+ * @description Checkbox 요소를 생성합니다.
+ */
+export function createCheckbox(field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.field = field;
+    input.checked = checked;
+    if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+    return input;
+}
+
+/**
+ * @description Button 요소를 생성합니다.
+ */
+export function createButton(action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.className = 'btn btn--small';
+    button.dataset.action = action;
+    button.dataset.variant = variant;
+    button.textContent = text;
+    if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
+    return button;
+}
+
+/**
+ * @description Cell 요소를 생성합니다.
+ */
+export function createCell(className: string = '', align: string = 'left'): HTMLDivElement {
+    const cell = document.createElement('div');
+    cell.className = `virtual-cell ${className} align-${align}`;
+    return cell;
+}
+
+/**
+ * @description Output Cell 요소를 생성합니다.
+ */
+export function createOutputCell(label: string, value: string, valueClass: string = ''): HTMLDivElement {
+    const cell = createCell('output-cell align-right');
+    // escapeHTML은 RowRenderer에서 호출 시 적용됨
+    cell.innerHTML = `<span class="label">${label}</span><span class="value ${valueClass}">${value}</span>`;
+    return cell;
+}
+
+/**
+ * @description 그리드 템플릿을 반환합니다 (반응형).
+ */
+export function getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        if (mainMode === 'simple') {
+            return '1.5fr 1fr 1fr 1fr 0.8fr';
+        }
+        return '1.5fr 1fr 1fr 1.2fr';
+    } else {
+        if (mainMode === 'add') {
+            return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+        } else if (mainMode === 'simple') {
+            return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
+        } else {
+            return '2fr 1fr 1fr 1fr 1fr 1.2fr';
+        }
+    }
+}

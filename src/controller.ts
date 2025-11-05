@@ -3,7 +3,7 @@ import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
 import { debounce, getRatioSum } from './utils';
-import { CONFIG } from './constants';
+import { CONFIG, DECIMAL_ZERO } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import Decimal from 'decimal.js';
@@ -298,7 +298,7 @@ export class PortfolioController {
      */
     getInvestmentAmountInKRW(): Decimal {
         const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return new Decimal(0);
+        if (!activePortfolio) return DECIMAL_ZERO;
 
         const { currentCurrency } = activePortfolio.settings;
         const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
@@ -308,7 +308,7 @@ export class PortfolioController {
             !(additionalAmountUSDInput instanceof HTMLInputElement) ||
             !(exchangeRateInput instanceof HTMLInputElement)
         ) {
-            return new Decimal(0);
+            return DECIMAL_ZERO;
         }
 
         const amountKRWStr = additionalAmountInput.value || '0';
@@ -321,15 +321,15 @@ export class PortfolioController {
             const exchangeRate = new Decimal(exchangeRateStr);
 
             if (currentCurrency === 'krw') {
-                return amountKRW.isNegative() ? new Decimal(0) : amountKRW;
+                return amountKRW.isNegative() ? DECIMAL_ZERO : amountKRW;
             } else {
-                if (exchangeRate.isZero() || exchangeRate.isNegative()) return new Decimal(0);
+                if (exchangeRate.isZero() || exchangeRate.isNegative()) return DECIMAL_ZERO;
                 const calculatedKRW = amountUSD.times(exchangeRate);
-                return calculatedKRW.isNegative() ? new Decimal(0) : calculatedKRW;
+                return calculatedKRW.isNegative() ? DECIMAL_ZERO : calculatedKRW;
             }
         } catch (e) {
             console.error('Error parsing investment amount:', e);
-            return new Decimal(0);
+            return DECIMAL_ZERO;
         }
     }
 }

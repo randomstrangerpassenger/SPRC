@@ -1,6 +1,6 @@
 // src/calculator.ts (Strategy Pattern Applied)
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.ts';
+import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
 import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency } from './types.ts';
 import type { IRebalanceStrategy } from './calculationStrategies.ts';
@@ -53,16 +53,16 @@ export class Calculator {
     static calculateStockMetrics(stock: Stock): CalculatedStockMetrics {
         try {
             const result: CalculatedStockMetrics = {
-                totalBuyQuantity: new Decimal(0),
-                totalSellQuantity: new Decimal(0),
-                quantity: new Decimal(0),
-                totalBuyAmount: new Decimal(0),
-                currentAmount: new Decimal(0),
-                currentAmountUSD: new Decimal(0),
-                currentAmountKRW: new Decimal(0),
-                avgBuyPrice: new Decimal(0),
-                profitLoss: new Decimal(0),
-                profitLossRate: new Decimal(0),
+                totalBuyQuantity: DECIMAL_ZERO,
+                totalSellQuantity: DECIMAL_ZERO,
+                quantity: DECIMAL_ZERO,
+                totalBuyAmount: DECIMAL_ZERO,
+                currentAmount: DECIMAL_ZERO,
+                currentAmountUSD: DECIMAL_ZERO,
+                currentAmountKRW: DECIMAL_ZERO,
+                avgBuyPrice: DECIMAL_ZERO,
+                profitLoss: DECIMAL_ZERO,
+                profitLossRate: DECIMAL_ZERO,
             };
 
             const currentPrice = new Decimal(stock.currentPrice || 0);
@@ -102,11 +102,11 @@ export class Calculator {
 
             // 6. 손익률
             if (originalCostOfHolding.isZero()) {
-                result.profitLossRate = new Decimal(0);
+                result.profitLossRate = DECIMAL_ZERO;
             } else {
                 result.profitLossRate = result.profitLoss
                     .div(originalCostOfHolding)
-                    .times(100);
+                    .times(DECIMAL_HUNDRED);
             }
 
             return result;
@@ -114,11 +114,11 @@ export class Calculator {
             ErrorService.handle(error as Error, 'calculateStockMetrics');
             // 에러 발생 시 기본값 반환
             return {
-                quantity: new Decimal(0),
-                avgBuyPrice: new Decimal(0),
-                currentAmount: new Decimal(0),
-                profitLoss: new Decimal(0),
-                profitLossRate: new Decimal(0),
+                quantity: DECIMAL_ZERO,
+                avgBuyPrice: DECIMAL_ZERO,
+                currentAmount: DECIMAL_ZERO,
+                profitLoss: DECIMAL_ZERO,
+                profitLossRate: DECIMAL_ZERO,
             };
         }
     }
@@ -144,7 +144,7 @@ export class Calculator {
         }
 
         const exchangeRateDec = new Decimal(exchangeRate);
-        let currentTotal = new Decimal(0);
+        let currentTotal = DECIMAL_ZERO;
 
         const calculatedPortfolioData: CalculatedStock[] = portfolioData.map((stock) => {
             const calculatedMetrics = Calculator.calculateStockMetrics(stock);
@@ -196,24 +196,24 @@ export class Calculator {
         const startTime = performance.now();
 
         const sectorMap = new Map<string, Decimal>();
-        let currentTotal = new Decimal(0);
+        let currentTotal = DECIMAL_ZERO;
 
         for (const s of portfolioData) {
             const sector = s.sector || 'Unclassified';
             const amount = currentCurrency === 'krw'
-                ? (s.calculated?.currentAmountKRW || new Decimal(0))
-                : (s.calculated?.currentAmountUSD || new Decimal(0));
+                ? (s.calculated?.currentAmountKRW || DECIMAL_ZERO)
+                : (s.calculated?.currentAmountUSD || DECIMAL_ZERO);
             currentTotal = currentTotal.plus(amount);
 
-            const currentSectorAmount = sectorMap.get(sector) || new Decimal(0);
+            const currentSectorAmount = sectorMap.get(sector) || DECIMAL_ZERO;
             sectorMap.set(sector, currentSectorAmount.plus(amount));
         }
 
         const result: { sector: string; amount: Decimal; percentage: Decimal }[] = [];
         for (const [sector, amount] of sectorMap.entries()) {
             const percentage = currentTotal.isZero()
-                ? new Decimal(0)
-                : amount.div(currentTotal).times(100);
+                ? DECIMAL_ZERO
+                : amount.div(currentTotal).times(DECIMAL_HUNDRED);
             result.push({ sector, amount, percentage });
         }
 
