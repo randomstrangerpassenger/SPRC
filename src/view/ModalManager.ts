@@ -1,36 +1,41 @@
 // src/view/ModalManager.ts
 import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
+import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction } from '../types';
 
 /**
  * @class ModalManager
- * @description 모달 창 관리 (custom modal, transaction modal)
+ * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
  */
 export class ModalManager {
     private dom: any;
     private activeModalResolver: ((value: any) => void) | null = null;
-    private lastFocusedElement: HTMLElement | null = null;
+    private focusManager: FocusManager;
+    private focusTrapCleanup: (() => void) | null = null;
 
     constructor(dom: any) {
         this.dom = dom;
+        this.focusManager = new FocusManager();
     }
 
     /**
-     * @description 현재 포커스 요소를 저장하고 모달 리졸버를 설정합니다.
+     * @description 현재 포커스 요소를 저장합니다.
      */
     private saveFocusContext(): void {
-        this.lastFocusedElement = document.activeElement as HTMLElement;
+        this.focusManager.saveFocus();
     }
 
     /**
      * @description 저장된 포커스 요소로 복원합니다.
      */
     private restoreFocus(): void {
-        if (this.lastFocusedElement) {
-            this.lastFocusedElement.focus();
-            this.lastFocusedElement = null;
+        this.focusManager.restoreFocus();
+        // Cleanup focus trap
+        if (this.focusTrapCleanup) {
+            this.focusTrapCleanup();
+            this.focusTrapCleanup = null;
         }
     }
 
@@ -88,7 +93,9 @@ export class ModalManager {
 
             if (modalEl) {
                 modalEl.classList.remove('hidden');
-                this._trapFocus(modalEl);
+                modalEl.setAttribute('aria-modal', 'true');
+                // Use enhanced focus trap from a11yHelpers
+                this.focusTrapCleanup = createFocusTrap(modalEl);
             }
 
             if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
@@ -113,39 +120,9 @@ export class ModalManager {
 
         this.activeModalResolver(value);
         modalEl?.classList.add('hidden');
+        modalEl?.removeAttribute('aria-modal');
         this.restoreFocus();
         this.activeModalResolver = null;
-    }
-
-    /**
-     * @description 모달 내에서 포커스를 가둡니다 (접근성).
-     * @param element - 모달 요소
-     */
-    private _trapFocus(element: HTMLElement): void {
-        if (!element) return;
-
-        const focusableEls = element.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusableEls.length === 0) return;
-
-        const firstFocusableEl = focusableEls[0] as HTMLElement;
-        const lastFocusableEl = focusableEls[focusableEls.length - 1] as HTMLElement;
-
-        element.addEventListener('keydown', (e) => {
-            if (e.key !== 'Tab') return;
-            if (e.shiftKey) {
-                if (document.activeElement === firstFocusableEl) {
-                    lastFocusableEl.focus();
-                    e.preventDefault();
-                }
-            } else {
-                if (document.activeElement === lastFocusableEl) {
-                    firstFocusableEl.focus();
-                    e.preventDefault();
-                }
-            }
-        });
     }
 
     /**
@@ -174,7 +151,8 @@ export class ModalManager {
         }
 
         modal.classList.remove('hidden');
-        this._trapFocus(modal);
+        modal.setAttribute('aria-modal', 'true');
+        this.focusTrapCleanup = createFocusTrap(modal);
 
         const closeBtn = this.dom.closeModalBtn;
         if (closeBtn instanceof HTMLButtonElement) {
@@ -192,6 +170,7 @@ export class ModalManager {
         if (!modal) return;
 
         modal.classList.add('hidden');
+        modal.removeAttribute('aria-modal');
         if (form instanceof HTMLFormElement) form.reset();
         modal.removeAttribute('data-stock-id');
         this.restoreFocus();
