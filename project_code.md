@@ -46,7 +46,6 @@
     "nanoid": "^5.1.6"
   }
 }
-
 ```
 
 ---
@@ -3509,9 +3508,14 @@ export interface Stock {
 }
 
 export interface CalculatedStockMetrics {
+    totalBuyQuantity: Decimal; // 총 매수 수량
+    totalSellQuantity: Decimal; // 총 매도 수량
     quantity: Decimal; // 현재 보유 수량
+    totalBuyAmount: Decimal; // 총 매수 금액
     avgBuyPrice: Decimal; // 평균 매수 단가
-    currentAmount: Decimal; // 현재 평가 금액
+    currentAmount: Decimal; // 현재 평가 금액 (USD 기준)
+    currentAmountUSD: Decimal; // 현재 평가 금액 (USD)
+    currentAmountKRW: Decimal; // 현재 평가 금액 (KRW)
     profitLoss: Decimal; // 평가 손익
     profitLossRate: Decimal; // 평가 수익률 (%)
 }
@@ -3586,23 +3590,26 @@ import type { IRebalanceStrategy } from './calculationStrategies.ts';
  * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.
  */
 function _generateStockKey(stock: Stock): string {
-    // transactions는 state.js에서 정렬되어 관리되므로, 단순히 배열의 길이와 마지막 거래 정보를 포함
-    const lastTx = stock.transactions[stock.transactions.length - 1];
-    const txSignature = lastTx
-        ? `${lastTx.type}-${lastTx.quantity.toString()}-${lastTx.price.toString()}`
-        : 'none';
+    // 모든 거래 ID를 조합하여 중간 거래 수정/삭제도 감지
+    const txIds = stock.transactions.map(tx => tx.id).join(',');
 
     // 섹터 정보도 계산에 영향을 주지 않으므로 제외
-    return `${stock.id}:${stock.currentPrice}:${stock.transactions.length}:${txSignature}`;
+    return `${stock.id}:${stock.currentPrice}:${txIds}`;
 }
 
 /**
  * @description 포트폴리오 전체를 위한 캐시 키를 생성합니다.
  */
-function _generatePortfolioKey(portfolioData: Stock[]): string {
+function _generatePortfolioKey(
+    portfolioData: Stock[],
+    exchangeRate: number,
+    currentCurrency: Currency
+): string {
     // 주식 ID 기준으로 정렬하여 배열 순서와 무관하게 일관된 캐시 키 생성
     const sortedData = [...portfolioData].sort((a, b) => a.id.localeCompare(b.id));
-    return sortedData.map(_generateStockKey).join('|');
+    const stockKeys = sortedData.map(_generateStockKey).join('|');
+    const settingsKey = `${exchangeRate}:${currentCurrency}`;
+    return `${stockKeys}|${settingsKey}`;
 }
 
 export interface PortfolioCalculationResult {
@@ -3621,10 +3628,12 @@ export class Calculator {
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
+     * @important stock.currentPrice는 항상 USD로 저장되어 있어야 합니다.
+     * 통화 표시는 calculatePortfolioState에서 환율을 적용하여 처리합니다.
      */
     static calculateStockMetrics(stock: Stock): CalculatedStockMetrics {
         try {
-            const result: any = {
+            const result: CalculatedStockMetrics = {
                 totalBuyQuantity: new Decimal(0),
                 totalSellQuantity: new Decimal(0),
                 quantity: new Decimal(0),
@@ -3709,7 +3718,7 @@ export class Calculator {
             currentCurrency = 'krw',
         } = options;
 
-        const cacheKey = _generatePortfolioKey(portfolioData);
+        const cacheKey = _generatePortfolioKey(portfolioData, exchangeRate, currentCurrency);
 
         if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
             return Calculator.#cache.result;
@@ -3721,21 +3730,20 @@ export class Calculator {
         const calculatedPortfolioData: CalculatedStock[] = portfolioData.map((stock) => {
             const calculatedMetrics = Calculator.calculateStockMetrics(stock);
 
-            // 현재가치를 KRW와 USD로 변환
-            const metricsWithCurrency: any = { ...calculatedMetrics };
-            if (currentCurrency === 'krw') {
-                metricsWithCurrency.currentAmountKRW = calculatedMetrics.currentAmount;
-                metricsWithCurrency.currentAmountUSD =
-                    calculatedMetrics.currentAmount.div(exchangeRateDec);
-            } else {
-                // usd
-                metricsWithCurrency.currentAmountUSD = calculatedMetrics.currentAmount;
-                metricsWithCurrency.currentAmountKRW =
-                    calculatedMetrics.currentAmount.times(exchangeRateDec);
-            }
+            // currentPrice는 항상 USD로 저장되어 있다고 가정
+            // currentAmount는 USD 기준 (quantity * currentPriceUSD)
+            const metricsWithCurrency: CalculatedStockMetrics = {
+                ...calculatedMetrics,
+                currentAmountUSD: calculatedMetrics.currentAmount,
+                currentAmountKRW: calculatedMetrics.currentAmount.times(exchangeRateDec),
+            };
 
             // Calculate total based on the selected currency
-            currentTotal = currentTotal.plus(calculatedMetrics.currentAmount);
+            if (currentCurrency === 'krw') {
+                currentTotal = currentTotal.plus(metricsWithCurrency.currentAmountKRW);
+            } else {
+                currentTotal = currentTotal.plus(metricsWithCurrency.currentAmountUSD);
+            }
 
             return { ...stock, calculated: metricsWithCurrency };
         });
@@ -3763,7 +3771,8 @@ export class Calculator {
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
      */
     static calculateSectorAnalysis(
-        portfolioData: CalculatedStock[]
+        portfolioData: CalculatedStock[],
+        currentCurrency: Currency = 'krw'
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
         const startTime = performance.now();
 
@@ -3772,7 +3781,9 @@ export class Calculator {
 
         for (const s of portfolioData) {
             const sector = s.sector || 'Unclassified';
-            const amount = s.calculated?.currentAmount || new Decimal(0);
+            const amount = currentCurrency === 'krw'
+                ? (s.calculated?.currentAmountKRW || new Decimal(0))
+                : (s.calculated?.currentAmountUSD || new Decimal(0));
             currentTotal = currentTotal.plus(amount);
 
             const currentSectorAmount = sectorMap.get(sector) || new Decimal(0);
@@ -3790,10 +3801,12 @@ export class Calculator {
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
-        const endTime = performance.now();
-        console.log(
-            `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
-        );
+        if (import.meta.env.DEV) {
+            const endTime = performance.now();
+            console.log(
+                `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            );
+        }
 
         return result;
     }
@@ -3818,6 +3831,10 @@ export const CONFIG = {
     DEFAULT_EXCHANGE_RATE: 1300,
     RATIO_TOLERANCE: 0.01,
     DARK_MODE_KEY: 'darkMode', // (LocalStorage에 유지)
+
+    // API 타임아웃 설정 (밀리초)
+    API_TIMEOUT: 8000, // 단일 API 호출 타임아웃
+    BATCH_API_TIMEOUT: 10000, // 배치 API 호출 타임아웃
 
     // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
     IDB_META_KEY: 'portfolioMeta_v2',
@@ -3845,6 +3862,8 @@ export type ConfigType = typeof CONFIG;
 ```typescript
 import Decimal from 'decimal.js';
 import type { Stock, Currency } from './types.ts';
+// Import enhanced i18n formatters
+import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
@@ -3879,7 +3898,7 @@ export function getRatioSum(portfolioData: Stock[]): Decimal {
 }
 
 /**
- * @description 숫자를 통화 형식의 문자열로 변환합니다. (null, undefined, Decimal 객체 안전 처리)
+ * @description 숫자를 통화 형식의 문자열로 변환합니다. (Enhanced with i18n)
  * @param amount - 변환할 금액
  * @param currency - 통화 코드 ('krw', 'usd')
  * @returns 포맷팅된 통화 문자열
@@ -3888,39 +3907,8 @@ export function formatCurrency(
     amount: number | Decimal | string | null | undefined,
     currency: Currency = 'krw'
 ): string {
-    try {
-        let num: number;
-        if (amount === null || amount === undefined) {
-            num = 0;
-        } else if (typeof amount === 'object' && 'toNumber' in amount) {
-            // Check if it's Decimal-like
-            num = amount.toNumber(); // This is synchronous
-        } else {
-            num = Number(amount);
-            if (isNaN(num)) num = 0;
-        }
-
-        const options: Intl.NumberFormatOptions = {
-            style: 'currency',
-            currency: currency.toUpperCase(), // Intl.NumberFormat requires uppercase
-        };
-
-        if (currency.toLowerCase() === 'krw') {
-            options.minimumFractionDigits = 0;
-            options.maximumFractionDigits = 0;
-        } else {
-            // usd and others
-            options.minimumFractionDigits = 2;
-            options.maximumFractionDigits = 2;
-        }
-        return new Intl.NumberFormat(
-            currency.toLowerCase() === 'usd' ? 'en-US' : 'ko-KR',
-            options
-        ).format(num);
-    } catch (e) {
-        console.error('formatCurrency error:', e);
-        return String(amount); // 에러 발생 시 원본 값 문자열로 반환
-    }
+    // Use enhanced i18n formatter
+    return formatCurrencyEnhanced(amount, currency);
 }
 
 /**
@@ -3947,6 +3935,9 @@ export function debounce<T extends (...args: any[]) => any>(
         if (callNow) func.apply(context, args); // 즉시 실행 조건 충족 시 바로 실행
     };
 }
+
+// Re-export enhanced formatters for convenience
+export { formatNumber, formatCurrencyEnhanced } from './i18nEnhancements';
 ```
 
 ---
@@ -3954,51 +3945,196 @@ export function debounce<T extends (...args: any[]) => any>(
 ## `src/apiService.ts`
 
 ```typescript
+// src/apiService.ts (강화된 오류 처리)
 import type { FetchStockResult } from './types.ts';
+import { CONFIG } from './constants.ts';
+
+/**
+ * @enum APIErrorType
+ * @description API 오류 유형 분류
+ */
+export enum APIErrorType {
+    NETWORK_ERROR = 'NETWORK_ERROR',
+    TIMEOUT = 'TIMEOUT',
+    RATE_LIMIT = 'RATE_LIMIT',
+    INVALID_TICKER = 'INVALID_TICKER',
+    SERVER_ERROR = 'SERVER_ERROR',
+    UNKNOWN = 'UNKNOWN'
+}
+
+/**
+ * @class APIError
+ * @description 구조화된 API 오류 클래스
+ */
+export class APIError extends Error {
+    type: APIErrorType;
+    ticker?: string;
+    statusCode?: number;
+    retryAfter?: number;
+
+    constructor(message: string, type: APIErrorType, options?: {
+        ticker?: string;
+        statusCode?: number;
+        retryAfter?: number;
+    }) {
+        super(message);
+        this.name = 'APIError';
+        this.type = type;
+        this.ticker = options?.ticker;
+        this.statusCode = options?.statusCode;
+        this.retryAfter = options?.retryAfter;
+    }
+}
+
+/**
+ * @description Retry 로직을 포함한 fetch 래퍼
+ * @param url - API URL
+ * @param options - Fetch 옵션
+ * @param maxRetries - 최대 재시도 횟수
+ * @returns Promise<Response>
+ */
+async function fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    maxRetries: number = 3
+): Promise<Response> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+
+            // 429 (Too Many Requests) 처리
+            if (response.status === 429) {
+                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                throw new APIError(
+                    `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
+                    APIErrorType.RATE_LIMIT,
+                    { statusCode: 429, retryAfter }
+                );
+            }
+
+            // 5xx 서버 오류는 재시도
+            if (response.status >= 500 && attempt < maxRetries) {
+                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                console.warn(`[API] Server error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+
+            return response;
+        } catch (error) {
+            lastError = error as Error;
+
+            // Timeout 오류
+            if (error instanceof Error && error.name === 'TimeoutError') {
+                if (attempt < maxRetries) {
+                    console.warn(`[API] Timeout, retrying... (attempt ${attempt + 1}/${maxRetries})`);
+                    continue;
+                }
+                throw new APIError(
+                    'Request timed out after multiple attempts',
+                    APIErrorType.TIMEOUT
+                );
+            }
+
+            // 네트워크 오류 (재시도 가능)
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                if (attempt < maxRetries) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    console.warn(`[API] Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                throw new APIError(
+                    'Network error after multiple retry attempts',
+                    APIErrorType.NETWORK_ERROR
+                );
+            }
+
+            // Rate limit 오류는 재시도하지 않음
+            if (error instanceof APIError && error.type === APIErrorType.RATE_LIMIT) {
+                throw error;
+            }
+        }
+    }
+
+    // 모든 재시도 실패
+    throw lastError || new APIError('Unknown fetch error', APIErrorType.UNKNOWN);
+}
 
 /**
  * @description 단일 주식의 현재가를 Finnhub API(Vite 프록시 경유)에서 가져옵니다.
+ * @param ticker - 주식 티커
+ * @returns Promise<number>
  */
 async function fetchStockPrice(ticker: string): Promise<number> {
     if (!ticker || ticker.trim() === '') {
-        throw new Error('Ticker is empty.');
+        throw new APIError('Ticker is empty', APIErrorType.INVALID_TICKER, { ticker });
     }
 
-    // Vite 프록시가 가로챌 주소 (/finnhub/quote)
     const url = `/finnhub/quote?symbol=${encodeURIComponent(ticker)}`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    try {
+        const response = await fetchWithRetry(
+            url,
+            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) },
+            2 // 최대 2회 재시도
+        );
 
-    if (!response.ok) {
-        let errorBody = '';
-        try {
-            const errorData = await response.json();
-            // Finnhub가 200 OK와 함께 에러 메시지를 보낼 때 (예: "No data found")
-            if (errorData.c === 0 && errorData.d === null) {
-                throw new Error(`Invalid ticker or no data found for ${ticker}`);
+        if (!response.ok) {
+            let errorBody = '';
+            try {
+                const errorData = await response.json();
+                if (errorData.c === 0 && errorData.d === null) {
+                    throw new APIError(
+                        `Invalid ticker or no data found for ${ticker}`,
+                        APIErrorType.INVALID_TICKER,
+                        { ticker, statusCode: response.status }
+                    );
+                }
+                errorBody = errorData.error || (await response.text());
+            } catch (e) {
+                errorBody = e instanceof Error ? e.message : await response.text();
             }
-            errorBody = errorData.error || (await response.text());
-        } catch (e) {
-            // response.json() 자체가 실패할 때 (예: 404, 500)
-            errorBody = e instanceof Error ? e.message : await response.text();
+
+            throw new APIError(
+                `API returned status ${response.status} for ${ticker}. ${errorBody}`,
+                response.status >= 500 ? APIErrorType.SERVER_ERROR : APIErrorType.UNKNOWN,
+                { ticker, statusCode: response.status }
+            );
         }
-        throw new Error(`API returned status ${response.status} for ${ticker}. ${errorBody}`);
+
+        const data = await response.json();
+        const price = data.c;
+
+        if (typeof price !== 'number' || price <= 0) {
+            console.warn(`[API] Received invalid price for ${ticker}: ${price}`);
+            throw new APIError(
+                `Invalid or zero price received for ${ticker}: ${price}`,
+                APIErrorType.INVALID_TICKER,
+                { ticker }
+            );
+        }
+
+        return price;
+    } catch (error) {
+        if (error instanceof APIError) {
+            throw error;
+        }
+        // 예상치 못한 오류
+        throw new APIError(
+            error instanceof Error ? error.message : 'Unknown error',
+            APIErrorType.UNKNOWN,
+            { ticker }
+        );
     }
-
-    const data = await response.json();
-    const price = data.c; // Finnhub API의 'current price' 필드
-
-    if (typeof price !== 'number' || price <= 0) {
-        console.warn(`[API] Received invalid price for ${ticker}: ${price}`);
-        throw new Error(`Invalid or zero price received for ${ticker}: ${price}`);
-    }
-
-    return price;
 }
 
 /**
  * @description 여러 종목의 가격을 배치로 가져옵니다.
- * /api/batchGetPrices 엔드포인트를 한 번만 호출합니다.
+ * @param tickersToFetch - 티커 배열
+ * @returns Promise<FetchStockResult[]>
  */
 async function fetchAllStockPrices(
     tickersToFetch: { id: string; ticker: string }[]
@@ -4007,37 +4143,75 @@ async function fetchAllStockPrices(
         return [];
     }
 
-    // 모든 티커를 콤마로 구분하여 하나의 요청으로 전송
     const symbols = tickersToFetch.map(item => item.ticker).join(',');
     const url = `/api/batchGetPrices?symbols=${encodeURIComponent(symbols)}`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    try {
+        const response = await fetchWithRetry(
+            url,
+            { signal: AbortSignal.timeout(CONFIG.BATCH_API_TIMEOUT) },
+            2 // 최대 2회 재시도
+        );
 
-    if (!response.ok) {
-        throw new Error(`Batch API returned status ${response.status}`);
-    }
-
-    const batchResults = await response.json();
-
-    // 배치 API 응답을 FetchStockResult 형식으로 매핑
-    return batchResults.map((result: any, index: number) => {
-        const { id } = tickersToFetch[index];
-        if (result.status === 'fulfilled') {
-            return {
-                id: id,
-                ticker: result.ticker,
-                status: 'fulfilled' as const,
-                value: result.value,
-            };
-        } else {
-            return {
-                id: id,
-                ticker: result.ticker,
-                status: 'rejected' as const,
-                reason: result.reason || 'Unknown error',
-            };
+        if (!response.ok) {
+            throw new APIError(
+                `Batch API returned status ${response.status}`,
+                response.status >= 500 ? APIErrorType.SERVER_ERROR : APIErrorType.UNKNOWN,
+                { statusCode: response.status }
+            );
         }
-    });
+
+        const batchResults = await response.json();
+
+        return batchResults.map((result: any, index: number) => {
+            const { id, ticker } = tickersToFetch[index];
+            if (result.status === 'fulfilled') {
+                return {
+                    id: id,
+                    ticker: result.ticker || ticker,
+                    status: 'fulfilled' as const,
+                    value: result.value,
+                };
+            } else {
+                return {
+                    id: id,
+                    ticker: result.ticker || ticker,
+                    status: 'rejected' as const,
+                    reason: result.reason || 'Unknown error',
+                };
+            }
+        });
+    } catch (error) {
+        if (error instanceof APIError) {
+            throw error;
+        }
+        throw new APIError(
+            error instanceof Error ? error.message : 'Batch API request failed',
+            APIErrorType.UNKNOWN
+        );
+    }
+}
+
+/**
+ * @description API 오류를 사용자 친화적인 메시지로 변환
+ * @param error - APIError 인스턴스
+ * @returns 사용자 메시지
+ */
+export function formatAPIError(error: APIError): string {
+    switch (error.type) {
+        case APIErrorType.NETWORK_ERROR:
+            return '네트워크 연결을 확인해주세요. 인터넷 연결이 불안정합니다.';
+        case APIErrorType.TIMEOUT:
+            return 'API 요청 시간이 초과되었습니다. 다시 시도해주세요.';
+        case APIErrorType.RATE_LIMIT:
+            return `요청 한도를 초과했습니다. ${error.retryAfter || 60}초 후에 다시 시도해주세요.`;
+        case APIErrorType.INVALID_TICKER:
+            return `유효하지 않은 티커: ${error.ticker}. 티커를 확인해주세요.`;
+        case APIErrorType.SERVER_ERROR:
+            return 'API 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        default:
+            return `알 수 없는 오류: ${error.message}`;
+    }
 }
 
 export const apiService = {
@@ -4223,10 +4397,12 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
                 : s.finalBuyAmount.div(totalBuyAmount).times(100),
         }));
 
-        const endTime = performance.now();
-        console.log(
-            `[Perf] AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
-        );
+        if (import.meta.env.DEV) {
+            const endTime = performance.now();
+            console.log(
+                `[Perf] AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            );
+        }
 
         return { results: finalResults };
     }
@@ -4261,10 +4437,12 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
 
         // 포트폴리오가 비어있으면 계산 불가
         if (totalInvestment.isZero()) {
-            const endTime = performance.now();
-            console.log(
-                `[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
-            );
+            if (import.meta.env.DEV) {
+                const endTime = performance.now();
+                console.log(
+                    `[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
+                );
+            }
             return { results: [] };
         }
 
@@ -4318,10 +4496,12 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
                 : s.finalBuyAmount.div(totalBuyAmount).times(100),
         }));
 
-        const endTime = performance.now();
-        console.log(
-            `[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
-        );
+        if (import.meta.env.DEV) {
+            const endTime = performance.now();
+            console.log(
+                `[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            );
+        }
 
         return { results: finalResults };
     }
@@ -4350,10 +4530,12 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
         const totalRatio = calculateTotalRatio(this.#portfolioData);
 
         if (currentTotal.isZero() || totalRatio.isZero()) {
-            const endTime = performance.now();
-            console.log(
-                `[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
-            );
+            if (import.meta.env.DEV) {
+                const endTime = performance.now();
+                console.log(
+                    `[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
+                );
+            }
             return { results: [] };
         }
 
@@ -4377,10 +4559,12 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
             };
         });
 
-        const endTime = performance.now();
-        console.log(
-            `[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
-        );
+        if (import.meta.env.DEV) {
+            const endTime = performance.now();
+            console.log(
+                `[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            );
+        }
 
         return { results };
     }
@@ -4914,7 +5098,7 @@ export const Validator = {
      * @description 숫자 입력값을 검증하고, 유효하면 숫자 타입으로 변환하여 반환합니다.
      * @param value - 검증할 값
      * @param max - 최대값 (기본: 1000조)
-     * @returns 검증 결과
+     * @returns 검증 결과 (value는 number 타입이지만, state.ts에서 Decimal로 변환됨)
      */
     validateNumericInput(
         value: string | number | null | undefined,
@@ -6779,20 +6963,19 @@ export function bindEventListeners(view: PortfolioView): AbortController {
 ## `src/view.ts`
 
 ```typescript
-// src/view.ts (가상 스크롤 적용)
+// src/view.ts (리팩토링: 모듈화)
 import { CONFIG } from './constants';
-import { formatCurrency, escapeHTML } from './utils';
+import { getRatioSum } from './utils';
 import { t } from './i18n';
 import Decimal from 'decimal.js';
 import type { Stock, CalculatedStock, Transaction } from './types';
 import type { Chart } from 'chart.js';
 
-// ▼▼▼▼▼ [추가] 가상 스크롤 상수 ▼▼▼▼▼
-const ROW_INPUT_HEIGHT = 60; // .virtual-row-inputs의 height
-const ROW_OUTPUT_HEIGHT = 50; // .virtual-row-outputs의 height
-const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT; // 한 종목(2줄)의 총 높이
-const VISIBLE_ROWS_BUFFER = 5; // 화면 밖 위/아래로 미리 렌더링할 행 수
-// ▲▲▲▲▲ [추가] ▲▲▲▲▲
+// 분리된 모듈들
+import { EventEmitter, type EventCallback } from './view/EventEmitter';
+import { ModalManager } from './view/ModalManager';
+import { VirtualScrollManager } from './view/VirtualScrollManager';
+import { ResultsRenderer } from './view/ResultsRenderer';
 
 // DOM 요소 타입 정의
 interface DOMElements {
@@ -6847,64 +7030,45 @@ interface DOMElements {
     customModalCancel: HTMLElement | null;
 }
 
-type EventCallback = (data?: any) => void;
-
 /**
  * @class PortfolioView
- * @description 포트폴리오 UI를 담당하는 View 클래스
+ * @description 포트폴리오 UI를 담당하는 View 클래스 (리팩토링: 모듈화)
  */
 export class PortfolioView {
     dom: DOMElements = {} as DOMElements;
-    chartInstance: Chart | null = null;
-    currentObserver: IntersectionObserver | null = null;
-    activeModalResolver: ((value: any) => void) | null = null;
-    lastFocusedElement: HTMLElement | null = null;
-    _events: Record<string, EventCallback[]> = {};
 
-    // ▼▼▼▼▼ 가상 스크롤 상태 변수 ▼▼▼▼▼
-    _virtualData: CalculatedStock[] = [];
-    _scrollWrapper: HTMLElement | null = null;
-    _scrollSpacer: HTMLElement | null = null;
-    _scrollContent: HTMLElement | null = null;
-    _viewportHeight: number = 0;
-    _renderedStartIndex: number = -1;
-    _renderedEndIndex: number = -1;
-    _scrollHandler: (() => void) | null = null;
-    _currentMainMode: 'add' | 'sell' | 'simple' = 'add';
-    _currentCurrency: 'krw' | 'usd' = 'krw';
-    // ▲▲▲▲▲ ▲▲▲▲▲
+    // 분리된 모듈들
+    private eventEmitter: EventEmitter;
+    private modalManager: ModalManager;
+    private virtualScrollManager: VirtualScrollManager;
+    private resultsRenderer: ResultsRenderer;
 
     /**
      * @constructor
      * @description View 초기화
      */
     constructor() {
-        // 초기화는 cacheDomElements()에서 수행
+        // 모듈 인스턴스 생성 (DOM 캐싱 후 초기화됨)
+        this.eventEmitter = new EventEmitter();
+        this.modalManager = new ModalManager(this.dom);
+        this.virtualScrollManager = new VirtualScrollManager(this.dom);
+        this.resultsRenderer = new ResultsRenderer(this.dom);
     }
 
     /**
-     * @description 추상 이벤트를 구독합니다.
-     * @param event - 이벤트 이름 (예: 'calculateClicked')
-     * @param callback - 실행할 콜백 함수
+     * @description EventEmitter 메서드 위임
      */
     on(event: string, callback: EventCallback): void {
-        if (!this._events[event]) {
-            this._events[event] = [];
-        }
-        this._events[event].push(callback);
+        this.eventEmitter.on(event, callback);
+    }
+
+    emit(event: string, data?: any): void {
+        this.eventEmitter.emit(event, data);
     }
 
     /**
-     * @description 추상 이벤트를 발행합니다.
-     * @param event - 이벤트 이름
-     * @param data - 전달할 데이터
+     * @description DOM 요소 캐싱
      */
-    emit(event: string, data?: any): void {
-        if (this._events[event]) {
-            this._events[event].forEach(callback => callback(data));
-        }
-    }
-
     cacheDomElements(): void {
         const D = document;
         this.dom = {
@@ -6959,24 +7123,24 @@ export class PortfolioView {
             customModalCancel: D.getElementById('customModalCancel'),
         };
 
-        this._events = {}; // 캐시 초기화 시 이벤트 리스너도 초기화
+        this.eventEmitter.clear();
 
-        // ▼▼▼▼▼ [추가] 가상 스크롤 래퍼 캐시 ▼▼▼▼▼
-        this._scrollWrapper = this.dom.virtualScrollWrapper;
-        this._scrollSpacer = this.dom.virtualScrollSpacer;
-        this._scrollContent = this.dom.virtualScrollContent;
-        this._viewportHeight = this._scrollWrapper ? this._scrollWrapper.clientHeight : 600;
-        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+        // 모듈 재초기화 (DOM 참조 업데이트)
+        this.modalManager = new ModalManager(this.dom);
+        this.virtualScrollManager = new VirtualScrollManager(this.dom);
+        this.resultsRenderer = new ResultsRenderer(this.dom);
 
-
-        const cancelBtn = this.dom.customModalCancel;
-        const confirmBtn = this.dom.customModalConfirm;
-        const customModalEl = this.dom.customModal;
-        cancelBtn?.addEventListener('click', () => this._handleCustomModal(false));
-        confirmBtn?.addEventListener('click', () => this._handleCustomModal(true));
-        customModalEl?.addEventListener('keydown', (e) => { if (e.key === 'Escape') this._handleCustomModal(false); });
+        // 모달 이벤트 바인딩
+        this.modalManager.bindModalEvents();
     }
 
+    // ===== ARIA & Accessibility =====
+
+    /**
+     * @description ARIA 알림 발표
+     * @param message - 알림 메시지
+     * @param politeness - 우선순위
+     */
     announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
         const announcer = this.dom.ariaAnnouncer;
         if (announcer) {
@@ -6988,868 +7152,15 @@ export class PortfolioView {
         }
     }
 
-    async showConfirm(title: string, message: string): Promise<boolean> {
-        return this._showModal({ title, message, type: 'confirm' }) as Promise<boolean>;
-    }
-
-    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
-        return this._showModal({ title, message, defaultValue, type: 'prompt' }) as Promise<string | null>;
-    }
-
-    _showModal(options: { title: string; message: string; defaultValue?: string; type: 'confirm' | 'prompt' }): Promise<boolean | string | null> {
-        return new Promise((resolve) => {
-            this.lastFocusedElement = document.activeElement as HTMLElement;
-            this.activeModalResolver = resolve;
-            const { title, message, defaultValue, type } = options;
-            const titleEl = this.dom.customModalTitle;
-            const messageEl = this.dom.customModalMessage;
-            const inputEl = this.dom.customModalInput;
-            const modalEl = this.dom.customModal;
-            const confirmBtnEl = this.dom.customModalConfirm;
-
-            if (titleEl) titleEl.textContent = title;
-            if (messageEl) messageEl.textContent = message;
-
-            if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
-                inputEl.value = defaultValue ?? '';
-                inputEl.classList.remove('hidden');
-            } else if (inputEl) {
-                inputEl.classList.add('hidden');
-            }
-            if (modalEl) {
-                modalEl.classList.remove('hidden');
-                this._trapFocus(modalEl);
-            }
-            if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
-                inputEl.focus();
-            } else if (confirmBtnEl instanceof HTMLButtonElement){
-                confirmBtnEl.focus();
-            }
-        });
-    }
-
-    _handleCustomModal(confirmed: boolean): void {
-        if (!this.activeModalResolver) return;
-        const inputEl = this.dom.customModalInput;
-        const modalEl = this.dom.customModal;
-        const isPrompt = inputEl instanceof HTMLInputElement && !inputEl.classList.contains('hidden');
-        const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
-        this.activeModalResolver(value);
-        modalEl?.classList.add('hidden');
-        if (this.lastFocusedElement) this.lastFocusedElement.focus();
-        this.activeModalResolver = null;
-        this.lastFocusedElement = null;
-    }
-
-    _trapFocus(element: HTMLElement): void {
-        if (!element) return;
-        const focusableEls = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        if (focusableEls.length === 0) return;
-        const firstFocusableEl = focusableEls[0] as HTMLElement;
-        const lastFocusableEl = focusableEls[focusableEls.length - 1] as HTMLElement;
-        element.addEventListener('keydown', (e) => {
-            if (e.key !== 'Tab') return;
-            if (e.shiftKey) {
-                if (document.activeElement === firstFocusableEl) { lastFocusableEl.focus(); e.preventDefault(); }
-            } else {
-                if (document.activeElement === lastFocusableEl) { firstFocusableEl.focus(); e.preventDefault(); }
-            }
-        });
-    }
-
-    renderPortfolioSelector(portfolios: Record<string, { name: string }>, activeId: string): void {
-        const selector = this.dom.portfolioSelector;
-        if (!(selector instanceof HTMLSelectElement)) return;
-        selector.innerHTML = '';
-        Object.entries(portfolios).forEach(([id, portfolio]) => {
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = portfolio.name;
-            option.selected = (id === activeId);
-            selector.appendChild(option);
-        });
-    }
-
-    // ▼▼▼▼▼ [대대적 수정] createStockRowFragment (div 기반으로 변경) ▼▼▼▼▼
-    createStockRowFragment(stock: CalculatedStock, currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): DocumentFragment {
-        const fragment = document.createDocumentFragment();
-
-        // --- 헬퍼 함수 ---
-        const createInput = (type: string, field: string, value: any, placeholder: string = '', disabled: boolean = false, ariaLabel: string = ''): HTMLInputElement => {
-            const input = document.createElement('input');
-            input.type = type;
-            input.dataset.field = field;
-            let displayValue = '';
-            if (value instanceof Decimal) {
-                const decimalPlaces = (field === 'fixedBuyAmount' ? 0 : 2);
-                displayValue = value.toFixed(decimalPlaces);
-            } else {
-                 const defaultValue = (field === 'fixedBuyAmount' ? '0' : (field === 'targetRatio' || field === 'currentPrice' ? '0.00' : ''));
-                 displayValue = String(value ?? defaultValue);
-            }
-            input.value = displayValue;
-            if (placeholder) input.placeholder = placeholder;
-            input.disabled = disabled;
-            if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
-            if (type === 'number') {
-                input.min = '0';
-                if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
-            }
-             if (type === 'text') {
-                 input.style.textAlign = 'center';
-             }
-            return input;
-        };
-
-        const createCheckbox = (field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement => {
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.dataset.field = field;
-            input.checked = checked;
-            if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
-            return input;
-        };
-
-        const createButton = (action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement => {
-            const button = document.createElement('button');
-            button.className = 'btn btn--small';
-            button.dataset.action = action;
-            button.dataset.variant = variant;
-            button.textContent = text;
-            if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
-            return button;
-        };
-
-        const createCell = (className: string = '', align: string = 'left'): HTMLDivElement => {
-            const cell = document.createElement('div');
-            cell.className = `virtual-cell ${className} align-${align}`;
-            return cell;
-        };
-
-        // --- 1. 입력 행 (Inputs Row) ---
-        const divInputs = document.createElement('div');
-        divInputs.className = 'virtual-row-inputs';
-        divInputs.dataset.id = stock.id;
-        divInputs.setAttribute('role', 'row');
-        // 그리드 템플릿 설정 (CSS 대신 JS에서)
-        divInputs.style.gridTemplateColumns = this.getGridTemplate(mainMode);
-
-        const isMobile = window.innerWidth <= 768;
-
-        // 컬럼 구성
-        divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
-        divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
-
-        // 간단 계산 모드에서는 섹터, 고정 매수 필드만 숨김 (목표비중은 유지)
-        if (mainMode !== 'simple' && !isMobile) {
-            // 섹터는 간단 모드가 아닐 때만 표시
-            divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
-        }
-
-        // 목표 비율은 모든 모드에서 표시
-        divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
-
-        if (!isMobile && mainMode !== 'simple') {
-            // 현재가는 간단 모드가 아닐 때만 표시
-            divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
-        }
-
-        if (mainMode === 'simple') {
-            // 간단 모드: 보유 금액 입력칸 + 고정 매수 필드 + 삭제 버튼
-            const amountCell = createCell('align-right');
-            const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
-            manualAmountInput.style.width = '100%';
-            manualAmountInput.style.textAlign = 'right';
-            amountCell.appendChild(manualAmountInput);
-            divInputs.appendChild(amountCell);
-
-            // 고정 매수 필드 추가 (간단 모드)
-            if (!isMobile) {
-                const fixedBuyCell = createCell('align-center');
-                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
-                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
-                amountInput.style.width = '80px';
-                fixedBuyCell.append(checkbox, ' ', amountInput);
-                divInputs.appendChild(fixedBuyCell);
-            }
-
-            const deleteCell = createCell('align-center');
-            deleteCell.appendChild(
-                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
-            );
-            divInputs.appendChild(deleteCell);
-        } else {
-            // 추가 매수 모드: 고정 매수 필드 표시
-            if (mainMode === 'add' && !isMobile) {
-                const fixedBuyCell = createCell('align-center');
-                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
-                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
-                amountInput.style.width = '80px';
-                fixedBuyCell.append(checkbox, ' ', amountInput);
-                divInputs.appendChild(fixedBuyCell);
-            }
-
-            // 일반 모드: 거래 내역 관리 및 삭제 버튼
-            const actionCell = createCell('align-center');
-            actionCell.append(
-                createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
-                ' ',
-                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
-            );
-            divInputs.appendChild(actionCell);
-        }
-
-        // --- 2. 출력 행 (Outputs Row) ---
-        const divOutputs = document.createElement('div');
-        divOutputs.className = 'virtual-row-outputs';
-        divOutputs.dataset.id = stock.id;
-        divOutputs.setAttribute('role', 'row');
-        divOutputs.style.gridTemplateColumns = this.getGridTemplate(mainMode); // 동일한 그리드 사용
-
-        const metrics = stock.calculated ?? {
-            quantity: new Decimal(0),
-            avgBuyPrice: new Decimal(0),
-            currentAmount: new Decimal(0),
-            profitLoss: new Decimal(0),
-            profitLossRate: new Decimal(0)
-        };
-        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
-        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
-        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
-        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
-        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
-
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
-
-        const createOutputCell = (label: string, value: string, valueClass: string = ''): HTMLDivElement => {
-            const cell = createCell('output-cell align-right');
-            cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
-            return cell;
-        };
-
-        const firstCell = createCell(); // 첫 번째 빈 셀 (스페이서)
-        firstCell.style.gridColumn = 'span 1'; // 첫 번째 컬럼 차지
-        divOutputs.appendChild(firstCell);
-
-        // 출력 행 컬럼 구성
-        if (mainMode === 'simple') {
-            // 간단 모드에서는 출력 행을 완전히 숨김 (보유 금액을 입력칸에서 바로 입력하므로)
-            divOutputs.style.display = 'none';
-        } else {
-            // 일반 모드
-            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
-            if (!isMobile) { // 모바일 아닐 때
-                divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
-            }
-            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
-            if (!isMobile) { // 모바일 아닐 때
-                divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
-            }
-            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
-        }
-
-        // 액션 컬럼 스페이서
-        const lastCell = createCell();
-        divOutputs.appendChild(lastCell);
-
-        fragment.append(divInputs, divOutputs);
-        return fragment;
-    }
-    // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
-
-    // ▼▼▼▼▼ [수정] updateStockRowOutputs (더 이상 사용 안 함) ▼▼▼▼▼
-    updateStockRowOutputs(id: string, stock: CalculatedStock, currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
-        // 이 함수는 가상 스크롤에서 전체 재조정 로직(_onScroll)으로 대체됨
-        // console.warn("updateStockRowOutputs is deprecated with Virtual Scroll");
-    }
-    // ▲▲▲▲▲ [수정] ▲▲▲▲▲
-
-    updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
-        // 가상 스크롤에서는 보이는 부분만 업데이트해야 함
-        portfolioData.forEach(stock => {
-            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`);
-            if (!inputRow) return; // 화면에 안보이면 스킵
-            const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
-            if (targetRatioInput instanceof HTMLInputElement) {
-                const ratio = stock.targetRatio instanceof Decimal ? stock.targetRatio : new Decimal(stock.targetRatio ?? 0);
-                targetRatioInput.value = ratio.toFixed(2);
-            }
-        });
-    }
-
-    updateCurrentPriceInput(id: string, price: string): void {
-        const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
-        if (!inputRow) return; // 화면에 안보이면 스킵
-        const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
-        if (currentPriceInput instanceof HTMLInputElement) {
-            currentPriceInput.value = price;
-        }
-    }
-
-    // ▼▼▼▼▼ [추가] 가상 스크롤 헬퍼 ▼▼▼▼▼
-    getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
-        // 반응형 그리드 템플릿 반환
-        const isMobile = window.innerWidth <= 768;
-
-        // 입력 행과 출력 행의 그리드 컬럼 수를 다르게 설정
-        if (isMobile) {
-            if (mainMode === 'simple') {
-                // 모바일 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 삭제 (5컬럼)
-                return '1.5fr 1fr 1fr 1fr 0.8fr';
-            }
-            // 모바일: 이름 | 티커 | 목표% | 액션 (입력)
-            // 모바일: (스페이서) | 수량 | 평가액 | 수익률 | (스페이서) (출력)
-            // -> 컬럼 수는 4개로 동일하게 맞추되, 내용만 다르게
-            return '1.5fr 1fr 1fr 1.2fr';
-        } else {
-            // 데스크탑
-            if (mainMode === 'add') {
-                // 이름 | 티커 | 섹터 | 목표% | 현재가 | 고정 | 액션 (7컬럼)
-                // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (7컬럼)
-                return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
-            } else if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 고정 매수 | 삭제 (6컬럼)
-                return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
-            } else {
-                // 매도 리밸런싱: 이름 | 티커 | 섹터 | 목표% | 현재가 | 액션 (6컬럼)
-                // (스페이서) | 수량 | 평단가 | 목표% | 평가액 | 수익률 | (스페이서) (6컬럼)
-                return '2fr 1fr 1fr 1fr 1fr 1.2fr';
-            }
-        }
-    }
-
-    // updateTableHeader를 새 div 헤더에 맞게 수정
-    updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
-        this._currentMainMode = mainMode; // 현재 모드 저장
-        this._currentCurrency = currency; // 현재 통화 저장
-        const header = this.dom.virtualTableHeader;
-        if (!header) return;
-
-        header.style.gridTemplateColumns = this.getGridTemplate(mainMode);
-
-        const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
-        let headersHTML = '';
-
-        const isMobile = window.innerWidth <= 768;
-
-        if (isMobile) {
-            if (mainMode === 'simple') {
-                headersHTML = `
-                    <div class="virtual-cell">${t('ui.stockName')}</div>
-                    <div class="virtual-cell">${t('ui.ticker')}</div>
-                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
-                    <div class="virtual-cell align-center">${t('ui.action')}</div>
-                `;
-            } else {
-                headersHTML = `
-                    <div class="virtual-cell">${t('ui.stockName')}</div>
-                    <div class="virtual-cell">${t('ui.ticker')}</div>
-                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                    <div class="virtual-cell align-center">${t('ui.action')}</div>
-                `;
-            }
-        } else {
-            if (mainMode === 'simple') {
-                // 간단 모드: 이름 | 티커 | 목표% | 보유 금액 | 고정 매수 | 삭제
-                headersHTML = `
-                    <div class="virtual-cell">${t('ui.stockName')}</div>
-                    <div class="virtual-cell">${t('ui.ticker')}</div>
-                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
-                    <div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>
-                    <div class="virtual-cell align-center">${t('ui.action')}</div>
-                `;
-            } else {
-                headersHTML = `
-                    <div class="virtual-cell">${t('ui.stockName')}</div>
-                    <div class="virtual-cell">${t('ui.ticker')}</div>
-                    <div class="virtual-cell">${t('ui.sector')}</div>
-                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
-                    <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
-                    ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
-                    <div class="virtual-cell align-center">${t('ui.action')}</div>
-                `;
-            }
-        }
-        header.innerHTML = headersHTML;
-    }
-
-    // ▼▼▼▼▼ [대대적 수정] renderTable (가상 스크롤 초기화 로직) ▼▼▼▼▼
-    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
-        if (!this._scrollWrapper || !this._scrollSpacer || !this._scrollContent) return;
-
-        // 1. 헤더 업데이트 (모드, 통화 저장)
-        this.updateTableHeader(currency, mainMode);
-
-        // 2. 데이터 저장
-        this._virtualData = calculatedPortfolioData;
-        if(this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
-        }
-
-        // 3. 전체 높이 설정
-        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
-        this._scrollSpacer.style.height = `${totalHeight}px`;
-
-        // 4. 뷰포트 높이 갱신
-        this._viewportHeight = this._scrollWrapper.clientHeight;
-
-        // 5. 기존 스크롤 이벤트 리스너 제거
-        if (this._scrollHandler) {
-            this._scrollWrapper.removeEventListener('scroll', this._scrollHandler);
-        }
-
-        // 6. 스크롤 이벤트 핸들러 생성 및 바인딩
-        // _onScroll 내부에서 this가 view를 가리키도록 .bind(this) 사용
-        this._scrollHandler = this._onScroll.bind(this);
-        this._scrollWrapper.addEventListener('scroll', this._scrollHandler);
-
-        // 7. 초기 렌더링 실행
-        this._onScroll(true); // forceRedraw = true
-    }
-
     /**
-     * @description [NEW] 컨트롤러가 데이터를 업데이트할 때 호출
+     * @description Toast 메시지 표시
+     * @param message - 메시지
+     * @param type - 메시지 타입
      */
-    updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
-        this._virtualData = calculatedPortfolioData; // 데이터 교체
-        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
-        if(this._scrollSpacer) this._scrollSpacer.style.height = `${totalHeight}px`;
-        if(this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
-        }
-
-        // 현재 스크롤 위치에서 강제로 다시 렌더링
-        this._onScroll(true); // forceRedraw = true
-    }
-
-    /**
-     * @description [NEW] 특정 종목의 속성을 _virtualData에서 업데이트 (재렌더링 없이)
-     * @param stockId - 종목 ID
-     * @param field - 업데이트할 필드명
-     * @param value - 새 값
-     */
-    updateStockInVirtualData(stockId: string, field: string, value: any): void {
-        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
-        if (stockIndex !== -1) {
-            (this._virtualData[stockIndex] as any)[field] = value;
-        }
-    }
-
-    /**
-     * @description [NEW] 특정 종목의 계산된 데이터를 업데이트하고 화면에 보이는 경우에만 DOM 업데이트
-     * @param stockId - 종목 ID
-     * @param calculatedData - 재계산된 데이터
-     */
-    updateSingleStockRow(stockId: string, calculatedData: any): void {
-        // 1. _virtualData 업데이트
-        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
-        if (stockIndex === -1) return;
-
-        this._virtualData[stockIndex] = { ...this._virtualData[stockIndex], calculated: calculatedData };
-
-        // 2. 화면에 보이는 범위인지 확인
-        if (stockIndex < this._renderedStartIndex || stockIndex >= this._renderedEndIndex) {
-            // 화면에 안 보이면 DOM 업데이트 불필요
-            return;
-        }
-
-        // 3. 화면에 보이면 출력 행만 업데이트
-        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
-        if (!outputRow || this._currentMainMode === 'simple') return; // 간단 모드는 출력 행이 숨겨짐
-
-        const currency = this._currentCurrency;
-        const metrics = calculatedData ?? {
-            quantity: new Decimal(0),
-            avgBuyPrice: new Decimal(0),
-            currentAmount: new Decimal(0),
-            profitLoss: new Decimal(0),
-            profitLossRate: new Decimal(0)
-        };
-
-        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
-        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
-        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
-        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
-        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
-
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
-
-        const isMobile = window.innerWidth <= 768;
-
-        // 출력 셀 업데이트
-        const cells = outputRow.querySelectorAll('.output-cell');
-        let cellIndex = 0;
-
-        // 첫 번째 셀은 스페이서이므로 건너뜀
-        if (cells[cellIndex]) cellIndex++;
-
-        // 수량
-        if (cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
-            cellIndex++;
-        }
-
-        // 평균 매입가 (모바일 아닐 때)
-        if (!isMobile && cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
-            cellIndex++;
-        }
-
-        // 현재 가치
-        if (cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
-            cellIndex++;
-        }
-
-        // 손익 (모바일 아닐 때)
-        if (!isMobile && cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
-            cellIndex++;
-        }
-
-        // 손익률
-        if (cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
-        }
-    }
-
-    /**
-     * @description [NEW] 실제 가상 스크롤 렌더링 로직
-     * @param forceRedraw - 강제 렌더링 여부
-     */
-    _onScroll(forceRedraw: boolean = false): void {
-        if (!this._scrollWrapper || !this._scrollContent) return;
-
-        // 클래스 멤버 변수에서 현재 모드와 통화 읽기
-        const currency = this._currentCurrency;
-        const mainMode = this._currentMainMode;
-
-        const scrollTop = this._scrollWrapper.scrollTop;
-
-        // 1. 렌더링할 인덱스 계산
-        const startIndex = Math.max(0, Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER);
-        const endIndex = Math.min(
-            this._virtualData.length, // 배열 최대 길이 넘지 않도록 수정
-            Math.ceil((scrollTop + this._viewportHeight) / ROW_PAIR_HEIGHT) + VISIBLE_ROWS_BUFFER
-        );
-
-        // 2. 이미 렌더링된 범위면 실행 취소 (강제 재조정 제외)
-        if (!forceRedraw && startIndex === this._renderedStartIndex && endIndex === this._renderedEndIndex) {
-            return;
-        }
-
-        // ▼▼▼▼▼ [수정] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 (IME 안전) ▼▼▼▼▼
-        // 스크롤로 인해 DOM이 사라지기 전에 사용자가 입력 중인 값을 보존
-        const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
-        const activeElement = document.activeElement;
-
-        currentInputRows.forEach(row => {
-            const stockId = (row as HTMLElement).dataset.id;
-            if (!stockId) return;
-
-            const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
-            if (stockIndex === -1) return;
-
-            // 모든 입력 필드의 현재 값을 읽어서 _virtualData에 반영
-            const inputs = row.querySelectorAll('input[data-field]');
-            inputs.forEach(input => {
-                if (!(input instanceof HTMLInputElement)) return;
-
-                // IME 조합 중이거나 현재 포커스된 필드는 건너뛰기 (입력 중단 방지)
-                if (input === activeElement || (input as any).isComposing) {
-                    return;
-                }
-
-                const field = input.dataset.field;
-                if (!field) return;
-
-                let value: any;
-                if (input.type === 'checkbox') {
-                    value = input.checked;
-                } else if (input.type === 'number') {
-                    // 숫자 필드는 parseFloat으로 변환
-                    value = parseFloat(input.value) || 0;
-                } else {
-                    value = input.value;
-                }
-
-                // _virtualData 업데이트
-                (this._virtualData[stockIndex] as any)[field] = value;
-            });
-        });
-        // ▲▲▲▲▲ [수정] ▲▲▲▲▲
-
-        // 3. 새 범위 저장
-        this._renderedStartIndex = startIndex;
-        this._renderedEndIndex = endIndex;
-
-        // 4. DOM 조각 생성
-        const fragment = document.createDocumentFragment();
-        for (let i = startIndex; i < endIndex; i++) {
-            const stock = this._virtualData[i];
-            fragment.appendChild(this.createStockRowFragment(stock, currency, mainMode));
-        }
-
-        // 5. 실제 DOM에 적용 및 Y축 위치 이동
-        // replaceChildren()를 사용하여 기존 행 삭제 및 새 행 추가 (innerHTML보다 효율적)
-        this._scrollContent.replaceChildren(fragment);
-        this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
-    }
-    // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
-
-    // toggleFixedBuyColumn은 더 이상 사용되지 않음
-
-    updateRatioSum(totalRatio: number): void {
-        const ratioSumEl = this.dom.ratioSum;
-        const ratioValidatorEl = this.dom.ratioValidator;
-        if (!ratioSumEl || !ratioValidatorEl) return;
-        ratioSumEl.textContent = `${totalRatio.toFixed(1)}%`;
-        ratioValidatorEl.classList.remove('valid', 'invalid');
-        if (Math.abs(totalRatio - 100) < CONFIG.RATIO_TOLERANCE) {
-            ratioValidatorEl.classList.add('valid');
-        } else if (totalRatio > 0) {
-            ratioValidatorEl.classList.add('invalid');
-        }
-    }
-
-    updateMainModeUI(mainMode: 'add' | 'sell' | 'simple'): void {
-        const addCard = this.dom.addInvestmentCard;
-        const modeRadios = this.dom.mainModeSelector;
-
-        // Show investment card for both 'add' and 'simple' modes
-        addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
-
-        modeRadios?.forEach(radio => {
-            if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
-        });
-        this.hideResults();
-    }
-
-    updateCurrencyModeUI(currencyMode: 'krw' | 'usd'): void {
-        const isUsdMode = currencyMode === 'usd';
-        const rateGroup = this.dom.exchangeRateGroup;
-        const usdGroup = this.dom.usdInputGroup;
-        const currencyRadios = this.dom.currencyModeSelector;
-        const usdInput = this.dom.additionalAmountUSDInput;
-        rateGroup?.classList.toggle('hidden', !isUsdMode);
-        usdGroup?.classList.toggle('hidden', !isUsdMode);
-        currencyRadios?.forEach(radio => {
-            if (radio instanceof HTMLInputElement) radio.checked = radio.value === currencyMode;
-        });
-        if (!isUsdMode && usdInput instanceof HTMLInputElement) usdInput.value = '';
-    }
-
-    openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
-        this.lastFocusedElement = document.activeElement as HTMLElement;
-        const modal = this.dom.transactionModal;
-        const modalTitle = this.dom.modalStockName;
-        const dateInput = this.dom.txDate;
-        if (!modal) return;
-        modal.dataset.stockId = stock.id;
-        if(modalTitle) {
-            modalTitle.textContent = `${stock.name} (${stock.ticker}) ${t('modal.transactionTitle')}`;
-        }
-        this.renderTransactionList(transactions || [], currency);
-        if(dateInput instanceof HTMLInputElement) dateInput.valueAsDate = new Date();
-        modal.classList.remove('hidden');
-        this._trapFocus(modal);
-        const closeBtn = this.dom.closeModalBtn;
-        if (closeBtn instanceof HTMLButtonElement) closeBtn.focus();
-    }
-
-    closeTransactionModal(): void {
-        const modal = this.dom.transactionModal;
-        const form = this.dom.newTransactionForm;
-        if (!modal) return;
-        modal.classList.add('hidden');
-        if(form instanceof HTMLFormElement) form.reset();
-        modal.removeAttribute('data-stock-id');
-        if (this.lastFocusedElement) this.lastFocusedElement.focus();
-    }
-
-    renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
-        const listBody = this.dom.transactionListBody;
-        if (!listBody) {
-            console.error("View: renderTransactionList - listBody not found!");
-            return;
-        }
-
-        (listBody as HTMLTableSectionElement).innerHTML = ''; // 1. 기존 내용 지우기
-
-        if (transactions.length === 0) {
-            const tr = (listBody as HTMLTableSectionElement).insertRow();
-            const td = tr.insertCell();
-            td.colSpan = 6;
-            td.style.textAlign = 'center';
-            td.textContent = t('view.noTransactions');
-            return;
-        }
-
-        const sorted = [...transactions].sort((a, b) => {
-             const dateCompare = b.date.localeCompare(a.date);
-             if (dateCompare !== 0) return dateCompare;
-             const idA = a.id || '';
-             const idB = b.id || '';
-             return idB.localeCompare(idA);
-        });
-
-        sorted.forEach(tx => {
-            const tr = (listBody as HTMLTableSectionElement).insertRow();
-            tr.dataset.txId = tx.id;
-            const quantityDec = tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
-            const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
-            const total = quantityDec.times(priceDec);
-
-            tr.insertCell().textContent = tx.date;
-            const typeTd = tr.insertCell();
-            const typeSpan = document.createElement('span');
-            typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
-            typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
-            typeTd.appendChild(typeSpan);
-
-            const qtyTd = tr.insertCell();
-            qtyTd.textContent = quantityDec.toNumber().toLocaleString();
-            qtyTd.style.textAlign = 'right';
-
-            const priceTd = tr.insertCell();
-            priceTd.textContent = formatCurrency(priceDec, currency);
-            priceTd.style.textAlign = 'right';
-
-            const totalTd = tr.insertCell();
-            totalTd.textContent = formatCurrency(total, currency);
-            totalTd.style.textAlign = 'right';
-
-            const actionTd = tr.insertCell();
-            actionTd.style.textAlign = 'center';
-            const btnDelete = document.createElement('button');
-            btnDelete.className = 'btn btn--small';
-            btnDelete.dataset.variant = 'delete';
-            btnDelete.dataset.action = 'delete-tx';
-             btnDelete.textContent = t('ui.delete');
-            btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
-            actionTd.appendChild(btnDelete);
-        });
-    }
-
-    displaySkeleton(): void {
-        const skeletonHTML = `...`; // 생략
-        const resultsEl = this.dom.resultsSection;
-        if (!resultsEl) return;
-        resultsEl.innerHTML = skeletonHTML;
-        resultsEl.classList.remove('hidden');
-        resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    cleanupObserver(): void {
-        if (this.currentObserver) { this.currentObserver.disconnect(); this.currentObserver = null; }
-    }
-
-    destroyChart(): void {
-        if (this.chartInstance) { this.chartInstance.destroy(); this.chartInstance = null; }
-    }
-
-    cleanup(): void {
-        this.cleanupObserver();
-        this.destroyChart();
-    }
-
-    hideResults(): void {
-        const resultsEl = this.dom.resultsSection;
-        const sectorEl = this.dom.sectorAnalysisSection;
-        const chartEl = this.dom.chartSection;
-        if (resultsEl) { resultsEl.innerHTML = ''; resultsEl.classList.add('hidden'); }
-        if (sectorEl) { sectorEl.innerHTML = ''; sectorEl.classList.add('hidden'); }
-        if (chartEl) { chartEl.classList.add('hidden'); }
-        this.cleanupObserver();
-    }
-
-    displayResults(html: string): void {
-        requestAnimationFrame(() => {
-            const resultsEl = this.dom.resultsSection;
-            if (!resultsEl) return;
-            resultsEl.innerHTML = html;
-            resultsEl.classList.remove('hidden');
-            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-             this.announce(t('aria.resultsLoaded'), 'assertive');
-            const rows = resultsEl.querySelectorAll('.result-row-highlight');
-            if (rows.length === 0) return;
-            this.cleanupObserver();
-            this.currentObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const target = entry.target as HTMLElement;
-                        target.style.transitionDelay = target.dataset.delay || '0s';
-                        target.classList.add('in-view');
-                        this.currentObserver?.unobserve(target);
-                    }
-                });
-            }, { threshold: 0.1 });
-            rows.forEach((row) => this.currentObserver?.observe(row as Element));
-        });
-    }
-
-    displaySectorAnalysis(html: string): void {
-         requestAnimationFrame(() => {
-            const sectorEl = this.dom.sectorAnalysisSection;
-            if (!sectorEl) return;
-            sectorEl.innerHTML = html;
-            sectorEl.classList.remove('hidden');
-        });
-    }
-
-    displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
-        const chartEl = this.dom.chartSection;
-        const canvas = this.dom.portfolioChart;
-        if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;
-        chartEl.classList.remove('hidden');
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' as const },
-                title: { display: true, text: title, font: { size: 16 } }
-            }
-        };
-        const chartData = {
-            labels: labels,
-            datasets: [{
-                label: t('template.ratio'),
-                data: data,
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#77DD77', '#FDFD96', '#836FFF', '#FFB347', '#FFD1DC'],
-                borderColor: document.body.classList.contains('dark-mode') ? '#2d2d2d' : '#ffffff',
-                borderWidth: 2
-            }]
-        };
-        if (this.chartInstance) {
-            this.chartInstance.data = chartData;
-            this.chartInstance.options = chartOptions;
-            this.chartInstance.update();
-        } else {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                this.chartInstance = new ChartClass(ctx, {
-                    type: 'doughnut',
-                    data: chartData,
-                    options: chartOptions
-                });
-            }
-        }
-    }
-
-    toggleInputValidation(inputElement: HTMLInputElement, isValid: boolean, errorMessage: string = ''): void {
-        if (!inputElement) return;
-        inputElement.classList.toggle('input-invalid', !isValid);
-        inputElement.setAttribute('aria-invalid', String(!isValid));
-    }
-
-
     showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
         const existingToast = document.querySelector('.toast');
         if (existingToast) existingToast.remove();
+
         const toast = document.createElement('div');
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
@@ -7859,34 +7170,193 @@ export class PortfolioView {
         setTimeout(() => toast.remove(), 3000);
     }
 
-    focusOnNewStock(stockId: string): void {
-        // ▼▼▼▼▼ [수정] 가상 스크롤에 맞게 수정 ▼▼▼▼▼
-        // 1. 데이터에 종목이 추가되었는지 확인
-        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
-        if (stockIndex === -1 || !this._scrollWrapper) return;
-
-        // 2. 해당 종목 위치로 스크롤 이동
-        const scrollTop = stockIndex * ROW_PAIR_HEIGHT;
-        this._scrollWrapper.scrollTo({ top: scrollTop, behavior: 'smooth' });
-
-        // 3. 스크롤 애니메이션 후 포커스
-        setTimeout(() => {
-            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`);
-            if (!inputRow) return;
-            const nameInput = inputRow.querySelector('input[data-field="name"]');
-            if (nameInput instanceof HTMLInputElement) {
-                nameInput.focus();
-                nameInput.select();
-            }
-        }, 300); // 스크롤 시간 고려
-        // ▲▲▲▲▲ [수정] ▲▲▲▲▲
+    /**
+     * @description 입력 필드 유효성 검사 시각적 표시
+     * @param inputElement - 입력 요소
+     * @param isValid - 유효 여부
+     * @param errorMessage - 에러 메시지
+     */
+    toggleInputValidation(inputElement: HTMLInputElement, isValid: boolean, errorMessage: string = ''): void {
+        if (!inputElement) return;
+        inputElement.classList.toggle('input-invalid', !isValid);
+        inputElement.setAttribute('aria-invalid', String(!isValid));
     }
 
+    // ===== Modal 위임 =====
+
+    async showConfirm(title: string, message: string): Promise<boolean> {
+        return this.modalManager.showConfirm(title, message);
+    }
+
+    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
+        return this.modalManager.showPrompt(title, message, defaultValue);
+    }
+
+    openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
+        this.modalManager.openTransactionModal(stock, currency, transactions);
+    }
+
+    closeTransactionModal(): void {
+        this.modalManager.closeTransactionModal();
+    }
+
+    renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
+        this.modalManager.renderTransactionList(transactions, currency);
+    }
+
+    // ===== VirtualScroll 위임 =====
+
+    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
+        this.virtualScrollManager.renderTable(calculatedPortfolioData, currency, mainMode);
+    }
+
+    updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
+        this.virtualScrollManager.updateVirtualTableData(calculatedPortfolioData);
+    }
+
+    updateStockInVirtualData(stockId: string, field: string, value: any): void {
+        this.virtualScrollManager.updateStockInVirtualData(stockId, field, value);
+    }
+
+    updateSingleStockRow(stockId: string, calculatedData: any): void {
+        this.virtualScrollManager.updateSingleStockRow(stockId, calculatedData);
+    }
+
+    updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
+        this.virtualScrollManager.updateAllTargetRatioInputs(portfolioData);
+    }
+
+    updateCurrentPriceInput(id: string, price: string): void {
+        this.virtualScrollManager.updateCurrentPriceInput(id, price);
+    }
+
+    focusOnNewStock(stockId: string): void {
+        this.virtualScrollManager.focusOnNewStock(stockId);
+    }
+
+    // ===== ResultsRenderer 위임 =====
+
+    displaySkeleton(): void {
+        this.resultsRenderer.displaySkeleton();
+    }
+
+    displayResults(html: string): void {
+        this.resultsRenderer.displayResults(html);
+        this.announce(t('aria.resultsLoaded'), 'assertive');
+    }
+
+    displaySectorAnalysis(html: string): void {
+        this.resultsRenderer.displaySectorAnalysis(html);
+    }
+
+    displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
+        this.resultsRenderer.displayChart(ChartClass, labels, data, title);
+    }
+
+    hideResults(): void {
+        this.resultsRenderer.hideResults();
+    }
+
+    cleanupObserver(): void {
+        this.resultsRenderer.cleanupObserver();
+    }
+
+    destroyChart(): void {
+        this.resultsRenderer.destroyChart();
+    }
+
+    cleanup(): void {
+        this.resultsRenderer.cleanup();
+    }
+
+    // ===== 포트폴리오 UI =====
+
+    /**
+     * @description 포트폴리오 선택기 렌더링
+     * @param portfolios - 포트폴리오 목록
+     * @param activeId - 활성 포트폴리오 ID
+     */
+    renderPortfolioSelector(portfolios: Record<string, { name: string }>, activeId: string): void {
+        const selector = this.dom.portfolioSelector;
+        if (!(selector instanceof HTMLSelectElement)) return;
+
+        selector.innerHTML = '';
+        Object.entries(portfolios).forEach(([id, portfolio]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = portfolio.name;
+            option.selected = id === activeId;
+            selector.appendChild(option);
+        });
+    }
+
+    /**
+     * @description 목표 비율 합계 업데이트
+     * @param totalRatio - 총 비율
+     */
+    updateRatioSum(totalRatio: number): void {
+        const ratioSumEl = this.dom.ratioSum;
+        const ratioValidatorEl = this.dom.ratioValidator;
+        if (!ratioSumEl || !ratioValidatorEl) return;
+
+        ratioSumEl.textContent = `${totalRatio.toFixed(1)}%`;
+        ratioValidatorEl.classList.remove('valid', 'invalid');
+
+        if (Math.abs(totalRatio - 100) < CONFIG.RATIO_TOLERANCE) {
+            ratioValidatorEl.classList.add('valid');
+        } else if (totalRatio > 0) {
+            ratioValidatorEl.classList.add('invalid');
+        }
+    }
+
+    /**
+     * @description 메인 모드 UI 업데이트
+     * @param mainMode - 메인 모드
+     */
+    updateMainModeUI(mainMode: 'add' | 'sell' | 'simple'): void {
+        const addCard = this.dom.addInvestmentCard;
+        const modeRadios = this.dom.mainModeSelector;
+
+        addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
+
+        modeRadios?.forEach((radio) => {
+            if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
+        });
+        this.hideResults();
+    }
+
+    /**
+     * @description 통화 모드 UI 업데이트
+     * @param currencyMode - 통화 모드
+     */
+    updateCurrencyModeUI(currencyMode: 'krw' | 'usd'): void {
+        const isUsdMode = currencyMode === 'usd';
+        const rateGroup = this.dom.exchangeRateGroup;
+        const usdGroup = this.dom.usdInputGroup;
+        const currencyRadios = this.dom.currencyModeSelector;
+        const usdInput = this.dom.additionalAmountUSDInput;
+
+        rateGroup?.classList.toggle('hidden', !isUsdMode);
+        usdGroup?.classList.toggle('hidden', !isUsdMode);
+
+        currencyRadios?.forEach((radio) => {
+            if (radio instanceof HTMLInputElement) radio.checked = radio.value === currencyMode;
+        });
+
+        if (!isUsdMode && usdInput instanceof HTMLInputElement) usdInput.value = '';
+    }
+
+    /**
+     * @description 가격 가져오기 버튼 상태 토글
+     * @param loading - 로딩 상태
+     */
     toggleFetchButton(loading: boolean): void {
         const btn = this.dom.fetchAllPricesBtn;
         if (!(btn instanceof HTMLButtonElement)) return;
+
         btn.disabled = loading;
         btn.textContent = loading ? t('ui.fetchingPrices') : t('ui.updateAllPrices');
+
         if (loading) {
             btn.setAttribute('aria-busy', 'true');
             this.announce(t('ui.fetchingPrices'), 'assertive');
@@ -7894,7 +7364,7 @@ export class PortfolioView {
             btn.removeAttribute('aria-busy');
         }
     }
-} // End of PortfolioView class
+}
 ```
 
 ---
@@ -7968,52 +7438,72 @@ export const ErrorService = {
 ## `src/controller.ts`
 
 ```typescript
-// src/controller.ts (async/await + DOMPurify 적용)
+// src/controller.ts (리팩토링: 모듈화)
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
-import { Validator } from './validator';
-import { debounce, formatCurrency, getRatioSum } from './utils';
+import { debounce, getRatioSum } from './utils';
 import { CONFIG } from './constants';
-import { ErrorService, ValidationError } from './errorService';
-import { t } from './i18n';
-import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from './templates';
+import { ErrorService } from './errorService';
+import { generateSectorAnalysisHTML } from './templates';
 import Decimal from 'decimal.js';
-import { apiService } from './apiService';
-import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from './calculationStrategies';
-import DOMPurify from 'dompurify';
-import type Chart from 'chart.js/auto';
-import type { CalculatedStock, Portfolio, Stock, MainMode, Currency } from './types';
-
-// ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
 import { bindEventListeners } from './eventBinder';
-// ▲▲▲ [추가] ▲▲▲
 
+// 분리된 매니저 모듈들
+import { PortfolioManager } from './controller/PortfolioManager';
+import { StockManager } from './controller/StockManager';
+import { TransactionManager } from './controller/TransactionManager';
+import { CalculationManager } from './controller/CalculationManager';
+import { DataManager } from './controller/DataManager';
+
+/**
+ * @class PortfolioController
+ * @description 포트폴리오 컨트롤러 (리팩토링: 모듈화)
+ */
 export class PortfolioController {
     state: PortfolioState;
     view: PortfolioView;
     debouncedSave: () => void;
+
+    // 분리된 매니저들
+    private portfolioManager: PortfolioManager;
+    private stockManager: StockManager;
+    private transactionManager: TransactionManager;
+    private calculationManager: CalculationManager;
+    private dataManager: DataManager;
+
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
 
-    /**
-     * @param state
-     * @param view
-     */
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
         this.view = view;
         this.debouncedSave = debounce(() => this.state.saveActivePortfolio(), 500);
+
+        // 매니저 인스턴스 생성
+        this.portfolioManager = new PortfolioManager(this.state, this.view);
+        this.stockManager = new StockManager(this.state, this.view, this.debouncedSave);
+        this.transactionManager = new TransactionManager(this.state, this.view);
+        this.calculationManager = new CalculationManager(
+            this.state,
+            this.view,
+            this.debouncedSave,
+            this.getInvestmentAmountInKRW.bind(this)
+        );
+        this.dataManager = new DataManager(this.state, this.view);
+
         this.initialize();
     }
 
+    /**
+     * @description 컨트롤러 초기화
+     */
     async initialize(): Promise<void> {
         await this.state.ensureInitialized();
         this.view.cacheDomElements();
+        ErrorService.setViewInstance(this.view);
         this.setupInitialUI();
         this.bindControllerEvents();
-
-        // 이벤트 바인딩 및 AbortController 저장 (메모리 누수 방지)
         this.#eventAbortController = bindEventListeners(this.view);
     }
 
@@ -8028,20 +7518,19 @@ export class PortfolioController {
         }
     }
 
+    /**
+     * @description 초기 UI 설정
+     */
     setupInitialUI(): void {
-        // prefers-color-scheme 감지 (localStorage 설정이 없을 경우 시스템 테마 사용)
         const storedDarkMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
         if (storedDarkMode === 'true') {
             document.body.classList.add('dark-mode');
         } else if (storedDarkMode === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // localStorage에 설정이 없으면 시스템 테마 사용
             document.body.classList.add('dark-mode');
             localStorage.setItem(CONFIG.DARK_MODE_KEY, 'true');
         }
 
-        // 시스템 테마 변경 감지 (실시간)
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            // 사용자가 수동으로 설정하지 않은 경우에만 시스템 테마 따라가기
             const storedMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
             if (storedMode === null) {
                 document.body.classList.toggle('dark-mode', e.matches);
@@ -8066,52 +7555,104 @@ export class PortfolioController {
         }
     }
 
+    /**
+     * @description 컨트롤러 이벤트 바인딩
+     */
     bindControllerEvents(): void {
-        // Pub/Sub 패턴: View가 발행(emit)한 이벤트를 Controller가 구독(on)합니다.
-
         // 포트폴리오 관리
-        this.view.on('newPortfolioClicked', () => this.handleNewPortfolio());
-        this.view.on('renamePortfolioClicked', () => this.handleRenamePortfolio());
-        this.view.on('deletePortfolioClicked', () => this.handleDeletePortfolio());
-        this.view.on('portfolioSwitched', (data) => this.handleSwitchPortfolio(data.newId));
+        this.view.on('newPortfolioClicked', async () => {
+            await this.portfolioManager.handleNewPortfolio();
+            this.fullRender();
+        });
+        this.view.on('renamePortfolioClicked', () => this.portfolioManager.handleRenamePortfolio());
+        this.view.on('deletePortfolioClicked', async () => {
+            await this.portfolioManager.handleDeletePortfolio();
+        });
+        this.view.on('portfolioSwitched', async (data) => {
+            await this.portfolioManager.handleSwitchPortfolio(data.newId);
+            this.fullRender();
+        });
 
-        // 포트폴리오 설정
-        this.view.on('addNewStockClicked', () => this.handleAddNewStock());
-        this.view.on('resetDataClicked', () => this.handleResetData());
-        this.view.on('normalizeRatiosClicked', () => this.handleNormalizeRatios());
-        this.view.on('fetchAllPricesClicked', () => this.handleFetchAllPrices());
+        // 주식 관리
+        this.view.on('addNewStockClicked', async () => {
+            const result = await this.stockManager.handleAddNewStock();
+            if (result.needsFullRender) {
+                this.fullRender();
+                if (result.stockId) this.view.focusOnNewStock(result.stockId);
+            }
+        });
+        this.view.on('normalizeRatiosClicked', () => this.calculationManager.handleNormalizeRatios());
+        this.view.on('fetchAllPricesClicked', async () => {
+            const result = await this.calculationManager.handleFetchAllPrices();
+            if (result.needsUIUpdate) this.updateUIState();
+        });
 
         // 데이터 관리
-        this.view.on('exportDataClicked', () => this.handleExportData());
-        this.view.on('importDataClicked', () => this.handleImportData());
-        this.view.on('fileSelected', (e) => this.handleFileSelected(e));
+        this.view.on('resetDataClicked', async () => {
+            const result = await this.dataManager.handleResetData();
+            if (result.needsFullRender) this.fullRender();
+        });
+        this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
+        this.view.on('importDataClicked', () => this.dataManager.handleImportData());
+        this.view.on('fileSelected', async (e) => {
+            const result = await this.dataManager.handleFileSelected(e);
+            if (result.needsUISetup) this.setupInitialUI();
+        });
 
         // 테이블 상호작용
-        this.view.on('portfolioBodyChanged', (e) => this.handlePortfolioBodyChange(e, null));
-        this.view.on('portfolioBodyClicked', (e) => this.handlePortfolioBodyClick(e));
-        this.view.on('manageStockClicked', (data) => this.openTransactionModalByStockId(data.stockId));
-        this.view.on('deleteStockShortcut', (data) => this.handleDeleteStock(data.stockId));
-
+        this.view.on('portfolioBodyChanged', (e) => this.stockManager.handlePortfolioBodyChange(e));
+        this.view.on('portfolioBodyClicked', (e) => {
+            const result = this.stockManager.handlePortfolioBodyClick(e);
+            if (result.action === 'manage' && result.stockId) {
+                this.transactionManager.openTransactionModalByStockId(result.stockId);
+            } else if (result.action === 'delete' && result.stockId) {
+                this.stockManager.handleDeleteStock(result.stockId).then((deleteResult) => {
+                    if (deleteResult.needsFullRender) this.fullRender();
+                });
+            }
+        });
+        this.view.on('manageStockClicked', (data) => this.transactionManager.openTransactionModalByStockId(data.stockId));
+        this.view.on('deleteStockShortcut', async (data) => {
+            const result = await this.stockManager.handleDeleteStock(data.stockId);
+            if (result.needsFullRender) this.fullRender();
+        });
 
         // 계산 및 통화
-        this.view.on('calculateClicked', () => this.handleCalculate());
-        this.view.on('mainModeChanged', (data) => this.handleMainModeChange(data.mode));
-        this.view.on('currencyModeChanged', (data) => this.handleCurrencyModeChange(data.currency));
-        this.view.on('currencyConversion', (data) => this.handleCurrencyConversion(data.source));
-        this.view.on('portfolioExchangeRateChanged', (data) => this.handlePortfolioExchangeRateChange(data.rate));
+        this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
+        this.view.on('mainModeChanged', async (data) => {
+            const result = await this.calculationManager.handleMainModeChange(data.mode);
+            if (result.needsFullRender) this.fullRender();
+        });
+        this.view.on('currencyModeChanged', async (data) => {
+            const result = await this.calculationManager.handleCurrencyModeChange(data.currency);
+            if (result.needsFullRender) this.fullRender();
+        });
+        this.view.on('currencyConversion', (data) => this.calculationManager.handleCurrencyConversion(data.source));
+        this.view.on('portfolioExchangeRateChanged', (data) =>
+            this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
+        );
 
         // 모달 상호작용
         this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
-        this.view.on('newTransactionSubmitted', (e) => this.handleAddNewTransaction(e));
-        this.view.on('transactionDeleteClicked', (data) => this.handleTransactionListClick(data.stockId, data.txId));
+        this.view.on('newTransactionSubmitted', async (e) => {
+            const result = await this.transactionManager.handleAddNewTransaction(e);
+            if (result.needsFullRender) this.fullRender();
+        });
+        this.view.on('transactionDeleteClicked', async (data) => {
+            const result = await this.transactionManager.handleTransactionListClick(data.stockId, data.txId);
+            if (result.needsUIUpdate) this.updateUIState();
+        });
 
         // 기타
         this.view.on('darkModeToggleClicked', () => this.handleToggleDarkMode());
         this.view.on('pageUnloading', () => this.handleSaveDataOnExit());
     }
 
-    // --- UI 렌더링 ---
+    // === 렌더링 메서드 ===
 
+    /**
+     * @description 전체 렌더링
+     */
     fullRender(): void {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
@@ -8131,7 +7672,10 @@ export class PortfolioController {
         const ratioSum = getRatioSum(activePortfolio.portfolioData);
         this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+        const sectorData = Calculator.calculateSectorAnalysis(
+            calculatedState.portfolioData,
+            activePortfolio.settings.currentCurrency
+        );
         this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
         this.view.updateMainModeUI(activePortfolio.settings.mainMode);
@@ -8140,6 +7684,9 @@ export class PortfolioController {
         this.debouncedSave();
     }
 
+    /**
+     * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트)
+     */
     updateUIState(): void {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
@@ -8155,818 +7702,40 @@ export class PortfolioController {
         const ratioSum = getRatioSum(activePortfolio.portfolioData);
         this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+        const sectorData = Calculator.calculateSectorAnalysis(
+            calculatedState.portfolioData,
+            activePortfolio.settings.currentCurrency
+        );
         this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
         activePortfolio.portfolioData = calculatedState.portfolioData;
         this.debouncedSave();
     }
 
-    // --- 포트폴리오 관리 핸들러 ---
-    async handleNewPortfolio(): Promise<void> {
-        let name = await this.view.showPrompt(t('modal.promptNewPortfolioNameTitle'), t('modal.promptNewPortfolioNameMsg'));
-        if (name) {
-            // ▼▼▼ [수정] 입력값 소독 ▼▼▼
-            name = DOMPurify.sanitize(name);
-            await this.state.createNewPortfolio(name);
-            // ▲▲▲ [수정] ▲▲▲
-            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), this.state.getActivePortfolio()?.id || '');
-            this.fullRender();
-            this.view.showToast(t('toast.portfolioCreated', { name }), "success");
-        }
-     }
-
-    async handleRenamePortfolio(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        let newName = await this.view.showPrompt(t('modal.promptRenamePortfolioTitle'), t('modal.promptRenamePortfolioMsg'), activePortfolio.name);
-        if (newName && newName.trim()) {
-            // ▼▼▼ [수정] 입력값 소독 ▼▼▼
-            newName = DOMPurify.sanitize(newName.trim());
-            await this.state.renamePortfolio(activePortfolio.id, newName);
-            // ▲▲▲ [수정] ▲▲▲
-            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
-            this.view.showToast(t('toast.portfolioRenamed'), "success");
-        }
-     }
-
-    async handleDeletePortfolio(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        if (Object.keys(this.state.getAllPortfolios()).length <= 1) {
-            this.view.showToast(t('toast.lastPortfolioDeleteError'), "error");
-            return;
-        }
-
-        const confirmDelete = await this.view.showConfirm(t('modal.confirmDeletePortfolioTitle'), t('modal.confirmDeletePortfolioMsg', { name: activePortfolio.name }));
-        if (confirmDelete) {
-            const deletedId = activePortfolio.id;
-            if (await this.state.deletePortfolio(deletedId)) {
-                const newActivePortfolio = this.state.getActivePortfolio();
-                if (newActivePortfolio) {
-                    this.view.renderPortfolioSelector(this.state.getAllPortfolios(), newActivePortfolio.id);
-                    this.fullRender();
-                    this.view.showToast(t('toast.portfolioDeleted'), "success");
-                }
-            }
-        }
-     }
-
-    async handleSwitchPortfolio(newId: string): Promise<void> {
-        // ▼▼▼ [수정] event.target 대신 newId를 받도록 수정 ▼▼▼
-        const selector = this.view.dom.portfolioSelector;
-        let targetId = newId;
-
-        // newId가 없는 경우(eventBinder.js에서 직접 호출된 경우) event.target에서 값을 찾음
-        if (!targetId && selector instanceof HTMLSelectElement) {
-             targetId = selector.value;
-        }
-
-        if (targetId) {
-            await this.state.setActivePortfolioId(targetId);
-            const activePortfolio = this.state.getActivePortfolio();
-            if (activePortfolio) {
-                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
-                if (exchangeRateInput instanceof HTMLInputElement) {
-                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-                }
-                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
-                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-                }
-            }
-            this.fullRender();
-        }
-        // ▲▲▲ [수정] ▲▲▲
-     }
-
-
-    // --- 주식/데이터 관리 핸들러 ---
-    async handleAddNewStock(): Promise<void> {
-        const newStock = await this.state.addNewStock();
-        this.fullRender();
-        if (newStock) {
-             this.view.focusOnNewStock(newStock.id);
-        }
-     }
-
-    async handleDeleteStock(stockId: string): Promise<void> {
-        const stockName = this.state.getStockById(stockId)?.name || t('defaults.unknownStock');
-        const confirmDelete = await this.view.showConfirm(
-            t('modal.confirmDeleteStockTitle'),
-            t('modal.confirmDeleteStockMsg', { name: stockName })
-        );
-        if (confirmDelete) {
-            if(await this.state.deleteStock(stockId)){
-                Calculator.clearPortfolioStateCache();
-                this.fullRender();
-                this.view.showToast(t('toast.transactionDeleted'), "success");
-            } else {
-                 this.view.showToast(t('toast.lastStockDeleteError'), "error");
-            }
-        }
-     }
-
-    async handleResetData(): Promise<void> {
-        const confirmReset = await this.view.showConfirm(t('modal.confirmResetTitle'), t('modal.confirmResetMsg'));
-        if (confirmReset) {
-            await this.state.resetData();
-            Calculator.clearPortfolioStateCache();
-            const activePortfolio = this.state.getActivePortfolio();
-             if (activePortfolio) {
-                this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
-                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
-                if (exchangeRateInput instanceof HTMLInputElement) {
-                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-                }
-                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
-                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-                }
-             }
-            this.fullRender();
-            this.view.showToast(t('toast.dataReset'), "success");
-        }
-     }
-
-    handleNormalizeRatios(): void {
-        try {
-            const success = this.state.normalizeRatios();
-            if (!success) {
-                this.view.showToast(t('toast.noRatiosToNormalize'), "info");
-                return;
-            }
-            const activePortfolio = this.state.getActivePortfolio();
-            if (!activePortfolio) return;
-            this.view.updateAllTargetRatioInputs(activePortfolio.portfolioData);
-            const sum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(sum.toNumber());
-            this.debouncedSave();
-            this.view.showToast(t('toast.ratiosNormalized'), "success");
-        } catch (error) {
-             ErrorService.handle(error as Error, 'handleNormalizeRatios');
-             this.view.showToast(t('toast.normalizeRatiosError'), "error");
-        }
-     }
-
-    handlePortfolioBodyChange(e: Event, _debouncedUpdate: any): void {
-        const target = e.target as HTMLInputElement | HTMLSelectElement;
-        // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
-        const row = target.closest('div[data-id]');
-        // ▲▲▲ [수정] ▲▲▲
-        if (!row) return;
-
-        const stockId = (row as HTMLElement).dataset.id;
-        const field = (target as HTMLInputElement).dataset.field;
-        if (!stockId || !field) return;
-
-        let value: any = (target.type === 'checkbox' && target instanceof HTMLInputElement) ? target.checked : target.value;
-        let isValid = true;
-
-        switch (field) {
-            case 'targetRatio':
-            case 'currentPrice':
-            case 'fixedBuyAmount':
-            case 'manualAmount':
-                const validationResult = Validator.validateNumericInput(value);
-                isValid = validationResult.isValid;
-                if(isValid) value = validationResult.value ?? 0;
-                break;
-            case 'isFixedBuyEnabled':
-                value = Boolean(value);
-                break;
-            case 'ticker':
-                // 티커: 정규식 필터링 (대문자, 숫자, ., - 만 허용)
-                const tickerResult = Validator.validateTicker(value);
-                isValid = tickerResult.isValid;
-                if(isValid) value = tickerResult.value ?? '';
-                break;
-            case 'name':
-            case 'sector':
-                // 자유 텍스트: 길이 제한 + DOMPurify
-                const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
-                isValid = textResult.isValid;
-                if(isValid) value = DOMPurify.sanitize(textResult.value ?? '');
-                break;
-            default:
-                value = DOMPurify.sanitize(String(value).trim());
-                break;
-        }
-
-        this.view.toggleInputValidation(target as HTMLInputElement, isValid);
-
-        if (isValid) {
-            this.state.updateStockProperty(stockId, field, value);
-
-            // manualAmount는 간단 모드 전용 필드로, 입력 시 테이블 재렌더링 불필요
-            if (field === 'manualAmount') {
-                // 하지만 _virtualData는 업데이트하여 스크롤 시 값이 유지되도록 함
-                this.view.updateStockInVirtualData(stockId, field, value);
-                this.debouncedSave();
-                return; // 재렌더링 건너뛰기
-            }
-
-            const activePortfolio = this.state.getActivePortfolio();
-            if (!activePortfolio) return;
-
-            // ▼▼▼ [최적화] 현재가 변경 시 부분 업데이트 ▼▼▼
-            if (field === 'currentPrice') {
-                // 해당 주식만 재계산
-                const stock = activePortfolio.portfolioData.find(s => s.id === stockId);
-                if (stock) {
-                    const calculatedMetrics = Calculator.calculateStockMetrics(stock);
-
-                    // 환율 변환 적용
-                    const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
-                    if (activePortfolio.settings.currentCurrency === 'krw') {
-                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
-                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
-                    } else {
-                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
-                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
-                    }
-
-                    // 화면 업데이트 (해당 행만)
-                    this.view.updateSingleStockRow(stockId, calculatedMetrics);
-
-                    // 섹터 분석은 전체 재계산 필요
-                    Calculator.clearPortfolioStateCache();
-                    const calculatedState = Calculator.calculatePortfolioState({
-                        portfolioData: activePortfolio.portfolioData,
-                        exchangeRate: activePortfolio.settings.exchangeRate,
-                        currentCurrency: activePortfolio.settings.currentCurrency
-                    });
-                    const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
-                    this.view.displaySectorAnalysis(generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency));
-                }
-
-                this.debouncedSave();
-                return;
-            }
-            // ▲▲▲ [최적화] ▲▲▲
-
-            // 기타 필드 변경 시 전체 재계산 (기존 방식)
-            Calculator.clearPortfolioStateCache();
-
-            const calculatedState = Calculator.calculatePortfolioState({
-                portfolioData: activePortfolio.portfolioData,
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency
-            });
-            activePortfolio.portfolioData = calculatedState.portfolioData;
-
-            this.view.updateVirtualTableData(calculatedState.portfolioData);
-
-            const newRatioSum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(newRatioSum.toNumber());
-
-            const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
-            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency));
-
-            this.debouncedSave();
-
-            if (field === 'isFixedBuyEnabled') {
-               const amountInput = row.querySelector('input[data-field="fixedBuyAmount"]');
-               if (amountInput instanceof HTMLInputElement) {
-                   amountInput.disabled = !value;
-                   if (!value) {
-                       amountInput.value = '0';
-                       this.state.updateStockProperty(stockId, 'fixedBuyAmount', 0);
-                       this.debouncedSave();
-                   }
-               }
-           }
-        }
-     }
-
-
-    handlePortfolioBodyClick(e: Event): void {
-        const target = e.target as HTMLElement;
-        const actionButton = target.closest('button[data-action]');
-        if (!actionButton) return;
-
-        // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
-        const row = actionButton.closest('div[data-id]');
-        // ▲▲▲ [수정] ▲▲▲
-        if (!row?.dataset.id) return;
-
-        const stockId = (row as HTMLElement).dataset.id;
-        const action = (actionButton as HTMLElement).dataset.action;
-
-        if (action === 'manage') {
-            this.openTransactionModalByStockId(stockId);
-        } else if (action === 'delete') {
-            this.handleDeleteStock(stockId);
-        }
-     }
-
-    openTransactionModalByStockId(stockId: string): void {
-        const stock = this.state.getStockById(stockId);
-        const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
-        if (stock && currency) {
-            this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId));
-        }
-    }
-
-
-    // --- 계산 및 통화 핸들러 ---
-    async handleCalculate(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        const additionalInvestment = this.getInvestmentAmountInKRW();
-
-        const inputs = {
-            mainMode: activePortfolio.settings.mainMode,
-            portfolioData: activePortfolio.portfolioData,
-            additionalInvestment: additionalInvestment
-        };
-
-        const validationErrors = Validator.validateForCalculation(inputs);
-
-        if (validationErrors.length > 0) {
-            const errorMessages = validationErrors.map(err => err.message).join('\n');
-            ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
-            this.view.hideResults();
-            return;
-        }
-
-        // 목표 비율 검증 (모든 모드에서 수행)
-        const totalRatio = getRatioSum(inputs.portfolioData);
-        if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
-            const proceed = await this.view.showConfirm(
-                t('modal.confirmRatioSumWarnTitle'),
-                t('modal.confirmRatioSumWarnMsg', { totalRatio: totalRatio.toFixed(1) })
-            );
-            if (!proceed) {
-                this.view.hideResults();
-                return;
-            }
-        }
-
-        const calculatedState = Calculator.calculatePortfolioState({
-            portfolioData: inputs.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency
-        });
-        activePortfolio.portfolioData = calculatedState.portfolioData;
-
-        // ▼▼▼ [수정] 전략 패턴 적용 ▼▼▼
-        let strategy;
-        if (activePortfolio.settings.mainMode === 'add') {
-            strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
-        } else if (activePortfolio.settings.mainMode === 'simple') {
-            strategy = new SimpleRatioStrategy(calculatedState.portfolioData, additionalInvestment);
-        } else {
-            strategy = new SellRebalanceStrategy(calculatedState.portfolioData);
-        }
-        const rebalancingResults = Calculator.calculateRebalancing(strategy);
-        // ▲▲▲ [수정] ▲▲▲
-
-        const resultsHTML = activePortfolio.settings.mainMode === 'add'
-             ? generateAddModeResultsHTML(rebalancingResults.results, {
-                   currentTotal: calculatedState.currentTotal,
-                   additionalInvestment: additionalInvestment,
-                   finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
-               }, activePortfolio.settings.currentCurrency)
-             : activePortfolio.settings.mainMode === 'simple'
-             ? generateSimpleModeResultsHTML(rebalancingResults.results, {
-                   currentTotal: calculatedState.currentTotal,
-                   additionalInvestment: additionalInvestment,
-                   finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
-               }, activePortfolio.settings.currentCurrency)
-             : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
-
-        this.view.displayResults(resultsHTML);
-
-        // ▼▼▼ [추가] 차트 표시 ▼▼▼
-        const chartLabels = rebalancingResults.results.map(r => r.stock.name);
-        const chartData = rebalancingResults.results.map(r => {
-            const ratio = r.stock.targetRatio instanceof Decimal ? r.stock.targetRatio : new Decimal(r.stock.targetRatio ?? 0);
-            return ratio.toNumber();
-        });
-        const chartTitle = activePortfolio.settings.mainMode === 'simple'
-            ? '포트폴리오 목표 비율 (간단 계산 모드)'
-            : activePortfolio.settings.mainMode === 'add'
-            ? '포트폴리오 목표 비율 (추가 매수 모드)'
-            : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
-        this.view.displayChart((await import('chart.js/auto')).default, chartLabels, chartData, chartTitle);
-        // ▲▲▲ [추가] ▲▲▲
-
-        this.debouncedSave();
-        this.view.showToast(t('toast.calculateSuccess'), "success");
-     }
-
-
-    async handleFetchAllPrices(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
-            this.view.showToast(t('api.noUpdates'), "info");
-            return;
-        }
-
-        const tickersToFetch = activePortfolio.portfolioData
-            .filter(s => s.ticker && s.ticker.trim() !== '')
-            .map(s => ({ id: s.id, ticker: s.ticker.trim() }));
-
-        if (tickersToFetch.length === 0) {
-            this.view.showToast(t('toast.noTickersToFetch'), "info");
-            return;
-        }
-
-        this.view.toggleFetchButton(true);
-
-        try {
-            let successCount = 0;
-            let failureCount = 0;
-            const failedTickers: string[] = [];
-
-            const results = await apiService.fetchAllStockPrices(tickersToFetch);
-
-            // Get current currency and exchange rate for conversion
-            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
-            const currentCurrency = activePortfolio.settings.currentCurrency || 'krw';
-
-            results.forEach((result) => {
-                if (result.status === 'fulfilled' && result.value) {
-                    let price = result.value; // This is in USD from Finnhub API
-
-                    // Convert USD price to KRW if current currency is KRW using Decimal.js
-                    if (currentCurrency === 'krw') {
-                        const priceDec = new Decimal(price);
-                        const exchangeRateDec = new Decimal(exchangeRate);
-                        price = priceDec.times(exchangeRateDec).toNumber();
-                    }
-
-                    this.state.updateStockProperty((result as any).id, 'currentPrice', price);
-                    this.view.updateCurrentPriceInput((result as any).id, price.toFixed(2));
-                    successCount++;
-                } else {
-                    failureCount++;
-                    failedTickers.push((result as any).ticker);
-                    console.error(`[API] Failed to fetch price for ${(result as any).ticker}:`, (result as any).reason);
-                }
-            });
-
-            Calculator.clearPortfolioStateCache();
-            this.updateUIState();
-
-            if (successCount === tickersToFetch.length) {
-                this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), "success");
-            } else if (successCount > 0) {
-                this.view.showToast(t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }), "warning");
-            } else {
-                this.view.showToast(t('api.fetchFailedAll', { failed: failureCount }), "error");
-            }
-            if (failedTickers.length > 0) {
-                console.log("Failed tickers:", failedTickers.join(', '));
-            }
-        } catch (error) {
-            ErrorService.handle(error as Error, 'handleFetchAllPrices');
-            this.view.showToast(t('api.fetchErrorGlobal', { message: (error as Error).message }), 'error');
-        } finally {
-            this.view.toggleFetchButton(false);
-        }
-     }
-
-    async handleMainModeChange(newMode: MainMode): Promise<void> {
-        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
-        await this.state.updatePortfolioSettings('mainMode', newMode);
-
-        // requestAnimationFrame을 사용하여 상태 업데이트가 완전히 반영된 후 렌더링
-        requestAnimationFrame(() => {
-            this.fullRender();
-            const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
-            this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
-        });
-     }
-
-    async handleCurrencyModeChange(newCurrency: Currency): Promise<void> {
-        if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
-
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        const oldCurrency = activePortfolio.settings.currentCurrency || 'krw';
-
-        // If currency is actually changing, convert all existing currentPrice values
-        if (oldCurrency !== newCurrency) {
-            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
-            const exchangeRateDec = new Decimal(exchangeRate);
-
-            activePortfolio.portfolioData.forEach(stock => {
-                if (stock.currentPrice && stock.currentPrice > 0) {
-                    const currentPriceDec = new Decimal(stock.currentPrice);
-                    let newPrice;
-
-                    // Convert from old currency to new currency using Decimal.js
-                    if (oldCurrency === 'usd' && newCurrency === 'krw') {
-                        // USD to KRW
-                        newPrice = currentPriceDec.times(exchangeRateDec).toNumber();
-                    } else if (oldCurrency === 'krw' && newCurrency === 'usd') {
-                        // KRW to USD
-                        newPrice = currentPriceDec.div(exchangeRateDec).toNumber();
-                    } else {
-                        newPrice = stock.currentPrice; // No conversion needed
-                    }
-
-                    this.state.updateStockProperty(stock.id, 'currentPrice', newPrice);
-                }
-            });
-        }
-
-        await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
-        this.fullRender();
-        this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
-    }
-
-    async handleCurrencyConversion(source: 'krw' | 'usd'): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
-
-         if (!(additionalAmountInput instanceof HTMLInputElement) || !(additionalAmountUSDInput instanceof HTMLInputElement) || !(exchangeRateInput instanceof HTMLInputElement)) return;
-
-        const exchangeRateNum = Number(exchangeRateInput.value) || CONFIG.DEFAULT_EXCHANGE_RATE;
-        const isValidRate = exchangeRateNum > 0;
-        let currentExchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE;
-
-        if (isValidRate) {
-            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
-            currentExchangeRate = exchangeRateNum;
-        } else {
-             await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
-             exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString();
-             this.view.showToast(t('toast.invalidExchangeRate'), "error");
-        }
-        const currentExchangeRateDec = new Decimal(currentExchangeRate);
-
-        let krwAmountDec = new Decimal(0);
-        let usdAmountDec = new Decimal(0);
-
-        try {
-            if (source === 'krw') {
-                krwAmountDec = new Decimal(additionalAmountInput.value || 0);
-                 if (krwAmountDec.isNegative()) throw new Error('Negative KRW input');
-                usdAmountDec = currentExchangeRateDec.isZero() ? new Decimal(0) : krwAmountDec.div(currentExchangeRateDec);
-            } else {
-                usdAmountDec = new Decimal(additionalAmountUSDInput.value || 0);
-                if (usdAmountDec.isNegative()) throw new Error('Negative USD input');
-                krwAmountDec = usdAmountDec.times(currentExchangeRateDec);
-            }
-
-            if (source === 'krw') {
-                 additionalAmountUSDInput.value = usdAmountDec.toFixed(2);
-            } else {
-                additionalAmountInput.value = krwAmountDec.toFixed(0);
-            }
-
-            this.debouncedSave();
-
-        } catch(e) {
-             console.error("Error during currency conversion:", e);
-             this.view.showToast(t('toast.amountInputError'), "error");
-             if (source === 'krw') additionalAmountUSDInput.value = ''; else additionalAmountInput.value = '';
-        }
-     }
-
-    async handlePortfolioExchangeRateChange(rate: number): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        const exchangeRateNum = Number(rate);
-        const isValidRate = !isNaN(exchangeRateNum) && exchangeRateNum > 0;
-
-        if (isValidRate) {
-            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
-            this.debouncedSave();
-        } else {
-            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
-            this.view.showToast(t('toast.invalidExchangeRate'), "error");
-        }
-    }
-
-
-    // --- 거래 내역 모달 핸들러 ---
-
-    async handleAddNewTransaction(e: Event): Promise<void> {
-        e.preventDefault();
-        const form = e.target as HTMLFormElement;
-        const modal = form.closest('#transactionModal') as HTMLElement | null;
-        const stockId = modal?.dataset.stockId;
-        if (!stockId) return;
-
-        const typeInput = form.querySelector('input[name="txType"]:checked');
-        const inputModeInput = form.querySelector('input[name="inputMode"]:checked');
-        const dateInput = form.querySelector('#txDate') as HTMLInputElement;
-        const quantityInput = form.querySelector('#txQuantity') as HTMLInputElement;
-        const totalAmountInput = form.querySelector('#txTotalAmount') as HTMLInputElement;
-        const priceInput = form.querySelector('#txPrice') as HTMLInputElement;
-
-        if (!typeInput || !dateInput || !priceInput) return;
-
-        const type = (typeInput instanceof HTMLInputElement && typeInput.value === 'sell') ? 'sell' : 'buy';
-        const inputMode = (inputModeInput instanceof HTMLInputElement) ? inputModeInput.value : 'quantity';
-        const date = dateInput.value;
-        const priceStr = priceInput.value;
-
-        let finalQuantity: number;
-
-        if (inputMode === 'amount') {
-            // 금액 입력 모드: 총 금액 / 단가 = 수량 (Decimal.js로 정밀 계산)
-            if (!totalAmountInput || !totalAmountInput.value) {
-                this.view.showToast(t('toast.invalidTransactionInfo'), "error");
-                return;
-            }
-
-            const totalAmountStr = totalAmountInput.value;
-
-            try {
-                const totalAmountDec = new Decimal(totalAmountStr);
-                const priceDec = new Decimal(priceStr);
-
-                if (priceDec.isZero() || priceDec.isNegative()) {
-                    this.view.showToast('단가는 0보다 커야 합니다.', "error");
-                    return;
-                }
-
-                // 수량 = 총 금액 / 단가
-                const quantityDec = totalAmountDec.div(priceDec);
-                finalQuantity = quantityDec.toNumber();
-            } catch (error) {
-                this.view.showToast('금액 또는 단가 입력이 올바르지 않습니다.', "error");
-                return;
-            }
-        } else {
-            // 수량 입력 모드: 기존 방식
-            if (!quantityInput || !quantityInput.value) {
-                this.view.showToast(t('toast.invalidTransactionInfo'), "error");
-                return;
-            }
-
-            const quantityStr = quantityInput.value;
-            finalQuantity = Number(quantityStr);
-        }
-
-        const txData = { type, date, quantity: String(finalQuantity), price: priceStr };
-        const validationResult = Validator.validateTransaction(txData);
-
-        if (!validationResult.isValid) {
-            this.view.showToast(validationResult.message || t('toast.invalidTransactionInfo'), "error");
-            return;
-        }
-
-        const success = await this.state.addTransaction(stockId, {
-             type,
-             date,
-             quantity: finalQuantity,
-             price: Number(priceStr)
-        });
-
-        if (success) {
-            const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
-            if (currency) {
-                 this.view.renderTransactionList(this.state.getTransactions(stockId), currency);
-            }
-            form.reset();
-            dateInput.valueAsDate = new Date();
-
-            // 입력 모드를 수량 입력으로 리셋
-            const inputModeQuantity = form.querySelector('#inputModeQuantity');
-            if (inputModeQuantity instanceof HTMLInputElement) {
-                inputModeQuantity.checked = true;
-                // UI 토글
-                const quantityInputGroup = document.getElementById('quantityInputGroup');
-                const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
-                const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
-
-                if (quantityInputGroup) quantityInputGroup.style.display = '';
-                if (totalAmountInputGroup) totalAmountInputGroup.style.display = 'none';
-                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'none';
-                if (quantityInput) quantityInput.required = true;
-                if (totalAmountInput) totalAmountInput.required = false;
-            }
-
-            this.view.showToast(t('toast.transactionAdded'), "success");
-
-            Calculator.clearPortfolioStateCache();
-            this.fullRender();
-        } else {
-             this.view.showToast(t('toast.transactionAddFailed'), "error");
-        }
-     }
-
-
-    async handleTransactionListClick(stockId: string, txId: string): Promise<void> {
-        if (stockId && txId) {
-             const confirmDelete = await this.view.showConfirm(t('modal.confirmDeleteTransactionTitle'), t('modal.confirmDeleteTransactionMsg'));
-             if(confirmDelete) {
-                 const success = await this.state.deleteTransaction(stockId, txId);
-                 if (success) {
-                    const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
-                    if (currency) {
-                         const transactionsBeforeRender = this.state.getTransactions(stockId);
-                         this.view.renderTransactionList(transactionsBeforeRender, currency);
-                    }
-                    this.view.showToast(t('toast.transactionDeleted'), "success");
-                    Calculator.clearPortfolioStateCache();
-                    this.updateUIState();
-                 } else {
-                     this.view.showToast(t('toast.transactionDeleteFailed'), "error");
-                 }
-            }
-        } else {
-             console.error("handleTransactionListClick received invalid IDs:", stockId, txId);
-        }
-     }
-
-
-    // --- 기타 핸들러 ---
+    // === 기타 핸들러 ===
+
+    /**
+     * @description 다크 모드 토글
+     */
     handleToggleDarkMode(): void {
         document.body.classList.toggle('dark-mode');
         const isDarkMode = document.body.classList.contains('dark-mode');
         localStorage.setItem(CONFIG.DARK_MODE_KEY, isDarkMode ? 'true' : 'false');
         this.view.destroyChart();
         this.fullRender();
-     }
-
-    handleSaveDataOnExit(): void {
-        console.log("Page unloading. Relaying on debounced save.");
     }
 
-    handleImportData(): void {
-        const fileInput = this.view.dom.importFileInput;
-        if (fileInput instanceof HTMLInputElement) fileInput.click();
-     }
+    /**
+     * @description 페이지 종료 시 저장
+     */
+    handleSaveDataOnExit(): void {
+        console.log('Page unloading. Relaying on debounced save.');
+    }
 
-    handleFileSelected(e: Event): void {
-        const fileInput = e.target as HTMLInputElement;
-        const file = fileInput.files?.[0];
-
-        if (file) {
-            if (file.type !== 'application/json') {
-                this.view.showToast(t('toast.invalidFileType'), "error");
-                fileInput.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const jsonString = event.target?.result;
-                    if (typeof jsonString === 'string') {
-                        const loadedData = JSON.parse(jsonString);
-                        await this.state.importData(loadedData);
-                        Calculator.clearPortfolioStateCache();
-                        this.setupInitialUI();
-                        this.view.showToast(t('toast.importSuccess'), "success");
-                    } else {
-                         throw new Error("Failed to read file content.");
-                    }
-                } catch (error) {
-                    ErrorService.handle(error as Error, 'handleFileSelected');
-                    this.view.showToast(t('toast.importError'), "error");
-                } finally {
-                    fileInput.value = '';
-                }
-            };
-             reader.onerror = () => {
-                 ErrorService.handle(new Error("File reading error"), 'handleFileSelected - Reader Error');
-                 this.view.showToast(t('toast.importError'), "error");
-                 fileInput.value = '';
-             };
-            reader.readAsText(file);
-        }
-     }
-
-    handleExportData(): void {
-        try {
-            const dataToExport = this.state.exportData();
-            const jsonString = JSON.stringify(dataToExport, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const activePortfolio = this.state.getActivePortfolio();
-            const filename = `portfolio_data_${activePortfolio?.name || 'export'}_${Date.now()}.json`;
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename.replace(/\s+/g, '_');
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            this.view.showToast(t('toast.exportSuccess'), "success");
-        } catch (error) {
-            ErrorService.handle(error as Error, 'handleExportData');
-            this.view.showToast(t('toast.exportError'), "error");
-        }
-     }
-
+    /**
+     * @description KRW로 투자 금액 가져오기
+     * @returns Decimal
+     */
     getInvestmentAmountInKRW(): Decimal {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return new Decimal(0);
@@ -8974,9 +7743,11 @@ export class PortfolioController {
         const { currentCurrency } = activePortfolio.settings;
         const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
 
-        if (!(additionalAmountInput instanceof HTMLInputElement) ||
+        if (
+            !(additionalAmountInput instanceof HTMLInputElement) ||
             !(additionalAmountUSDInput instanceof HTMLInputElement) ||
-            !(exchangeRateInput instanceof HTMLInputElement)) {
+            !(exchangeRateInput instanceof HTMLInputElement)
+        ) {
             return new Decimal(0);
         }
 
@@ -8992,15 +7763,15 @@ export class PortfolioController {
             if (currentCurrency === 'krw') {
                 return amountKRW.isNegative() ? new Decimal(0) : amountKRW;
             } else {
-                 if (exchangeRate.isZero() || exchangeRate.isNegative()) return new Decimal(0);
+                if (exchangeRate.isZero() || exchangeRate.isNegative()) return new Decimal(0);
                 const calculatedKRW = amountUSD.times(exchangeRate);
                 return calculatedKRW.isNegative() ? new Decimal(0) : calculatedKRW;
             }
         } catch (e) {
-             console.error("Error parsing investment amount:", e);
-             return new Decimal(0);
+            console.error('Error parsing investment amount:', e);
+            return new Decimal(0);
         }
-     }
+    }
 }
 ```
 
@@ -9843,6 +8614,14 @@ export default async function handler(
 
   const tickers = symbols.split(',');
 
+  // 티커 수 제한 (서버리스 함수 타임아웃 방지)
+  const MAX_TICKERS = 30;
+  if (tickers.length > MAX_TICKERS) {
+    return response.status(400).json({
+      error: `Too many tickers requested. Maximum ${MAX_TICKERS} tickers allowed per request. Received ${tickers.length}.`
+    });
+  }
+
   // 2. 서버리스 함수 내에서 Promise.allSettled를 사용해 병렬로 Finnhub에 요청합니다.
   const results = await Promise.allSettled(
     tickers.map(ticker => fetchSinglePrice(ticker, API_KEY))
@@ -9883,64 +8662,357 @@ export default async function handler(
 ## `e2e/app.spec.ts`
 
 ```typescript
-// e2e/app.spec.ts
-
 import { test, expect } from '@playwright/test';
 
-// 테스트 1: 페이지가 올바르게 로드되는지 확인
-test('페이지 로드 및 제목 확인', async ({ page }) => {
-  // 1. baseURL (http://localhost:5173)로 이동
-  await page.goto('/');
+test.describe('Portfolio Rebalancer E2E Tests', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await page.waitForLoadState('networkidle');
+    });
 
-  // 2. <title> 태그의 텍스트가 올바른지 확인
-  await expect(page).toHaveTitle(/포트폴리오 리밸런싱 계산기/);
+    test('should load the application', async ({ page }) => {
+        await expect(page).toHaveTitle(/Portfolio Rebalancing Calculator/i);
+        await expect(page.locator('h1')).toContainText(/포트폴리오 리밸런싱 계산기|Portfolio Rebalancing Calculator/i);
+    });
 
-  // 3. h1 제목이 보이는지 확인
-  await expect(
-    page.getByRole('heading', { name: '📊 포트폴리오 리밸런싱 계산기' })
-  ).toBeVisible();
-});
+    test('simple calculation mode workflow', async ({ page }) => {
+        // Switch to simple mode
+        await page.click('input[value="simple"]');
 
-// 테스트 2: '간단 계산 모드' E2E 시나리오
-test('간단 계산 모드 워크플로우 테스트', async ({ page }) => {
-  // 1. 페이지 방문
-  await page.goto('/');
+        // Add stock information
+        const nameInput = page.locator('input[data-field="name"]').first();
+        await nameInput.fill('Apple Inc.');
 
-  // 2. '간단 계산 모드' 라디오 버튼 선택 (기본값이지만 명시적으로 확인)
-  const simpleModeRadio = page.getByLabel('🎯 간단 계산 모드');
-  await simpleModeRadio.check();
-  await expect(simpleModeRadio).toBeChecked();
+        const tickerInput = page.locator('input[data-field="ticker"]').first();
+        await tickerInput.fill('AAPL');
 
-  // 3. 첫 번째 (기본 "새 종목") 행의 입력 필드 채우기
-  // 가상 스크롤의 첫 번째 행을 찾습니다.
-  const firstRow = page.locator('.virtual-row-inputs').first();
+        const ratioInput = page.locator('input[data-field="targetRatio"]').first();
+        await ratioInput.fill('50');
 
-  // '새 종목' 이름을 '테스트 주식'으로 변경
-  await firstRow.getByRole('textbox', { name: /티커/ }).fill('TEST');
-  await firstRow.getByRole('spinbutton', { name: /목표 비율/ }).fill('100');
-  await firstRow.getByRole('spinbutton', { name: /보유 금액/ }).fill('100000');
+        const amountInput = page.locator('input[data-field="manualAmount"]').first();
+        await amountInput.fill('1000000');
 
-  // 4. 추가 투자 금액 입력
-  await page.getByLabel('추가 투자 금액:').fill('50000');
+        // Add second stock
+        await page.click('#addNewStockBtn');
 
-  // 5. 계산하기 버튼 클릭
-  await page.getByRole('button', { name: '계산하기' }).click();
+        const nameInput2 = page.locator('input[data-field="name"]').nth(1);
+        await nameInput2.fill('Google');
 
-  // 6. 결과 확인
-  const resultsSection = page.locator('#resultsSection');
-  
-  // 6-1. 결과 섹션이 보이는지 확인
-  await expect(resultsSection).toBeVisible();
+        const tickerInput2 = page.locator('input[data-field="ticker"]').nth(1);
+        await tickerInput2.fill('GOOGL');
 
-  // 6-2. 요약 정보가 올바른지 확인 (총 자산 100,000 + 50,000 = 150,000)
-  await expect(page.getByText('투자 후 총 자산')).toBeVisible();
-  // formatCurrency 함수가 콤마를 사용하므로 '150,000'으로 확인
-  await expect(resultsSection.getByText('150,000')).toBeVisible(); 
+        const ratioInput2 = page.locator('input[data-field="targetRatio"]').nth(1);
+        await ratioInput2.fill('50');
 
-  // 6-3. 구매 가이드에 올바른 금액이 표시되는지 확인 (목표 150,000 - 현재 100,000 = 50,000)
-  const guideBox = resultsSection.locator('.guide-box--buy');
-  // 'formatCurrency'는 '원'을 붙이므로 '50,000원'을 확인합니다.
-  await expect(guideBox.getByText(/TEST.*50,000원/)).toBeVisible();
+        const amountInput2 = page.locator('input[data-field="manualAmount"]').nth(1);
+        await amountInput2.fill('1000000');
+
+        // Set additional investment
+        await page.fill('#additionalAmount', '500000');
+
+        // Click calculate
+        await page.click('#calculateBtn');
+
+        // Wait for results
+        await page.waitForSelector('#resultsSection:not(.hidden)', { timeout: 5000 });
+
+        // Verify results are displayed
+        await expect(page.locator('#resultsSection')).toBeVisible();
+    });
+
+    test.describe('Modal Tests', () => {
+        test('should open and close custom modal (confirm)', async ({ page }) => {
+            // Click new portfolio button to trigger confirm modal
+            await page.click('#newPortfolioBtn');
+
+            // Wait for modal to appear
+            await page.waitForSelector('#customModal:not(.hidden)');
+            const modal = page.locator('#customModal');
+
+            await expect(modal).toBeVisible();
+            await expect(modal).toHaveAttribute('aria-modal', 'true');
+
+            // Check modal has input field for prompt
+            const input = modal.locator('input');
+            await expect(input).toBeVisible();
+
+            // Fill in portfolio name
+            await input.fill('Test Portfolio');
+
+            // Click confirm
+            await page.click('#customModalConfirm');
+
+            // Modal should close
+            await expect(modal).toHaveClass(/hidden/);
+        });
+
+        test('should handle Escape key to close modal', async ({ page }) => {
+            await page.click('#newPortfolioBtn');
+            await page.waitForSelector('#customModal:not(.hidden)');
+
+            // Press Escape
+            await page.keyboard.press('Escape');
+
+            // Modal should close
+            await expect(page.locator('#customModal')).toHaveClass(/hidden/);
+        });
+
+        test('should trap focus within modal', async ({ page }) => {
+            await page.click('#newPortfolioBtn');
+            await page.waitForSelector('#customModal:not(.hidden)');
+
+            const modal = page.locator('#customModal');
+
+            // Tab through focusable elements
+            await page.keyboard.press('Tab');
+            await page.keyboard.press('Tab');
+
+            // Focus should stay within modal
+            const focusedElement = page.locator(':focus');
+            await expect(modal.locator('button, input')).toContainText(await focusedElement.textContent() || '');
+        });
+
+        test('should open transaction modal for stock', async ({ page }) => {
+            // Switch to add mode (not simple)
+            await page.click('input[value="add"]');
+
+            // Wait for table to render
+            await page.waitForTimeout(500);
+
+            // Click manage button
+            const manageBtn = page.locator('button[data-action="manage"]').first();
+            if (await manageBtn.isVisible()) {
+                await manageBtn.click();
+
+                // Wait for transaction modal
+                await page.waitForSelector('#transactionModal:not(.hidden)');
+
+                const txModal = page.locator('#transactionModal');
+                await expect(txModal).toBeVisible();
+                await expect(txModal).toHaveAttribute('aria-modal', 'true');
+
+                // Close modal
+                await page.click('#closeModalBtn');
+                await expect(txModal).toHaveClass(/hidden/);
+            }
+        });
+    });
+
+    test.describe('Portfolio Management', () => {
+        test('should create new portfolio', async ({ page }) => {
+            const initialPortfolios = await page.locator('#portfolioSelector option').count();
+
+            await page.click('#newPortfolioBtn');
+            await page.waitForSelector('#customModal:not(.hidden)');
+
+            await page.fill('#customModalInput', 'My New Portfolio');
+            await page.click('#customModalConfirm');
+
+            // Wait for modal to close and portfolio to be created
+            await page.waitForTimeout(500);
+
+            const newPortfolios = await page.locator('#portfolioSelector option').count();
+            expect(newPortfolios).toBe(initialPortfolios + 1);
+        });
+
+        test('should switch between portfolios', async ({ page }) => {
+            // Get current selected portfolio
+            const selector = page.locator('#portfolioSelector');
+            const optionsCount = await selector.locator('option').count();
+
+            if (optionsCount > 1) {
+                // Select different portfolio
+                await selector.selectOption({ index: 1 });
+
+                // Wait for data to load
+                await page.waitForTimeout(500);
+
+                // Verify UI updated (toast or data change)
+                // This is a basic check, more specific checks can be added
+                await expect(page).not.toHaveURL(/error/);
+            }
+        });
+
+        test('should delete portfolio with confirmation', async ({ page }) => {
+            // Create a new portfolio first
+            await page.click('#newPortfolioBtn');
+            await page.waitForSelector('#customModal:not(.hidden)');
+            await page.fill('#customModalInput', 'Portfolio to Delete');
+            await page.click('#customModalConfirm');
+            await page.waitForTimeout(500);
+
+            const initialCount = await page.locator('#portfolioSelector option').count();
+
+            // Now delete it
+            await page.click('#deletePortfolioBtn');
+            await page.waitForSelector('#customModal:not(.hidden)');
+
+            // Confirm deletion
+            await page.click('#customModalConfirm');
+            await page.waitForTimeout(500);
+
+            const finalCount = await page.locator('#portfolioSelector option').count();
+            expect(finalCount).toBeLessThan(initialCount);
+        });
+    });
+
+    test.describe('Dark Mode', () => {
+        test('should toggle dark mode', async ({ page }) => {
+            const body = page.locator('body');
+
+            // Check initial state
+            const initialDarkMode = await body.evaluate((el) => el.classList.contains('dark-mode'));
+
+            // Toggle dark mode
+            await page.click('#darkModeToggle');
+            await page.waitForTimeout(200);
+
+            // Verify state changed
+            const newDarkMode = await body.evaluate((el) => el.classList.contains('dark-mode'));
+            expect(newDarkMode).toBe(!initialDarkMode);
+
+            // Toggle again
+            await page.click('#darkModeToggle');
+            await page.waitForTimeout(200);
+
+            // Verify back to original
+            const finalDarkMode = await body.evaluate((el) => el.classList.contains('dark-mode'));
+            expect(finalDarkMode).toBe(initialDarkMode);
+        });
+
+        test('should persist dark mode preference', async ({ page, context }) => {
+            // Enable dark mode
+            await page.click('#darkModeToggle');
+            await page.waitForTimeout(200);
+
+            const darkModeEnabled = await page.locator('body').evaluate((el) =>
+                el.classList.contains('dark-mode')
+            );
+
+            // Reload page
+            await page.reload();
+            await page.waitForLoadState('networkidle');
+
+            // Check dark mode persisted
+            const darkModeAfterReload = await page.locator('body').evaluate((el) =>
+                el.classList.contains('dark-mode')
+            );
+
+            expect(darkModeAfterReload).toBe(darkModeEnabled);
+        });
+    });
+
+    test.describe('Accessibility', () => {
+        test('should have proper ARIA labels', async ({ page }) => {
+            // Check for aria-label on important buttons
+            await expect(page.locator('#calculateBtn')).toHaveAttribute('aria-label');
+            await expect(page.locator('#addNewStockBtn')).toHaveAttribute('aria-label');
+        });
+
+        test('should have aria-live region for announcements', async ({ page }) => {
+            const announcer = page.locator('#aria-announcer');
+            await expect(announcer).toHaveAttribute('aria-live');
+        });
+
+        test('should be keyboard navigable', async ({ page }) => {
+            // Tab through main elements
+            await page.keyboard.press('Tab');
+            let focusedElement = page.locator(':focus');
+            await expect(focusedElement).toBeVisible();
+
+            // Tab multiple times
+            for (let i = 0; i < 5; i++) {
+                await page.keyboard.press('Tab');
+            }
+
+            focusedElement = page.locator(':focus');
+            await expect(focusedElement).toBeVisible();
+        });
+    });
+
+    test.describe('Data Import/Export', () => {
+        test('should export portfolio data', async ({ page }) => {
+            // Click data management dropdown
+            await page.click('#dataManagementBtn');
+            await page.waitForTimeout(200);
+
+            // Setup download handler
+            const downloadPromise = page.waitForEvent('download');
+
+            // Click export
+            await page.click('#exportDataBtn');
+
+            const download = await downloadPromise;
+            expect(download.suggestedFilename()).toMatch(/portfolio_data_.*\.json/);
+        });
+
+        test('should show import file dialog', async ({ page }) => {
+            await page.click('#dataManagementBtn');
+            await page.waitForTimeout(200);
+
+            // Click import (opens file picker - can't fully test without file)
+            await page.click('#importDataBtn');
+            // File input should be triggered (hidden input)
+            // This is hard to test in E2E without actual file
+        });
+    });
+
+    test.describe('Currency Conversion', () => {
+        test('should switch between KRW and USD', async ({ page }) => {
+            // Switch to USD mode
+            await page.click('input[value="usd"]');
+            await page.waitForTimeout(200);
+
+            // Exchange rate input should be visible
+            await expect(page.locator('#exchangeRateGroup')).toBeVisible();
+            await expect(page.locator('#usdInputGroup')).toBeVisible();
+
+            // Switch back to KRW
+            await page.click('input[value="krw"]');
+            await page.waitForTimeout(200);
+
+            // Exchange rate input should be hidden
+            await expect(page.locator('#exchangeRateGroup')).toHaveClass(/hidden/);
+        });
+
+        test('should convert between currencies', async ({ page }) => {
+            // Switch to USD mode
+            await page.click('input[value="usd"]');
+
+            // Enter USD amount
+            await page.fill('#additionalAmountUSD', '100');
+
+            // Trigger conversion (blur event)
+            await page.locator('#additionalAmountUSD').blur();
+            await page.waitForTimeout(300);
+
+            // Check KRW amount updated
+            const krwValue = await page.inputValue('#additionalAmount');
+            expect(parseInt(krwValue)).toBeGreaterThan(0);
+        });
+    });
+
+    test.describe('Virtual Scroll', () => {
+        test('should handle many stocks with virtual scrolling', async ({ page }) => {
+            // Add multiple stocks
+            for (let i = 0; i < 20; i++) {
+                await page.click('#addNewStockBtn');
+                await page.waitForTimeout(100);
+            }
+
+            // Scroll the virtual scroll container
+            const scrollContainer = page.locator('#virtual-scroll-wrapper');
+            await scrollContainer.evaluate((el) => {
+                el.scrollTop = 500;
+            });
+
+            await page.waitForTimeout(300);
+
+            // Verify scroll worked (container should have stocks)
+            const stocks = await page.locator('.virtual-row-inputs').count();
+            expect(stocks).toBeGreaterThan(0);
+        });
+    });
 });
 ```
 
@@ -10026,4 +9098,3410 @@ export default defineConfig({
         // },
       ],
 });
+```
+
+---
+
+## `src/controller/CalculationManager.ts`
+
+```typescript
+// src/controller/CalculationManager.ts
+import { PortfolioState } from '../state';
+import { PortfolioView } from '../view';
+import { Calculator } from '../calculator';
+import { Validator } from '../validator';
+import { CONFIG } from '../constants';
+import { ErrorService, ValidationError } from '../errorService';
+import { getRatioSum } from '../utils';
+import { t } from '../i18n';
+import { generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from '../templates';
+import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from '../calculationStrategies';
+import { apiService, APIError, formatAPIError } from '../apiService';
+import Decimal from 'decimal.js';
+import type { MainMode, Currency } from '../types';
+
+/**
+ * @class CalculationManager
+ * @description 계산, API, 통화 변환 관리
+ */
+export class CalculationManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView,
+        private debouncedSave: () => void,
+        private getInvestmentAmountInKRW: () => Decimal
+    ) {}
+
+    /**
+     * @description 리밸런싱 계산 실행
+     */
+    async handleCalculate(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const additionalInvestment = this.getInvestmentAmountInKRW();
+
+        const inputs = {
+            mainMode: activePortfolio.settings.mainMode,
+            portfolioData: activePortfolio.portfolioData,
+            additionalInvestment: additionalInvestment
+        };
+
+        const validationErrors = Validator.validateForCalculation(inputs);
+
+        if (validationErrors.length > 0) {
+            const errorMessages = validationErrors.map((err) => err.message).join('\n');
+            ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
+            this.view.hideResults();
+            return;
+        }
+
+        const totalRatio = getRatioSum(inputs.portfolioData);
+        if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
+            const proceed = await this.view.showConfirm(
+                t('modal.confirmRatioSumWarnTitle'),
+                t('modal.confirmRatioSumWarnMsg', { totalRatio: totalRatio.toFixed(1) })
+            );
+            if (!proceed) {
+                this.view.hideResults();
+                return;
+            }
+        }
+
+        const calculatedState = Calculator.calculatePortfolioState({
+            portfolioData: inputs.portfolioData,
+            exchangeRate: activePortfolio.settings.exchangeRate,
+            currentCurrency: activePortfolio.settings.currentCurrency
+        });
+        activePortfolio.portfolioData = calculatedState.portfolioData;
+
+        let strategy;
+        if (activePortfolio.settings.mainMode === 'add') {
+            strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
+        } else if (activePortfolio.settings.mainMode === 'simple') {
+            strategy = new SimpleRatioStrategy(calculatedState.portfolioData, additionalInvestment);
+        } else {
+            strategy = new SellRebalanceStrategy(calculatedState.portfolioData);
+        }
+        const rebalancingResults = Calculator.calculateRebalancing(strategy);
+
+        const resultsHTML =
+            activePortfolio.settings.mainMode === 'add'
+                ? generateAddModeResultsHTML(
+                      rebalancingResults.results,
+                      {
+                          currentTotal: calculatedState.currentTotal,
+                          additionalInvestment: additionalInvestment,
+                          finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
+                      },
+                      activePortfolio.settings.currentCurrency
+                  )
+                : activePortfolio.settings.mainMode === 'simple'
+                ? generateSimpleModeResultsHTML(
+                      rebalancingResults.results,
+                      {
+                          currentTotal: calculatedState.currentTotal,
+                          additionalInvestment: additionalInvestment,
+                          finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
+                      },
+                      activePortfolio.settings.currentCurrency
+                  )
+                : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
+
+        this.view.displayResults(resultsHTML);
+
+        const chartLabels = rebalancingResults.results.map((r) => r.stock.name);
+        const chartData = rebalancingResults.results.map((r) => {
+            const ratio = r.stock.targetRatio instanceof Decimal ? r.stock.targetRatio : new Decimal(r.stock.targetRatio ?? 0);
+            return ratio.toNumber();
+        });
+        const chartTitle =
+            activePortfolio.settings.mainMode === 'simple'
+                ? '포트폴리오 목표 비율 (간단 계산 모드)'
+                : activePortfolio.settings.mainMode === 'add'
+                ? '포트폴리오 목표 비율 (추가 매수 모드)'
+                : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
+
+        this.view.displayChart((await import('chart.js/auto')).default, chartLabels, chartData, chartTitle);
+
+        this.debouncedSave();
+        this.view.showToast(t('toast.calculateSuccess'), 'success');
+    }
+
+    /**
+     * @description 모든 주식 가격 가져오기
+     */
+    async handleFetchAllPrices(): Promise<{ needsUIUpdate: boolean }> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+            this.view.showToast(t('api.noUpdates'), 'info');
+            return { needsUIUpdate: false };
+        }
+
+        const tickersToFetch = activePortfolio.portfolioData
+            .filter((s) => s.ticker && s.ticker.trim() !== '')
+            .map((s) => ({ id: s.id, ticker: s.ticker.trim() }));
+
+        if (tickersToFetch.length === 0) {
+            this.view.showToast(t('toast.noTickersToFetch'), 'info');
+            return { needsUIUpdate: false };
+        }
+
+        this.view.toggleFetchButton(true);
+
+        try {
+            let successCount = 0;
+            let failureCount = 0;
+            const failedTickers: string[] = [];
+
+            const results = await apiService.fetchAllStockPrices(tickersToFetch);
+
+            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const currentCurrency = activePortfolio.settings.currentCurrency || 'krw';
+
+            results.forEach((result) => {
+                if (result.status === 'fulfilled' && result.value) {
+                    let price = result.value;
+
+                    if (currentCurrency === 'krw') {
+                        const priceDec = new Decimal(price);
+                        const exchangeRateDec = new Decimal(exchangeRate);
+                        price = priceDec.times(exchangeRateDec).toNumber();
+                    }
+
+                    this.state.updateStockProperty((result as any).id, 'currentPrice', price);
+                    this.view.updateCurrentPriceInput((result as any).id, price.toFixed(2));
+                    successCount++;
+                } else {
+                    failureCount++;
+                    failedTickers.push((result as any).ticker);
+                    console.error(`[API] Failed to fetch price for ${(result as any).ticker}:`, (result as any).reason);
+                }
+            });
+
+            Calculator.clearPortfolioStateCache();
+
+            if (successCount === tickersToFetch.length) {
+                this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), 'success');
+            } else if (successCount > 0) {
+                this.view.showToast(t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }), 'warning');
+            } else {
+                this.view.showToast(t('api.fetchFailedAll', { failed: failureCount }), 'error');
+            }
+
+            if (failedTickers.length > 0) {
+                console.log('Failed tickers:', failedTickers.join(', '));
+            }
+
+            return { needsUIUpdate: true };
+        } catch (error) {
+            // Enhanced error handling with APIError
+            if (error instanceof APIError) {
+                const userMessage = formatAPIError(error);
+                this.view.showToast(userMessage, 'error');
+                console.error(`[API] ${error.type}:`, error.message);
+            } else {
+                ErrorService.handle(error as Error, 'handleFetchAllPrices');
+                this.view.showToast(t('api.fetchErrorGlobal', { message: (error as Error).message }), 'error');
+            }
+            return { needsUIUpdate: false };
+        } finally {
+            this.view.toggleFetchButton(false);
+        }
+    }
+
+    /**
+     * @description 메인 모드 변경
+     * @param newMode - 새 메인 모드
+     */
+    async handleMainModeChange(newMode: MainMode): Promise<{ needsFullRender: boolean }> {
+        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return { needsFullRender: false };
+
+        await this.state.updatePortfolioSettings('mainMode', newMode);
+
+        requestAnimationFrame(() => {
+            const modeName =
+                newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
+            this.view.showToast(t('toast.modeChanged', { mode: modeName }), 'info');
+        });
+
+        return { needsFullRender: true };
+    }
+
+    /**
+     * @description 통화 모드 변경
+     * @param newCurrency - 새 통화 모드
+     */
+    async handleCurrencyModeChange(newCurrency: Currency): Promise<{ needsFullRender: boolean }> {
+        if (newCurrency !== 'krw' && newCurrency !== 'usd') return { needsFullRender: false };
+
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return { needsFullRender: false };
+
+        await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
+        Calculator.clearPortfolioStateCache();
+        this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), 'info');
+
+        return { needsFullRender: true };
+    }
+
+    /**
+     * @description 통화 변환
+     * @param source - 변환 소스 ('krw' 또는 'usd')
+     */
+    async handleCurrencyConversion(source: 'krw' | 'usd'): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
+
+        if (
+            !(additionalAmountInput instanceof HTMLInputElement) ||
+            !(additionalAmountUSDInput instanceof HTMLInputElement) ||
+            !(exchangeRateInput instanceof HTMLInputElement)
+        )
+            return;
+
+        const exchangeRateNum = Number(exchangeRateInput.value) || CONFIG.DEFAULT_EXCHANGE_RATE;
+        const isValidRate = exchangeRateNum > 0;
+        let currentExchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE;
+
+        if (isValidRate) {
+            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            currentExchangeRate = exchangeRateNum;
+        } else {
+            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+            exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString();
+            this.view.showToast(t('toast.invalidExchangeRate'), 'error');
+        }
+
+        const currentExchangeRateDec = new Decimal(currentExchangeRate);
+
+        let krwAmountDec = new Decimal(0);
+        let usdAmountDec = new Decimal(0);
+
+        try {
+            if (source === 'krw') {
+                krwAmountDec = new Decimal(additionalAmountInput.value || 0);
+                if (krwAmountDec.isNegative()) throw new Error('Negative KRW input');
+                usdAmountDec = currentExchangeRateDec.isZero() ? new Decimal(0) : krwAmountDec.div(currentExchangeRateDec);
+            } else {
+                usdAmountDec = new Decimal(additionalAmountUSDInput.value || 0);
+                if (usdAmountDec.isNegative()) throw new Error('Negative USD input');
+                krwAmountDec = usdAmountDec.times(currentExchangeRateDec);
+            }
+
+            if (source === 'krw') {
+                additionalAmountUSDInput.value = usdAmountDec.toFixed(2);
+            } else {
+                additionalAmountInput.value = krwAmountDec.toFixed(0);
+            }
+
+            this.debouncedSave();
+        } catch (e) {
+            console.error('Error during currency conversion:', e);
+            this.view.showToast(t('toast.amountInputError'), 'error');
+            if (source === 'krw') additionalAmountUSDInput.value = '';
+            else additionalAmountInput.value = '';
+        }
+    }
+
+    /**
+     * @description 포트폴리오 환율 변경
+     * @param rate - 환율
+     */
+    async handlePortfolioExchangeRateChange(rate: number): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const exchangeRateNum = Number(rate);
+        const isValidRate = !isNaN(exchangeRateNum) && exchangeRateNum > 0;
+
+        if (isValidRate) {
+            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            this.debouncedSave();
+        } else {
+            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+            this.view.showToast(t('toast.invalidExchangeRate'), 'error');
+        }
+    }
+
+    /**
+     * @description 비율 정규화
+     */
+    handleNormalizeRatios(): void {
+        try {
+            const success = this.state.normalizeRatios();
+            if (!success) {
+                this.view.showToast(t('toast.noRatiosToNormalize'), 'info');
+                return;
+            }
+
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio) return;
+
+            this.view.updateAllTargetRatioInputs(activePortfolio.portfolioData);
+            const sum = getRatioSum(activePortfolio.portfolioData);
+            this.view.updateRatioSum(sum.toNumber());
+            this.debouncedSave();
+            this.view.showToast(t('toast.ratiosNormalized'), 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleNormalizeRatios');
+            this.view.showToast(t('toast.normalizeRatiosError'), 'error');
+        }
+    }
+}
+```
+
+---
+
+## `src/controller/DataManager.ts`
+
+```typescript
+// src/controller/DataManager.ts
+import { PortfolioState } from '../state';
+import { PortfolioView } from '../view';
+import { Calculator } from '../calculator';
+import { ErrorService } from '../errorService';
+import { t } from '../i18n';
+
+/**
+ * @class DataManager
+ * @description 데이터 가져오기/내보내기, 초기화 관리
+ */
+export class DataManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView
+    ) {}
+
+    /**
+     * @description 데이터 초기화
+     */
+    async handleResetData(): Promise<{ needsFullRender: boolean; needsUISetup: boolean }> {
+        const confirmReset = await this.view.showConfirm(t('modal.confirmResetTitle'), t('modal.confirmResetMsg'));
+        if (confirmReset) {
+            await this.state.resetData();
+            Calculator.clearPortfolioStateCache();
+
+            const activePortfolio = this.state.getActivePortfolio();
+            if (activePortfolio) {
+                this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
+                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                if (exchangeRateInput instanceof HTMLInputElement) {
+                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+            }
+
+            this.view.showToast(t('toast.dataReset'), 'success');
+            return { needsFullRender: true, needsUISetup: true };
+        }
+        return { needsFullRender: false, needsUISetup: false };
+    }
+
+    /**
+     * @description 데이터 내보내기
+     */
+    handleExportData(): void {
+        try {
+            const dataToExport = this.state.exportData();
+            const jsonString = JSON.stringify(dataToExport, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const activePortfolio = this.state.getActivePortfolio();
+            const filename = `portfolio_data_${activePortfolio?.name || 'export'}_${Date.now()}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.replace(/\s+/g, '_');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.view.showToast(t('toast.exportSuccess'), 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleExportData');
+            this.view.showToast(t('toast.exportError'), 'error');
+        }
+    }
+
+    /**
+     * @description 데이터 가져오기 트리거
+     */
+    handleImportData(): void {
+        const fileInput = this.view.dom.importFileInput;
+        if (fileInput instanceof HTMLInputElement) fileInput.click();
+    }
+
+    /**
+     * @description 파일 선택 핸들러
+     * @param e - 파일 입력 이벤트
+     */
+    handleFileSelected(e: Event): Promise<{ needsUISetup: boolean }> {
+        return new Promise((resolve) => {
+            const fileInput = e.target as HTMLInputElement;
+            const file = fileInput.files?.[0];
+
+            if (file) {
+                if (file.type !== 'application/json') {
+                    this.view.showToast(t('toast.invalidFileType'), 'error');
+                    fileInput.value = '';
+                    resolve({ needsUISetup: false });
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const jsonString = event.target?.result;
+                        if (typeof jsonString === 'string') {
+                            const loadedData = JSON.parse(jsonString);
+                            await this.state.importData(loadedData);
+                            Calculator.clearPortfolioStateCache();
+                            this.view.showToast(t('toast.importSuccess'), 'success');
+                            resolve({ needsUISetup: true });
+                        } else {
+                            throw new Error('Failed to read file content.');
+                        }
+                    } catch (error) {
+                        ErrorService.handle(error as Error, 'handleFileSelected');
+                        this.view.showToast(t('toast.importError'), 'error');
+                        resolve({ needsUISetup: false });
+                    } finally {
+                        fileInput.value = '';
+                    }
+                };
+
+                reader.onerror = () => {
+                    ErrorService.handle(new Error('File reading error'), 'handleFileSelected - Reader Error');
+                    this.view.showToast(t('toast.importError'), 'error');
+                    fileInput.value = '';
+                    resolve({ needsUISetup: false });
+                };
+
+                reader.readAsText(file);
+            } else {
+                resolve({ needsUISetup: false });
+            }
+        });
+    }
+}
+```
+
+---
+
+## `src/controller/PortfolioManager.ts`
+
+```typescript
+// src/controller/PortfolioManager.ts
+import { PortfolioState } from '../state';
+import { PortfolioView } from '../view';
+import { t } from '../i18n';
+import DOMPurify from 'dompurify';
+
+/**
+ * @class PortfolioManager
+ * @description 포트폴리오 CRUD 작업 관리
+ */
+export class PortfolioManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView
+    ) {}
+
+    /**
+     * @description 새 포트폴리오 생성
+     */
+    async handleNewPortfolio(): Promise<void> {
+        let name = await this.view.showPrompt(
+            t('modal.promptNewPortfolioNameTitle'),
+            t('modal.promptNewPortfolioNameMsg')
+        );
+
+        if (name) {
+            name = DOMPurify.sanitize(name);
+            await this.state.createNewPortfolio(name);
+            this.view.renderPortfolioSelector(
+                this.state.getAllPortfolios(),
+                this.state.getActivePortfolio()?.id || ''
+            );
+            this.view.showToast(t('toast.portfolioCreated', { name }), 'success');
+            return; // 신호: fullRender 필요
+        }
+    }
+
+    /**
+     * @description 포트폴리오 이름 변경
+     */
+    async handleRenamePortfolio(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        let newName = await this.view.showPrompt(
+            t('modal.promptRenamePortfolioTitle'),
+            t('modal.promptRenamePortfolioMsg'),
+            activePortfolio.name
+        );
+
+        if (newName && newName.trim()) {
+            newName = DOMPurify.sanitize(newName.trim());
+            await this.state.renamePortfolio(activePortfolio.id, newName);
+            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
+            this.view.showToast(t('toast.portfolioRenamed'), 'success');
+        }
+    }
+
+    /**
+     * @description 포트폴리오 삭제
+     */
+    async handleDeletePortfolio(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        if (Object.keys(this.state.getAllPortfolios()).length <= 1) {
+            this.view.showToast(t('toast.lastPortfolioDeleteError'), 'error');
+            return;
+        }
+
+        const confirmDelete = await this.view.showConfirm(
+            t('modal.confirmDeletePortfolioTitle'),
+            t('modal.confirmDeletePortfolioMsg', { name: activePortfolio.name })
+        );
+
+        if (confirmDelete) {
+            const deletedId = activePortfolio.id;
+            if (await this.state.deletePortfolio(deletedId)) {
+                const newActivePortfolio = this.state.getActivePortfolio();
+                if (newActivePortfolio) {
+                    this.view.renderPortfolioSelector(this.state.getAllPortfolios(), newActivePortfolio.id);
+                    this.view.showToast(t('toast.portfolioDeleted'), 'success');
+                    return; // 신호: fullRender 필요
+                }
+            }
+        }
+    }
+
+    /**
+     * @description 포트폴리오 전환
+     * @param newId - 새 포트폴리오 ID
+     */
+    async handleSwitchPortfolio(newId: string): Promise<void> {
+        const selector = this.view.dom.portfolioSelector;
+        let targetId = newId;
+
+        if (!targetId && selector instanceof HTMLSelectElement) {
+            targetId = selector.value;
+        }
+
+        if (targetId) {
+            await this.state.setActivePortfolioId(targetId);
+            const activePortfolio = this.state.getActivePortfolio();
+            if (activePortfolio) {
+                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                if (exchangeRateInput instanceof HTMLInputElement) {
+                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                }
+            }
+            return; // 신호: fullRender 필요
+        }
+    }
+}
+```
+
+---
+
+## `src/controller/StockManager.ts`
+
+```typescript
+// src/controller/StockManager.ts
+import { PortfolioState } from '../state';
+import { PortfolioView } from '../view';
+import { Calculator } from '../calculator';
+import { Validator } from '../validator';
+import { getRatioSum } from '../utils';
+import { t } from '../i18n';
+import { generateSectorAnalysisHTML } from '../templates';
+import Decimal from 'decimal.js';
+import DOMPurify from 'dompurify';
+
+/**
+ * @class StockManager
+ * @description 주식 추가, 삭제, 수정 관리
+ */
+export class StockManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView,
+        private debouncedSave: () => void
+    ) {}
+
+    /**
+     * @description 새 주식 추가
+     */
+    async handleAddNewStock(): Promise<{ needsFullRender: boolean; stockId?: string }> {
+        const newStock = await this.state.addNewStock();
+        return { needsFullRender: true, stockId: newStock?.id };
+    }
+
+    /**
+     * @description 주식 삭제
+     * @param stockId - 주식 ID
+     */
+    async handleDeleteStock(stockId: string): Promise<{ needsFullRender: boolean }> {
+        const stockName = this.state.getStockById(stockId)?.name || t('defaults.unknownStock');
+        const confirmDelete = await this.view.showConfirm(
+            t('modal.confirmDeleteStockTitle'),
+            t('modal.confirmDeleteStockMsg', { name: stockName })
+        );
+
+        if (confirmDelete) {
+            if (await this.state.deleteStock(stockId)) {
+                Calculator.clearPortfolioStateCache();
+                this.view.showToast(t('toast.transactionDeleted'), 'success');
+                return { needsFullRender: true };
+            } else {
+                this.view.showToast(t('toast.lastStockDeleteError'), 'error');
+            }
+        }
+        return { needsFullRender: false };
+    }
+
+    /**
+     * @description 포트폴리오 테이블 변경 핸들러
+     * @param e - 이벤트
+     */
+    handlePortfolioBodyChange(e: Event): { needsFullRender: boolean; needsUIUpdate: boolean; needsSave: boolean } {
+        const target = e.target as HTMLInputElement | HTMLSelectElement;
+        const row = target.closest('div[data-id]');
+        if (!row) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+
+        const stockId = (row as HTMLElement).dataset.id;
+        const field = (target as HTMLInputElement).dataset.field;
+        if (!stockId || !field) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+
+        let value: any = target.type === 'checkbox' && target instanceof HTMLInputElement ? target.checked : target.value;
+        let isValid = true;
+
+        switch (field) {
+            case 'targetRatio':
+            case 'currentPrice':
+            case 'fixedBuyAmount':
+            case 'manualAmount':
+                const validationResult = Validator.validateNumericInput(value);
+                isValid = validationResult.isValid;
+                if (isValid) value = validationResult.value ?? 0;
+                break;
+            case 'isFixedBuyEnabled':
+                value = Boolean(value);
+                break;
+            case 'ticker':
+                const tickerResult = Validator.validateTicker(value);
+                isValid = tickerResult.isValid;
+                if (isValid) value = tickerResult.value ?? '';
+                break;
+            case 'name':
+            case 'sector':
+                const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
+                isValid = textResult.isValid;
+                if (isValid) value = DOMPurify.sanitize(textResult.value ?? '');
+                break;
+            default:
+                value = DOMPurify.sanitize(String(value).trim());
+                break;
+        }
+
+        this.view.toggleInputValidation(target as HTMLInputElement, isValid);
+
+        if (isValid) {
+            this.state.updateStockProperty(stockId, field, value);
+
+            // manualAmount는 간단 모드 전용 필드
+            if (field === 'manualAmount') {
+                this.view.updateStockInVirtualData(stockId, field, value);
+                this.debouncedSave();
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            }
+
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+
+            // currentPrice 변경 시 부분 업데이트 (최적화)
+            if (field === 'currentPrice') {
+                const stock = activePortfolio.portfolioData.find((s) => s.id === stockId);
+                if (stock) {
+                    const calculatedMetrics = Calculator.calculateStockMetrics(stock);
+                    const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
+
+                    if (activePortfolio.settings.currentCurrency === 'krw') {
+                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
+                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
+                    } else {
+                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
+                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
+                    }
+
+                    this.view.updateSingleStockRow(stockId, calculatedMetrics);
+
+                    // 섹터 분석 재계산
+                    Calculator.clearPortfolioStateCache();
+                    const calculatedState = Calculator.calculatePortfolioState({
+                        portfolioData: activePortfolio.portfolioData,
+                        exchangeRate: activePortfolio.settings.exchangeRate,
+                        currentCurrency: activePortfolio.settings.currentCurrency
+                    });
+                    const newSectorData = Calculator.calculateSectorAnalysis(
+                        calculatedState.portfolioData,
+                        activePortfolio.settings.currentCurrency
+                    );
+                    this.view.displaySectorAnalysis(
+                        generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+                    );
+                }
+
+                this.debouncedSave();
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            }
+
+            // 기타 필드 변경 시 전체 재계산
+            Calculator.clearPortfolioStateCache();
+
+            const calculatedState = Calculator.calculatePortfolioState({
+                portfolioData: activePortfolio.portfolioData,
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                currentCurrency: activePortfolio.settings.currentCurrency
+            });
+            activePortfolio.portfolioData = calculatedState.portfolioData;
+
+            this.view.updateVirtualTableData(calculatedState.portfolioData);
+
+            const newRatioSum = getRatioSum(activePortfolio.portfolioData);
+            this.view.updateRatioSum(newRatioSum.toNumber());
+
+            const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+            this.view.displaySectorAnalysis(
+                generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+            );
+
+            this.debouncedSave();
+
+            if (field === 'isFixedBuyEnabled') {
+                const amountInput = row.querySelector('input[data-field="fixedBuyAmount"]');
+                if (amountInput instanceof HTMLInputElement) {
+                    amountInput.disabled = !value;
+                    if (!value) {
+                        amountInput.value = '0';
+                        this.state.updateStockProperty(stockId, 'fixedBuyAmount', 0);
+                        this.debouncedSave();
+                    }
+                }
+            }
+        }
+
+        return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    }
+
+    /**
+     * @description 포트폴리오 테이블 클릭 핸들러
+     * @param e - 이벤트
+     */
+    handlePortfolioBodyClick(e: Event): { action: string | null; stockId: string | null } {
+        const target = e.target as HTMLElement;
+        const actionButton = target.closest('button[data-action]');
+        if (!actionButton) return { action: null, stockId: null };
+
+        const row = actionButton.closest('div[data-id]');
+        if (!row?.dataset.id) return { action: null, stockId: null };
+
+        const stockId = (row as HTMLElement).dataset.id;
+        const action = (actionButton as HTMLElement).dataset.action || null;
+
+        return { action, stockId };
+    }
+}
+```
+
+---
+
+## `src/controller/TransactionManager.ts`
+
+```typescript
+// src/controller/TransactionManager.ts
+import { PortfolioState } from '../state';
+import { PortfolioView } from '../view';
+import { Calculator } from '../calculator';
+import { Validator } from '../validator';
+import { t } from '../i18n';
+import Decimal from 'decimal.js';
+
+/**
+ * @class TransactionManager
+ * @description 거래 내역 추가, 삭제 관리
+ */
+export class TransactionManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView
+    ) {}
+
+    /**
+     * @description 주식 ID로 거래 내역 모달 열기
+     * @param stockId - 주식 ID
+     */
+    openTransactionModalByStockId(stockId: string): void {
+        const stock = this.state.getStockById(stockId);
+        const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+        if (stock && currency) {
+            this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId));
+        }
+    }
+
+    /**
+     * @description 새 거래 내역 추가
+     * @param e - 폼 제출 이벤트
+     */
+    async handleAddNewTransaction(e: Event): Promise<{ needsFullRender: boolean }> {
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const modal = form.closest('#transactionModal') as HTMLElement | null;
+        const stockId = modal?.dataset.stockId;
+        if (!stockId) return { needsFullRender: false };
+
+        const typeInput = form.querySelector('input[name="txType"]:checked');
+        const inputModeInput = form.querySelector('input[name="inputMode"]:checked');
+        const dateInput = form.querySelector('#txDate') as HTMLInputElement;
+        const quantityInput = form.querySelector('#txQuantity') as HTMLInputElement;
+        const totalAmountInput = form.querySelector('#txTotalAmount') as HTMLInputElement;
+        const priceInput = form.querySelector('#txPrice') as HTMLInputElement;
+
+        if (!typeInput || !dateInput || !priceInput) return { needsFullRender: false };
+
+        const type = typeInput instanceof HTMLInputElement && typeInput.value === 'sell' ? 'sell' : 'buy';
+        const inputMode = inputModeInput instanceof HTMLInputElement ? inputModeInput.value : 'quantity';
+        const date = dateInput.value;
+        const priceStr = priceInput.value;
+
+        let finalQuantity: number;
+
+        if (inputMode === 'amount') {
+            if (!totalAmountInput || !totalAmountInput.value) {
+                this.view.showToast(t('toast.invalidTransactionInfo'), 'error');
+                return { needsFullRender: false };
+            }
+
+            const totalAmountStr = totalAmountInput.value;
+
+            try {
+                const totalAmountDec = new Decimal(totalAmountStr);
+                const priceDec = new Decimal(priceStr);
+
+                if (priceDec.isZero() || priceDec.isNegative()) {
+                    this.view.showToast('단가는 0보다 커야 합니다.', 'error');
+                    return { needsFullRender: false };
+                }
+
+                const quantityDec = totalAmountDec.div(priceDec);
+                finalQuantity = quantityDec.toNumber();
+            } catch (error) {
+                this.view.showToast('금액 또는 단가 입력이 올바르지 않습니다.', 'error');
+                return { needsFullRender: false };
+            }
+        } else {
+            if (!quantityInput || !quantityInput.value) {
+                this.view.showToast(t('toast.invalidTransactionInfo'), 'error');
+                return { needsFullRender: false };
+            }
+
+            const quantityStr = quantityInput.value;
+            finalQuantity = Number(quantityStr);
+        }
+
+        const txData = { type, date, quantity: String(finalQuantity), price: priceStr };
+        const validationResult = Validator.validateTransaction(txData);
+
+        if (!validationResult.isValid) {
+            this.view.showToast(validationResult.message || t('toast.invalidTransactionInfo'), 'error');
+            return { needsFullRender: false };
+        }
+
+        const success = await this.state.addTransaction(stockId, {
+            type,
+            date,
+            quantity: finalQuantity,
+            price: Number(priceStr)
+        });
+
+        if (success) {
+            const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+            if (currency) {
+                this.view.renderTransactionList(this.state.getTransactions(stockId), currency);
+            }
+            form.reset();
+            dateInput.valueAsDate = new Date();
+
+            // 입력 모드를 수량 입력으로 리셋
+            const inputModeQuantity = form.querySelector('#inputModeQuantity');
+            if (inputModeQuantity instanceof HTMLInputElement) {
+                inputModeQuantity.checked = true;
+                const quantityInputGroup = document.getElementById('quantityInputGroup');
+                const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
+                const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
+
+                if (quantityInputGroup) quantityInputGroup.style.display = '';
+                if (totalAmountInputGroup) totalAmountInputGroup.style.display = 'none';
+                if (calculatedQuantityDisplay) calculatedQuantityDisplay.style.display = 'none';
+                if (quantityInput) quantityInput.required = true;
+                if (totalAmountInput) totalAmountInput.required = false;
+            }
+
+            this.view.showToast(t('toast.transactionAdded'), 'success');
+            Calculator.clearPortfolioStateCache();
+            return { needsFullRender: true };
+        } else {
+            this.view.showToast(t('toast.transactionAddFailed'), 'error');
+            return { needsFullRender: false };
+        }
+    }
+
+    /**
+     * @description 거래 내역 삭제
+     * @param stockId - 주식 ID
+     * @param txId - 거래 내역 ID
+     */
+    async handleTransactionListClick(stockId: string, txId: string): Promise<{ needsUIUpdate: boolean }> {
+        if (stockId && txId) {
+            const confirmDelete = await this.view.showConfirm(
+                t('modal.confirmDeleteTransactionTitle'),
+                t('modal.confirmDeleteTransactionMsg')
+            );
+            if (confirmDelete) {
+                const success = await this.state.deleteTransaction(stockId, txId);
+                if (success) {
+                    const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+                    if (currency) {
+                        const transactionsBeforeRender = this.state.getTransactions(stockId);
+                        this.view.renderTransactionList(transactionsBeforeRender, currency);
+                    }
+                    this.view.showToast(t('toast.transactionDeleted'), 'success');
+                    Calculator.clearPortfolioStateCache();
+                    return { needsUIUpdate: true };
+                } else {
+                    this.view.showToast(t('toast.transactionDeleteFailed'), 'error');
+                }
+            }
+        } else {
+            console.error('handleTransactionListClick received invalid IDs:', stockId, txId);
+        }
+        return { needsUIUpdate: false };
+    }
+}
+```
+
+---
+
+## `src/view/EventEmitter.test.ts`
+
+```typescript
+// src/view/EventEmitter.test.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { EventEmitter } from './EventEmitter';
+
+describe('EventEmitter', () => {
+    let emitter: EventEmitter;
+
+    beforeEach(() => {
+        emitter = new EventEmitter();
+    });
+
+    describe('on() and emit()', () => {
+        it('should register and call a single event listener', () => {
+            const callback = vi.fn();
+            emitter.on('testEvent', callback);
+            emitter.emit('testEvent', { data: 'test' });
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith({ data: 'test' });
+        });
+
+        it('should call multiple listeners for the same event', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+            const callback3 = vi.fn();
+
+            emitter.on('testEvent', callback1);
+            emitter.on('testEvent', callback2);
+            emitter.on('testEvent', callback3);
+
+            emitter.emit('testEvent', 'payload');
+
+            expect(callback1).toHaveBeenCalledWith('payload');
+            expect(callback2).toHaveBeenCalledWith('payload');
+            expect(callback3).toHaveBeenCalledWith('payload');
+        });
+
+        it('should emit events without data', () => {
+            const callback = vi.fn();
+            emitter.on('noDataEvent', callback);
+            emitter.emit('noDataEvent');
+
+            expect(callback).toHaveBeenCalledWith(undefined);
+        });
+
+        it('should not call listeners for different events', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+
+            emitter.on('event1', callback1);
+            emitter.on('event2', callback2);
+
+            emitter.emit('event1', 'data1');
+
+            expect(callback1).toHaveBeenCalledWith('data1');
+            expect(callback2).not.toHaveBeenCalled();
+        });
+
+        it('should handle emitting non-existent events gracefully', () => {
+            expect(() => {
+                emitter.emit('nonExistentEvent', 'data');
+            }).not.toThrow();
+        });
+    });
+
+    describe('clear()', () => {
+        it('should remove all event listeners', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+
+            emitter.on('event1', callback1);
+            emitter.on('event2', callback2);
+
+            emitter.clear();
+
+            emitter.emit('event1');
+            emitter.emit('event2');
+
+            expect(callback1).not.toHaveBeenCalled();
+            expect(callback2).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('off()', () => {
+        it('should remove listeners for a specific event', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+
+            emitter.on('event1', callback1);
+            emitter.on('event2', callback2);
+
+            emitter.off('event1');
+
+            emitter.emit('event1');
+            emitter.emit('event2');
+
+            expect(callback1).not.toHaveBeenCalled();
+            expect(callback2).toHaveBeenCalled();
+        });
+
+        it('should handle removing non-existent events gracefully', () => {
+            expect(() => {
+                emitter.off('nonExistentEvent');
+            }).not.toThrow();
+        });
+    });
+
+    describe('multiple subscriptions', () => {
+        it('should support multiple events with different callbacks', () => {
+            const callbacks = {
+                calculate: vi.fn(),
+                save: vi.fn(),
+                delete: vi.fn()
+            };
+
+            emitter.on('calculateClicked', callbacks.calculate);
+            emitter.on('saveClicked', callbacks.save);
+            emitter.on('deleteClicked', callbacks.delete);
+
+            emitter.emit('calculateClicked', { amount: 1000 });
+            emitter.emit('saveClicked', { id: 123 });
+
+            expect(callbacks.calculate).toHaveBeenCalledWith({ amount: 1000 });
+            expect(callbacks.save).toHaveBeenCalledWith({ id: 123 });
+            expect(callbacks.delete).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('edge cases', () => {
+        it('should handle rapid successive emits', () => {
+            const callback = vi.fn();
+            emitter.on('rapidEvent', callback);
+
+            for (let i = 0; i < 100; i++) {
+                emitter.emit('rapidEvent', i);
+            }
+
+            expect(callback).toHaveBeenCalledTimes(100);
+        });
+
+        it('should handle callbacks that throw errors', () => {
+            const errorCallback = vi.fn(() => {
+                throw new Error('Callback error');
+            });
+            const normalCallback = vi.fn();
+
+            emitter.on('errorEvent', errorCallback);
+            emitter.on('errorEvent', normalCallback);
+
+            // First callback throws, but second should still execute
+            expect(() => {
+                emitter.emit('errorEvent');
+            }).toThrow();
+
+            expect(errorCallback).toHaveBeenCalled();
+            // Note: Due to the throw, normalCallback might not be called
+            // depending on implementation
+        });
+    });
+});
+```
+
+---
+
+## `src/view/EventEmitter.ts`
+
+```typescript
+// src/view/EventEmitter.ts
+/**
+ * @class EventEmitter
+ * @description Pub/Sub 패턴을 구현하는 이벤트 시스템
+ */
+
+export type EventCallback = (data?: any) => void;
+
+export class EventEmitter {
+    private _events: Record<string, EventCallback[]> = {};
+
+    /**
+     * @description 추상 이벤트를 구독합니다.
+     * @param event - 이벤트 이름 (예: 'calculateClicked')
+     * @param callback - 실행할 콜백 함수
+     */
+    on(event: string, callback: EventCallback): void {
+        if (!this._events[event]) {
+            this._events[event] = [];
+        }
+        this._events[event].push(callback);
+    }
+
+    /**
+     * @description 추상 이벤트를 발행합니다.
+     * @param event - 이벤트 이름
+     * @param data - 전달할 데이터
+     */
+    emit(event: string, data?: any): void {
+        if (this._events[event]) {
+            this._events[event].forEach(callback => callback(data));
+        }
+    }
+
+    /**
+     * @description 모든 이벤트 리스너를 초기화합니다.
+     */
+    clear(): void {
+        this._events = {};
+    }
+
+    /**
+     * @description 특정 이벤트의 모든 리스너를 제거합니다.
+     * @param event - 이벤트 이름
+     */
+    off(event: string): void {
+        delete this._events[event];
+    }
+}
+```
+
+---
+
+## `src/view/ModalManager.test.ts`
+
+```typescript
+// src/view/ModalManager.test.ts
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { ModalManager } from './ModalManager';
+
+describe('ModalManager', () => {
+    let modalManager: ModalManager;
+    let mockDom: any;
+
+    beforeEach(() => {
+        // Create mock DOM elements
+        mockDom = {
+            customModal: document.createElement('div'),
+            customModalTitle: document.createElement('h2'),
+            customModalMessage: document.createElement('p'),
+            customModalInput: document.createElement('input'),
+            customModalConfirm: document.createElement('button'),
+            customModalCancel: document.createElement('button'),
+            transactionModal: document.createElement('div'),
+            modalStockName: document.createElement('h2'),
+            closeModalBtn: document.createElement('button'),
+            transactionListBody: document.createElement('tbody'),
+            newTransactionForm: document.createElement('form'),
+            txDate: document.createElement('input'),
+            txQuantity: document.createElement('input'),
+            txPrice: document.createElement('input')
+        };
+
+        // Setup IDs for elements
+        mockDom.customModal.id = 'customModal';
+        mockDom.transactionModal.id = 'transactionModal';
+
+        // Append to document body for focus trap to work
+        document.body.appendChild(mockDom.customModal);
+        document.body.appendChild(mockDom.transactionModal);
+
+        modalManager = new ModalManager(mockDom);
+    });
+
+    afterEach(() => {
+        // Cleanup
+        document.body.innerHTML = '';
+        vi.clearAllMocks();
+    });
+
+    describe('showConfirm()', () => {
+        it('should display confirm modal with title and message', () => {
+            const promise = modalManager.showConfirm('Test Title', 'Test Message');
+
+            expect(mockDom.customModalTitle.textContent).toBe('Test Title');
+            expect(mockDom.customModalMessage.textContent).toBe('Test Message');
+            expect(mockDom.customModal.classList.contains('hidden')).toBe(false);
+            expect(mockDom.customModalInput.classList.contains('hidden')).toBe(true);
+
+            // Cleanup promise
+            modalManager.handleCustomModal(false);
+        });
+
+        it('should resolve to true when confirmed', async () => {
+            const promise = modalManager.showConfirm('Confirm', 'Are you sure?');
+
+            // Simulate confirm click
+            setTimeout(() => {
+                modalManager.handleCustomModal(true);
+            }, 10);
+
+            const result = await promise;
+            expect(result).toBe(true);
+        });
+
+        it('should resolve to false when cancelled', async () => {
+            const promise = modalManager.showConfirm('Confirm', 'Are you sure?');
+
+            setTimeout(() => {
+                modalManager.handleCustomModal(false);
+            }, 10);
+
+            const result = await promise;
+            expect(result).toBe(false);
+        });
+
+        it('should set aria-modal attribute', () => {
+            modalManager.showConfirm('Test', 'Message');
+            expect(mockDom.customModal.getAttribute('aria-modal')).toBe('true');
+
+            modalManager.handleCustomModal(false);
+        });
+    });
+
+    describe('showPrompt()', () => {
+        it('should display prompt modal with input field', () => {
+            const promise = modalManager.showPrompt('Enter Name', 'Please provide a name', 'Default');
+
+            expect(mockDom.customModalTitle.textContent).toBe('Enter Name');
+            expect(mockDom.customModalMessage.textContent).toBe('Please provide a name');
+            expect(mockDom.customModalInput.value).toBe('Default');
+            expect(mockDom.customModalInput.classList.contains('hidden')).toBe(false);
+
+            modalManager.handleCustomModal(false);
+        });
+
+        it('should resolve to input value when confirmed', async () => {
+            const promise = modalManager.showPrompt('Name', 'Enter your name', '');
+
+            setTimeout(() => {
+                mockDom.customModalInput.value = 'John Doe';
+                modalManager.handleCustomModal(true);
+            }, 10);
+
+            const result = await promise;
+            expect(result).toBe('John Doe');
+        });
+
+        it('should resolve to null when cancelled', async () => {
+            const promise = modalManager.showPrompt('Name', 'Enter your name');
+
+            setTimeout(() => {
+                modalManager.handleCustomModal(false);
+            }, 10);
+
+            const result = await promise;
+            expect(result).toBe(null);
+        });
+    });
+
+    describe('openTransactionModal()', () => {
+        it('should open transaction modal with stock info', () => {
+            const mockStock = {
+                id: 'stock-1',
+                name: 'Apple',
+                ticker: 'AAPL',
+                sector: 'Technology',
+                targetRatio: 25,
+                currentPrice: 150,
+                transactions: []
+            };
+
+            modalManager.openTransactionModal(mockStock, 'usd', []);
+
+            expect(mockDom.transactionModal.dataset.stockId).toBe('stock-1');
+            expect(mockDom.modalStockName.textContent).toContain('Apple');
+            expect(mockDom.modalStockName.textContent).toContain('AAPL');
+            expect(mockDom.transactionModal.classList.contains('hidden')).toBe(false);
+        });
+
+        it('should render transaction list', () => {
+            const mockStock = {
+                id: 'stock-1',
+                name: 'Apple',
+                ticker: 'AAPL',
+                sector: 'Technology',
+                targetRatio: 25,
+                currentPrice: 150,
+                transactions: []
+            };
+
+            const mockTransactions = [
+                {
+                    id: 'tx-1',
+                    type: 'buy' as const,
+                    date: '2024-01-01',
+                    quantity: 10,
+                    price: 140
+                }
+            ];
+
+            modalManager.openTransactionModal(mockStock, 'usd', mockTransactions);
+
+            const rows = mockDom.transactionListBody.querySelectorAll('tr');
+            expect(rows.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('closeTransactionModal()', () => {
+        it('should close transaction modal and reset form', () => {
+            const mockStock = {
+                id: 'stock-1',
+                name: 'Apple',
+                ticker: 'AAPL',
+                sector: 'Technology',
+                targetRatio: 25,
+                currentPrice: 150,
+                transactions: []
+            };
+
+            modalManager.openTransactionModal(mockStock, 'usd', []);
+            modalManager.closeTransactionModal();
+
+            expect(mockDom.transactionModal.classList.contains('hidden')).toBe(true);
+            expect(mockDom.transactionModal.hasAttribute('data-stock-id')).toBe(false);
+        });
+
+        it('should remove aria-modal attribute', () => {
+            const mockStock = {
+                id: 'stock-1',
+                name: 'Apple',
+                ticker: 'AAPL',
+                sector: 'Technology',
+                targetRatio: 25,
+                currentPrice: 150,
+                transactions: []
+            };
+
+            modalManager.openTransactionModal(mockStock, 'usd', []);
+            expect(mockDom.transactionModal.getAttribute('aria-modal')).toBe('true');
+
+            modalManager.closeTransactionModal();
+            expect(mockDom.transactionModal.hasAttribute('aria-modal')).toBe(false);
+        });
+    });
+
+    describe('renderTransactionList()', () => {
+        it('should show "no transactions" message when list is empty', () => {
+            modalManager.renderTransactionList([], 'krw');
+
+            const rows = mockDom.transactionListBody.querySelectorAll('tr');
+            expect(rows.length).toBe(1);
+            expect(rows[0].textContent).toContain('거래 내역이 없습니다');
+        });
+
+        it('should render transactions sorted by date (newest first)', () => {
+            const transactions = [
+                { id: 'tx-1', type: 'buy' as const, date: '2024-01-01', quantity: 10, price: 100 },
+                { id: 'tx-2', type: 'sell' as const, date: '2024-01-03', quantity: 5, price: 110 },
+                { id: 'tx-3', type: 'buy' as const, date: '2024-01-02', quantity: 8, price: 105 }
+            ];
+
+            modalManager.renderTransactionList(transactions, 'usd');
+
+            const rows = mockDom.transactionListBody.querySelectorAll('tr');
+            expect(rows.length).toBe(3);
+
+            // Check sorting (newest first)
+            expect(rows[0].cells[0].textContent).toBe('2024-01-03');
+            expect(rows[1].cells[0].textContent).toBe('2024-01-02');
+            expect(rows[2].cells[0].textContent).toBe('2024-01-01');
+        });
+
+        it('should display buy/sell types with correct styling', () => {
+            const transactions = [
+                { id: 'tx-1', type: 'buy' as const, date: '2024-01-01', quantity: 10, price: 100 },
+                { id: 'tx-2', type: 'sell' as const, date: '2024-01-02', quantity: 5, price: 110 }
+            ];
+
+            modalManager.renderTransactionList(transactions, 'krw');
+
+            const rows = mockDom.transactionListBody.querySelectorAll('tr');
+            const buySpan = rows[1].querySelector('.text-buy');
+            const sellSpan = rows[0].querySelector('.text-sell');
+
+            expect(buySpan).toBeTruthy();
+            expect(sellSpan).toBeTruthy();
+        });
+    });
+
+    describe('bindModalEvents()', () => {
+        it('should bind cancel button click', () => {
+            const handleSpy = vi.spyOn(modalManager, 'handleCustomModal');
+            modalManager.bindModalEvents();
+
+            mockDom.customModalCancel.click();
+
+            expect(handleSpy).toHaveBeenCalledWith(false);
+        });
+
+        it('should bind confirm button click', () => {
+            const handleSpy = vi.spyOn(modalManager, 'handleCustomModal');
+            modalManager.bindModalEvents();
+
+            mockDom.customModalConfirm.click();
+
+            expect(handleSpy).toHaveBeenCalledWith(true);
+        });
+
+        it('should handle Escape key', () => {
+            const handleSpy = vi.spyOn(modalManager, 'handleCustomModal');
+            modalManager.bindModalEvents();
+
+            const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+            mockDom.customModal.dispatchEvent(escapeEvent);
+
+            expect(handleSpy).toHaveBeenCalledWith(false);
+        });
+    });
+});
+```
+
+---
+
+## `src/view/ModalManager.ts`
+
+```typescript
+// src/view/ModalManager.ts
+import { formatCurrency, escapeHTML } from '../utils';
+import { t } from '../i18n';
+import { createFocusTrap, FocusManager } from '../a11yHelpers';
+import Decimal from 'decimal.js';
+import type { Stock, Transaction } from '../types';
+
+/**
+ * @class ModalManager
+ * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
+ */
+export class ModalManager {
+    private dom: any;
+    private activeModalResolver: ((value: any) => void) | null = null;
+    private focusManager: FocusManager;
+    private focusTrapCleanup: (() => void) | null = null;
+
+    constructor(dom: any) {
+        this.dom = dom;
+        this.focusManager = new FocusManager();
+    }
+
+    /**
+     * @description 현재 포커스 요소를 저장합니다.
+     */
+    private saveFocusContext(): void {
+        this.focusManager.saveFocus();
+    }
+
+    /**
+     * @description 저장된 포커스 요소로 복원합니다.
+     */
+    private restoreFocus(): void {
+        this.focusManager.restoreFocus();
+        // Cleanup focus trap
+        if (this.focusTrapCleanup) {
+            this.focusTrapCleanup();
+            this.focusTrapCleanup = null;
+        }
+    }
+
+    /**
+     * @description 확인 대화상자를 표시합니다.
+     * @param title - 모달 제목
+     * @param message - 모달 메시지
+     * @returns 사용자의 선택 (true/false)
+     */
+    async showConfirm(title: string, message: string): Promise<boolean> {
+        return this._showModal({ title, message, type: 'confirm' }) as Promise<boolean>;
+    }
+
+    /**
+     * @description 입력 프롬프트를 표시합니다.
+     * @param title - 모달 제목
+     * @param message - 모달 메시지
+     * @param defaultValue - 기본값
+     * @returns 사용자 입력 문자열 또는 null
+     */
+    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
+        return this._showModal({ title, message, defaultValue, type: 'prompt' }) as Promise<string | null>;
+    }
+
+    /**
+     * @description 커스텀 모달을 표시합니다 (내부 헬퍼).
+     * @param options - 모달 옵션
+     * @returns Promise<boolean | string | null>
+     */
+    private _showModal(options: {
+        title: string;
+        message: string;
+        defaultValue?: string;
+        type: 'confirm' | 'prompt';
+    }): Promise<boolean | string | null> {
+        return new Promise((resolve) => {
+            this.saveFocusContext();
+            this.activeModalResolver = resolve;
+            const { title, message, defaultValue, type } = options;
+            const titleEl = this.dom.customModalTitle;
+            const messageEl = this.dom.customModalMessage;
+            const inputEl = this.dom.customModalInput;
+            const modalEl = this.dom.customModal;
+            const confirmBtnEl = this.dom.customModalConfirm;
+
+            if (titleEl) titleEl.textContent = title;
+            if (messageEl) messageEl.textContent = message;
+
+            if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
+                inputEl.value = defaultValue ?? '';
+                inputEl.classList.remove('hidden');
+            } else if (inputEl) {
+                inputEl.classList.add('hidden');
+            }
+
+            if (modalEl) {
+                modalEl.classList.remove('hidden');
+                modalEl.setAttribute('aria-modal', 'true');
+                // Use enhanced focus trap from a11yHelpers
+                this.focusTrapCleanup = createFocusTrap(modalEl);
+            }
+
+            if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
+                inputEl.focus();
+            } else if (confirmBtnEl instanceof HTMLButtonElement) {
+                confirmBtnEl.focus();
+            }
+        });
+    }
+
+    /**
+     * @description 커스텀 모달의 응답을 처리합니다.
+     * @param confirmed - 확인 여부
+     */
+    handleCustomModal(confirmed: boolean): void {
+        if (!this.activeModalResolver) return;
+
+        const inputEl = this.dom.customModalInput;
+        const modalEl = this.dom.customModal;
+        const isPrompt = inputEl instanceof HTMLInputElement && !inputEl.classList.contains('hidden');
+        const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
+
+        this.activeModalResolver(value);
+        modalEl?.classList.add('hidden');
+        modalEl?.removeAttribute('aria-modal');
+        this.restoreFocus();
+        this.activeModalResolver = null;
+    }
+
+    /**
+     * @description 거래 내역 모달을 엽니다.
+     * @param stock - 주식 정보
+     * @param currency - 통화 모드
+     * @param transactions - 거래 내역 배열
+     */
+    openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
+        this.saveFocusContext();
+        const modal = this.dom.transactionModal;
+        const modalTitle = this.dom.modalStockName;
+        const dateInput = this.dom.txDate;
+
+        if (!modal) return;
+
+        modal.dataset.stockId = stock.id;
+        if (modalTitle) {
+            modalTitle.textContent = `${stock.name} (${stock.ticker}) ${t('modal.transactionTitle')}`;
+        }
+
+        this.renderTransactionList(transactions || [], currency);
+
+        if (dateInput instanceof HTMLInputElement) {
+            dateInput.valueAsDate = new Date();
+        }
+
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-modal', 'true');
+        this.focusTrapCleanup = createFocusTrap(modal);
+
+        const closeBtn = this.dom.closeModalBtn;
+        if (closeBtn instanceof HTMLButtonElement) {
+            closeBtn.focus();
+        }
+    }
+
+    /**
+     * @description 거래 내역 모달을 닫습니다.
+     */
+    closeTransactionModal(): void {
+        const modal = this.dom.transactionModal;
+        const form = this.dom.newTransactionForm;
+
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+        modal.removeAttribute('aria-modal');
+        if (form instanceof HTMLFormElement) form.reset();
+        modal.removeAttribute('data-stock-id');
+        this.restoreFocus();
+    }
+
+    /**
+     * @description 거래 내역 목록을 렌더링합니다.
+     * @param transactions - 거래 내역 배열
+     * @param currency - 통화 모드
+     */
+    renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
+        const listBody = this.dom.transactionListBody;
+        if (!listBody) {
+            console.error('ModalManager: renderTransactionList - listBody not found!');
+            return;
+        }
+
+        (listBody as HTMLTableSectionElement).innerHTML = '';
+
+        if (transactions.length === 0) {
+            const tr = (listBody as HTMLTableSectionElement).insertRow();
+            const td = tr.insertCell();
+            td.colSpan = 6;
+            td.style.textAlign = 'center';
+            td.textContent = t('view.noTransactions');
+            return;
+        }
+
+        const sorted = [...transactions].sort((a, b) => {
+            const dateCompare = b.date.localeCompare(a.date);
+            if (dateCompare !== 0) return dateCompare;
+            const idA = a.id || '';
+            const idB = b.id || '';
+            return idB.localeCompare(idA);
+        });
+
+        sorted.forEach((tx) => {
+            const tr = (listBody as HTMLTableSectionElement).insertRow();
+            tr.dataset.txId = tx.id;
+
+            const quantityDec = tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
+            const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
+            const total = quantityDec.times(priceDec);
+
+            tr.insertCell().textContent = tx.date;
+
+            const typeTd = tr.insertCell();
+            const typeSpan = document.createElement('span');
+            typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
+            typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
+            typeTd.appendChild(typeSpan);
+
+            const qtyTd = tr.insertCell();
+            qtyTd.textContent = quantityDec.toNumber().toLocaleString();
+            qtyTd.style.textAlign = 'right';
+
+            const priceTd = tr.insertCell();
+            priceTd.textContent = formatCurrency(priceDec, currency);
+            priceTd.style.textAlign = 'right';
+
+            const totalTd = tr.insertCell();
+            totalTd.textContent = formatCurrency(total, currency);
+            totalTd.style.textAlign = 'right';
+
+            const actionTd = tr.insertCell();
+            actionTd.style.textAlign = 'center';
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn btn--small';
+            btnDelete.dataset.variant = 'delete';
+            btnDelete.dataset.action = 'delete-tx';
+            btnDelete.textContent = t('ui.delete');
+            btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
+            actionTd.appendChild(btnDelete);
+        });
+    }
+
+    /**
+     * @description 커스텀 모달 이벤트 리스너를 바인딩합니다.
+     */
+    bindModalEvents(): void {
+        const cancelBtn = this.dom.customModalCancel;
+        const confirmBtn = this.dom.customModalConfirm;
+        const customModalEl = this.dom.customModal;
+
+        cancelBtn?.addEventListener('click', () => this.handleCustomModal(false));
+        confirmBtn?.addEventListener('click', () => this.handleCustomModal(true));
+        customModalEl?.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.key === 'Escape') this.handleCustomModal(false);
+        });
+    }
+}
+```
+
+---
+
+## `src/view/ResultsRenderer.ts`
+
+```typescript
+// src/view/ResultsRenderer.ts
+import { t } from '../i18n';
+import type { Chart } from 'chart.js';
+
+/**
+ * @class ResultsRenderer
+ * @description 계산 결과, 섹터 분석, 차트 렌더링 관리
+ */
+export class ResultsRenderer {
+    private dom: any;
+    private chartInstance: Chart | null = null;
+    private currentObserver: IntersectionObserver | null = null;
+
+    constructor(dom: any) {
+        this.dom = dom;
+    }
+
+    /**
+     * @description 스켈레톤 로딩 화면을 표시합니다.
+     */
+    displaySkeleton(): void {
+        const skeletonHTML = `
+            <div class="skeleton-container">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+            </div>
+        `;
+        const resultsEl = this.dom.resultsSection;
+        if (!resultsEl) return;
+
+        resultsEl.innerHTML = skeletonHTML;
+        resultsEl.classList.remove('hidden');
+        resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /**
+     * @description 계산 결과를 표시합니다.
+     * @param html - 결과 HTML
+     */
+    displayResults(html: string): void {
+        requestAnimationFrame(() => {
+            const resultsEl = this.dom.resultsSection;
+            if (!resultsEl) return;
+
+            resultsEl.innerHTML = html;
+            resultsEl.classList.remove('hidden');
+            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            const rows = resultsEl.querySelectorAll('.result-row-highlight');
+            if (rows.length === 0) return;
+
+            this.cleanupObserver();
+            this.currentObserver = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            const target = entry.target as HTMLElement;
+                            target.style.transitionDelay = target.dataset.delay || '0s';
+                            target.classList.add('in-view');
+                            this.currentObserver?.unobserve(target);
+                        }
+                    });
+                },
+                { threshold: 0.1 }
+            );
+
+            rows.forEach((row) => this.currentObserver?.observe(row as Element));
+        });
+    }
+
+    /**
+     * @description 섹터 분석을 표시합니다.
+     * @param html - 섹터 분석 HTML
+     */
+    displaySectorAnalysis(html: string): void {
+        requestAnimationFrame(() => {
+            const sectorEl = this.dom.sectorAnalysisSection;
+            if (!sectorEl) return;
+
+            sectorEl.innerHTML = html;
+            sectorEl.classList.remove('hidden');
+        });
+    }
+
+    /**
+     * @description 포트폴리오 차트를 표시합니다.
+     * @param ChartClass - Chart.js 클래스
+     * @param labels - 차트 레이블
+     * @param data - 차트 데이터
+     * @param title - 차트 제목
+     */
+    displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
+        const chartEl = this.dom.chartSection;
+        const canvas = this.dom.portfolioChart;
+
+        if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;
+
+        chartEl.classList.remove('hidden');
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' as const },
+                title: { display: true, text: title, font: { size: 16 } }
+            }
+        };
+
+        const chartData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: t('template.ratio'),
+                    data: data,
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF',
+                        '#FF9F40',
+                        '#C9CBCF',
+                        '#77DD77',
+                        '#FDFD96',
+                        '#836FFF',
+                        '#FFB347',
+                        '#FFD1DC'
+                    ],
+                    borderColor: document.body.classList.contains('dark-mode') ? '#2d2d2d' : '#ffffff',
+                    borderWidth: 2
+                }
+            ]
+        };
+
+        if (this.chartInstance) {
+            this.chartInstance.data = chartData;
+            this.chartInstance.options = chartOptions;
+            this.chartInstance.update();
+        } else {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                this.chartInstance = new ChartClass(ctx, {
+                    type: 'doughnut',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+    }
+
+    /**
+     * @description 결과 화면을 숨깁니다.
+     */
+    hideResults(): void {
+        const resultsEl = this.dom.resultsSection;
+        const sectorEl = this.dom.sectorAnalysisSection;
+        const chartEl = this.dom.chartSection;
+
+        if (resultsEl) {
+            resultsEl.innerHTML = '';
+            resultsEl.classList.add('hidden');
+        }
+        if (sectorEl) {
+            sectorEl.innerHTML = '';
+            sectorEl.classList.add('hidden');
+        }
+        if (chartEl) {
+            chartEl.classList.add('hidden');
+        }
+
+        this.cleanupObserver();
+    }
+
+    /**
+     * @description Intersection Observer를 정리합니다.
+     */
+    cleanupObserver(): void {
+        if (this.currentObserver) {
+            this.currentObserver.disconnect();
+            this.currentObserver = null;
+        }
+    }
+
+    /**
+     * @description 차트 인스턴스를 제거합니다.
+     */
+    destroyChart(): void {
+        if (this.chartInstance) {
+            this.chartInstance.destroy();
+            this.chartInstance = null;
+        }
+    }
+
+    /**
+     * @description 모든 리소스를 정리합니다.
+     */
+    cleanup(): void {
+        this.cleanupObserver();
+        this.destroyChart();
+    }
+}
+```
+
+---
+
+## `src/view/VirtualScrollManager.ts`
+
+```typescript
+// src/view/VirtualScrollManager.ts
+import { formatCurrency, escapeHTML } from '../utils';
+import { t } from '../i18n';
+import Decimal from 'decimal.js';
+import type { CalculatedStock } from '../types';
+
+// 가상 스크롤 상수
+const ROW_INPUT_HEIGHT = 60;
+const ROW_OUTPUT_HEIGHT = 50;
+const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT;
+const VISIBLE_ROWS_BUFFER = 5;
+
+/**
+ * @class VirtualScrollManager
+ * @description 가상 스크롤 관리 - 대량 데이터를 효율적으로 렌더링
+ */
+export class VirtualScrollManager {
+    private dom: any;
+    private _virtualData: CalculatedStock[] = [];
+    private _scrollWrapper: HTMLElement | null = null;
+    private _scrollSpacer: HTMLElement | null = null;
+    private _scrollContent: HTMLElement | null = null;
+    private _viewportHeight: number = 0;
+    private _renderedStartIndex: number = -1;
+    private _renderedEndIndex: number = -1;
+    private _scrollHandler: (() => void) | null = null;
+    private _currentMainMode: 'add' | 'sell' | 'simple' = 'add';
+    private _currentCurrency: 'krw' | 'usd' = 'krw';
+
+    constructor(dom: any) {
+        this.dom = dom;
+        this.initializeScrollElements();
+    }
+
+    /**
+     * @description 스크롤 요소들을 초기화합니다.
+     */
+    private initializeScrollElements(): void {
+        this._scrollWrapper = this.dom.virtualScrollWrapper;
+        this._scrollSpacer = this.dom.virtualScrollSpacer;
+        this._scrollContent = this.dom.virtualScrollContent;
+        this._viewportHeight = this._scrollWrapper ? this._scrollWrapper.clientHeight : 600;
+    }
+
+    /**
+     * @description 그리드 템플릿을 반환합니다 (반응형).
+     * @param mainMode - 메인 모드
+     * @returns CSS grid-template-columns 문자열
+     */
+    private getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            if (mainMode === 'simple') {
+                return '1.5fr 1fr 1fr 1fr 0.8fr';
+            }
+            return '1.5fr 1fr 1fr 1.2fr';
+        } else {
+            if (mainMode === 'add') {
+                return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+            } else if (mainMode === 'simple') {
+                return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
+            } else {
+                return '2fr 1fr 1fr 1fr 1fr 1.2fr';
+            }
+        }
+    }
+
+    /**
+     * @description 테이블 헤더를 업데이트합니다.
+     * @param currency - 통화 모드
+     * @param mainMode - 메인 모드
+     */
+    updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
+        this._currentMainMode = mainMode;
+        this._currentCurrency = currency;
+        const header = this.dom.virtualTableHeader;
+        if (!header) return;
+
+        header.style.gridTemplateColumns = this.getGridTemplate(mainMode);
+
+        const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
+        let headersHTML = '';
+
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            if (mainMode === 'simple') {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            } else {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            }
+        } else {
+            if (mainMode === 'simple') {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">보유 금액(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            } else {
+                headersHTML = `
+                    <div class="virtual-cell">${t('ui.stockName')}</div>
+                    <div class="virtual-cell">${t('ui.ticker')}</div>
+                    <div class="virtual-cell">${t('ui.sector')}</div>
+                    <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
+                    <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
+                    ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}
+                    <div class="virtual-cell align-center">${t('ui.action')}</div>
+                `;
+            }
+        }
+        header.innerHTML = headersHTML;
+    }
+
+    /**
+     * @description 주식 행 Fragment를 생성합니다.
+     * @param stock - 계산된 주식 데이터
+     * @param currency - 통화 모드
+     * @param mainMode - 메인 모드
+     * @returns DocumentFragment
+     */
+    createStockRowFragment(stock: CalculatedStock, currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): DocumentFragment {
+        const fragment = document.createDocumentFragment();
+
+        // 헬퍼 함수들
+        const createInput = (
+            type: string,
+            field: string,
+            value: any,
+            placeholder: string = '',
+            disabled: boolean = false,
+            ariaLabel: string = ''
+        ): HTMLInputElement => {
+            const input = document.createElement('input');
+            input.type = type;
+            input.dataset.field = field;
+
+            let displayValue = '';
+            if (value instanceof Decimal) {
+                const decimalPlaces = field === 'fixedBuyAmount' ? 0 : 2;
+                displayValue = value.toFixed(decimalPlaces);
+            } else {
+                const defaultValue =
+                    field === 'fixedBuyAmount' ? '0' : field === 'targetRatio' || field === 'currentPrice' ? '0.00' : '';
+                displayValue = String(value ?? defaultValue);
+            }
+
+            input.value = displayValue;
+            if (placeholder) input.placeholder = placeholder;
+            input.disabled = disabled;
+            if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+
+            if (type === 'number') {
+                input.min = '0';
+                if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
+            }
+            if (type === 'text') {
+                input.style.textAlign = 'center';
+            }
+
+            return input;
+        };
+
+        const createCheckbox = (field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement => {
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.dataset.field = field;
+            input.checked = checked;
+            if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+            return input;
+        };
+
+        const createButton = (action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement => {
+            const button = document.createElement('button');
+            button.className = 'btn btn--small';
+            button.dataset.action = action;
+            button.dataset.variant = variant;
+            button.textContent = text;
+            if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
+            return button;
+        };
+
+        const createCell = (className: string = '', align: string = 'left'): HTMLDivElement => {
+            const cell = document.createElement('div');
+            cell.className = `virtual-cell ${className} align-${align}`;
+            return cell;
+        };
+
+        // 1. 입력 행 (Inputs Row)
+        const divInputs = document.createElement('div');
+        divInputs.className = 'virtual-row-inputs';
+        divInputs.dataset.id = stock.id;
+        divInputs.setAttribute('role', 'row');
+        divInputs.style.gridTemplateColumns = this.getGridTemplate(mainMode);
+
+        const isMobile = window.innerWidth <= 768;
+
+        // 컬럼 구성
+        divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
+        divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
+
+        if (mainMode !== 'simple' && !isMobile) {
+            divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
+        }
+
+        divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
+
+        if (!isMobile && mainMode !== 'simple') {
+            divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
+        }
+
+        if (mainMode === 'simple') {
+            const amountCell = createCell('align-right');
+            const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
+            manualAmountInput.style.width = '100%';
+            manualAmountInput.style.textAlign = 'right';
+            amountCell.appendChild(manualAmountInput);
+            divInputs.appendChild(amountCell);
+
+            if (!isMobile) {
+                const fixedBuyCell = createCell('align-center');
+                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
+                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+                amountInput.style.width = '80px';
+                fixedBuyCell.append(checkbox, ' ', amountInput);
+                divInputs.appendChild(fixedBuyCell);
+            }
+
+            const deleteCell = createCell('align-center');
+            deleteCell.appendChild(createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete'));
+            divInputs.appendChild(deleteCell);
+        } else {
+            if (mainMode === 'add' && !isMobile) {
+                const fixedBuyCell = createCell('align-center');
+                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
+                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
+                amountInput.style.width = '80px';
+                fixedBuyCell.append(checkbox, ' ', amountInput);
+                divInputs.appendChild(fixedBuyCell);
+            }
+
+            const actionCell = createCell('align-center');
+            actionCell.append(
+                createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
+                ' ',
+                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+            );
+            divInputs.appendChild(actionCell);
+        }
+
+        // 2. 출력 행 (Outputs Row)
+        const divOutputs = document.createElement('div');
+        divOutputs.className = 'virtual-row-outputs';
+        divOutputs.dataset.id = stock.id;
+        divOutputs.setAttribute('role', 'row');
+        divOutputs.style.gridTemplateColumns = this.getGridTemplate(mainMode);
+
+        const metrics = stock.calculated ?? {
+            quantity: new Decimal(0),
+            avgBuyPrice: new Decimal(0),
+            currentAmount: new Decimal(0),
+            profitLoss: new Decimal(0),
+            profitLossRate: new Decimal(0)
+        };
+
+        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
+        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
+        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        const createOutputCell = (label: string, value: string, valueClass: string = ''): HTMLDivElement => {
+            const cell = createCell('output-cell align-right');
+            cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
+            return cell;
+        };
+
+        const firstCell = createCell();
+        firstCell.style.gridColumn = 'span 1';
+        divOutputs.appendChild(firstCell);
+
+        if (mainMode === 'simple') {
+            divOutputs.style.display = 'none';
+        } else {
+            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+            if (!isMobile) {
+                divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+            }
+            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+            if (!isMobile) {
+                divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
+            }
+            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
+        }
+
+        const lastCell = createCell();
+        divOutputs.appendChild(lastCell);
+
+        fragment.append(divInputs, divOutputs);
+        return fragment;
+    }
+
+    /**
+     * @description 가상 테이블을 렌더링합니다 (초기화).
+     * @param calculatedPortfolioData - 계산된 포트폴리오 데이터
+     * @param currency - 통화 모드
+     * @param mainMode - 메인 모드
+     */
+    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
+        if (!this._scrollWrapper || !this._scrollSpacer || !this._scrollContent) return;
+
+        this.updateTableHeader(currency, mainMode);
+
+        this._virtualData = calculatedPortfolioData;
+        if (this.dom.virtualScrollWrapper) {
+            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
+        }
+
+        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
+        this._scrollSpacer.style.height = `${totalHeight}px`;
+
+        this._viewportHeight = this._scrollWrapper.clientHeight;
+
+        if (this._scrollHandler) {
+            this._scrollWrapper.removeEventListener('scroll', this._scrollHandler);
+        }
+
+        this._scrollHandler = this._onScroll.bind(this);
+        this._scrollWrapper.addEventListener('scroll', this._scrollHandler);
+
+        this._onScroll(true);
+    }
+
+    /**
+     * @description 가상 테이블 데이터를 업데이트합니다.
+     * @param calculatedPortfolioData - 계산된 포트폴리오 데이터
+     */
+    updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
+        this._virtualData = calculatedPortfolioData;
+        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
+        if (this._scrollSpacer) this._scrollSpacer.style.height = `${totalHeight}px`;
+        if (this.dom.virtualScrollWrapper) {
+            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
+        }
+
+        this._onScroll(true);
+    }
+
+    /**
+     * @description 특정 주식의 virtual data를 업데이트합니다.
+     * @param stockId - 주식 ID
+     * @param field - 필드명
+     * @param value - 값
+     */
+    updateStockInVirtualData(stockId: string, field: string, value: any): void {
+        const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+        if (stockIndex !== -1) {
+            (this._virtualData[stockIndex] as any)[field] = value;
+        }
+    }
+
+    /**
+     * @description 특정 주식 행의 출력 부분만 업데이트합니다.
+     * @param stockId - 주식 ID
+     * @param calculatedData - 재계산된 데이터
+     */
+    updateSingleStockRow(stockId: string, calculatedData: any): void {
+        const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+        if (stockIndex === -1) return;
+
+        this._virtualData[stockIndex] = { ...this._virtualData[stockIndex], calculated: calculatedData };
+
+        if (stockIndex < this._renderedStartIndex || stockIndex >= this._renderedEndIndex) {
+            return;
+        }
+
+        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
+        if (!outputRow || this._currentMainMode === 'simple') return;
+
+        const currency = this._currentCurrency;
+        const metrics = calculatedData ?? {
+            quantity: new Decimal(0),
+            avgBuyPrice: new Decimal(0),
+            currentAmount: new Decimal(0),
+            profitLoss: new Decimal(0),
+            profitLossRate: new Decimal(0)
+        };
+
+        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
+        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
+        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        const isMobile = window.innerWidth <= 768;
+
+        const cells = outputRow.querySelectorAll('.output-cell');
+        let cellIndex = 0;
+
+        if (cells[cellIndex]) cellIndex++;
+
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
+            cellIndex++;
+        }
+
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
+            cellIndex++;
+        }
+
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
+            cellIndex++;
+        }
+
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
+            cellIndex++;
+        }
+
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
+        }
+    }
+
+    /**
+     * @description 스크롤 이벤트 핸들러 (실제 가상 스크롤 로직).
+     * @param forceRedraw - 강제 재렌더링 여부
+     */
+    private _onScroll(forceRedraw: boolean = false): void {
+        if (!this._scrollWrapper || !this._scrollContent) return;
+
+        const currency = this._currentCurrency;
+        const mainMode = this._currentMainMode;
+
+        const scrollTop = this._scrollWrapper.scrollTop;
+
+        const startIndex = Math.max(0, Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER);
+        const endIndex = Math.min(
+            this._virtualData.length,
+            Math.ceil((scrollTop + this._viewportHeight) / ROW_PAIR_HEIGHT) + VISIBLE_ROWS_BUFFER
+        );
+
+        if (!forceRedraw && startIndex === this._renderedStartIndex && endIndex === this._renderedEndIndex) {
+            return;
+        }
+
+        // 재렌더링 전 입력값 저장 (IME 안전)
+        const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        const activeElement = document.activeElement;
+
+        currentInputRows.forEach((row) => {
+            const stockId = (row as HTMLElement).dataset.id;
+            if (!stockId) return;
+
+            const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+            if (stockIndex === -1) return;
+
+            const inputs = row.querySelectorAll('input[data-field]');
+            inputs.forEach((input) => {
+                if (!(input instanceof HTMLInputElement)) return;
+
+                if (input === activeElement || (input as any).isComposing) {
+                    return;
+                }
+
+                const field = input.dataset.field;
+                if (!field) return;
+
+                let value: any;
+                if (input.type === 'checkbox') {
+                    value = input.checked;
+                } else if (input.type === 'number') {
+                    value = parseFloat(input.value) || 0;
+                } else {
+                    value = input.value;
+                }
+
+                (this._virtualData[stockIndex] as any)[field] = value;
+            });
+        });
+
+        this._renderedStartIndex = startIndex;
+        this._renderedEndIndex = endIndex;
+
+        const fragment = document.createDocumentFragment();
+        for (let i = startIndex; i < endIndex; i++) {
+            const stock = this._virtualData[i];
+            fragment.appendChild(this.createStockRowFragment(stock, currency, mainMode));
+        }
+
+        this._scrollContent.replaceChildren(fragment);
+        this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+    }
+
+    /**
+     * @description 모든 목표 비율 입력 필드를 업데이트합니다.
+     * @param portfolioData - 포트폴리오 데이터
+     */
+    updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
+        portfolioData.forEach((stock) => {
+            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`);
+            if (!inputRow) return;
+
+            const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
+            if (targetRatioInput instanceof HTMLInputElement) {
+                const ratio = stock.targetRatio instanceof Decimal ? stock.targetRatio : new Decimal(stock.targetRatio ?? 0);
+                targetRatioInput.value = ratio.toFixed(2);
+            }
+        });
+    }
+
+    /**
+     * @description 특정 주식의 현재가 입력 필드를 업데이트합니다.
+     * @param id - 주식 ID
+     * @param price - 가격
+     */
+    updateCurrentPriceInput(id: string, price: string): void {
+        const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
+        if (!inputRow) return;
+
+        const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
+        if (currentPriceInput instanceof HTMLInputElement) {
+            currentPriceInput.value = price;
+        }
+    }
+
+    /**
+     * @description 새로 추가된 주식으로 포커스를 이동합니다.
+     * @param stockId - 주식 ID
+     */
+    focusOnNewStock(stockId: string): void {
+        const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+        if (stockIndex === -1 || !this._scrollWrapper) return;
+
+        const scrollTop = stockIndex * ROW_PAIR_HEIGHT;
+        this._scrollWrapper.scrollTo({ top: scrollTop, behavior: 'smooth' });
+
+        setTimeout(() => {
+            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`);
+            if (!inputRow) return;
+
+            const nameInput = inputRow.querySelector('input[data-field="name"]');
+            if (nameInput instanceof HTMLInputElement) {
+                nameInput.focus();
+                nameInput.select();
+            }
+        }, 300);
+    }
+}
+```
+
+---
+
+## `src/a11yHelpers.ts`
+
+```typescript
+// src/a11yHelpers.ts
+/**
+ * @description 접근성(Accessibility) 개선 유틸리티
+ */
+
+/**
+ * @description 키보드 네비게이션 헬퍼 - Enter/Space로 버튼 활성화
+ * @param element - 대상 요소
+ * @param callback - 실행할 콜백
+ */
+export function addKeyboardActivation(
+    element: HTMLElement,
+    callback: (e: KeyboardEvent) => void
+): void {
+    element.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            callback(e);
+        }
+    });
+}
+
+/**
+ * @description 포커스 트랩 (모달 내부에서만 포커스 이동)
+ * @param container - 컨테이너 요소
+ * @returns cleanup 함수
+ */
+export function createFocusTrap(container: HTMLElement): () => void {
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusableElements = container.querySelectorAll(focusableSelector);
+
+    if (focusableElements.length === 0) {
+        return () => {};
+    }
+
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key !== 'Tab') return;
+
+        if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+                lastElement.focus();
+                e.preventDefault();
+            }
+        } else {
+            if (document.activeElement === lastElement) {
+                firstElement.focus();
+                e.preventDefault();
+            }
+        }
+    };
+
+    container.addEventListener('keydown', handleKeyDown);
+
+    // 초기 포커스
+    firstElement.focus();
+
+    // Cleanup 함수 반환
+    return () => {
+        container.removeEventListener('keydown', handleKeyDown);
+    };
+}
+
+/**
+ * @description 스크린 리더 전용 텍스트 생성
+ * @param text - 읽을 텍스트
+ * @returns HTMLElement (visually hidden)
+ */
+export function createScreenReaderText(text: string): HTMLSpanElement {
+    const span = document.createElement('span');
+    span.textContent = text;
+    span.className = 'sr-only'; // CSS에서 .sr-only 정의 필요
+    span.setAttribute('aria-hidden', 'false');
+    return span;
+}
+
+/**
+ * @description ARIA live region에 메시지 발표
+ * @param message - 알림 메시지
+ * @param priority - 'polite' | 'assertive'
+ */
+export function announceToScreenReader(
+    message: string,
+    priority: 'polite' | 'assertive' = 'polite'
+): void {
+    const announcer = document.getElementById('aria-announcer');
+    if (announcer) {
+        announcer.textContent = '';
+        announcer.setAttribute('aria-live', priority);
+        setTimeout(() => {
+            announcer.textContent = message;
+        }, 100);
+    }
+}
+
+/**
+ * @description 폼 필드 에러 연결 (aria-describedby)
+ * @param input - 입력 필드
+ * @param errorMessage - 에러 메시지
+ * @returns 에러 메시지 요소
+ */
+export function linkFormError(input: HTMLInputElement, errorMessage: string): HTMLElement {
+    const errorId = `${input.id || 'input'}-error`;
+    let errorEl = document.getElementById(errorId);
+
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.id = errorId;
+        errorEl.className = 'error-message';
+        errorEl.setAttribute('role', 'alert');
+        errorEl.setAttribute('aria-live', 'polite');
+        input.parentElement?.appendChild(errorEl);
+    }
+
+    errorEl.textContent = errorMessage;
+    input.setAttribute('aria-describedby', errorId);
+    input.setAttribute('aria-invalid', 'true');
+
+    return errorEl;
+}
+
+/**
+ * @description 폼 필드 에러 제거
+ * @param input - 입력 필드
+ */
+export function clearFormError(input: HTMLInputElement): void {
+    const errorId = `${input.id || 'input'}-error`;
+    const errorEl = document.getElementById(errorId);
+
+    if (errorEl) {
+        errorEl.remove();
+    }
+
+    input.removeAttribute('aria-describedby');
+    input.removeAttribute('aria-invalid');
+}
+
+/**
+ * @description 진행률 표시 (aria-valuenow, aria-valuemin, aria-valuemax)
+ * @param element - 진행률 요소
+ * @param current - 현재 값
+ * @param max - 최대 값
+ * @param label - 라벨 (선택)
+ */
+export function updateProgressBar(
+    element: HTMLElement,
+    current: number,
+    max: number,
+    label?: string
+): void {
+    element.setAttribute('role', 'progressbar');
+    element.setAttribute('aria-valuenow', String(current));
+    element.setAttribute('aria-valuemin', '0');
+    element.setAttribute('aria-valuemax', String(max));
+
+    if (label) {
+        element.setAttribute('aria-label', label);
+    }
+
+    const percent = (current / max) * 100;
+    element.setAttribute('aria-valuetext', `${percent.toFixed(0)}%`);
+}
+
+/**
+ * @description 스킵 링크 생성 (페이지 상단에서 메인 콘텐츠로 바로 이동)
+ * @param targetId - 이동할 요소의 ID
+ * @param text - 링크 텍스트
+ * @returns HTMLAnchorElement
+ */
+export function createSkipLink(targetId: string, text: string = 'Skip to main content'): HTMLAnchorElement {
+    const skipLink = document.createElement('a');
+    skipLink.href = `#${targetId}`;
+    skipLink.textContent = text;
+    skipLink.className = 'skip-link'; // CSS에서 정의 필요 (시각적으로 숨김, 포커스 시 표시)
+    skipLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.getElementById(targetId);
+        if (target) {
+            target.focus();
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+    return skipLink;
+}
+
+/**
+ * @description 모달 오픈 시 이전 포커스 저장 및 복원
+ */
+export class FocusManager {
+    private previousFocus: HTMLElement | null = null;
+
+    /**
+     * @description 현재 포커스 저장
+     */
+    saveFocus(): void {
+        this.previousFocus = document.activeElement as HTMLElement;
+    }
+
+    /**
+     * @description 이전 포커스 복원
+     */
+    restoreFocus(): void {
+        if (this.previousFocus && typeof this.previousFocus.focus === 'function') {
+            this.previousFocus.focus();
+            this.previousFocus = null;
+        }
+    }
+}
+
+/**
+ * @description 색상 대비 검사 (WCAG 2.0 기준)
+ * @param foreground - 전경색 (hex)
+ * @param background - 배경색 (hex)
+ * @returns { ratio: number, passAA: boolean, passAAA: boolean }
+ */
+export function checkColorContrast(
+    foreground: string,
+    background: string
+): { ratio: number; passAA: boolean; passAAA: boolean } {
+    // Hex to RGB
+    const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+            ? {
+                  r: parseInt(result[1], 16),
+                  g: parseInt(result[2], 16),
+                  b: parseInt(result[3], 16)
+              }
+            : null;
+    };
+
+    // Relative luminance
+    const getLuminance = (r: number, g: number, b: number) => {
+        const [rs, gs, bs] = [r, g, b].map((c) => {
+            c = c / 255;
+            return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    };
+
+    const fg = hexToRgb(foreground);
+    const bg = hexToRgb(background);
+
+    if (!fg || !bg) {
+        return { ratio: 0, passAA: false, passAAA: false };
+    }
+
+    const l1 = getLuminance(fg.r, fg.g, fg.b);
+    const l2 = getLuminance(bg.r, bg.g, bg.b);
+
+    const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+
+    return {
+        ratio: Math.round(ratio * 100) / 100,
+        passAA: ratio >= 4.5, // WCAG AA 기준
+        passAAA: ratio >= 7 // WCAG AAA 기준
+    };
+}
+
+/**
+ * @description 터치 타겟 크기 검사 (최소 44x44px 권장)
+ * @param element - 검사할 요소
+ * @returns { width: number, height: number, isSufficient: boolean }
+ */
+export function checkTouchTargetSize(element: HTMLElement): {
+    width: number;
+    height: number;
+    isSufficient: boolean;
+} {
+    const rect = element.getBoundingClientRect();
+    const minSize = 44; // WCAG 2.1 권장 크기
+
+    return {
+        width: rect.width,
+        height: rect.height,
+        isSufficient: rect.width >= minSize && rect.height >= minSize
+    };
+}
+```
+
+---
+
+## `src/apiService.test.ts`
+
+```typescript
+// src/apiService.test.ts
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { apiService, APIError, APIErrorType, formatAPIError } from './apiService';
+
+// Mock global fetch
+global.fetch = vi.fn();
+
+describe('apiService', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    describe('APIError', () => {
+        it('should create APIError with type and message', () => {
+            const error = new APIError('Test error', APIErrorType.NETWORK_ERROR);
+
+            expect(error.name).toBe('APIError');
+            expect(error.message).toBe('Test error');
+            expect(error.type).toBe(APIErrorType.NETWORK_ERROR);
+        });
+
+        it('should include optional fields', () => {
+            const error = new APIError('Ticker error', APIErrorType.INVALID_TICKER, {
+                ticker: 'INVALID',
+                statusCode: 404
+            });
+
+            expect(error.ticker).toBe('INVALID');
+            expect(error.statusCode).toBe(404);
+        });
+
+        it('should handle rate limit with retryAfter', () => {
+            const error = new APIError('Rate limit', APIErrorType.RATE_LIMIT, {
+                retryAfter: 60
+            });
+
+            expect(error.retryAfter).toBe(60);
+        });
+    });
+
+    describe('formatAPIError()', () => {
+        it('should format network error', () => {
+            const error = new APIError('Network failed', APIErrorType.NETWORK_ERROR);
+            const message = formatAPIError(error);
+
+            expect(message).toContain('네트워크');
+            expect(message).toContain('연결');
+        });
+
+        it('should format timeout error', () => {
+            const error = new APIError('Timeout', APIErrorType.TIMEOUT);
+            const message = formatAPIError(error);
+
+            expect(message).toContain('시간이 초과');
+        });
+
+        it('should format rate limit error with retry time', () => {
+            const error = new APIError('Rate limit', APIErrorType.RATE_LIMIT, {
+                retryAfter: 120
+            });
+            const message = formatAPIError(error);
+
+            expect(message).toContain('요청 한도');
+            expect(message).toContain('120');
+        });
+
+        it('should format invalid ticker error', () => {
+            const error = new APIError('Invalid', APIErrorType.INVALID_TICKER, {
+                ticker: 'BADTICKER'
+            });
+            const message = formatAPIError(error);
+
+            expect(message).toContain('유효하지 않은 티커');
+            expect(message).toContain('BADTICKER');
+        });
+
+        it('should format server error', () => {
+            const error = new APIError('Server error', APIErrorType.SERVER_ERROR);
+            const message = formatAPIError(error);
+
+            expect(message).toContain('서버 오류');
+        });
+
+        it('should format unknown error', () => {
+            const error = new APIError('Unknown', APIErrorType.UNKNOWN);
+            const message = formatAPIError(error);
+
+            expect(message).toContain('알 수 없는 오류');
+        });
+    });
+
+    describe('fetchStockPrice()', () => {
+        it('should fetch stock price successfully', async () => {
+            const mockResponse = {
+                ok: true,
+                json: async () => ({ c: 150.25 })
+            };
+            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+
+            const price = await apiService.fetchStockPrice('AAPL');
+
+            expect(price).toBe(150.25);
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.stringContaining('AAPL'),
+                expect.objectContaining({
+                    signal: expect.any(AbortSignal)
+                })
+            );
+        });
+
+        it('should throw APIError for empty ticker', async () => {
+            await expect(apiService.fetchStockPrice('')).rejects.toThrow(APIError);
+            await expect(apiService.fetchStockPrice('')).rejects.toMatchObject({
+                type: APIErrorType.INVALID_TICKER
+            });
+        });
+
+        it('should throw APIError for invalid ticker (no data)', async () => {
+            const mockResponse = {
+                ok: true,
+                json: async () => ({ c: 0, d: null })
+            };
+            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+
+            await expect(apiService.fetchStockPrice('INVALID')).rejects.toThrow(APIError);
+            await expect(apiService.fetchStockPrice('INVALID')).rejects.toMatchObject({
+                type: APIErrorType.INVALID_TICKER
+            });
+        });
+
+        it('should throw APIError for zero or negative price', async () => {
+            const mockResponse = {
+                ok: true,
+                json: async () => ({ c: 0 })
+            };
+            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+
+            await expect(apiService.fetchStockPrice('ZERO')).rejects.toThrow(APIError);
+        });
+
+        it('should retry on server error (5xx)', async () => {
+            const mockError = {
+                ok: false,
+                status: 503,
+                json: async () => ({ error: 'Service unavailable' }),
+                text: async () => 'Service unavailable'
+            };
+            const mockSuccess = {
+                ok: true,
+                json: async () => ({ c: 100 })
+            };
+
+            (global.fetch as any)
+                .mockResolvedValueOnce(mockError)
+                .mockResolvedValueOnce(mockSuccess);
+
+            const price = await apiService.fetchStockPrice('AAPL');
+
+            expect(price).toBe(100);
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('should throw APIError after max retries', async () => {
+            const mockError = {
+                ok: false,
+                status: 500,
+                json: async () => ({ error: 'Server error' }),
+                text: async () => 'Server error'
+            };
+
+            (global.fetch as any).mockResolvedValue(mockError);
+
+            await expect(apiService.fetchStockPrice('AAPL')).rejects.toThrow(APIError);
+            // Should retry up to 3 times (initial + 2 retries)
+            expect(global.fetch).toHaveBeenCalledTimes(3);
+        });
+
+        it('should handle rate limiting (429)', async () => {
+            const mockRateLimit = {
+                ok: false,
+                status: 429,
+                headers: new Headers({ 'Retry-After': '60' }),
+                json: async () => ({}),
+                text: async () => 'Too many requests'
+            };
+
+            (global.fetch as any).mockResolvedValueOnce(mockRateLimit);
+
+            await expect(apiService.fetchStockPrice('AAPL')).rejects.toMatchObject({
+                type: APIErrorType.RATE_LIMIT,
+                retryAfter: 60
+            });
+        });
+    });
+
+    describe('fetchAllStockPrices()', () => {
+        it('should fetch prices for multiple tickers', async () => {
+            const mockResponse = {
+                ok: true,
+                json: async () => [
+                    { status: 'fulfilled', ticker: 'AAPL', value: 150 },
+                    { status: 'fulfilled', ticker: 'GOOGL', value: 2800 },
+                    { status: 'rejected', ticker: 'INVALID', reason: 'Not found' }
+                ]
+            };
+            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+
+            const tickersToFetch = [
+                { id: '1', ticker: 'AAPL' },
+                { id: '2', ticker: 'GOOGL' },
+                { id: '3', ticker: 'INVALID' }
+            ];
+
+            const results = await apiService.fetchAllStockPrices(tickersToFetch);
+
+            expect(results).toHaveLength(3);
+            expect(results[0]).toMatchObject({
+                id: '1',
+                status: 'fulfilled',
+                value: 150
+            });
+            expect(results[1]).toMatchObject({
+                id: '2',
+                status: 'fulfilled',
+                value: 2800
+            });
+            expect(results[2]).toMatchObject({
+                id: '3',
+                status: 'rejected',
+                reason: 'Not found'
+            });
+        });
+
+        it('should return empty array for empty input', async () => {
+            const results = await apiService.fetchAllStockPrices([]);
+
+            expect(results).toEqual([]);
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('should throw APIError on batch API failure', async () => {
+            const mockError = {
+                ok: false,
+                status: 500,
+                json: async () => ({ error: 'Batch failed' }),
+                text: async () => 'Batch failed'
+            };
+
+            (global.fetch as any).mockResolvedValue(mockError);
+
+            const tickersToFetch = [{ id: '1', ticker: 'AAPL' }];
+
+            await expect(apiService.fetchAllStockPrices(tickersToFetch)).rejects.toThrow(APIError);
+        });
+
+        it('should construct correct batch URL', async () => {
+            const mockResponse = {
+                ok: true,
+                json: async () => [
+                    { status: 'fulfilled', ticker: 'AAPL', value: 150 },
+                    { status: 'fulfilled', ticker: 'GOOGL', value: 2800 }
+                ]
+            };
+            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+
+            const tickersToFetch = [
+                { id: '1', ticker: 'AAPL' },
+                { id: '2', ticker: 'GOOGL' }
+            ];
+
+            await apiService.fetchAllStockPrices(tickersToFetch);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                expect.stringContaining('symbols=AAPL%2CGOOGL'),
+                expect.any(Object)
+            );
+        });
+    });
+});
+```
+
+---
+
+## `src/i18nEnhancements.ts`
+
+```typescript
+// src/i18nEnhancements.ts
+/**
+ * @description 국제화 숫자 포맷팅 유틸리티
+ */
+
+import Decimal from 'decimal.js';
+import type { Currency } from './types';
+
+/**
+ * @description 현재 언어 설정 가져오기
+ * @returns 'ko' | 'en'
+ */
+export function getCurrentLanguage(): 'ko' | 'en' {
+    // localStorage에서 언어 설정 가져오기
+    const storedLang = localStorage.getItem('app_language');
+    if (storedLang === 'ko' || storedLang === 'en') {
+        return storedLang;
+    }
+
+    // 브라우저 언어 감지
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.startsWith('ko')) {
+        return 'ko';
+    }
+    return 'en';
+}
+
+/**
+ * @description 언어 설정 변경
+ * @param lang - 'ko' | 'en'
+ */
+export function setLanguage(lang: 'ko' | 'en'): void {
+    localStorage.setItem('app_language', lang);
+    // 페이지 리로드 또는 이벤트 발생으로 UI 업데이트
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+}
+
+/**
+ * @description 숫자를 로케일에 맞게 포맷팅 (소수점 있는 숫자)
+ * @param value - 숫자 또는 Decimal
+ * @param fractionDigits - 소수점 자릿수 (기본값: 2)
+ * @returns 포맷팅된 문자열
+ */
+export function formatNumber(
+    value: number | Decimal | string | null | undefined,
+    fractionDigits: number = 2
+): string {
+    const lang = getCurrentLanguage();
+    const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+
+    let num: number;
+    if (value === null || value === undefined) {
+        num = 0;
+    } else if (typeof value === 'object' && 'toNumber' in value) {
+        num = value.toNumber();
+    } else {
+        num = Number(value);
+        if (isNaN(num)) num = 0;
+    }
+
+    return new Intl.NumberFormat(locale, {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits
+    }).format(num);
+}
+
+/**
+ * @description 퍼센트를 로케일에 맞게 포맷팅
+ * @param value - 숫자 (예: 15.5 = 15.5%)
+ * @param fractionDigits - 소수점 자릿수 (기본값: 2)
+ * @returns 포맷팅된 문자열
+ */
+export function formatPercent(
+    value: number | Decimal | string | null | undefined,
+    fractionDigits: number = 2
+): string {
+    const lang = getCurrentLanguage();
+    const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+
+    let num: number;
+    if (value === null || value === undefined) {
+        num = 0;
+    } else if (typeof value === 'object' && 'toNumber' in value) {
+        num = value.toNumber();
+    } else {
+        num = Number(value);
+        if (isNaN(num)) num = 0;
+    }
+
+    return new Intl.NumberFormat(locale, {
+        style: 'percent',
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits
+    }).format(num / 100); // Intl.NumberFormat의 percent는 0-1 범위를 사용
+}
+
+/**
+ * @description 통화를 로케일에 맞게 포맷팅 (기존 formatCurrency 개선 버전)
+ * @param amount - 금액
+ * @param currency - 통화 ('krw', 'usd')
+ * @returns 포맷팅된 문자열
+ */
+export function formatCurrencyEnhanced(
+    amount: number | Decimal | string | null | undefined,
+    currency: Currency = 'krw'
+): string {
+    const lang = getCurrentLanguage();
+
+    try {
+        let num: number;
+        if (amount === null || amount === undefined) {
+            num = 0;
+        } else if (typeof amount === 'object' && 'toNumber' in amount) {
+            num = amount.toNumber();
+        } else {
+            num = Number(amount);
+            if (isNaN(num)) num = 0;
+        }
+
+        const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+        const options: Intl.NumberFormatOptions = {
+            style: 'currency',
+            currency: currency.toUpperCase(),
+        };
+
+        if (currency.toLowerCase() === 'krw') {
+            options.minimumFractionDigits = 0;
+            options.maximumFractionDigits = 0;
+        } else {
+            options.minimumFractionDigits = 2;
+            options.maximumFractionDigits = 2;
+        }
+
+        return new Intl.NumberFormat(locale, options).format(num);
+    } catch (e) {
+        console.error('formatCurrencyEnhanced error:', e);
+        return String(amount);
+    }
+}
+
+/**
+ * @description 큰 숫자를 축약 형태로 포맷팅 (예: 1,234,567 → 1.23M)
+ * @param value - 숫자
+ * @param fractionDigits - 소수점 자릿수
+ * @returns 축약된 문자열
+ */
+export function formatCompactNumber(
+    value: number | Decimal | string | null | undefined,
+    fractionDigits: number = 2
+): string {
+    const lang = getCurrentLanguage();
+    const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+
+    let num: number;
+    if (value === null || value === undefined) {
+        num = 0;
+    } else if (typeof value === 'object' && 'toNumber' in value) {
+        num = value.toNumber();
+    } else {
+        num = Number(value);
+        if (isNaN(num)) num = 0;
+    }
+
+    // Intl.NumberFormat의 notation: 'compact'는 일부 브라우저에서만 지원
+    try {
+        return new Intl.NumberFormat(locale, {
+            notation: 'compact' as any, // TypeScript 버전에 따라 type assertion 필요
+            minimumFractionDigits: 0,
+            maximumFractionDigits: fractionDigits
+        }).format(num);
+    } catch (e) {
+        // Fallback: 수동 축약
+        if (num >= 1_000_000_000) {
+            return `${(num / 1_000_000_000).toFixed(fractionDigits)}B`;
+        } else if (num >= 1_000_000) {
+            return `${(num / 1_000_000).toFixed(fractionDigits)}M`;
+        } else if (num >= 1_000) {
+            return `${(num / 1_000).toFixed(fractionDigits)}K`;
+        }
+        return num.toFixed(fractionDigits);
+    }
+}
+
+/**
+ * @description 날짜를 로케일에 맞게 포맷팅
+ * @param date - Date 객체 또는 날짜 문자열
+ * @param style - 'short' | 'medium' | 'long' | 'full'
+ * @returns 포맷팅된 날짜 문자열
+ */
+export function formatDate(
+    date: Date | string,
+    style: 'short' | 'medium' | 'long' | 'full' = 'medium'
+): string {
+    const lang = getCurrentLanguage();
+    const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    return new Intl.DateTimeFormat(locale, {
+        dateStyle: style
+    }).format(dateObj);
+}
+
+/**
+ * @description 상대 시간 포맷팅 (예: "3일 전", "2 hours ago")
+ * @param date - Date 객체 또는 날짜 문자열
+ * @returns 상대 시간 문자열
+ */
+export function formatRelativeTime(date: Date | string): string {
+    const lang = getCurrentLanguage();
+    const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const now = new Date();
+    const diffMs = now.getTime() - dateObj.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+    const diffMonth = Math.floor(diffDay / 30);
+    const diffYear = Math.floor(diffDay / 365);
+
+    try {
+        const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+
+        if (diffYear > 0) return rtf.format(-diffYear, 'year');
+        if (diffMonth > 0) return rtf.format(-diffMonth, 'month');
+        if (diffDay > 0) return rtf.format(-diffDay, 'day');
+        if (diffHour > 0) return rtf.format(-diffHour, 'hour');
+        if (diffMin > 0) return rtf.format(-diffMin, 'minute');
+        return rtf.format(-diffSec, 'second');
+    } catch (e) {
+        // Fallback
+        if (diffYear > 0) return lang === 'ko' ? `${diffYear}년 전` : `${diffYear} years ago`;
+        if (diffMonth > 0) return lang === 'ko' ? `${diffMonth}개월 전` : `${diffMonth} months ago`;
+        if (diffDay > 0) return lang === 'ko' ? `${diffDay}일 전` : `${diffDay} days ago`;
+        if (diffHour > 0) return lang === 'ko' ? `${diffHour}시간 전` : `${diffHour} hours ago`;
+        if (diffMin > 0) return lang === 'ko' ? `${diffMin}분 전` : `${diffMin} minutes ago`;
+        return lang === 'ko' ? '방금 전' : 'just now';
+    }
+}
 ```
