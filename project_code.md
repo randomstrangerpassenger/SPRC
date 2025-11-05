@@ -17,7 +17,9 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "keywords": [
     "portfolio",
@@ -28,6 +30,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^24.10.0",
     "jsdom": "^24.1.0",
@@ -43,6 +46,7 @@
     "nanoid": "^5.1.6"
   }
 }
+
 ```
 
 ---
@@ -68,6 +72,7 @@
         "nanoid": "^5.1.6"
       },
       "devDependencies": {
+        "@playwright/test": "^1.56.1",
         "@types/dompurify": "^3.0.5",
         "@types/node": "^24.10.0",
         "jsdom": "^24.1.0",
@@ -659,6 +664,22 @@
       "resolved": "https://registry.npmjs.org/@kurkle/color/-/color-0.3.4.tgz",
       "integrity": "sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==",
       "license": "MIT"
+    },
+    "node_modules/@playwright/test": {
+      "version": "1.56.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.56.1.tgz",
+      "integrity": "sha512-vSMYtL/zOcFpvJCW71Q/OEGQb7KYBPAdKh35WNSkaZA75JlAO8ED8UN6GUNTm3drWomcbcqRPFqQbLae8yBTdg==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "dependencies": {
+        "playwright": "1.56.1"
+      },
+      "bin": {
+        "playwright": "cli.js"
+      },
+      "engines": {
+        "node": ">=18"
+      }
     },
     "node_modules/@rollup/rollup-android-arm-eabi": {
       "version": "4.52.5",
@@ -1822,6 +1843,53 @@
         "url": "https://github.com/sponsors/jonschlinkert"
       }
     },
+    "node_modules/playwright": {
+      "version": "1.56.1",
+      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.56.1.tgz",
+      "integrity": "sha512-aFi5B0WovBHTEvpM3DzXTUaeN6eN0qWnTkKx4NQaH4Wvcmc153PdaY2UBdSYKaGYw+UyWXSVyxDUg5DoPEttjw==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "dependencies": {
+        "playwright-core": "1.56.1"
+      },
+      "bin": {
+        "playwright": "cli.js"
+      },
+      "engines": {
+        "node": ">=18"
+      },
+      "optionalDependencies": {
+        "fsevents": "2.3.2"
+      }
+    },
+    "node_modules/playwright-core": {
+      "version": "1.56.1",
+      "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.56.1.tgz",
+      "integrity": "sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "bin": {
+        "playwright-core": "cli.js"
+      },
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/playwright/node_modules/fsevents": {
+      "version": "2.3.2",
+      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz",
+      "integrity": "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==",
+      "dev": true,
+      "hasInstallScript": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
+      }
+    },
     "node_modules/postcss": {
       "version": "8.5.6",
       "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.6.tgz",
@@ -2471,14 +2539,14 @@ export default defineConfig(({ mode }) => {
 
     server: {
       proxy: {
-        '/finnhub': {
+        '/api/batchGetPrices': {
           target: 'https://finnhub.io/api/v1',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/finnhub/, ''),
+          rewrite: (path) => path.replace(/^\/api\/batchGetPrices/, '/quote'),
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
               const url = new URL(proxyReq.path, options.target);
-              url.searchParams.set('token', env.VITE_FINNHUB_API_KEY);
+              url.searchParams.set('token', env.FINNHUB_API_KEY || env.VITE_FINNHUB_API_KEY);
               proxyReq.path = url.pathname + url.search;
             });
           }
@@ -3929,37 +3997,44 @@ async function fetchStockPrice(ticker: string): Promise<number> {
 }
 
 /**
- * @description 여러 종목의 가격을 병렬로 가져옵니다.
+ * @description 여러 종목의 가격을 배치로 가져옵니다.
+ * /api/batchGetPrices 엔드포인트를 한 번만 호출합니다.
  */
 async function fetchAllStockPrices(
     tickersToFetch: { id: string; ticker: string }[]
 ): Promise<FetchStockResult[]> {
-    const results = await Promise.allSettled(
-        tickersToFetch.map(async (item) => {
-            const price = await fetchStockPrice(item.ticker);
-            return { ...item, price }; // 성공 시 price 포함
-        })
-    );
+    if (tickersToFetch.length === 0) {
+        return [];
+    }
 
-    // Promise.allSettled 결과를 일관된 형식으로 매핑
-    return results.map((result, index) => {
-        const { id, ticker } = tickersToFetch[index];
+    // 모든 티커를 콤마로 구분하여 하나의 요청으로 전송
+    const symbols = tickersToFetch.map(item => item.ticker).join(',');
+    const url = `/api/batchGetPrices?symbols=${encodeURIComponent(symbols)}`;
+
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+
+    if (!response.ok) {
+        throw new Error(`Batch API returned status ${response.status}`);
+    }
+
+    const batchResults = await response.json();
+
+    // 배치 API 응답을 FetchStockResult 형식으로 매핑
+    return batchResults.map((result: any, index: number) => {
+        const { id } = tickersToFetch[index];
         if (result.status === 'fulfilled') {
             return {
-                id: result.value.id,
-                ticker: result.value.ticker,
+                id: id,
+                ticker: result.ticker,
                 status: 'fulfilled' as const,
-                value: result.value.price,
+                value: result.value,
             };
         } else {
             return {
                 id: id,
-                ticker: ticker,
+                ticker: result.ticker,
                 status: 'rejected' as const,
-                reason:
-                    result.reason instanceof Error
-                        ? result.reason.message
-                        : String(result.reason),
+                reason: result.reason || 'Unknown error',
             };
         }
     });
@@ -4317,7 +4392,7 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 ## `src/testUtils.ts`
 
 ```typescript
-// src/testUtils.ts
+// js/testUtils.ts
 import Decimal from 'decimal.js';
 import type { CalculatedStock, Portfolio } from './types';
 
@@ -4399,7 +4474,7 @@ export const MOCK_PORTFOLIO_1: Portfolio = {
 ## `src/templates.ts`
 
 ```typescript
-// src/templates.ts
+// js/templates.ts
 import { escapeHTML, formatCurrency } from './utils.ts';
 import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
@@ -5140,7 +5215,7 @@ export const Validator = {
 ## `src/state.ts`
 
 ```typescript
-// src/state.ts (Refactored with DataStore separation)
+// js/state.ts (Refactored with DataStore separation)
 import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.ts';
@@ -5704,10 +5779,10 @@ export class PortfolioState {
 
 ---
 
-## `src/state.test.js`
+## `src/state.test.ts`
 
 ```typescript
-// src/state.test.ts (async / idb-keyval / testUtils / Assertion Fix)
+// js/state.test.ts (async / idb-keyval / testUtils / Assertion Fix)
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PortfolioState } from './state';
 import { CONFIG } from './constants';
@@ -5875,7 +5950,7 @@ describe('PortfolioState (Async)', () => {
 
 ---
 
-## `src/i18n.js`
+## `src/i18n.ts`
 
 ```typescript
 // src/i18n.ts (Updated with missing ui keys)
@@ -6313,7 +6388,7 @@ export function t(key: string, replacements: Replacements = {}): string {
 
 ---
 
-## `src/eventBinder.js`
+## `src/eventBinder.ts`
 
 ```typescript
 // src/eventBinder.ts (Updated with Pub/Sub emit)
@@ -9716,4 +9791,239 @@ export class DataStore {
         }
     }
 }
+```
+
+---
+
+## `api/batchGetPrices.ts`
+
+```typescript
+// /api/batchGetPrices.ts
+
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+// 단일 티커를 가져오는 내부 헬퍼 함수
+async function fetchSinglePrice(ticker: string, apiKey: string) {
+  const finnhubUrl = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`;
+  
+  try {
+    const apiResponse = await fetch(finnhubUrl, { signal: AbortSignal.timeout(5000) });
+    if (!apiResponse.ok) throw new Error(`API status ${apiResponse.status}`);
+    
+    const data = await apiResponse.json();
+    
+    // Finnhub의 유효한 응답인지 확인
+    if (typeof data.c === 'number' && data.c > 0) {
+      return { status: 'fulfilled', value: data.c };
+    } else {
+      // API는 성공(200)했지만 데이터가 없는 경우 (잘못된 티커 등)
+      return { status: 'rejected', reason: `Invalid ticker or no data found for ${ticker}` };
+    }
+  } catch (error) {
+    return { status: 'rejected', reason: error instanceof Error ? error.message : 'Fetch failed' };
+  }
+}
+
+// 메인 핸들러
+export default async function handler(
+  request: VercelRequest,
+  response: VercelResponse,
+) {
+  // 1. 쿼리 파라미터로 'symbols=AAPL,MSFT,GOOG' 형태를 받습니다.
+  const { symbols } = request.query;
+
+  if (typeof symbols !== 'string' || !symbols) {
+    return response.status(400).json({ error: 'Symbols query parameter is required (e.g., ?symbols=AAPL,MSFT)' });
+  }
+
+  const API_KEY = process.env.FINNHUB_API_KEY;
+  if (!API_KEY) {
+    return response.status(500).json({ error: 'API key is not configured' });
+  }
+
+  const tickers = symbols.split(',');
+
+  // 2. 서버리스 함수 내에서 Promise.allSettled를 사용해 병렬로 Finnhub에 요청합니다.
+  const results = await Promise.allSettled(
+    tickers.map(ticker => fetchSinglePrice(ticker, API_KEY))
+  );
+
+  // 3. Finnhub의 결과를 클라이언트가 원하는 형식으로 재조립합니다.
+  const mappedResults = results.map((result, index) => {
+    const ticker = tickers[index];
+    if (result.status === 'fulfilled' && result.value.status === 'fulfilled') {
+      return {
+        ticker: ticker,
+        status: 'fulfilled',
+        value: result.value.value,
+      };
+    } else {
+      // fetchSinglePrice에서 rejected된 경우
+      const reason = (result.status === 'rejected' ? result.reason : result.value.reason) || 'Unknown error';
+      return {
+        ticker: ticker,
+        status: 'rejected',
+        reason: reason,
+      };
+    }
+  });
+
+  // 4. [중요!] 해결책 2: 캐시 헤더 추가
+  // Netlify/Vercel Edge에 5분(300초) 동안 이 응답을 캐시하도록 지시합니다.
+  // 동일한 요청(e.g., ?symbols=AAPL,MSFT)이 5분 내에 다시 오면 서버리스 함수를 실행하지 않고 캐시된 값을 즉시 반환합니다.
+  response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
+
+  // 5. 최종 결과를 클라이언트에 한 번만 보냅니다.
+  response.status(200).json(mappedResults);
+}
+```
+
+---
+
+## `e2e/app.spec.ts`
+
+```typescript
+// e2e/app.spec.ts
+
+import { test, expect } from '@playwright/test';
+
+// 테스트 1: 페이지가 올바르게 로드되는지 확인
+test('페이지 로드 및 제목 확인', async ({ page }) => {
+  // 1. baseURL (http://localhost:5173)로 이동
+  await page.goto('/');
+
+  // 2. <title> 태그의 텍스트가 올바른지 확인
+  await expect(page).toHaveTitle(/포트폴리오 리밸런싱 계산기/);
+
+  // 3. h1 제목이 보이는지 확인
+  await expect(
+    page.getByRole('heading', { name: '📊 포트폴리오 리밸런싱 계산기' })
+  ).toBeVisible();
+});
+
+// 테스트 2: '간단 계산 모드' E2E 시나리오
+test('간단 계산 모드 워크플로우 테스트', async ({ page }) => {
+  // 1. 페이지 방문
+  await page.goto('/');
+
+  // 2. '간단 계산 모드' 라디오 버튼 선택 (기본값이지만 명시적으로 확인)
+  const simpleModeRadio = page.getByLabel('🎯 간단 계산 모드');
+  await simpleModeRadio.check();
+  await expect(simpleModeRadio).toBeChecked();
+
+  // 3. 첫 번째 (기본 "새 종목") 행의 입력 필드 채우기
+  // 가상 스크롤의 첫 번째 행을 찾습니다.
+  const firstRow = page.locator('.virtual-row-inputs').first();
+
+  // '새 종목' 이름을 '테스트 주식'으로 변경
+  await firstRow.getByRole('textbox', { name: /티커/ }).fill('TEST');
+  await firstRow.getByRole('spinbutton', { name: /목표 비율/ }).fill('100');
+  await firstRow.getByRole('spinbutton', { name: /보유 금액/ }).fill('100000');
+
+  // 4. 추가 투자 금액 입력
+  await page.getByLabel('추가 투자 금액:').fill('50000');
+
+  // 5. 계산하기 버튼 클릭
+  await page.getByRole('button', { name: '계산하기' }).click();
+
+  // 6. 결과 확인
+  const resultsSection = page.locator('#resultsSection');
+  
+  // 6-1. 결과 섹션이 보이는지 확인
+  await expect(resultsSection).toBeVisible();
+
+  // 6-2. 요약 정보가 올바른지 확인 (총 자산 100,000 + 50,000 = 150,000)
+  await expect(page.getByText('투자 후 총 자산')).toBeVisible();
+  // formatCurrency 함수가 콤마를 사용하므로 '150,000'으로 확인
+  await expect(resultsSection.getByText('150,000')).toBeVisible(); 
+
+  // 6-3. 구매 가이드에 올바른 금액이 표시되는지 확인 (목표 150,000 - 현재 100,000 = 50,000)
+  const guideBox = resultsSection.locator('.guide-box--buy');
+  // 'formatCurrency'는 '원'을 붙이므로 '50,000원'을 확인합니다.
+  await expect(guideBox.getByText(/TEST.*50,000원/)).toBeVisible();
+});
+```
+
+---
+
+## `netlify.toml`
+
+```toml
+# netlify.toml (새 파일)
+
+[build]
+  # 1. Netlify가 실행할 '빌드' 명령
+  #    이것이 CI/CD의 핵심입니다.
+  #    - npx playwright install --with-deps: Netlify 빌드 서버에 Playwright 브라우저와 리눅스 종속성 설치
+  #    - npm run test: Vitest 단위 테스트 실행
+  #    - npm run test:e2e: Playwright E2E 테스트 실행
+  #    - npm run build: 모든 테스트 통과 시 Vite 빌드 실행
+  #    (참고: npm run test:e2e가 실패하면 '&&' 때문에 npm run build는 실행되지 않고 배포가 중단됩니다.)
+  command = "npx playwright install --with-deps && npm run test && npm run test:e2e && npm run build"
+
+  # 2. 빌드 결과물(정적 파일)이 있는 폴더
+  publish = "dist"
+
+  # 3. 서버리스 함수(api 폴더)가 있는 폴더
+  functions = "api"
+
+[build.environment]
+  # Playwright가 Vite 개발 서버를 시작할 때 필요한 환경 변수
+  # (이 키의 '값'은 3단계에서 Netlify 대시보드에 설정합니다)
+  FINNHUB_API_KEY = "FINNHUB_API_KEY"
+```
+
+---
+
+## `playwright.config.ts`
+
+```typescript
+// playwright.config.ts (수정본)
+
+import { defineConfig, devices } from '@playwright/test';
+
+const baseURL = 'http://localhost:5173';
+
+export default defineConfig({
+  testDir: './e2e',
+  timeout: 30 * 1000,
+  
+  // [수정] CI 환경(Netlify 빌드)에서는 실패 시 1번만 재시도합니다.
+  retries: process.env.CI ? 1 : 0,
+
+  // [수정] webServer 설정은 그대로 유지합니다.
+  webServer: {
+    command: 'npm run dev',
+    url: baseURL,
+    reuseExistingServer: !process.env.CI,
+  },
+
+  use: {
+    baseURL: baseURL,
+    trace: 'on-first-retry',
+  },
+
+  // [수정] CI 환경에서는 Chromium만 사용하고, 로컬에서는 3개 모두 사용합니다.
+  projects: process.env.CI
+    ? [
+        {
+          name: 'chromium',
+          use: { ...devices['Desktop Chrome'] },
+        },
+      ]
+    : [
+        {
+          name: 'chromium',
+          use: { ...devices['Desktop Chrome'] },
+        },
+        {
+          name: 'firefox',
+          use: { ...devices['Desktop Firefox'] },
+        },
+        // {
+        //   name: 'webkit',
+        //   use: { ...devices['Desktop Safari'] },
+        // },
+      ],
+});
 ```
