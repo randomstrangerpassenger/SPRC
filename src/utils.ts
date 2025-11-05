@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import type { Stock, Currency } from './types.js';
+import type { Stock, Currency } from './types.ts';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.

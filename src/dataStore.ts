@@ -1,8 +1,8 @@
 // js/dataStore.ts - IndexedDB 저장/로드 전담
 import { get, set, del } from 'idb-keyval';
-import { CONFIG } from './constants.js';
-import { ErrorService } from './errorService.js';
-import type { Portfolio, MetaState } from './types.js';
+import { CONFIG } from './constants.ts';
+import { ErrorService } from './errorService.ts';
+import type { Portfolio, MetaState } from './types.ts';
 
 /**
  * @description IndexedDB 저장/로드 및 마이그레이션을 담당하는 클래스
