@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
 import type { Stock, Currency } from './types.ts';
+// Import enhanced i18n formatters
+import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
@@ -34,7 +36,7 @@ export function getRatioSum(portfolioData: Stock[]): Decimal {
 }
 
 /**
- * @description 숫자를 통화 형식의 문자열로 변환합니다. (null, undefined, Decimal 객체 안전 처리)
+ * @description 숫자를 통화 형식의 문자열로 변환합니다. (Enhanced with i18n)
  * @param amount - 변환할 금액
  * @param currency - 통화 코드 ('krw', 'usd')
  * @returns 포맷팅된 통화 문자열
@@ -43,39 +45,8 @@ export function formatCurrency(
     amount: number | Decimal | string | null | undefined,
     currency: Currency = 'krw'
 ): string {
-    try {
-        let num: number;
-        if (amount === null || amount === undefined) {
-            num = 0;
-        } else if (typeof amount === 'object' && 'toNumber' in amount) {
-            // Check if it's Decimal-like
-            num = amount.toNumber(); // This is synchronous
-        } else {
-            num = Number(amount);
-            if (isNaN(num)) num = 0;
-        }
-
-        const options: Intl.NumberFormatOptions = {
-            style: 'currency',
-            currency: currency.toUpperCase(), // Intl.NumberFormat requires uppercase
-        };
-
-        if (currency.toLowerCase() === 'krw') {
-            options.minimumFractionDigits = 0;
-            options.maximumFractionDigits = 0;
-        } else {
-            // usd and others
-            options.minimumFractionDigits = 2;
-            options.maximumFractionDigits = 2;
-        }
-        return new Intl.NumberFormat(
-            currency.toLowerCase() === 'usd' ? 'en-US' : 'ko-KR',
-            options
-        ).format(num);
-    } catch (e) {
-        console.error('formatCurrency error:', e);
-        return String(amount); // 에러 발생 시 원본 값 문자열로 반환
-    }
+    // Use enhanced i18n formatter
+    return formatCurrencyEnhanced(amount, currency);
 }
 
 /**
@@ -102,3 +73,6 @@ export function debounce<T extends (...args: any[]) => any>(
         if (callNow) func.apply(context, args); // 즉시 실행 조건 충족 시 바로 실행
     };
 }
+
+// Re-export enhanced formatters for convenience
+export { formatNumber, formatCurrencyEnhanced } from './i18nEnhancements';

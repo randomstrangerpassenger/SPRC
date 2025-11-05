@@ -9,7 +9,7 @@ import { getRatioSum } from '../utils';
 import { t } from '../i18n';
 import { generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from '../templates';
 import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from '../calculationStrategies';
-import { apiService } from '../apiService';
+import { apiService, APIError, formatAPIError } from '../apiService';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency } from '../types';
 
@@ -188,8 +188,15 @@ export class CalculationManager {
 
             return { needsUIUpdate: true };
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleFetchAllPrices');
-            this.view.showToast(t('api.fetchErrorGlobal', { message: (error as Error).message }), 'error');
+            // Enhanced error handling with APIError
+            if (error instanceof APIError) {
+                const userMessage = formatAPIError(error);
+                this.view.showToast(userMessage, 'error');
+                console.error(`[API] ${error.type}:`, error.message);
+            } else {
+                ErrorService.handle(error as Error, 'handleFetchAllPrices');
+                this.view.showToast(t('api.fetchErrorGlobal', { message: (error as Error).message }), 'error');
+            }
             return { needsUIUpdate: false };
         } finally {
             this.view.toggleFetchButton(false);

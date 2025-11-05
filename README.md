@@ -191,18 +191,55 @@ updateStockInVirtualData(stockId, field, value) {
 
 ```
 SPRC/
-├── index.html              # 메인 HTML
-├── style.css               # 스타일시트
-├── js/
-│   ├── main.js            # 애플리케이션 진입점
-│   ├── calculator.js      # 계산 로직 (Decimal.js 활용)
-│   ├── controller.js      # 비즈니스 로직 및 이벤트 처리
-│   ├── eventBinder.js     # DOM 이벤트 바인딩
-│   ├── state.js           # 상태 관리
-│   ├── view.js            # UI 렌더링
-│   └── ...
-└── package.json           # 프로젝트 의존성
+├── index.html                   # 메인 HTML
+├── style.css                    # 스타일시트
+├── src/
+│   ├── main.ts                 # 애플리케이션 진입점
+│   ├── types.ts                # TypeScript 타입 정의
+│   ├── calculator.ts           # 계산 로직 (Decimal.js 활용)
+│   ├── state.ts                # 상태 관리 (IndexedDB)
+│   ├── utils.ts                # 유틸리티 함수
+│   │
+│   ├── view/                   # View Layer (UI 렌더링)
+│   │   ├── view.ts            # 메인 View 클래스 (조정자)
+│   │   ├── EventEmitter.ts    # Pub/Sub 이벤트 시스템
+│   │   ├── ModalManager.ts    # 모달 관리 (접근성 강화)
+│   │   ├── VirtualScrollManager.ts  # 가상 스크롤 (성능 최적화)
+│   │   └── ResultsRenderer.ts # 결과 및 차트 렌더링
+│   │
+│   ├── controller/             # Controller Layer (비즈니스 로직)
+│   │   ├── controller.ts      # 메인 Controller 클래스 (조정자)
+│   │   ├── PortfolioManager.ts    # 포트폴리오 CRUD
+│   │   ├── StockManager.ts        # 종목 관리
+│   │   ├── TransactionManager.ts  # 거래 내역 관리
+│   │   ├── CalculationManager.ts  # 계산 및 API 호출
+│   │   └── DataManager.ts         # 데이터 가져오기/내보내기
+│   │
+│   ├── apiService.ts           # API 호출 (재시도 로직, 에러 처리)
+│   ├── a11yHelpers.ts          # 접근성 유틸리티 (WCAG 2.0)
+│   ├── i18nEnhancements.ts     # 국제화 (Intl API)
+│   ├── eventBinder.ts          # DOM 이벤트 바인딩
+│   └── domPurify.d.ts          # DOMPurify 타입 정의
+│
+├── e2e/
+│   └── app.spec.ts             # E2E 테스트 (Playwright)
+├── PERFORMANCE.md              # 성능 최적화 가이드
+└── package.json                # 프로젝트 의존성
 ```
+
+### 아키텍처 개요
+
+이 프로젝트는 **모듈화된 MVC 아키텍처**를 따릅니다:
+
+- **View Layer**: UI 렌더링, 이벤트 발행 (비즈니스 로직 없음)
+  - 위임 패턴으로 역할 분리 (EventEmitter, ModalManager, VirtualScrollManager, ResultsRenderer)
+
+- **Controller Layer**: 비즈니스 로직, API 호출, 상태 업데이트
+  - 책임별로 모듈 분리 (Portfolio, Stock, Transaction, Calculation, Data 관리자)
+
+- **Model Layer**: 상태 관리 (IndexedDB), 계산 로직 (Calculator)
+
+자세한 내용은 [ARCHITECTURE.md](./ARCHITECTURE.md)를 참고하세요.
 
 ## 주요 기능
 
@@ -218,11 +255,27 @@ SPRC/
 
 ## 기술 스택
 
-- Vanilla JavaScript (ES6+)
-- Vite (빌드 도구)
-- Decimal.js (정밀 계산)
-- Chart.js (데이터 시각화)
-- DOMPurify (XSS 방지)
+### 코어
+- **TypeScript** - 타입 안정성
+- **Vite** - 빌드 도구 및 개발 서버
+- **Decimal.js** - 정밀 계산 (부동소수점 오류 방지)
+
+### UI & 성능
+- **Chart.js** - 데이터 시각화 (lazy loading)
+- **Virtual Scrolling** - 대량 데이터 렌더링 최적화
+- **RequestAnimationFrame** - 부드러운 UI 업데이트
+
+### 보안 & 접근성
+- **DOMPurify** - XSS 방지
+- **WCAG 2.0 준수** - 접근성 강화 (FocusManager, ARIA 속성)
+
+### 국제화 & API
+- **Intl API** - 로케일 기반 숫자/날짜/통화 포맷팅
+- **API Service** - 재시도 로직, 구조화된 에러 처리
+
+### 테스팅
+- **Vitest** - 유닛 테스트
+- **Playwright** - E2E 테스트
 
 ## 라이선스
 
