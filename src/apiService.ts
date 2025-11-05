@@ -41,37 +41,44 @@ async function fetchStockPrice(ticker: string): Promise<number> {
 }
 
 /**
- * @description 여러 종목의 가격을 병렬로 가져옵니다.
+ * @description 여러 종목의 가격을 배치로 가져옵니다.
+ * /api/batchGetPrices 엔드포인트를 한 번만 호출합니다.
  */
 async function fetchAllStockPrices(
     tickersToFetch: { id: string; ticker: string }[]
 ): Promise<FetchStockResult[]> {
-    const results = await Promise.allSettled(
-        tickersToFetch.map(async (item) => {
-            const price = await fetchStockPrice(item.ticker);
-            return { ...item, price }; // 성공 시 price 포함
-        })
-    );
+    if (tickersToFetch.length === 0) {
+        return [];
+    }
 
-    // Promise.allSettled 결과를 일관된 형식으로 매핑
-    return results.map((result, index) => {
-        const { id, ticker } = tickersToFetch[index];
+    // 모든 티커를 콤마로 구분하여 하나의 요청으로 전송
+    const symbols = tickersToFetch.map(item => item.ticker).join(',');
+    const url = `/api/batchGetPrices?symbols=${encodeURIComponent(symbols)}`;
+
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+
+    if (!response.ok) {
+        throw new Error(`Batch API returned status ${response.status}`);
+    }
+
+    const batchResults = await response.json();
+
+    // 배치 API 응답을 FetchStockResult 형식으로 매핑
+    return batchResults.map((result: any, index: number) => {
+        const { id } = tickersToFetch[index];
         if (result.status === 'fulfilled') {
             return {
-                id: result.value.id,
-                ticker: result.value.ticker,
+                id: id,
+                ticker: result.ticker,
                 status: 'fulfilled' as const,
-                value: result.value.price,
+                value: result.value,
             };
         } else {
             return {
                 id: id,
-                ticker: ticker,
+                ticker: result.ticker,
                 status: 'rejected' as const,
-                reason:
-                    result.reason instanceof Error
-                        ? result.reason.message
-                        : String(result.reason),
+                reason: result.reason || 'Unknown error',
             };
         }
     });

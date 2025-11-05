@@ -24,14 +24,14 @@ export default defineConfig(({ mode }) => {
 
     server: {
       proxy: {
-        '/finnhub': {
+        '/api/batchGetPrices': {
           target: 'https://finnhub.io/api/v1',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/finnhub/, ''),
+          rewrite: (path) => path.replace(/^\/api\/batchGetPrices/, '/quote'),
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
               const url = new URL(proxyReq.path, options.target);
-              url.searchParams.set('token', env.VITE_FINNHUB_API_KEY);
+              url.searchParams.set('token', env.FINNHUB_API_KEY || env.VITE_FINNHUB_API_KEY);
               proxyReq.path = url.pathname + url.search;
             });
           }
