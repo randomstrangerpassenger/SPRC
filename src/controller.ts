@@ -161,7 +161,7 @@ export class PortfolioController {
         const ratioSum = getRatioSum(activePortfolio.portfolioData);
         this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+        const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData, activePortfolio.settings.currentCurrency);
         this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
         this.view.updateMainModeUI(activePortfolio.settings.mainMode);
@@ -185,7 +185,7 @@ export class PortfolioController {
         const ratioSum = getRatioSum(activePortfolio.portfolioData);
         this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+        const sectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData, activePortfolio.settings.currentCurrency);
         this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
         activePortfolio.portfolioData = calculatedState.portfolioData;
@@ -430,7 +430,7 @@ export class PortfolioController {
                         exchangeRate: activePortfolio.settings.exchangeRate,
                         currentCurrency: activePortfolio.settings.currentCurrency
                     });
-                    const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+                    const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData, activePortfolio.settings.currentCurrency);
                     this.view.displaySectorAnalysis(generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency));
                 }
 
@@ -681,35 +681,10 @@ export class PortfolioController {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const oldCurrency = activePortfolio.settings.currentCurrency || 'krw';
-
-        // If currency is actually changing, convert all existing currentPrice values
-        if (oldCurrency !== newCurrency) {
-            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
-            const exchangeRateDec = new Decimal(exchangeRate);
-
-            activePortfolio.portfolioData.forEach(stock => {
-                if (stock.currentPrice && stock.currentPrice > 0) {
-                    const currentPriceDec = new Decimal(stock.currentPrice);
-                    let newPrice;
-
-                    // Convert from old currency to new currency using Decimal.js
-                    if (oldCurrency === 'usd' && newCurrency === 'krw') {
-                        // USD to KRW
-                        newPrice = currentPriceDec.times(exchangeRateDec).toNumber();
-                    } else if (oldCurrency === 'krw' && newCurrency === 'usd') {
-                        // KRW to USD
-                        newPrice = currentPriceDec.div(exchangeRateDec).toNumber();
-                    } else {
-                        newPrice = stock.currentPrice; // No conversion needed
-                    }
-
-                    this.state.updateStockProperty(stock.id, 'currentPrice', newPrice);
-                }
-            });
-        }
-
+        // currentPrice는 항상 USD로 저장되므로 변환하지 않음
+        // 표시만 변경되고, 원본 데이터는 유지됨
         await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
+        Calculator.clearPortfolioStateCache(); // 캐시 무효화
         this.fullRender();
         this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
     }

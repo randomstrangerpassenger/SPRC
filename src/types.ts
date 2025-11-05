@@ -26,9 +26,14 @@ export interface Stock {
 }
 
 export interface CalculatedStockMetrics {
+    totalBuyQuantity: Decimal; // 총 매수 수량
+    totalSellQuantity: Decimal; // 총 매도 수량
     quantity: Decimal; // 현재 보유 수량
+    totalBuyAmount: Decimal; // 총 매수 금액
     avgBuyPrice: Decimal; // 평균 매수 단가
-    currentAmount: Decimal; // 현재 평가 금액
+    currentAmount: Decimal; // 현재 평가 금액 (USD 기준)
+    currentAmountUSD: Decimal; // 현재 평가 금액 (USD)
+    currentAmountKRW: Decimal; // 현재 평가 금액 (KRW)
     profitLoss: Decimal; // 평가 손익
     profitLossRate: Decimal; // 평가 수익률 (%)
 }
