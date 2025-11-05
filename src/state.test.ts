@@ -112,7 +112,7 @@ describe('PortfolioState (Async)', () => {
      expect(loadedPortfolio?.name).toBe('Test Portfolio');
      expect(loadedPortfolio?.settings.mainMode).toBe('sell');
      expect(loadedPortfolio?.portfolioData?.[0]?.name).toBe('Test Stock');
-     expect(loadedPortfolio?.portfolioData?.[0]?.targetRatio).toBe(100);
+     expect(Number(loadedPortfolio?.portfolioData?.[0]?.targetRatio)).toBe(100);
    });
 
 
@@ -123,7 +123,7 @@ describe('PortfolioState (Async)', () => {
 
        expect(state.getActivePortfolio()?.portfolioData?.length).toBe(initialLength + 1);
        expect(newStock.name).toBe('새 종목');
-       expect(newStock.targetRatio).toBe(0);
+       expect(Number(newStock.targetRatio)).toBe(0);
 
        // saveActivePortfolio -> savePortfolios -> set 호출 확인
        expect(mockSet).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, expect.any(Object));

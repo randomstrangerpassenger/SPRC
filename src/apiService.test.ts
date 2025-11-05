@@ -124,12 +124,11 @@ describe('apiService', () => {
                 ok: true,
                 json: async () => ({ c: 0, d: null })
             };
-            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+            (global.fetch as any).mockResolvedValue(mockResponse);
 
-            await expect(apiService.fetchStockPrice('INVALID')).rejects.toThrow(APIError);
-            await expect(apiService.fetchStockPrice('INVALID')).rejects.toMatchObject({
-                type: APIErrorType.INVALID_TICKER
-            });
+            const error = await apiService.fetchStockPrice('INVALID').catch(e => e);
+            expect(error).toBeInstanceOf(APIError);
+            expect(error.type).toBe(APIErrorType.INVALID_TICKER);
         });
 
         it('should throw APIError for zero or negative price', async () => {

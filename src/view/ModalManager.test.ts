@@ -2,12 +2,29 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ModalManager } from './ModalManager';
 
+// Mock i18n
+vi.mock('../i18n', () => ({
+    t: vi.fn((key: string) => {
+        const translations: Record<string, string> = {
+            'view.noTransactions': '거래 내역이 없습니다',
+            'ui.buy': '매수',
+            'ui.sell': '매도',
+            'ui.delete': '삭제',
+            'modal.transactionTitle': '거래 내역'
+        };
+        return translations[key] || key;
+    })
+}));
+
 describe('ModalManager', () => {
     let modalManager: ModalManager;
     let mockDom: any;
 
     beforeEach(() => {
         // Create mock DOM elements
+        const txDateInput = document.createElement('input');
+        txDateInput.type = 'date'; // Set type to date to support valueAsDate
+
         mockDom = {
             customModal: document.createElement('div'),
             customModalTitle: document.createElement('h2'),
@@ -20,7 +37,7 @@ describe('ModalManager', () => {
             closeModalBtn: document.createElement('button'),
             transactionListBody: document.createElement('tbody'),
             newTransactionForm: document.createElement('form'),
-            txDate: document.createElement('input'),
+            txDate: txDateInput, // Use the date input with proper type
             txQuantity: document.createElement('input'),
             txPrice: document.createElement('input')
         };
