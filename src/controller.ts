@@ -9,6 +9,10 @@ import { generateSectorAnalysisHTML } from './templates';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
 
+// ===== [Phase 2.2 Web Worker 통합] =====
+import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
+// ===== [Phase 2.2 Web Worker 통합 끝] =====
+
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
 import { StockManager } from './controller/StockManager';
@@ -31,6 +35,10 @@ export class PortfolioController {
     private transactionManager: TransactionManager;
     private calculationManager: CalculationManager;
     private dataManager: DataManager;
+
+    // ===== [Phase 2.2 Web Worker 통합] =====
+    private calculatorWorker = getCalculatorWorkerService();
+    // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
@@ -211,65 +219,83 @@ export class PortfolioController {
     // === 렌더링 메서드 ===
 
     /**
-     * @description 전체 렌더링
+     * @description 전체 렌더링 (Web Worker 사용)
      */
-    fullRender(): void {
+    async fullRender(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const calculatedState = Calculator.calculatePortfolioState({
-            portfolioData: activePortfolio.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency
-        });
+        try {
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+                portfolioData: activePortfolio.portfolioData,
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                currentCurrency: activePortfolio.settings.currentCurrency
+            });
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
-        this.view.renderTable(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency,
-            activePortfolio.settings.mainMode
-        );
+            this.view.renderTable(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency,
+                activePortfolio.settings.mainMode
+            );
 
-        const ratioSum = getRatioSum(activePortfolio.portfolioData);
-        this.view.updateRatioSum(ratioSum.toNumber());
+            const ratioSum = getRatioSum(activePortfolio.portfolioData);
+            this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency
-        );
-        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency
+            );
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
+            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
-        this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-        activePortfolio.portfolioData = calculatedState.portfolioData;
-        this.debouncedSave();
+            activePortfolio.portfolioData = calculatedState.portfolioData;
+            this.debouncedSave();
+        } catch (error) {
+            console.error('[Controller] fullRender error:', error);
+            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+        }
     }
 
     /**
-     * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트)
+     * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트) (Web Worker 사용)
      */
-    updateUIState(): void {
+    async updateUIState(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const calculatedState = Calculator.calculatePortfolioState({
-            portfolioData: activePortfolio.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency
-        });
+        try {
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+                portfolioData: activePortfolio.portfolioData,
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                currentCurrency: activePortfolio.settings.currentCurrency
+            });
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
-        this.view.updateVirtualTableData(calculatedState.portfolioData);
+            this.view.updateVirtualTableData(calculatedState.portfolioData);
 
-        const ratioSum = getRatioSum(activePortfolio.portfolioData);
-        this.view.updateRatioSum(ratioSum.toNumber());
+            const ratioSum = getRatioSum(activePortfolio.portfolioData);
+            this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency
-        );
-        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency
+            );
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
+            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
-        activePortfolio.portfolioData = calculatedState.portfolioData;
-        this.debouncedSave();
+            activePortfolio.portfolioData = calculatedState.portfolioData;
+            this.debouncedSave();
+        } catch (error) {
+            console.error('[Controller] updateUIState error:', error);
+            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+        }
     }
 
     // === 기타 핸들러 ===
@@ -282,7 +308,7 @@ export class PortfolioController {
         const isDarkMode = document.body.classList.contains('dark-mode');
         localStorage.setItem(CONFIG.DARK_MODE_KEY, isDarkMode ? 'true' : 'false');
         this.view.destroyChart();
-        this.fullRender();
+        this.fullRender(); // async but we don't await
     }
 
     /**
