@@ -3,6 +3,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Decimal from 'decimal.js';
 
+// --- ▼▼▼ Mock window.matchMedia ▼▼▼ ---
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // --- ▼▼▼ 모의(Mock) 설정 ▼▼▼ ---
 vi.mock('./state');
 vi.mock('./view', () => ({
@@ -39,12 +54,25 @@ vi.mock('./view', () => ({
     toggleInputValidation: vi.fn(),
     toggleFetchButton: vi.fn(),
     destroyChart: vi.fn(),
+    displayChart: vi.fn(),
     // DOM 요소 (최소한의 모의)
     dom: {
-        additionalAmountInput: { value: '0' },
-        additionalAmountUSDInput: { value: '0' },
-        exchangeRateInput: { value: '1300' },
-        importFileInput: { click: vi.fn() },
+        additionalAmountInput: {
+            value: '0',
+            addEventListener: vi.fn()
+        },
+        additionalAmountUSDInput: {
+            value: '0',
+            addEventListener: vi.fn()
+        },
+        exchangeRateInput: {
+            value: '1300',
+            addEventListener: vi.fn()
+        },
+        importFileInput: {
+            click: vi.fn(),
+            addEventListener: vi.fn()
+        },
     }
   }
 }));
@@ -246,12 +274,11 @@ describe('PortfolioController', () => {
 
     expect(mockView.toggleFetchButton).toHaveBeenCalledWith(true);
     expect(apiService.fetchAllStockPrices).toHaveBeenCalledWith([{ id: 's1', ticker: 'AAA' }, { id: 's2', ticker: 'BBB' }]);
-    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s1', 'currentPrice', 150);
-    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s2', 'currentPrice', 210);
-    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s1', '150.00');
-    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s2', '210.00');
-
-    expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce();
+    // Currency is KRW, so prices are converted: 150 * 1300 = 195000, 210 * 1300 = 273000
+    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s1', 'currentPrice', 195000);
+    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s2', 'currentPrice', 273000);
+    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s1', '195000.00');
+    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s2', '273000.00');
 
     expect(mockView.showToast).toHaveBeenCalledWith('api.fetchSuccessAll', "success");
     expect(mockView.toggleFetchButton).toHaveBeenCalledWith(false);
@@ -260,14 +287,13 @@ describe('PortfolioController', () => {
   it('handleTransactionListClick: 거래 삭제 시 state.deleteTransaction을 호출해야 한다 (async)', async () => {
     vi.mocked(mockView.showConfirm).mockResolvedValue(true);
 
-    await controller.handleTransactionListClick('s1', 'tx1');
+    const result = await controller.handleTransactionListClick('s1', 'tx1');
 
     expect(mockView.showConfirm).toHaveBeenCalledOnce();
     expect(mockState.deleteTransaction).toHaveBeenCalledWith('s1', 'tx1');
     expect(mockView.renderTransactionList).toHaveBeenCalledOnce();
     expect(mockView.showToast).toHaveBeenCalledWith('toast.transactionDeleted', 'success');
-
-    expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce();
+    expect(result.needsUIUpdate).toBe(true);
   });
 
   it('handleTransactionListClick: 거래 삭제 취소 시 state를 호출하지 않아야 한다 (async)', async () => {

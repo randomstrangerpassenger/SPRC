@@ -358,4 +358,17 @@ export class PortfolioController {
             return DECIMAL_ZERO;
         }
     }
+
+    // ===== Proxy methods for testing compatibility =====
+    async handleCalculate(): Promise<void> {
+        return this.calculationManager.handleCalculate();
+    }
+
+    async handleFetchAllPrices(): Promise<void> {
+        return this.calculationManager.handleFetchAllPrices();
+    }
+
+    async handleTransactionListClick(stockId: string, txId: string): Promise<void> {
+        return this.transactionManager.handleTransactionListClick(stockId, txId);
+    }
 }
