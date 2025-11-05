@@ -118,6 +118,15 @@
                     <canvas id="portfolioChart"></canvas>
                 </div>
             </section>
+            <section id="performanceHistorySection" class="card hidden" role="region" aria-label="포트폴리오 성과 히스토리">
+                <h2>📈 포트폴리오 성과 히스토리</h2>
+                <div class="btn-controls" style="margin-bottom: 15px;">
+                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">성과 히스토리 보기</button>
+                </div>
+                <div id="performanceChartContainer" class="hidden">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -144,6 +153,7 @@
                 <div class="mode-selector" style="margin-bottom: 15px;">
                     <label><input type="radio" name="txType" value="buy" checked> 매수</label>
                     <label><input type="radio" name="txType" value="sell"> 매도</label>
+                    <label><input type="radio" name="txType" value="dividend"> 배당</label>
                 </div>
                 <div class="mode-selector" style="margin-bottom: 15px;">
                     <label><input type="radio" name="inputMode" value="quantity" id="inputModeQuantity" checked> 수량 입력</label>

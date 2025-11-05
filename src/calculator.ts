@@ -1,8 +1,9 @@
 // src/calculator.ts (Strategy Pattern Applied)
 import Decimal from 'decimal.js';
+import { nanoid } from 'nanoid';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
-import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency } from './types.ts';
+import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency, PortfolioSnapshot } from './types.ts';
 import type { IRebalanceStrategy } from './calculationStrategies.ts';
 
 /**
@@ -57,17 +58,21 @@ export class Calculator {
                 totalSellQuantity: DECIMAL_ZERO,
                 quantity: DECIMAL_ZERO,
                 totalBuyAmount: DECIMAL_ZERO,
+                totalSellAmount: DECIMAL_ZERO,
                 currentAmount: DECIMAL_ZERO,
                 currentAmountUSD: DECIMAL_ZERO,
                 currentAmountKRW: DECIMAL_ZERO,
                 avgBuyPrice: DECIMAL_ZERO,
                 profitLoss: DECIMAL_ZERO,
                 profitLossRate: DECIMAL_ZERO,
+                totalDividends: DECIMAL_ZERO,
+                realizedPL: DECIMAL_ZERO,
+                totalRealizedPL: DECIMAL_ZERO,
             };
 
             const currentPrice = new Decimal(stock.currentPrice || 0);
 
-            // 1. 매수/매도 수량 및 금액 합산
+            // 1. 매수/매도 수량 및 금액 합산, 배당금 집계
             for (const tx of stock.transactions) {
                 const txQuantity = new Decimal(tx.quantity || 0);
                 const txPrice = new Decimal(tx.price || 0);
@@ -79,6 +84,12 @@ export class Calculator {
                     );
                 } else if (tx.type === 'sell') {
                     result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
+                    result.totalSellAmount = result.totalSellAmount.plus(
+                        txQuantity.times(txPrice)
+                    );
+                } else if (tx.type === 'dividend') {
+                    // 배당금: quantity 필드에 배당금액 저장, price는 1로 가정
+                    result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
                 }
             }
 
@@ -93,14 +104,23 @@ export class Calculator {
                 result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
             }
 
-            // 4. 현재 가치 (quantity * currentPrice)
+            // 4. 실현 손익 계산 (매도금액 - 매도수량 × 평균매입가)
+            if (result.totalSellQuantity.greaterThan(0) && result.avgBuyPrice.greaterThan(0)) {
+                const costBasisOfSold = result.totalSellQuantity.times(result.avgBuyPrice);
+                result.realizedPL = result.totalSellAmount.minus(costBasisOfSold);
+            }
+
+            // 5. 총 실현 손익 (실현손익 + 배당금)
+            result.totalRealizedPL = result.realizedPL.plus(result.totalDividends);
+
+            // 6. 현재 가치 (quantity * currentPrice)
             result.currentAmount = result.quantity.times(currentPrice);
 
-            // 5. 손익 계산 (currentAmount - (quantity * avgBuyPrice))
+            // 7. 미실현 손익 계산 (currentAmount - (quantity * avgBuyPrice))
             const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
             result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
 
-            // 6. 손익률
+            // 8. 미실현 손익률
             if (originalCostOfHolding.isZero()) {
                 result.profitLossRate = DECIMAL_ZERO;
             } else {
@@ -114,11 +134,20 @@ export class Calculator {
             ErrorService.handle(error as Error, 'calculateStockMetrics');
             // 에러 발생 시 기본값 반환
             return {
+                totalBuyQuantity: DECIMAL_ZERO,
+                totalSellQuantity: DECIMAL_ZERO,
                 quantity: DECIMAL_ZERO,
+                totalBuyAmount: DECIMAL_ZERO,
+                totalSellAmount: DECIMAL_ZERO,
                 avgBuyPrice: DECIMAL_ZERO,
                 currentAmount: DECIMAL_ZERO,
+                currentAmountUSD: DECIMAL_ZERO,
+                currentAmountKRW: DECIMAL_ZERO,
                 profitLoss: DECIMAL_ZERO,
                 profitLossRate: DECIMAL_ZERO,
+                totalDividends: DECIMAL_ZERO,
+                realizedPL: DECIMAL_ZERO,
+                totalRealizedPL: DECIMAL_ZERO,
             };
         }
     }
@@ -235,5 +264,91 @@ export class Calculator {
      */
     static clearPortfolioStateCache(): void {
         Calculator.#cache = null;
+    }
+
+    /**
+     * @description 현재 포트폴리오 상태에서 스냅샷을 생성합니다.
+     */
+    static createSnapshot(
+        portfolioId: string,
+        portfolioData: CalculatedStock[],
+        exchangeRate: number,
+        currentCurrency: Currency = 'krw'
+    ): PortfolioSnapshot {
+        try {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            let totalValue = DECIMAL_ZERO;
+            let totalInvestedCapital = DECIMAL_ZERO;
+            let totalUnrealizedPL = DECIMAL_ZERO;
+            let totalRealizedPL = DECIMAL_ZERO;
+            let totalDividends = DECIMAL_ZERO;
+
+            // 모든 주식의 메트릭 집계
+            for (const stock of portfolioData) {
+                const metrics = stock.calculated;
+                if (!metrics) continue;
+
+                // USD 기준으로 집계
+                totalValue = totalValue.plus(metrics.currentAmountUSD || 0);
+
+                // 투자 원금 = 현재 보유수량 × 평균매입가
+                const investedForHolding = metrics.quantity.times(metrics.avgBuyPrice);
+                totalInvestedCapital = totalInvestedCapital.plus(investedForHolding);
+
+                // 미실현 손익
+                totalUnrealizedPL = totalUnrealizedPL.plus(metrics.profitLoss || 0);
+
+                // 실현 손익
+                totalRealizedPL = totalRealizedPL.plus(metrics.realizedPL || 0);
+
+                // 배당금
+                totalDividends = totalDividends.plus(metrics.totalDividends || 0);
+            }
+
+            // 총 전체 손익 = 미실현 + 실현 + 배당금
+            const totalOverallPL = totalUnrealizedPL.plus(totalRealizedPL).plus(totalDividends);
+
+            const exchangeRateDec = new Decimal(exchangeRate);
+            const totalValueKRW = totalValue.times(exchangeRateDec);
+
+            const snapshot: PortfolioSnapshot = {
+                id: nanoid(),
+                portfolioId,
+                timestamp: now.getTime(),
+                date: dateStr,
+                totalValue: totalValue.toNumber(),
+                totalValueKRW: totalValueKRW.toNumber(),
+                totalInvestedCapital: totalInvestedCapital.toNumber(),
+                totalUnrealizedPL: totalUnrealizedPL.toNumber(),
+                totalRealizedPL: totalRealizedPL.toNumber(),
+                totalDividends: totalDividends.toNumber(),
+                totalOverallPL: totalOverallPL.toNumber(),
+                exchangeRate,
+                stockCount: portfolioData.filter(s => s.calculated && s.calculated.quantity.greaterThan(0)).length,
+            };
+
+            return snapshot;
+        } catch (error) {
+            ErrorService.handle(error as Error, 'Calculator.createSnapshot');
+            // Return empty snapshot on error
+            const now = new Date();
+            return {
+                id: nanoid(),
+                portfolioId,
+                timestamp: now.getTime(),
+                date: now.toISOString().split('T')[0],
+                totalValue: 0,
+                totalValueKRW: 0,
+                totalInvestedCapital: 0,
+                totalUnrealizedPL: 0,
+                totalRealizedPL: 0,
+                totalDividends: 0,
+                totalOverallPL: 0,
+                exchangeRate,
+                stockCount: 0,
+            };
+        }
     }
 }

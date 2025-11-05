@@ -2,6 +2,7 @@
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
+import { DataStore } from './dataStore';
 import { debounce, getRatioSum } from './utils';
 import { CONFIG, DECIMAL_ZERO } from './constants';
 import { ErrorService } from './errorService';
@@ -187,6 +188,7 @@ export class PortfolioController {
 
         // 계산 및 통화
         this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
+        this.view.on('showPerformanceHistoryClicked', () => this.handleShowPerformanceHistory());
         this.view.on('mainModeChanged', async (data) => {
             const result = await this.calculationManager.handleMainModeChange(data.mode);
             if (result.needsFullRender) this.fullRender();
@@ -299,6 +301,35 @@ export class PortfolioController {
     }
 
     // === 기타 핸들러 ===
+
+    /**
+     * @description 성과 히스토리 표시
+     */
+    async handleShowPerformanceHistory(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.view.showToast('성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                return;
+            }
+
+            const ChartClass = (await import('chart.js/auto')).default;
+            await this.view.displayPerformanceHistory(
+                ChartClass,
+                snapshots,
+                activePortfolio.settings.currentCurrency
+            );
+
+            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+        } catch (error) {
+            console.error('[Controller] Failed to display performance history:', error);
+            this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
+        }
+    }
 
     /**
      * @description 다크 모드 토글

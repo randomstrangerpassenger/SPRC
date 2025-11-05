@@ -10,6 +10,7 @@ import { t } from '../i18n';
 import { generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from '../templates';
 import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from '../calculationStrategies';
 import { apiService, APIError, formatAPIError } from '../apiService';
+import { DataStore } from '../dataStore';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency } from '../types';
 
@@ -67,6 +68,21 @@ export class CalculationManager {
             currentCurrency: activePortfolio.settings.currentCurrency
         });
         activePortfolio.portfolioData = calculatedState.portfolioData;
+
+        // Save portfolio snapshot
+        try {
+            const snapshot = Calculator.createSnapshot(
+                activePortfolio.id,
+                calculatedState.portfolioData,
+                activePortfolio.settings.exchangeRate,
+                activePortfolio.settings.currentCurrency
+            );
+            await DataStore.addSnapshot(snapshot);
+            console.log('[CalculationManager] Snapshot saved:', snapshot.date);
+        } catch (error) {
+            console.error('[CalculationManager] Failed to save snapshot:', error);
+            // Continue with calculation even if snapshot fails
+        }
 
         let strategy;
         if (activePortfolio.settings.mainMode === 'add') {

@@ -3,7 +3,7 @@ import { CONFIG } from './constants';
 import { getRatioSum } from './utils';
 import { t } from './i18n';
 import Decimal from 'decimal.js';
-import type { Stock, CalculatedStock, Transaction } from './types';
+import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot } from './types';
 import type { Chart } from 'chart.js';
 
 // 분리된 모듈들
@@ -156,6 +156,10 @@ export class PortfolioView {
             customModalInput: D.getElementById('customModalInput'),
             customModalConfirm: D.getElementById('customModalConfirm'),
             customModalCancel: D.getElementById('customModalCancel'),
+            performanceHistorySection: D.getElementById('performanceHistorySection'),
+            showPerformanceHistoryBtn: D.getElementById('showPerformanceHistoryBtn'),
+            performanceChartContainer: D.getElementById('performanceChartContainer'),
+            performanceChart: D.getElementById('performanceChart'),
         };
 
         this.eventEmitter.clear();
@@ -286,6 +290,10 @@ export class PortfolioView {
 
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
         this.resultsRenderer.displayChart(ChartClass, labels, data, title);
+    }
+
+    async displayPerformanceHistory(ChartClass: typeof Chart, snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): Promise<void> {
+        await this.resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
     }
 
     hideResults(): void {

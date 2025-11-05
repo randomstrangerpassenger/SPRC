@@ -2,7 +2,7 @@
 
 import type { Decimal } from 'decimal.js';
 
-export type TransactionType = 'buy' | 'sell';
+export type TransactionType = 'buy' | 'sell' | 'dividend';
 
 export interface Transaction {
     id: string; // 거래 고유 ID
@@ -30,12 +30,16 @@ export interface CalculatedStockMetrics {
     totalSellQuantity: Decimal; // 총 매도 수량
     quantity: Decimal; // 현재 보유 수량
     totalBuyAmount: Decimal; // 총 매수 금액
+    totalSellAmount: Decimal; // 총 매도 금액
     avgBuyPrice: Decimal; // 평균 매수 단가
     currentAmount: Decimal; // 현재 평가 금액 (USD 기준)
     currentAmountUSD: Decimal; // 현재 평가 금액 (USD)
     currentAmountKRW: Decimal; // 현재 평가 금액 (KRW)
-    profitLoss: Decimal; // 평가 손익
-    profitLossRate: Decimal; // 평가 수익률 (%)
+    profitLoss: Decimal; // 미실현 손익 (현재 보유분)
+    profitLossRate: Decimal; // 미실현 수익률 (%)
+    totalDividends: Decimal; // 총 배당금
+    realizedPL: Decimal; // 실현 손익 (매도 차익)
+    totalRealizedPL: Decimal; // 총 실현 손익 (실현손익 + 배당금)
 }
 
 export interface CalculatedStock extends Stock {
@@ -89,4 +93,21 @@ export interface FetchStockResult {
     status: 'fulfilled' | 'rejected';
     value?: number;
     reason?: string;
+}
+
+// Performance tracking types
+export interface PortfolioSnapshot {
+    id: string; // 스냅샷 고유 ID
+    portfolioId: string; // 포트폴리오 ID
+    timestamp: number; // Unix timestamp (milliseconds)
+    date: string; // YYYY-MM-DD format for display
+    totalValue: number; // 총 포트폴리오 가치 (USD)
+    totalValueKRW: number; // 총 포트폴리오 가치 (KRW)
+    totalInvestedCapital: number; // 총 투자 원금 (USD)
+    totalUnrealizedPL: number; // 총 미실현 손익 (USD)
+    totalRealizedPL: number; // 총 실현 손익 (USD)
+    totalDividends: number; // 총 배당금 (USD)
+    totalOverallPL: number; // 총 전체 손익 (USD) = unrealized + realized + dividends
+    exchangeRate: number; // 환율 (스냅샷 당시)
+    stockCount: number; // 보유 종목 수
 }

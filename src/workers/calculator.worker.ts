@@ -45,17 +45,21 @@ function calculateStockMetrics(stock: any): any {
             totalSellQuantity: DECIMAL_ZERO,
             quantity: DECIMAL_ZERO,
             totalBuyAmount: DECIMAL_ZERO,
+            totalSellAmount: DECIMAL_ZERO,
             currentAmount: DECIMAL_ZERO,
             currentAmountUSD: DECIMAL_ZERO,
             currentAmountKRW: DECIMAL_ZERO,
             avgBuyPrice: DECIMAL_ZERO,
             profitLoss: DECIMAL_ZERO,
             profitLossRate: DECIMAL_ZERO,
+            totalDividends: DECIMAL_ZERO,
+            realizedPL: DECIMAL_ZERO,
+            totalRealizedPL: DECIMAL_ZERO,
         };
 
         const currentPrice = new Decimal(stock.currentPrice || 0);
 
-        // 1. Sum buy/sell transactions
+        // 1. 매수/매도 수량 및 금액 합산, 배당금 집계
         for (const tx of stock.transactions || []) {
             const txQuantity = new Decimal(tx.quantity || 0);
             const txPrice = new Decimal(tx.price || 0);
@@ -65,6 +69,10 @@ function calculateStockMetrics(stock: any): any {
                 result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
             } else if (tx.type === 'sell') {
                 result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
+                result.totalSellAmount = result.totalSellAmount.plus(txQuantity.times(txPrice));
+            } else if (tx.type === 'dividend') {
+                // 배당금: quantity 필드에 배당금액 저장, price는 1로 가정
+                result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
             }
         }
 
@@ -76,14 +84,23 @@ function calculateStockMetrics(stock: any): any {
             result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
         }
 
-        // 4. Current amount
+        // 4. 실현 손익 계산 (매도금액 - 매도수량 × 평균매입가)
+        if (result.totalSellQuantity.greaterThan(0) && result.avgBuyPrice.greaterThan(0)) {
+            const costBasisOfSold = result.totalSellQuantity.times(result.avgBuyPrice);
+            result.realizedPL = result.totalSellAmount.minus(costBasisOfSold);
+        }
+
+        // 5. 총 실현 손익 (실현손익 + 배당금)
+        result.totalRealizedPL = result.realizedPL.plus(result.totalDividends);
+
+        // 6. Current amount
         result.currentAmount = result.quantity.times(currentPrice);
 
-        // 5. Profit/loss
+        // 7. 미실현 손익 계산 (currentAmount - (quantity * avgBuyPrice))
         const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
         result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
 
-        // 6. Profit/loss rate
+        // 8. Profit/loss rate
         if (originalCostOfHolding.isZero()) {
             result.profitLossRate = DECIMAL_ZERO;
         } else {
@@ -95,13 +112,20 @@ function calculateStockMetrics(stock: any): any {
     } catch (error) {
         console.error('Worker: calculateStockMetrics error', error);
         return {
+            totalBuyQuantity: '0',
+            totalSellQuantity: '0',
             quantity: '0',
+            totalBuyAmount: '0',
+            totalSellAmount: '0',
             avgBuyPrice: '0',
             currentAmount: '0',
             currentAmountUSD: '0',
             currentAmountKRW: '0',
             profitLoss: '0',
             profitLossRate: '0',
+            totalDividends: '0',
+            realizedPL: '0',
+            totalRealizedPL: '0',
         };
     }
 }

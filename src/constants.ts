@@ -24,6 +24,7 @@ export const CONFIG = {
     // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
     IDB_META_KEY: 'portfolioMeta_v2',
     IDB_PORTFOLIOS_KEY: 'portfolioData_v2',
+    IDB_SNAPSHOTS_KEY: 'portfolioSnapshots_v2',
     // ▲▲▲▲▲ [신규] ▲▲▲▲▲
 
     // ▼▼▼▼▼ [수정] 마이그레이션을 위한 레거시 LocalStorage 키 ▼▼▼▼▼

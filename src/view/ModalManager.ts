@@ -219,8 +219,18 @@ export class ModalManager {
 
             const typeTd = tr.insertCell();
             const typeSpan = document.createElement('span');
-            typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
-            typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
+            if (tx.type === 'buy') {
+                typeSpan.className = 'text-buy';
+                typeSpan.textContent = t('ui.buy');
+            } else if (tx.type === 'sell') {
+                typeSpan.className = 'text-sell';
+                typeSpan.textContent = t('ui.sell');
+            } else if (tx.type === 'dividend') {
+                typeSpan.className = 'text-buy';
+                typeSpan.textContent = '배당';
+            } else {
+                typeSpan.textContent = tx.type;
+            }
             typeTd.appendChild(typeSpan);
 
             const qtyTd = tr.insertCell();

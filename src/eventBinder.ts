@@ -196,6 +196,9 @@ export function bindEventListeners(view: PortfolioView): AbortController {
         }
     });
 
+    // 성과 히스토리 버튼
+    dom.showPerformanceHistoryBtn?.addEventListener('click', () => view.emit('showPerformanceHistoryClicked'));
+
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
         const mode = (e.target as HTMLInputElement).value as 'add' | 'sell' | 'simple';

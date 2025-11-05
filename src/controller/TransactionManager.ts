@@ -48,7 +48,11 @@ export class TransactionManager {
 
         if (!typeInput || !dateInput || !priceInput) return { needsFullRender: false };
 
-        const type = typeInput instanceof HTMLInputElement && typeInput.value === 'sell' ? 'sell' : 'buy';
+        const typeValue = typeInput instanceof HTMLInputElement ? typeInput.value : 'buy';
+        const type: 'buy' | 'sell' | 'dividend' =
+            typeValue === 'sell' ? 'sell' :
+            typeValue === 'dividend' ? 'dividend' :
+            'buy';
         const inputMode = inputModeInput instanceof HTMLInputElement ? inputModeInput.value : 'quantity';
         const date = dateInput.value;
         const priceStr = priceInput.value;
