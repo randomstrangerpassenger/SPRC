@@ -26,9 +26,9 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["js/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["js/**/*", "*.config.js"],
+  "include": ["src/**/*", "*.config.ts"],
   "exclude": ["node_modules"]
 }
