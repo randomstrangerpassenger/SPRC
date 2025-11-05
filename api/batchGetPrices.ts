@@ -43,6 +43,14 @@ export default async function handler(
 
   const tickers = symbols.split(',');
 
+  // 티커 수 제한 (서버리스 함수 타임아웃 방지)
+  const MAX_TICKERS = 30;
+  if (tickers.length > MAX_TICKERS) {
+    return response.status(400).json({
+      error: `Too many tickers requested. Maximum ${MAX_TICKERS} tickers allowed per request. Received ${tickers.length}.`
+    });
+  }
+
   // 2. 서버리스 함수 내에서 Promise.allSettled를 사용해 병렬로 Finnhub에 요청합니다.
   const results = await Promise.allSettled(
     tickers.map(ticker => fetchSinglePrice(ticker, API_KEY))

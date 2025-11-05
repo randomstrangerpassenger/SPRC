@@ -1,4 +1,5 @@
 import type { FetchStockResult } from './types.ts';
+import { CONFIG } from './constants.ts';
 
 /**
  * @description 단일 주식의 현재가를 Finnhub API(Vite 프록시 경유)에서 가져옵니다.
@@ -11,7 +12,7 @@ async function fetchStockPrice(ticker: string): Promise<number> {
     // Vite 프록시가 가로챌 주소 (/finnhub/quote)
     const url = `/finnhub/quote?symbol=${encodeURIComponent(ticker)}`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) });
 
     if (!response.ok) {
         let errorBody = '';
@@ -55,7 +56,7 @@ async function fetchAllStockPrices(
     const symbols = tickersToFetch.map(item => item.ticker).join(',');
     const url = `/api/batchGetPrices?symbols=${encodeURIComponent(symbols)}`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(CONFIG.BATCH_API_TIMEOUT) });
 
     if (!response.ok) {
         throw new Error(`Batch API returned status ${response.status}`);

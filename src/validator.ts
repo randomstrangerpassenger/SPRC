@@ -50,7 +50,7 @@ export const Validator = {
      * @description 숫자 입력값을 검증하고, 유효하면 숫자 타입으로 변환하여 반환합니다.
      * @param value - 검증할 값
      * @param max - 최대값 (기본: 1000조)
-     * @returns 검증 결과
+     * @returns 검증 결과 (value는 number 타입이지만, state.ts에서 Decimal로 변환됨)
      */
     validateNumericInput(
         value: string | number | null | undefined,

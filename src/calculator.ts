@@ -9,23 +9,26 @@ import type { IRebalanceStrategy } from './calculationStrategies.ts';
  * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.
  */
 function _generateStockKey(stock: Stock): string {
-    // transactions는 state.js에서 정렬되어 관리되므로, 단순히 배열의 길이와 마지막 거래 정보를 포함
-    const lastTx = stock.transactions[stock.transactions.length - 1];
-    const txSignature = lastTx
-        ? `${lastTx.type}-${lastTx.quantity.toString()}-${lastTx.price.toString()}`
-        : 'none';
+    // 모든 거래 ID를 조합하여 중간 거래 수정/삭제도 감지
+    const txIds = stock.transactions.map(tx => tx.id).join(',');
 
     // 섹터 정보도 계산에 영향을 주지 않으므로 제외
-    return `${stock.id}:${stock.currentPrice}:${stock.transactions.length}:${txSignature}`;
+    return `${stock.id}:${stock.currentPrice}:${txIds}`;
 }
 
 /**
  * @description 포트폴리오 전체를 위한 캐시 키를 생성합니다.
  */
-function _generatePortfolioKey(portfolioData: Stock[]): string {
+function _generatePortfolioKey(
+    portfolioData: Stock[],
+    exchangeRate: number,
+    currentCurrency: Currency
+): string {
     // 주식 ID 기준으로 정렬하여 배열 순서와 무관하게 일관된 캐시 키 생성
     const sortedData = [...portfolioData].sort((a, b) => a.id.localeCompare(b.id));
-    return sortedData.map(_generateStockKey).join('|');
+    const stockKeys = sortedData.map(_generateStockKey).join('|');
+    const settingsKey = `${exchangeRate}:${currentCurrency}`;
+    return `${stockKeys}|${settingsKey}`;
 }
 
 export interface PortfolioCalculationResult {
@@ -44,10 +47,12 @@ export class Calculator {
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
+     * @important stock.currentPrice는 항상 USD로 저장되어 있어야 합니다.
+     * 통화 표시는 calculatePortfolioState에서 환율을 적용하여 처리합니다.
      */
     static calculateStockMetrics(stock: Stock): CalculatedStockMetrics {
         try {
-            const result: any = {
+            const result: CalculatedStockMetrics = {
                 totalBuyQuantity: new Decimal(0),
                 totalSellQuantity: new Decimal(0),
                 quantity: new Decimal(0),
@@ -132,7 +137,7 @@ export class Calculator {
             currentCurrency = 'krw',
         } = options;
 
-        const cacheKey = _generatePortfolioKey(portfolioData);
+        const cacheKey = _generatePortfolioKey(portfolioData, exchangeRate, currentCurrency);
 
         if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
             return Calculator.#cache.result;
@@ -144,21 +149,20 @@ export class Calculator {
         const calculatedPortfolioData: CalculatedStock[] = portfolioData.map((stock) => {
             const calculatedMetrics = Calculator.calculateStockMetrics(stock);
 
-            // 현재가치를 KRW와 USD로 변환
-            const metricsWithCurrency: any = { ...calculatedMetrics };
-            if (currentCurrency === 'krw') {
-                metricsWithCurrency.currentAmountKRW = calculatedMetrics.currentAmount;
-                metricsWithCurrency.currentAmountUSD =
-                    calculatedMetrics.currentAmount.div(exchangeRateDec);
-            } else {
-                // usd
-                metricsWithCurrency.currentAmountUSD = calculatedMetrics.currentAmount;
-                metricsWithCurrency.currentAmountKRW =
-                    calculatedMetrics.currentAmount.times(exchangeRateDec);
-            }
+            // currentPrice는 항상 USD로 저장되어 있다고 가정
+            // currentAmount는 USD 기준 (quantity * currentPriceUSD)
+            const metricsWithCurrency: CalculatedStockMetrics = {
+                ...calculatedMetrics,
+                currentAmountUSD: calculatedMetrics.currentAmount,
+                currentAmountKRW: calculatedMetrics.currentAmount.times(exchangeRateDec),
+            };
 
             // Calculate total based on the selected currency
-            currentTotal = currentTotal.plus(calculatedMetrics.currentAmount);
+            if (currentCurrency === 'krw') {
+                currentTotal = currentTotal.plus(metricsWithCurrency.currentAmountKRW);
+            } else {
+                currentTotal = currentTotal.plus(metricsWithCurrency.currentAmountUSD);
+            }
 
             return { ...stock, calculated: metricsWithCurrency };
         });
@@ -186,7 +190,8 @@ export class Calculator {
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
      */
     static calculateSectorAnalysis(
-        portfolioData: CalculatedStock[]
+        portfolioData: CalculatedStock[],
+        currentCurrency: Currency = 'krw'
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
         const startTime = performance.now();
 
@@ -195,7 +200,9 @@ export class Calculator {
 
         for (const s of portfolioData) {
             const sector = s.sector || 'Unclassified';
-            const amount = s.calculated?.currentAmount || new Decimal(0);
+            const amount = currentCurrency === 'krw'
+                ? (s.calculated?.currentAmountKRW || new Decimal(0))
+                : (s.calculated?.currentAmountUSD || new Decimal(0));
             currentTotal = currentTotal.plus(amount);
 
             const currentSectorAmount = sectorMap.get(sector) || new Decimal(0);
@@ -213,10 +220,12 @@ export class Calculator {
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
-        const endTime = performance.now();
-        console.log(
-            `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
-        );
+        if (import.meta.env.DEV) {
+            const endTime = performance.now();
+            console.log(
+                `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            );
+        }
 
         return result;
     }

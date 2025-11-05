@@ -5,6 +5,10 @@ export const CONFIG = {
     RATIO_TOLERANCE: 0.01,
     DARK_MODE_KEY: 'darkMode', // (LocalStorage에 유지)
 
+    // API 타임아웃 설정 (밀리초)
+    API_TIMEOUT: 8000, // 단일 API 호출 타임아웃
+    BATCH_API_TIMEOUT: 10000, // 배치 API 호출 타임아웃
+
     // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
     IDB_META_KEY: 'portfolioMeta_v2',
     IDB_PORTFOLIOS_KEY: 'portfolioData_v2',
