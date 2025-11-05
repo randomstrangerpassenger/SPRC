@@ -220,18 +220,8 @@ export const Validator = {
                         stockId: stock.id,
                         message: t('validation.fixedBuyAmountZero', { name: stockName }),
                     });
-                } else if (
-                    !currentPrice.isNaN() &&
-                    currentPrice.greaterThan(0) &&
-                    fixedAmount.lessThan(currentPrice)
-                ) {
-                    // 고정 매수 금액이 현재가보다 작아 1주도 살 수 없는 경우
-                    errors.push({
-                        field: 'fixedBuyAmount',
-                        stockId: stock.id,
-                        message: t('validation.fixedBuyAmountTooSmall', { name: stockName }),
-                    });
                 }
+                // 소수점 거래(fractional shares) 지원을 위해 현재가보다 작은 금액도 허용
                 totalFixedBuyAmount = totalFixedBuyAmount.plus(fixedAmount);
             }
 
