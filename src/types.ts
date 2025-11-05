@@ -53,6 +53,7 @@ export interface PortfolioSettings {
     mainMode: MainMode;
     currentCurrency: Currency;
     exchangeRate: number;
+    rebalancingTolerance?: number; // 리밸런싱 허용 오차 (%), optional for backward compatibility
 }
 
 export interface Portfolio {
