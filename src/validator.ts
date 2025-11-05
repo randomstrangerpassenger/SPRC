@@ -1,5 +1,5 @@
 // js/validator.ts
-import { t } from './i18n.js';
+import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
 import type {
     Transaction,
@@ -7,7 +7,7 @@ import type {
     ValidationErrorDetail,
     CalculatedStock,
     MainMode,
-} from './types.js';
+} from './types.ts';
 
 export const Validator = {
     /**

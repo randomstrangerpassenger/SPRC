@@ -1,9 +1,9 @@
 // js/templates.ts
-import { escapeHTML, formatCurrency } from './utils.js';
-import { CONFIG } from './constants.js';
-import { t } from './i18n.js';
+import { escapeHTML, formatCurrency } from './utils.ts';
+import { CONFIG } from './constants.ts';
+import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
-import type { CalculatedStock, Currency } from './types.js';
+import type { CalculatedStock, Currency } from './types.ts';
 
 // Add mode result stock type
 export interface AddModeResultStock extends CalculatedStock {

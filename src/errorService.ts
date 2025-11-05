@@ -1,4 +1,4 @@
-import { t } from './i18n.js';
+import { t } from './i18n.ts';
 
 /**
  * @description 유효성 검사 오류를 나타내는 커스텀 에러 클래스

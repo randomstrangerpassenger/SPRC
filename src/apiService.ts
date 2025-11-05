@@ -1,4 +1,4 @@
-import type { FetchStockResult } from './types.js';
+import type { FetchStockResult } from './types.ts';
 
 /**
  * @description 단일 주식의 현재가를 Finnhub API(Vite 프록시 경유)에서 가져옵니다.

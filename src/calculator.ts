@@ -1,9 +1,9 @@
 // js/calculator.ts (Strategy Pattern Applied)
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.js';
-import { ErrorService } from './errorService.js';
-import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency } from './types.js';
-import type { IRebalanceStrategy } from './calculationStrategies.js';
+import { CONFIG } from './constants.ts';
+import { ErrorService } from './errorService.ts';
+import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency } from './types.ts';
+import type { IRebalanceStrategy } from './calculationStrategies.ts';
 
 /**
  * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.

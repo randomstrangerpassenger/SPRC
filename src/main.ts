@@ -1,8 +1,8 @@
 // js/main.ts (Class-based View)
-import { PortfolioState } from './state.js';
-import { PortfolioView } from './view.js';
-import { PortfolioController } from './controller.js';
-import { ErrorService } from './errorService.js';
+import { PortfolioState } from './state.ts';
+import { PortfolioView } from './view.ts';
+import { PortfolioController } from './controller.ts';
+import { ErrorService } from './errorService.ts';
 import { Chart, DoughnutController, ArcElement, Legend, Title, Tooltip } from 'chart.js';
 
 // Chart.js의 필요한 구성 요소만 등록

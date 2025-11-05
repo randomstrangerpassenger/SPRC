@@ -1,13 +1,13 @@
 // js/state.ts (Refactored with DataStore separation)
 import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.js';
-import { t } from './i18n.js';
-import { ErrorService } from './errorService.js';
-import { Validator } from './validator.js';
+import { CONFIG } from './constants.ts';
+import { t } from './i18n.ts';
+import { ErrorService } from './errorService.ts';
+import { Validator } from './validator.ts';
 import DOMPurify from 'dompurify';
-import { DataStore } from './dataStore.js';
-import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.js';
+import { DataStore } from './dataStore.ts';
+import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
