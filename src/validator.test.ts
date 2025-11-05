@@ -1,4 +1,4 @@
-// js/validator.test.ts
+// src/validator.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { Validator } from './validator';
 import Decimal from 'decimal.js';

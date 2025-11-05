@@ -1,4 +1,4 @@
-// js/validator.ts
+// src/validator.ts
 import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
 import type {

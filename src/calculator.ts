@@ -1,4 +1,4 @@
-// js/calculator.ts (Strategy Pattern Applied)
+// src/calculator.ts (Strategy Pattern Applied)
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.ts';
 import { ErrorService } from './errorService.ts';

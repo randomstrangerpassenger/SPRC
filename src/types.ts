@@ -1,4 +1,4 @@
-// js/types.ts
+// src/types.ts
 
 import type { Decimal } from 'decimal.js';
 

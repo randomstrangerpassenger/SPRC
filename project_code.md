@@ -28,7 +28,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^24.10.0",
     "jsdom": "^24.1.0",
+    "typescript": "^5.9.3",
     "vite": "^7.1.12",
     "vitest": "^4.0.3"
   },
@@ -65,7 +68,10 @@
         "nanoid": "^5.1.6"
       },
       "devDependencies": {
+        "@types/dompurify": "^3.0.5",
+        "@types/node": "^24.10.0",
         "jsdom": "^24.1.0",
+        "typescript": "^5.9.3",
         "vite": "^7.1.12",
         "vitest": "^4.0.3"
       }
@@ -200,9 +206,9 @@
       }
     },
     "node_modules/@esbuild/aix-ppc64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.25.11.tgz",
-      "integrity": "sha512-Xt1dOL13m8u0WE8iplx9Ibbm+hFAO0GsU2P34UNoDGvZYkY8ifSiy6Zuc1lYxfG7svWE2fzqCUmFp5HCn51gJg==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.25.12.tgz",
+      "integrity": "sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==",
       "cpu": [
         "ppc64"
       ],
@@ -217,9 +223,9 @@
       }
     },
     "node_modules/@esbuild/android-arm": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.25.11.tgz",
-      "integrity": "sha512-uoa7dU+Dt3HYsethkJ1k6Z9YdcHjTrSb5NUy66ZfZaSV8hEYGD5ZHbEMXnqLFlbBflLsl89Zke7CAdDJ4JI+Gg==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.25.12.tgz",
+      "integrity": "sha512-VJ+sKvNA/GE7Ccacc9Cha7bpS8nyzVv0jdVgwNDaR4gDMC/2TTRc33Ip8qrNYUcpkOHUT5OZ0bUcNNVZQ9RLlg==",
       "cpu": [
         "arm"
       ],
@@ -234,9 +240,9 @@
       }
     },
     "node_modules/@esbuild/android-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.25.11.tgz",
-      "integrity": "sha512-9slpyFBc4FPPz48+f6jyiXOx/Y4v34TUeDDXJpZqAWQn/08lKGeD8aDp9TMn9jDz2CiEuHwfhRmGBvpnd/PWIQ==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.25.12.tgz",
+      "integrity": "sha512-6AAmLG7zwD1Z159jCKPvAxZd4y/VTO0VkprYy+3N2FtJ8+BQWFXU+OxARIwA46c5tdD9SsKGZ/1ocqBS/gAKHg==",
       "cpu": [
         "arm64"
       ],
@@ -251,9 +257,9 @@
       }
     },
     "node_modules/@esbuild/android-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.25.11.tgz",
-      "integrity": "sha512-Sgiab4xBjPU1QoPEIqS3Xx+R2lezu0LKIEcYe6pftr56PqPygbB7+szVnzoShbx64MUupqoE0KyRlN7gezbl8g==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.25.12.tgz",
+      "integrity": "sha512-5jbb+2hhDHx5phYR2By8GTWEzn6I9UqR11Kwf22iKbNpYrsmRB18aX/9ivc5cabcUiAT/wM+YIZ6SG9QO6a8kg==",
       "cpu": [
         "x64"
       ],
@@ -268,9 +274,9 @@
       }
     },
     "node_modules/@esbuild/darwin-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.25.11.tgz",
-      "integrity": "sha512-VekY0PBCukppoQrycFxUqkCojnTQhdec0vevUL/EDOCnXd9LKWqD/bHwMPzigIJXPhC59Vd1WFIL57SKs2mg4w==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.25.12.tgz",
+      "integrity": "sha512-N3zl+lxHCifgIlcMUP5016ESkeQjLj/959RxxNYIthIg+CQHInujFuXeWbWMgnTo4cp5XVHqFPmpyu9J65C1Yg==",
       "cpu": [
         "arm64"
       ],
@@ -285,9 +291,9 @@
       }
     },
     "node_modules/@esbuild/darwin-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.25.11.tgz",
-      "integrity": "sha512-+hfp3yfBalNEpTGp9loYgbknjR695HkqtY3d3/JjSRUyPg/xd6q+mQqIb5qdywnDxRZykIHs3axEqU6l1+oWEQ==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.25.12.tgz",
+      "integrity": "sha512-HQ9ka4Kx21qHXwtlTUVbKJOAnmG1ipXhdWTmNXiPzPfWKpXqASVcWdnf2bnL73wgjNrFXAa3yYvBSd9pzfEIpA==",
       "cpu": [
         "x64"
       ],
@@ -302,9 +308,9 @@
       }
     },
     "node_modules/@esbuild/freebsd-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.25.11.tgz",
-      "integrity": "sha512-CmKjrnayyTJF2eVuO//uSjl/K3KsMIeYeyN7FyDBjsR3lnSJHaXlVoAK8DZa7lXWChbuOk7NjAc7ygAwrnPBhA==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.25.12.tgz",
+      "integrity": "sha512-gA0Bx759+7Jve03K1S0vkOu5Lg/85dou3EseOGUes8flVOGxbhDDh/iZaoek11Y8mtyKPGF3vP8XhnkDEAmzeg==",
       "cpu": [
         "arm64"
       ],
@@ -319,9 +325,9 @@
       }
     },
     "node_modules/@esbuild/freebsd-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.25.11.tgz",
-      "integrity": "sha512-Dyq+5oscTJvMaYPvW3x3FLpi2+gSZTCE/1ffdwuM6G1ARang/mb3jvjxs0mw6n3Lsw84ocfo9CrNMqc5lTfGOw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.25.12.tgz",
+      "integrity": "sha512-TGbO26Yw2xsHzxtbVFGEXBFH0FRAP7gtcPE7P5yP7wGy7cXK2oO7RyOhL5NLiqTlBh47XhmIUXuGciXEqYFfBQ==",
       "cpu": [
         "x64"
       ],
@@ -336,9 +342,9 @@
       }
     },
     "node_modules/@esbuild/linux-arm": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.25.11.tgz",
-      "integrity": "sha512-TBMv6B4kCfrGJ8cUPo7vd6NECZH/8hPpBHHlYI3qzoYFvWu2AdTvZNuU/7hsbKWqu/COU7NIK12dHAAqBLLXgw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.25.12.tgz",
+      "integrity": "sha512-lPDGyC1JPDou8kGcywY0YILzWlhhnRjdof3UlcoqYmS9El818LLfJJc3PXXgZHrHCAKs/Z2SeZtDJr5MrkxtOw==",
       "cpu": [
         "arm"
       ],
@@ -353,9 +359,9 @@
       }
     },
     "node_modules/@esbuild/linux-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.25.11.tgz",
-      "integrity": "sha512-Qr8AzcplUhGvdyUF08A1kHU3Vr2O88xxP0Tm8GcdVOUm25XYcMPp2YqSVHbLuXzYQMf9Bh/iKx7YPqECs6ffLA==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.25.12.tgz",
+      "integrity": "sha512-8bwX7a8FghIgrupcxb4aUmYDLp8pX06rGh5HqDT7bB+8Rdells6mHvrFHHW2JAOPZUbnjUpKTLg6ECyzvas2AQ==",
       "cpu": [
         "arm64"
       ],
@@ -370,9 +376,9 @@
       }
     },
     "node_modules/@esbuild/linux-ia32": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.25.11.tgz",
-      "integrity": "sha512-TmnJg8BMGPehs5JKrCLqyWTVAvielc615jbkOirATQvWWB1NMXY77oLMzsUjRLa0+ngecEmDGqt5jiDC6bfvOw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.25.12.tgz",
+      "integrity": "sha512-0y9KrdVnbMM2/vG8KfU0byhUN+EFCny9+8g202gYqSSVMonbsCfLjUO+rCci7pM0WBEtz+oK/PIwHkzxkyharA==",
       "cpu": [
         "ia32"
       ],
@@ -387,9 +393,9 @@
       }
     },
     "node_modules/@esbuild/linux-loong64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.25.11.tgz",
-      "integrity": "sha512-DIGXL2+gvDaXlaq8xruNXUJdT5tF+SBbJQKbWy/0J7OhU8gOHOzKmGIlfTTl6nHaCOoipxQbuJi7O++ldrxgMw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.25.12.tgz",
+      "integrity": "sha512-h///Lr5a9rib/v1GGqXVGzjL4TMvVTv+s1DPoxQdz7l/AYv6LDSxdIwzxkrPW438oUXiDtwM10o9PmwS/6Z0Ng==",
       "cpu": [
         "loong64"
       ],
@@ -404,9 +410,9 @@
       }
     },
     "node_modules/@esbuild/linux-mips64el": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.25.11.tgz",
-      "integrity": "sha512-Osx1nALUJu4pU43o9OyjSCXokFkFbyzjXb6VhGIJZQ5JZi8ylCQ9/LFagolPsHtgw6himDSyb5ETSfmp4rpiKQ==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.25.12.tgz",
+      "integrity": "sha512-iyRrM1Pzy9GFMDLsXn1iHUm18nhKnNMWscjmp4+hpafcZjrr2WbT//d20xaGljXDBYHqRcl8HnxbX6uaA/eGVw==",
       "cpu": [
         "mips64el"
       ],
@@ -421,9 +427,9 @@
       }
     },
     "node_modules/@esbuild/linux-ppc64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.25.11.tgz",
-      "integrity": "sha512-nbLFgsQQEsBa8XSgSTSlrnBSrpoWh7ioFDUmwo158gIm5NNP+17IYmNWzaIzWmgCxq56vfr34xGkOcZ7jX6CPw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.25.12.tgz",
+      "integrity": "sha512-9meM/lRXxMi5PSUqEXRCtVjEZBGwB7P/D4yT8UG/mwIdze2aV4Vo6U5gD3+RsoHXKkHCfSxZKzmDssVlRj1QQA==",
       "cpu": [
         "ppc64"
       ],
@@ -438,9 +444,9 @@
       }
     },
     "node_modules/@esbuild/linux-riscv64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.25.11.tgz",
-      "integrity": "sha512-HfyAmqZi9uBAbgKYP1yGuI7tSREXwIb438q0nqvlpxAOs3XnZ8RsisRfmVsgV486NdjD7Mw2UrFSw51lzUk1ww==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.25.12.tgz",
+      "integrity": "sha512-Zr7KR4hgKUpWAwb1f3o5ygT04MzqVrGEGXGLnj15YQDJErYu/BGg+wmFlIDOdJp0PmB0lLvxFIOXZgFRrdjR0w==",
       "cpu": [
         "riscv64"
       ],
@@ -455,9 +461,9 @@
       }
     },
     "node_modules/@esbuild/linux-s390x": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.25.11.tgz",
-      "integrity": "sha512-HjLqVgSSYnVXRisyfmzsH6mXqyvj0SA7pG5g+9W7ESgwA70AXYNpfKBqh1KbTxmQVaYxpzA/SvlB9oclGPbApw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.25.12.tgz",
+      "integrity": "sha512-MsKncOcgTNvdtiISc/jZs/Zf8d0cl/t3gYWX8J9ubBnVOwlk65UIEEvgBORTiljloIWnBzLs4qhzPkJcitIzIg==",
       "cpu": [
         "s390x"
       ],
@@ -472,9 +478,9 @@
       }
     },
     "node_modules/@esbuild/linux-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.25.11.tgz",
-      "integrity": "sha512-HSFAT4+WYjIhrHxKBwGmOOSpphjYkcswF449j6EjsjbinTZbp8PJtjsVK1XFJStdzXdy/jaddAep2FGY+wyFAQ==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.25.12.tgz",
+      "integrity": "sha512-uqZMTLr/zR/ed4jIGnwSLkaHmPjOjJvnm6TVVitAa08SLS9Z0VM8wIRx7gWbJB5/J54YuIMInDquWyYvQLZkgw==",
       "cpu": [
         "x64"
       ],
@@ -489,9 +495,9 @@
       }
     },
     "node_modules/@esbuild/netbsd-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-arm64/-/netbsd-arm64-0.25.11.tgz",
-      "integrity": "sha512-hr9Oxj1Fa4r04dNpWr3P8QKVVsjQhqrMSUzZzf+LZcYjZNqhA3IAfPQdEh1FLVUJSiu6sgAwp3OmwBfbFgG2Xg==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-arm64/-/netbsd-arm64-0.25.12.tgz",
+      "integrity": "sha512-xXwcTq4GhRM7J9A8Gv5boanHhRa/Q9KLVmcyXHCTaM4wKfIpWkdXiMog/KsnxzJ0A1+nD+zoecuzqPmCRyBGjg==",
       "cpu": [
         "arm64"
       ],
@@ -506,9 +512,9 @@
       }
     },
     "node_modules/@esbuild/netbsd-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.25.11.tgz",
-      "integrity": "sha512-u7tKA+qbzBydyj0vgpu+5h5AeudxOAGncb8N6C9Kh1N4n7wU1Xw1JDApsRjpShRpXRQlJLb9wY28ELpwdPcZ7A==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.25.12.tgz",
+      "integrity": "sha512-Ld5pTlzPy3YwGec4OuHh1aCVCRvOXdH8DgRjfDy/oumVovmuSzWfnSJg+VtakB9Cm0gxNO9BzWkj6mtO1FMXkQ==",
       "cpu": [
         "x64"
       ],
@@ -523,9 +529,9 @@
       }
     },
     "node_modules/@esbuild/openbsd-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-arm64/-/openbsd-arm64-0.25.11.tgz",
-      "integrity": "sha512-Qq6YHhayieor3DxFOoYM1q0q1uMFYb7cSpLD2qzDSvK1NAvqFi8Xgivv0cFC6J+hWVw2teCYltyy9/m/14ryHg==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-arm64/-/openbsd-arm64-0.25.12.tgz",
+      "integrity": "sha512-fF96T6KsBo/pkQI950FARU9apGNTSlZGsv1jZBAlcLL1MLjLNIWPBkj5NlSz8aAzYKg+eNqknrUJ24QBybeR5A==",
       "cpu": [
         "arm64"
       ],
@@ -540,9 +546,9 @@
       }
     },
     "node_modules/@esbuild/openbsd-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.25.11.tgz",
-      "integrity": "sha512-CN+7c++kkbrckTOz5hrehxWN7uIhFFlmS/hqziSFVWpAzpWrQoAG4chH+nN3Be+Kzv/uuo7zhX716x3Sn2Jduw==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.25.12.tgz",
+      "integrity": "sha512-MZyXUkZHjQxUvzK7rN8DJ3SRmrVrke8ZyRusHlP+kuwqTcfWLyqMOE3sScPPyeIXN/mDJIfGXvcMqCgYKekoQw==",
       "cpu": [
         "x64"
       ],
@@ -557,9 +563,9 @@
       }
     },
     "node_modules/@esbuild/openharmony-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/openharmony-arm64/-/openharmony-arm64-0.25.11.tgz",
-      "integrity": "sha512-rOREuNIQgaiR+9QuNkbkxubbp8MSO9rONmwP5nKncnWJ9v5jQ4JxFnLu4zDSRPf3x4u+2VN4pM4RdyIzDty/wQ==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/openharmony-arm64/-/openharmony-arm64-0.25.12.tgz",
+      "integrity": "sha512-rm0YWsqUSRrjncSXGA7Zv78Nbnw4XL6/dzr20cyrQf7ZmRcsovpcRBdhD43Nuk3y7XIoW2OxMVvwuRvk9XdASg==",
       "cpu": [
         "arm64"
       ],
@@ -574,9 +580,9 @@
       }
     },
     "node_modules/@esbuild/sunos-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.25.11.tgz",
-      "integrity": "sha512-nq2xdYaWxyg9DcIyXkZhcYulC6pQ2FuCgem3LI92IwMgIZ69KHeY8T4Y88pcwoLIjbed8n36CyKoYRDygNSGhA==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.25.12.tgz",
+      "integrity": "sha512-3wGSCDyuTHQUzt0nV7bocDy72r2lI33QL3gkDNGkod22EsYl04sMf0qLb8luNKTOmgF/eDEDP5BFNwoBKH441w==",
       "cpu": [
         "x64"
       ],
@@ -591,9 +597,9 @@
       }
     },
     "node_modules/@esbuild/win32-arm64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.25.11.tgz",
-      "integrity": "sha512-3XxECOWJq1qMZ3MN8srCJ/QfoLpL+VaxD/WfNRm1O3B4+AZ/BnLVgFbUV3eiRYDMXetciH16dwPbbHqwe1uU0Q==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.25.12.tgz",
+      "integrity": "sha512-rMmLrur64A7+DKlnSuwqUdRKyd3UE7oPJZmnljqEptesKM8wx9J8gx5u0+9Pq0fQQW8vqeKebwNXdfOyP+8Bsg==",
       "cpu": [
         "arm64"
       ],
@@ -608,9 +614,9 @@
       }
     },
     "node_modules/@esbuild/win32-ia32": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.25.11.tgz",
-      "integrity": "sha512-3ukss6gb9XZ8TlRyJlgLn17ecsK4NSQTmdIXRASVsiS2sQ6zPPZklNJT5GR5tE/MUarymmy8kCEf5xPCNCqVOA==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.25.12.tgz",
+      "integrity": "sha512-HkqnmmBoCbCwxUKKNPBixiWDGCpQGVsrQfJoVGYLPT41XWF8lHuE5N6WhVia2n4o5QK5M4tYr21827fNhi4byQ==",
       "cpu": [
         "ia32"
       ],
@@ -625,9 +631,9 @@
       }
     },
     "node_modules/@esbuild/win32-x64": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.25.11.tgz",
-      "integrity": "sha512-D7Hpz6A2L4hzsRpPaCYkQnGOotdUpDzSGRIv9I+1ITdHROSFUWW95ZPZWQmGka1Fg7W3zFJowyn9WGwMJ0+KPA==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.25.12.tgz",
+      "integrity": "sha512-alJC0uCZpTFrSL0CCDjcgleBXPnCrEAhTBILpeAp7M/OFgoqtAetfBzX0xM00MUsVVPpVjlPuMbREqnZCXaTnA==",
       "cpu": [
         "x64"
       ],
@@ -987,6 +993,16 @@
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/@types/dompurify": {
+      "version": "3.0.5",
+      "resolved": "https://registry.npmjs.org/@types/dompurify/-/dompurify-3.0.5.tgz",
+      "integrity": "sha512-1Wg0g3BtQF7sSb27fJQAKck1HECM6zV1EB66j8JH9i3LCjYabJa0FSdiSgsD5K/RbrsR0SiraKacLB+T8ZVYAg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@types/trusted-types": "*"
+      }
+    },
     "node_modules/@types/estree": {
       "version": "1.0.8",
       "resolved": "https://registry.npmjs.org/@types/estree/-/estree-1.0.8.tgz",
@@ -994,24 +1010,34 @@
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/@types/node": {
+      "version": "24.10.0",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-24.10.0.tgz",
+      "integrity": "sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "undici-types": "~7.16.0"
+      }
+    },
     "node_modules/@types/trusted-types": {
       "version": "2.0.7",
       "resolved": "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz",
       "integrity": "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==",
-      "license": "MIT",
-      "optional": true
+      "devOptional": true,
+      "license": "MIT"
     },
     "node_modules/@vitest/expect": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/expect/-/expect-4.0.3.tgz",
-      "integrity": "sha512-v3eSDx/bF25pzar6aEJrrdTXJduEBU3uSGXHslIdGIpJVP8tQQHV6x1ZfzbFQ/bLIomLSbR/2ZCfnaEGkWkiVQ==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/expect/-/expect-4.0.6.tgz",
+      "integrity": "sha512-5j8UUlBVhOjhj4lR2Nt9sEV8b4WtbcYh8vnfhTNA2Kn5+smtevzjNq+xlBuVhnFGXiyPPNzGrOVvmyHWkS5QGg==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
         "@standard-schema/spec": "^1.0.0",
         "@types/chai": "^5.2.2",
-        "@vitest/spy": "4.0.3",
-        "@vitest/utils": "4.0.3",
+        "@vitest/spy": "4.0.6",
+        "@vitest/utils": "4.0.6",
         "chai": "^6.0.1",
         "tinyrainbow": "^3.0.3"
       },
@@ -1020,13 +1046,13 @@
       }
     },
     "node_modules/@vitest/mocker": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-4.0.3.tgz",
-      "integrity": "sha512-evZcRspIPbbiJEe748zI2BRu94ThCBE+RkjCpVF8yoVYuTV7hMe+4wLF/7K86r8GwJHSmAPnPbZhpXWWrg1qbA==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-4.0.6.tgz",
+      "integrity": "sha512-3COEIew5HqdzBFEYN9+u0dT3i/NCwppLnO1HkjGfAP1Vs3vti1Hxm/MvcbC4DAn3Szo1M7M3otiAaT83jvqIjA==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@vitest/spy": "4.0.3",
+        "@vitest/spy": "4.0.6",
         "estree-walker": "^3.0.3",
         "magic-string": "^0.30.19"
       },
@@ -1047,9 +1073,9 @@
       }
     },
     "node_modules/@vitest/pretty-format": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-4.0.3.tgz",
-      "integrity": "sha512-N7gly/DRXzxa9w9sbDXwD9QNFYP2hw90LLLGDobPNwiWgyW95GMxsCt29/COIKKh3P7XJICR38PSDePenMBtsw==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-4.0.6.tgz",
+      "integrity": "sha512-4vptgNkLIA1W1Nn5X4x8rLJBzPiJwnPc+awKtfBE5hNMVsoAl/JCCPPzNrbf+L4NKgklsis5Yp2gYa+XAS442g==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -1060,13 +1086,13 @@
       }
     },
     "node_modules/@vitest/runner": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/runner/-/runner-4.0.3.tgz",
-      "integrity": "sha512-1/aK6fPM0lYXWyGKwop2Gbvz1plyTps/HDbIIJXYtJtspHjpXIeB3If07eWpVH4HW7Rmd3Rl+IS/+zEAXrRtXA==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/runner/-/runner-4.0.6.tgz",
+      "integrity": "sha512-trPk5qpd7Jj+AiLZbV/e+KiiaGXZ8ECsRxtnPnCrJr9OW2mLB72Cb824IXgxVz/mVU3Aj4VebY+tDTPn++j1Og==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@vitest/utils": "4.0.3",
+        "@vitest/utils": "4.0.6",
         "pathe": "^2.0.3"
       },
       "funding": {
@@ -1074,13 +1100,13 @@
       }
     },
     "node_modules/@vitest/snapshot": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/snapshot/-/snapshot-4.0.3.tgz",
-      "integrity": "sha512-amnYmvZ5MTjNCP1HZmdeczAPLRD6iOm9+2nMRUGxbe/6sQ0Ymur0NnR9LIrWS8JA3wKE71X25D6ya/3LN9YytA==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/snapshot/-/snapshot-4.0.6.tgz",
+      "integrity": "sha512-PaYLt7n2YzuvxhulDDu6c9EosiRuIE+FI2ECKs6yvHyhoga+2TBWI8dwBjs+IeuQaMtZTfioa9tj3uZb7nev1g==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@vitest/pretty-format": "4.0.3",
+        "@vitest/pretty-format": "4.0.6",
         "magic-string": "^0.30.19",
         "pathe": "^2.0.3"
       },
@@ -1089,9 +1115,9 @@
       }
     },
     "node_modules/@vitest/spy": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-4.0.3.tgz",
-      "integrity": "sha512-82vVL8Cqz7rbXaNUl35V2G7xeNMAjBdNOVaHbrzznT9BmiCiPOzhf0FhU3eP41nP1bLDm/5wWKZqkG4nyU95DQ==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-4.0.6.tgz",
+      "integrity": "sha512-g9jTUYPV1LtRPRCQfhbMintW7BTQz1n6WXYQYRQ25qkyffA4bjVXjkROokZnv7t07OqfaFKw1lPzqKGk1hmNuQ==",
       "dev": true,
       "license": "MIT",
       "funding": {
@@ -1099,13 +1125,13 @@
       }
     },
     "node_modules/@vitest/utils": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/@vitest/utils/-/utils-4.0.3.tgz",
-      "integrity": "sha512-qV6KJkq8W3piW6MDIbGOmn1xhvcW4DuA07alqaQ+vdx7YA49J85pnwnxigZVQFQw3tWnQNRKWwhz5wbP6iv/GQ==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/@vitest/utils/-/utils-4.0.6.tgz",
+      "integrity": "sha512-bG43VS3iYKrMIZXBo+y8Pti0O7uNju3KvNn6DrQWhQQKcLavMB+0NZfO1/QBAEbq0MaQ3QjNsnnXlGQvsh0Z6A==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@vitest/pretty-format": "4.0.3",
+        "@vitest/pretty-format": "4.0.6",
         "tinyrainbow": "^3.0.3"
       },
       "funding": {
@@ -1351,9 +1377,9 @@
       }
     },
     "node_modules/esbuild": {
-      "version": "0.25.11",
-      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.25.11.tgz",
-      "integrity": "sha512-KohQwyzrKTQmhXDW1PjCv3Tyspn9n5GcY2RTDqeORIdIJY8yKIF7sTSopFmn/wpMPW4rdPXI0UE5LJLuq3bx0Q==",
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.25.12.tgz",
+      "integrity": "sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==",
       "dev": true,
       "hasInstallScript": true,
       "license": "MIT",
@@ -1364,32 +1390,32 @@
         "node": ">=18"
       },
       "optionalDependencies": {
-        "@esbuild/aix-ppc64": "0.25.11",
-        "@esbuild/android-arm": "0.25.11",
-        "@esbuild/android-arm64": "0.25.11",
-        "@esbuild/android-x64": "0.25.11",
-        "@esbuild/darwin-arm64": "0.25.11",
-        "@esbuild/darwin-x64": "0.25.11",
-        "@esbuild/freebsd-arm64": "0.25.11",
-        "@esbuild/freebsd-x64": "0.25.11",
-        "@esbuild/linux-arm": "0.25.11",
-        "@esbuild/linux-arm64": "0.25.11",
-        "@esbuild/linux-ia32": "0.25.11",
-        "@esbuild/linux-loong64": "0.25.11",
-        "@esbuild/linux-mips64el": "0.25.11",
-        "@esbuild/linux-ppc64": "0.25.11",
-        "@esbuild/linux-riscv64": "0.25.11",
-        "@esbuild/linux-s390x": "0.25.11",
-        "@esbuild/linux-x64": "0.25.11",
-        "@esbuild/netbsd-arm64": "0.25.11",
-        "@esbuild/netbsd-x64": "0.25.11",
-        "@esbuild/openbsd-arm64": "0.25.11",
-        "@esbuild/openbsd-x64": "0.25.11",
-        "@esbuild/openharmony-arm64": "0.25.11",
-        "@esbuild/sunos-x64": "0.25.11",
-        "@esbuild/win32-arm64": "0.25.11",
-        "@esbuild/win32-ia32": "0.25.11",
-        "@esbuild/win32-x64": "0.25.11"
+        "@esbuild/aix-ppc64": "0.25.12",
+        "@esbuild/android-arm": "0.25.12",
+        "@esbuild/android-arm64": "0.25.12",
+        "@esbuild/android-x64": "0.25.12",
+        "@esbuild/darwin-arm64": "0.25.12",
+        "@esbuild/darwin-x64": "0.25.12",
+        "@esbuild/freebsd-arm64": "0.25.12",
+        "@esbuild/freebsd-x64": "0.25.12",
+        "@esbuild/linux-arm": "0.25.12",
+        "@esbuild/linux-arm64": "0.25.12",
+        "@esbuild/linux-ia32": "0.25.12",
+        "@esbuild/linux-loong64": "0.25.12",
+        "@esbuild/linux-mips64el": "0.25.12",
+        "@esbuild/linux-ppc64": "0.25.12",
+        "@esbuild/linux-riscv64": "0.25.12",
+        "@esbuild/linux-s390x": "0.25.12",
+        "@esbuild/linux-x64": "0.25.12",
+        "@esbuild/netbsd-arm64": "0.25.12",
+        "@esbuild/netbsd-x64": "0.25.12",
+        "@esbuild/openbsd-arm64": "0.25.12",
+        "@esbuild/openbsd-x64": "0.25.12",
+        "@esbuild/openharmony-arm64": "0.25.12",
+        "@esbuild/sunos-x64": "0.25.12",
+        "@esbuild/win32-arm64": "0.25.12",
+        "@esbuild/win32-ia32": "0.25.12",
+        "@esbuild/win32-x64": "0.25.12"
       }
     },
     "node_modules/estree-walker": {
@@ -2058,6 +2084,27 @@
         "node": ">=18"
       }
     },
+    "node_modules/typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "bin": {
+        "tsc": "bin/tsc",
+        "tsserver": "bin/tsserver"
+      },
+      "engines": {
+        "node": ">=14.17"
+      }
+    },
+    "node_modules/undici-types": {
+      "version": "7.16.0",
+      "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-7.16.0.tgz",
+      "integrity": "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==",
+      "dev": true,
+      "license": "MIT"
+    },
     "node_modules/universalify": {
       "version": "0.2.0",
       "resolved": "https://registry.npmjs.org/universalify/-/universalify-0.2.0.tgz",
@@ -2155,19 +2202,19 @@
       }
     },
     "node_modules/vitest": {
-      "version": "4.0.3",
-      "resolved": "https://registry.npmjs.org/vitest/-/vitest-4.0.3.tgz",
-      "integrity": "sha512-IUSop8jgaT7w0g1yOM/35qVtKjr/8Va4PrjzH1OUb0YH4c3OXB2lCZDkMAB6glA8T5w8S164oJGsbcmAecr4sA==",
+      "version": "4.0.6",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-4.0.6.tgz",
+      "integrity": "sha512-gR7INfiVRwnEOkCk47faros/9McCZMp5LM+OMNWGLaDBSvJxIzwjgNFufkuePBNaesGRnLmNfW+ddbUJRZn0nQ==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
-        "@vitest/expect": "4.0.3",
-        "@vitest/mocker": "4.0.3",
-        "@vitest/pretty-format": "4.0.3",
-        "@vitest/runner": "4.0.3",
-        "@vitest/snapshot": "4.0.3",
-        "@vitest/spy": "4.0.3",
-        "@vitest/utils": "4.0.3",
+        "@vitest/expect": "4.0.6",
+        "@vitest/mocker": "4.0.6",
+        "@vitest/pretty-format": "4.0.6",
+        "@vitest/runner": "4.0.6",
+        "@vitest/snapshot": "4.0.6",
+        "@vitest/spy": "4.0.6",
+        "@vitest/utils": "4.0.6",
         "debug": "^4.4.3",
         "es-module-lexer": "^1.7.0",
         "expect-type": "^1.2.2",
@@ -2195,10 +2242,10 @@
         "@edge-runtime/vm": "*",
         "@types/debug": "^4.1.12",
         "@types/node": "^20.0.0 || ^22.0.0 || >=24.0.0",
-        "@vitest/browser-playwright": "4.0.3",
-        "@vitest/browser-preview": "4.0.3",
-        "@vitest/browser-webdriverio": "4.0.3",
-        "@vitest/ui": "4.0.3",
+        "@vitest/browser-playwright": "4.0.6",
+        "@vitest/browser-preview": "4.0.6",
+        "@vitest/browser-webdriverio": "4.0.6",
+        "@vitest/ui": "4.0.6",
         "happy-dom": "*",
         "jsdom": "*"
       },
@@ -2354,27 +2401,51 @@
 
 ---
 
-## `jsconfig.json`
+## `tsconfig.json`
 
 ```json
-// jsconfig.json (새 파일)
 {
   "compilerOptions": {
-    "checkJs": true,
-    "target": "ESNext",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
     "module": "ESNext",
-    "moduleResolution": "node"
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Gradual migration support */
+    "allowJs": true,
+    "checkJs": false,
+
+    /* Path mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["js/**/*.js"]
+  "include": ["src/**/*", "*.config.ts"],
+  "exclude": ["node_modules"]
 }
 ```
 
 ---
 
-## `vite.config.js`
+## `vite.config.ts`
 
-```javascript
-// vite.config.js (Vitest 4.x용 단순화 버전)
+```typescript
+// vite.config.ts (Vitest 4.x용 단순화 버전)
 
 import { defineConfig, loadEnv } from 'vite';
 
@@ -2386,18 +2457,16 @@ export default defineConfig(({ mode }) => {
 
     esbuild: {
       target: 'esnext', // # 문법 지원은 유지
+      drop: ['console', 'debugger'],
     },
 
     test: {
       globals: true,
       environment: 'jsdom',
-      include: ['js/**/*.test.js'],
-      // --- ⬇️ [추가된 부분] ⬇️ ---
+      include: ['src/**/*.test.js', 'src/**/*.test.ts'],
       esbuild: {
         target: 'esnext', // 테스트 환경에서도 esnext 문법(예: #)을 사용하도록 설정
       },
-      // --- ⬆️ [추가된 부분] ⬆️ ---
-      // pool, threads, deps.optimizer 등 제거
     },
 
     server: {
@@ -2416,7 +2485,7 @@ export default defineConfig(({ mode }) => {
         }
       }
     }
-  }
+  };
 });
 ```
 
@@ -2638,7 +2707,7 @@ pnpm-debug.log*
         </div>
     </div>
 
-    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
 ```
@@ -3294,24 +3363,29 @@ body.dark-mode .skeleton {
 
 ---
 
-## `js/main.js`
+## `src/main.ts`
 
-```javascript
-// js/main.js (수정 후)
-// @ts-check
-import { PortfolioState } from './state.js';
-import { PortfolioView } from './view.js';
-import { PortfolioController } from './controller.js';
-import Chart from 'chart.js/auto'; // Chart.js import 추가
+```typescript
+// src/main.ts (Class-based View)
+import { PortfolioState } from './state.ts';
+import { PortfolioView } from './view.ts';
+import { PortfolioController } from './controller.ts';
+import { ErrorService } from './errorService.ts';
+import { Chart, DoughnutController, ArcElement, Legend, Title, Tooltip } from 'chart.js';
+
+// Chart.js의 필요한 구성 요소만 등록
+Chart.register(DoughnutController, ArcElement, Legend, Title, Tooltip);
 
 try {
     const state = new PortfolioState();
-    // PortfolioView는 객체 리터럴이므로 new 키워드 없이 사용
-    const view = PortfolioView;
-    // --- ⬇️ 수정: new PortfolioController 생성만 수행 ⬇️ ---
+    // PortfolioView는 클래스이므로 new 키워드로 인스턴스화
+    const view = new PortfolioView();
+
+    // ErrorService에 view 인스턴스 설정 (에러 토스트 메시지 표시를 위해)
+    ErrorService.setViewInstance(view);
+
+    // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
-    // app.init(); // <-- 제거 (init 메소드 없음, initialize는 생성자에서 호출됨)
-    // --- ⬆️ 수정 ⬆️ ---
 
     // Make Chart globally available or pass it where needed (e.g., to View)
     // If View needs Chart, consider passing it during initialization or directly
@@ -3319,16 +3393,16 @@ try {
     // (A better approach might be dependency injection)
 
     console.log("Application setup complete.");
-
 } catch (error) {
     console.error("애플리케이션 초기화 중 치명적인 오류 발생:", error);
     // 사용자에게 오류 메시지를 표시하는 UI 로직 추가 가능
     const bodyElement = document.body;
     if (bodyElement) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
         bodyElement.innerHTML = `<div style="padding: 20px; text-align: center; color: red;">
             <h1>애플리케이션 로딩 실패</h1>
             <p>오류가 발생했습니다. 페이지를 새로고침하거나 나중에 다시 시도해주세요.</p>
-            <p>오류 메시지: ${error.message}</p>
+            <p>오류 메시지: ${errorMsg}</p>
         </div>`;
     }
 }
@@ -3336,130 +3410,153 @@ try {
 
 ---
 
-## `js/types.js`
+## `src/types.ts`
 
-```javascript
-// js/types.js (새 파일)
+```typescript
+// src/types.ts
 
-/**
- * @typedef {import('decimal.js').Decimal} Decimal
- */
+import type { Decimal } from 'decimal.js';
 
-/**
- * @typedef {Object} Transaction
- * @property {string} id - 거래 고유 ID
- * @property {'buy' | 'sell'} type - 거래 유형
- * @property {string} date - 거래 날짜 (YYYY-MM-DD)
- * @property {number} quantity - 수량
- * @property {number} price - 단가
- */
+export type TransactionType = 'buy' | 'sell';
 
-/**
- * @typedef {Object} Stock
- * @property {string} id - 주식 고유 ID
- * @property {string} name - 종목명
- * @property {string} ticker - 티커
- * @property {string} sector - 섹터
- * @property {number} targetRatio - 목표 비율 (%)
- * @property {number} currentPrice - 현재가
- * @property {Transaction[]} transactions - 거래 내역 배열
- * @property {boolean} isFixedBuyEnabled - 고정 매수 활성화 여부
- * @property {number} fixedBuyAmount - 고정 매수 금액
- * @property {number} [manualAmount] - 간단 모드용 수동 입력 금액 (선택 사항)
- */
+export interface Transaction {
+    id: string; // 거래 고유 ID
+    type: TransactionType; // 거래 유형
+    date: string; // 거래 날짜 (YYYY-MM-DD)
+    quantity: number; // 수량
+    price: number; // 단가
+}
 
-/**
- * @typedef {Object} CalculatedStockMetrics
- * @property {Decimal} quantity - 현재 보유 수량
- * @property {Decimal} avgBuyPrice - 평균 매수 단가
- * @property {Decimal} currentAmount - 현재 평가 금액
- * @property {Decimal} profitLoss - 평가 손익
- * @property {Decimal} profitLossRate - 평가 수익률 (%)
- */
+export interface Stock {
+    id: string; // 주식 고유 ID
+    name: string; // 종목명
+    ticker: string; // 티커
+    sector: string; // 섹터
+    targetRatio: number; // 목표 비율 (%)
+    currentPrice: number; // 현재가
+    transactions: Transaction[]; // 거래 내역 배열
+    isFixedBuyEnabled: boolean; // 고정 매수 활성화 여부
+    fixedBuyAmount: number; // 고정 매수 금액
+    manualAmount?: number; // 간단 모드용 수동 입력 금액 (선택 사항)
+}
 
-/**
- * @typedef {Stock & { calculated: CalculatedStockMetrics }} CalculatedStock
- */
+export interface CalculatedStockMetrics {
+    quantity: Decimal; // 현재 보유 수량
+    avgBuyPrice: Decimal; // 평균 매수 단가
+    currentAmount: Decimal; // 현재 평가 금액
+    profitLoss: Decimal; // 평가 손익
+    profitLossRate: Decimal; // 평가 수익률 (%)
+}
 
-/**
- * @typedef {Object} PortfolioData
- * @property {string} name - 포트폴리오 이름
- * @property {Stock[]} portfolioData - 주식 데이터 배열
- * @property {Object} settings
- * @property {'add' | 'sell'} settings.mainMode - 계산 모드
- * @property {'krw' | 'usd'} settings.currentCurrency - 통화
- */
+export interface CalculatedStock extends Stock {
+    calculated: CalculatedStockMetrics;
+}
 
-// 이 파일은 타입을 정의하는 파일이므로, export는 필요 없습니다.
+export type MainMode = 'add' | 'sell';
+export type Currency = 'krw' | 'usd';
+
+export interface PortfolioSettings {
+    mainMode: MainMode;
+    currentCurrency: Currency;
+    exchangeRate: number;
+}
+
+export interface Portfolio {
+    id: string;
+    name: string;
+    portfolioData: Stock[];
+    settings: PortfolioSettings;
+}
+
+export interface MetaState {
+    activePortfolioId: string;
+    version: string;
+}
+
+export interface PortfolioData {
+    name: string; // 포트폴리오 이름
+    portfolioData: Stock[]; // 주식 데이터 배열
+    settings: PortfolioSettings;
+}
+
+// Validation types
+export interface ValidationResult {
+    isValid: boolean;
+    value?: string | number;
+    message?: string;
+}
+
+export interface ValidationErrorDetail {
+    field: string;
+    stockId: string | null;
+    message: string;
+}
+
+// API types
+export interface FetchStockResult {
+    id: string;
+    ticker: string;
+    status: 'fulfilled' | 'rejected';
+    value?: number;
+    reason?: string;
+}
 ```
 
 ---
 
-## `js/calculator.js`
+## `src/calculator.ts`
 
-```javascript
-// js/calculator.js (Strategy Pattern Applied)
-// @ts-check
-import Decimal from 'decimal.js'; 
-import { CONFIG } from './constants.js';
-import { ErrorService } from './errorService.js';
-
-/** @typedef {import('./types.js').Stock} Stock */
-/** @typedef {import('./types.js').Transaction} Transaction */
-/** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
+```typescript
+// src/calculator.ts (Strategy Pattern Applied)
+import Decimal from 'decimal.js';
+import { CONFIG } from './constants.ts';
+import { ErrorService } from './errorService.ts';
+import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency } from './types.ts';
+import type { IRebalanceStrategy } from './calculationStrategies.ts';
 
 /**
  * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.
- * 이 키는 calculateStockMetrics의 입력이 변경되지 않았는지 확인하는 데 사용됩니다.
- * @param {Stock} stock - 주식 객체
- * @returns {string} 캐시 키
  */
-function _generateStockKey(stock) {
+function _generateStockKey(stock: Stock): string {
     // transactions는 state.js에서 정렬되어 관리되므로, 단순히 배열의 길이와 마지막 거래 정보를 포함
     const lastTx = stock.transactions[stock.transactions.length - 1];
-    const txSignature = lastTx ? `${lastTx.type}-${lastTx.quantity.toString()}-${lastTx.price.toString()}` : 'none';
-    
+    const txSignature = lastTx
+        ? `${lastTx.type}-${lastTx.quantity.toString()}-${lastTx.price.toString()}`
+        : 'none';
+
     // 섹터 정보도 계산에 영향을 주지 않으므로 제외
     return `${stock.id}:${stock.currentPrice}:${stock.transactions.length}:${txSignature}`;
 }
 
 /**
  * @description 포트폴리오 전체를 위한 캐시 키를 생성합니다.
- * @param {Stock[]} portfolioData - 포트폴리오 데이터
- * @returns {string} 캐시 키
  */
-function _generatePortfolioKey(portfolioData) {
-    return portfolioData.map(_generateStockKey).join('|');
+function _generatePortfolioKey(portfolioData: Stock[]): string {
+    // 주식 ID 기준으로 정렬하여 배열 순서와 무관하게 일관된 캐시 키 생성
+    const sortedData = [...portfolioData].sort((a, b) => a.id.localeCompare(b.id));
+    return sortedData.map(_generateStockKey).join('|');
 }
 
-/**
- * @typedef {object} PortfolioCalculationResult
- * @property {CalculatedStock[]} portfolioData - 계산된 주식 데이터 배열
- * @property {Decimal} currentTotal - 현재 총 자산 가치
- * @property {string} cacheKey - 사용된 캐시 키
- */
+export interface PortfolioCalculationResult {
+    portfolioData: CalculatedStock[];
+    currentTotal: Decimal;
+    cacheKey: string;
+}
 
-/**
- * @typedef {object} CalculatorCache
- * @property {string} key - 캐시 키
- * @property {PortfolioCalculationResult} result - 계산 결과
- */
+interface CalculatorCache {
+    key: string;
+    result: PortfolioCalculationResult;
+}
 
-export class Calculator { 
-    /** @type {CalculatorCache | null} */
-    static #cache = null; 
+export class Calculator {
+    static #cache: CalculatorCache | null = null;
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
-     * @param {Stock} stock - 계산할 주식 객체
-     * @returns {CalculatedStock['calculated']} 계산 결과 객체
      */
-    static calculateStockMetrics(stock) { 
-        // --- ⬇️ Performance Monitoring ⬇️ ---
-        const startTime = performance.now();
-        // --- ⬆️ Performance Monitoring ⬆️ ---
+    static calculateStockMetrics(stock: Stock): CalculatedStockMetrics {
         try {
-            const result = {
+            const result: any = {
                 totalBuyQuantity: new Decimal(0),
                 totalSellQuantity: new Decimal(0),
                 quantity: new Decimal(0),
@@ -3476,21 +3573,24 @@ export class Calculator {
 
             // 1. 매수/매도 수량 및 금액 합산
             for (const tx of stock.transactions) {
-                // [수정] state.js에서 이미 Decimal 객체로 변환했을 수 있으나,
-                // calculateStockMetrics는 순수 함수이므로 number도 처리
                 const txQuantity = new Decimal(tx.quantity || 0);
                 const txPrice = new Decimal(tx.price || 0);
 
                 if (tx.type === 'buy') {
                     result.totalBuyQuantity = result.totalBuyQuantity.plus(txQuantity);
-                    result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
+                    result.totalBuyAmount = result.totalBuyAmount.plus(
+                        txQuantity.times(txPrice)
+                    );
                 } else if (tx.type === 'sell') {
                     result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
                 }
             }
 
             // 2. 순 보유 수량
-            result.quantity = Decimal.max(0, result.totalBuyQuantity.minus(result.totalSellQuantity)); 
+            result.quantity = Decimal.max(
+                0,
+                result.totalBuyQuantity.minus(result.totalSellQuantity)
+            );
 
             // 3. 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
             if (result.totalBuyQuantity.greaterThan(0)) {
@@ -3508,131 +3608,98 @@ export class Calculator {
             if (originalCostOfHolding.isZero()) {
                 result.profitLossRate = new Decimal(0);
             } else {
-                result.profitLossRate = result.profitLoss.div(originalCostOfHolding).times(100);
+                result.profitLossRate = result.profitLoss
+                    .div(originalCostOfHolding)
+                    .times(100);
             }
 
             return result;
-
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'calculateStockMetrics');
+            ErrorService.handle(error as Error, 'calculateStockMetrics');
             // 에러 발생 시 기본값 반환
             return {
-                totalBuyQuantity: new Decimal(0), totalSellQuantity: new Decimal(0), quantity: new Decimal(0),
-                totalBuyAmount: new Decimal(0), currentAmount: new Decimal(0), currentAmountUSD: new Decimal(0), currentAmountKRW: new Decimal(0),
-                avgBuyPrice: new Decimal(0), profitLoss: new Decimal(0), profitLossRate: new Decimal(0),
+                quantity: new Decimal(0),
+                avgBuyPrice: new Decimal(0),
+                currentAmount: new Decimal(0),
+                profitLoss: new Decimal(0),
+                profitLossRate: new Decimal(0),
             };
-        } finally {
-            // --- ⬇️ Performance Monitoring ⬇️ ---
-            const endTime = performance.now();
-            console.log(`[Perf] calculateStockMetrics (${stock.name || stock.id}) took ${(endTime - startTime).toFixed(2)} ms`);
-            // --- ⬆️ Performance Monitoring ⬆️ ---
         }
     }
 
     /**
      * @description 포트폴리오 상태를 계산하고 캐싱합니다.
-     * @param {{ portfolioData: Stock[], exchangeRate: number, currentCurrency: 'krw' | 'usd' }} options - 포트폴리오 데이터 및 환율/통화
-     * @returns {PortfolioCalculationResult}
      */
-    static calculatePortfolioState({ portfolioData, exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE, currentCurrency = 'krw' }) {
-        // --- ⬇️ Performance Monitoring ⬇️ ---
-        const startTime = performance.now();
-        // --- ⬆️ Performance Monitoring ⬆️ ---
+    static calculatePortfolioState(options: {
+        portfolioData: Stock[];
+        exchangeRate?: number;
+        currentCurrency?: Currency;
+    }): PortfolioCalculationResult {
+        const {
+            portfolioData,
+            exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE,
+            currentCurrency = 'krw',
+        } = options;
 
         const cacheKey = _generatePortfolioKey(portfolioData);
 
         if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
-             // --- ⬇️ Performance Monitoring (Cache Hit) ⬇️ ---
-            const endTime = performance.now();
-            console.log(`[Perf] calculatePortfolioState (Cache Hit) took ${(endTime - startTime).toFixed(2)} ms`);
-            // --- ⬆️ Performance Monitoring ⬆️ ---
             return Calculator.#cache.result;
         }
 
         const exchangeRateDec = new Decimal(exchangeRate);
         let currentTotal = new Decimal(0);
 
-        /** @type {CalculatedStock[]} */
-        const calculatedPortfolioData = portfolioData.map(stock => {
-            const calculatedMetrics = Calculator.calculateStockMetrics(stock); // This will log its own performance
+        const calculatedPortfolioData: CalculatedStock[] = portfolioData.map((stock) => {
+            const calculatedMetrics = Calculator.calculateStockMetrics(stock);
 
             // 현재가치를 KRW와 USD로 변환
+            const metricsWithCurrency: any = { ...calculatedMetrics };
             if (currentCurrency === 'krw') {
-                calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
-                calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
-            } else { // usd
-                calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
-                calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
+                metricsWithCurrency.currentAmountKRW = calculatedMetrics.currentAmount;
+                metricsWithCurrency.currentAmountUSD =
+                    calculatedMetrics.currentAmount.div(exchangeRateDec);
+            } else {
+                // usd
+                metricsWithCurrency.currentAmountUSD = calculatedMetrics.currentAmount;
+                metricsWithCurrency.currentAmountKRW =
+                    calculatedMetrics.currentAmount.times(exchangeRateDec);
             }
 
             // Calculate total based on the selected currency
             currentTotal = currentTotal.plus(calculatedMetrics.currentAmount);
 
-            return { ...stock, calculated: calculatedMetrics };
+            return { ...stock, calculated: metricsWithCurrency };
         });
 
-        /** @type {PortfolioCalculationResult} */
-        const result = {
+        const result: PortfolioCalculationResult = {
             portfolioData: calculatedPortfolioData,
             currentTotal: currentTotal,
-            cacheKey: cacheKey
+            cacheKey: cacheKey,
         };
-        
-        // 캐시 업데이트
-        Calculator.#cache = { key: cacheKey, result: result }; 
 
-        // --- ⬇️ Performance Monitoring (Cache Miss) ⬇️ ---
-        const endTime = performance.now();
-        console.log(`[Perf] calculatePortfolioState (Cache Miss) for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        // --- ⬆️ Performance Monitoring ⬆️ ---
+        // 캐시 업데이트
+        Calculator.#cache = { key: cacheKey, result: result };
 
         return result;
     }
-    
-    // ▼▼▼▼▼ [신규] 전략 실행기 ▼▼▼▼▼
+
     /**
      * @description '전략' 객체를 받아 리밸런싱 계산을 실행합니다.
-     * @param {import('./calculationStrategies.js').IRebalanceStrategy} strategy - 실행할 계산 전략 (Add or Sell)
-     * @returns {{ results: any[] }} 계산 결과
      */
-    static calculateRebalancing(strategy) {
-        // Calculator는 더 이상 'add'인지 'sell'인지 알 필요가 없습니다.
-        // 단순히 전략의 calculate 메서드를 호출합니다.
+    static calculateRebalancing(strategy: IRebalanceStrategy): { results: any[] } {
         return strategy.calculate();
     }
-    // ▲▲▲▲▲ [신규] ▲▲▲▲▲
-    
-
-    // ▼▼▼▼▼ [삭제] calculateAddRebalancing ▼▼▼▼▼
-    /*
-    static calculateAddRebalancing({ portfolioData, additionalInvestment }) { 
-        // ... (이 로직은 AddRebalanceStrategy로 이동했습니다) ...
-    }
-    */
-    // ▲▲▲▲▲ [삭제] ▲▲▲▲▲
-
-
-    // ▼▼▼▼▼ [삭제] calculateSellRebalancing ▼▼▼▼▼
-    /*
-    static calculateSellRebalancing({ portfolioData }) { 
-        // ... (이 로직은 SellRebalanceStrategy로 이동했습니다) ...
-    }
-    */
-    // ▲▲▲▲▲ [삭제] ▲▲▲▲▲
-
 
     /**
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
-     * @param {CalculatedStock[]} portfolioData - 계산된 주식 데이터
-     * @returns {{ sector: string, amount: Decimal, percentage: Decimal }[]} 섹터 분석 결과
      */
-    static calculateSectorAnalysis(portfolioData) { 
-        // --- ⬇️ Performance Monitoring ⬇️ ---
+    static calculateSectorAnalysis(
+        portfolioData: CalculatedStock[]
+    ): { sector: string; amount: Decimal; percentage: Decimal }[] {
         const startTime = performance.now();
-        // --- ⬆️ Performance Monitoring ⬆️ ---
-        
-        /** @type {Map<string, Decimal>} */
-        const sectorMap = new Map();
+
+        const sectorMap = new Map<string, Decimal>();
         let currentTotal = new Decimal(0);
 
         for (const s of portfolioData) {
@@ -3644,45 +3711,46 @@ export class Calculator {
             sectorMap.set(sector, currentSectorAmount.plus(amount));
         }
 
-        /** @type {{ sector: string, amount: Decimal, percentage: Decimal }[]} */
-        const result = [];
+        const result: { sector: string; amount: Decimal; percentage: Decimal }[] = [];
         for (const [sector, amount] of sectorMap.entries()) {
-            const percentage = currentTotal.isZero() ? new Decimal(0) : amount.div(currentTotal).times(100);
+            const percentage = currentTotal.isZero()
+                ? new Decimal(0)
+                : amount.div(currentTotal).times(100);
             result.push({ sector, amount, percentage });
         }
 
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
-        
-        // --- ⬇️ Performance Monitoring ⬇️ ---
+
         const endTime = performance.now();
-        console.log(`[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
-        // --- ⬆️ Performance Monitoring ⬆️ ---
-        
+        console.log(
+            `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+        );
+
         return result;
     }
 
     /**
      * @description 포트폴리오 계산 캐시를 초기화합니다.
      */
-    static clearPortfolioStateCache() { 
-        Calculator.#cache = null; 
+    static clearPortfolioStateCache(): void {
+        Calculator.#cache = null;
     }
 }
 ```
 
 ---
 
-## `js/constants.js`
+## `src/constants.ts`
 
-```javascript
+```typescript
 // 설정값들을 정의하는 상수 객체
 export const CONFIG = {
-    MIN_BUYABLE_AMOUNT: 1000, 
-    DEFAULT_EXCHANGE_RATE: 1300, 
-    RATIO_TOLERANCE: 0.01, 
+    MIN_BUYABLE_AMOUNT: 1000,
+    DEFAULT_EXCHANGE_RATE: 1300,
+    RATIO_TOLERANCE: 0.01,
     DARK_MODE_KEY: 'darkMode', // (LocalStorage에 유지)
-    
+
     // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
     IDB_META_KEY: 'portfolioMeta_v2',
     IDB_PORTFOLIOS_KEY: 'portfolioData_v2',
@@ -3690,33 +3758,32 @@ export const CONFIG = {
 
     // ▼▼▼▼▼ [수정] 마이그레이션을 위한 레거시 LocalStorage 키 ▼▼▼▼▼
     // (참고: LEGACY_LS_PORTFOLIOS_KEY는 state.js에서 savePortfolios가 저장하던 방식에 맞게 수정됨)
-    LEGACY_LS_META_KEY: 'portfolioCalculatorMeta_v1', 
+    LEGACY_LS_META_KEY: 'portfolioCalculatorMeta_v1',
     LEGACY_LS_PORTFOLIOS_KEY: 'portfolioCalculatorData_v1_all',
     // ▲▲▲▲▲ [수정] ▲▲▲▲▲
-    
+
     DATA_VERSION: '2.0.0', // [신규] state.js가 참조하는 버전 키
-    
+
     // DATA_PREFIX: 'portfolioCalculatorData_v1_', // (주석 처리 - 현재 state.js에서 미사용)
-};
+} as const;
+
+export type ConfigType = typeof CONFIG;
 ```
 
 ---
 
-## `js/utils.js`
+## `src/utils.ts`
 
-```javascript
-// @ts-check
-import Decimal from 'decimal.js'; // 동기 임포트로 복구
-
-/** @typedef {import('decimal.js').Decimal} Decimal */ // 타입 정의는 유지
-/** @typedef {import('./types.js').Stock} Stock */ // Stock 타입 추가
+```typescript
+import Decimal from 'decimal.js';
+import type { Stock, Currency } from './types.ts';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
- * @param {string | number | null | undefined} str - 이스케이프할 문자열
- * @returns {string} 이스케이프된 안전한 HTML 문자열
+ * @param str - 이스케이프할 문자열
+ * @returns 이스케이프된 안전한 HTML 문자열
  */
-export function escapeHTML(str) {
+export function escapeHTML(str: string | number | null | undefined): string {
     if (str === null || str === undefined) return '';
     return String(str)
         .replace(/&/g, '&amp;')
@@ -3728,11 +3795,11 @@ export function escapeHTML(str) {
 
 /**
  * @description 포트폴리오 데이터에서 목표 비율의 합계를 Decimal 객체로 계산합니다.
- * @param {Stock[]} portfolioData - 포트폴리오 주식 객체 배열
- * @returns {Decimal} 목표 비율 합계
+ * @param portfolioData - 포트폴리오 주식 객체 배열
+ * @returns 목표 비율 합계
  */
-export function getRatioSum(portfolioData) {
-    let sum = new Decimal(0); // Decimal 생성은 동기
+export function getRatioSum(portfolioData: Stock[]): Decimal {
+    let sum = new Decimal(0);
     if (!Array.isArray(portfolioData)) return sum;
 
     for (const s of portfolioData) {
@@ -3745,23 +3812,27 @@ export function getRatioSum(portfolioData) {
 
 /**
  * @description 숫자를 통화 형식의 문자열로 변환합니다. (null, undefined, Decimal 객체 안전 처리)
- * @param {number|Decimal|string|null|undefined} amount - 변환할 금액
- * @param {string} currency - 통화 코드 ('krw', 'usd')
- * @returns {string} 포맷팅된 통화 문자열
+ * @param amount - 변환할 금액
+ * @param currency - 통화 코드 ('krw', 'usd')
+ * @returns 포맷팅된 통화 문자열
  */
-export function formatCurrency(amount, currency = 'krw') {
+export function formatCurrency(
+    amount: number | Decimal | string | null | undefined,
+    currency: Currency = 'krw'
+): string {
     try {
-        let num;
+        let num: number;
         if (amount === null || amount === undefined) {
             num = 0;
-        } else if (typeof amount === 'object' && 'toNumber' in amount) { // Check if it's Decimal-like
+        } else if (typeof amount === 'object' && 'toNumber' in amount) {
+            // Check if it's Decimal-like
             num = amount.toNumber(); // This is synchronous
         } else {
             num = Number(amount);
             if (isNaN(num)) num = 0;
         }
 
-        const options = {
+        const options: Intl.NumberFormatOptions = {
             style: 'currency',
             currency: currency.toUpperCase(), // Intl.NumberFormat requires uppercase
         };
@@ -3769,32 +3840,40 @@ export function formatCurrency(amount, currency = 'krw') {
         if (currency.toLowerCase() === 'krw') {
             options.minimumFractionDigits = 0;
             options.maximumFractionDigits = 0;
-        } else { // usd and others
+        } else {
+            // usd and others
             options.minimumFractionDigits = 2;
             options.maximumFractionDigits = 2;
         }
-        return new Intl.NumberFormat(currency.toLowerCase() === 'usd' ? 'en-US' : 'ko-KR', options).format(num);
+        return new Intl.NumberFormat(
+            currency.toLowerCase() === 'usd' ? 'en-US' : 'ko-KR',
+            options
+        ).format(num);
     } catch (e) {
-        console.error("formatCurrency error:", e);
+        console.error('formatCurrency error:', e);
         return String(amount); // 에러 발생 시 원본 값 문자열로 반환
     }
 }
 
 /**
  * @description 함수 실행을 지연시키는 디바운스 함수를 생성합니다.
- * @param {Function} func - 디바운싱을 적용할 함수
- * @param {number} [delay=300] - 지연 시간 (ms)
- * @param {boolean} [immediate=false] - 첫 이벤트 시 즉시 실행할지 여부
- * @returns {Function} 디바운싱이 적용된 새로운 함수
+ * @param func - 디바운싱을 적용할 함수
+ * @param delay - 지연 시간 (ms)
+ * @param immediate - 첫 이벤트 시 즉시 실행할지 여부
+ * @returns 디바운싱이 적용된 새로운 함수
  */
-export function debounce(func, delay = 300, immediate = false) { // immediate 옵션 추가
-    let timeoutId;
-    return function(...args) {
+export function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    delay = 300,
+    immediate = false
+): (...args: Parameters<T>) => void {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    return function (this: any, ...args: Parameters<T>) {
         const context = this; // 'this' 컨텍스트 저장
         const callNow = immediate && !timeoutId; // 즉시 실행 조건: immediate가 true이고 타이머가 없을 때
         clearTimeout(timeoutId); // 기존 타이머 취소
         timeoutId = setTimeout(() => {
-            timeoutId = null; // 타이머 완료 후 ID 초기화
+            timeoutId = undefined; // 타이머 완료 후 ID 초기화
             if (!immediate) func.apply(context, args); // immediate가 false면 지연 후 실행
         }, delay);
         if (callNow) func.apply(context, args); // 즉시 실행 조건 충족 시 바로 실행
@@ -3804,18 +3883,15 @@ export function debounce(func, delay = 300, immediate = false) { // immediate �
 
 ---
 
-## `js/apiService.js`
+## `src/apiService.ts`
 
-```javascript
-// @ts-check
+```typescript
+import type { FetchStockResult } from './types.ts';
 
 /**
  * @description 단일 주식의 현재가를 Finnhub API(Vite 프록시 경유)에서 가져옵니다.
- * @param {string} ticker - 가져올 주식의 티커
- * @returns {Promise<number>} 현재가
- * @throws {Error} - API 호출 실패 또는 티커가 유효하지 않을 경우
  */
-async function fetchStockPrice(ticker) {
+async function fetchStockPrice(ticker: string): Promise<number> {
     if (!ticker || ticker.trim() === '') {
         throw new Error('Ticker is empty.');
     }
@@ -3833,10 +3909,10 @@ async function fetchStockPrice(ticker) {
             if (errorData.c === 0 && errorData.d === null) {
                 throw new Error(`Invalid ticker or no data found for ${ticker}`);
             }
-            errorBody = errorData.error || await response.text();
+            errorBody = errorData.error || (await response.text());
         } catch (e) {
             // response.json() 자체가 실패할 때 (예: 404, 500)
-            errorBody = (e instanceof Error) ? e.message : await response.text();
+            errorBody = e instanceof Error ? e.message : await response.text();
         }
         throw new Error(`API returned status ${response.status} for ${ticker}. ${errorBody}`);
     }
@@ -3852,12 +3928,12 @@ async function fetchStockPrice(ticker) {
     return price;
 }
 
-// 여러 종목의 가격을 병렬로 가져옵니다.
 /**
- * @param {{id: string, ticker: string}[]} tickersToFetch 
- * @returns {Promise<{id: string, ticker: string, status: 'fulfilled' | 'rejected', value?: number, reason?: string}[]>}
+ * @description 여러 종목의 가격을 병렬로 가져옵니다.
  */
-async function fetchAllStockPrices(tickersToFetch) {
+async function fetchAllStockPrices(
+    tickersToFetch: { id: string; ticker: string }[]
+): Promise<FetchStockResult[]> {
     const results = await Promise.allSettled(
         tickersToFetch.map(async (item) => {
             const price = await fetchStockPrice(item.ticker);
@@ -3872,15 +3948,18 @@ async function fetchAllStockPrices(tickersToFetch) {
             return {
                 id: result.value.id,
                 ticker: result.value.ticker,
-                status: 'fulfilled',
-                value: result.value.price
+                status: 'fulfilled' as const,
+                value: result.value.price,
             };
         } else {
             return {
                 id: id,
                 ticker: ticker,
-                status: 'rejected',
-                reason: (result.reason instanceof Error) ? result.reason.message : String(result.reason)
+                status: 'rejected' as const,
+                reason:
+                    result.reason instanceof Error
+                        ? result.reason.message
+                        : String(result.reason),
             };
         }
     });
@@ -3888,138 +3967,191 @@ async function fetchAllStockPrices(tickersToFetch) {
 
 export const apiService = {
     fetchStockPrice,
-    fetchAllStockPrices
+    fetchAllStockPrices,
 };
 ```
 
 ---
 
-## `js/calculationStrategies.js`
+## `src/calculationStrategies.ts`
 
-```javascript
-// js/calculationStrategies.js (버그 수정)
-// @ts-check
+```typescript
+// src/calculationStrategies.ts (DRY 원칙 적용)
 import Decimal from 'decimal.js';
+import type { CalculatedStock } from './types.ts';
+
+// ==================== 공통 유틸리티 함수 ====================
 
 /**
- * @typedef {import('./types.js').CalculatedStock} CalculatedStock
- * @typedef {import('decimal.js').Decimal} Decimal
+ * @description 포트폴리오의 목표 비율 합계 계산
  */
+function calculateTotalRatio(portfolioData: CalculatedStock[]): Decimal {
+    return portfolioData.reduce((sum, s) => sum.plus(s.targetRatio || 0), new Decimal(0));
+}
 
 /**
- * @description 모든 리밸런싱 전략이 따라야 하는 인터페이스(개념)
- * @interface
+ * @description 목표 비율을 100%로 정규화하기 위한 계수 계산
  */
-class IRebalanceStrategy {
-    /**
-     * @returns {{results: any[]}} 계산 결과
-     */
-    calculate() {
-        throw new Error("calculate() must be implemented by subclass.");
+function calculateRatioMultiplier(totalRatio: Decimal): Decimal {
+    return totalRatio.isZero() ? new Decimal(0) : new Decimal(100).div(totalRatio);
+}
+
+/**
+ * @description 고정 매수 금액을 먼저 할당하고 남은 투자금 반환
+ */
+function allocateFixedBuyAmounts(
+    portfolioData: CalculatedStock[],
+    additionalInvestment: Decimal,
+    results: any[]
+): Decimal {
+    const zero = new Decimal(0);
+    let remainingInvestment = additionalInvestment;
+
+    for (const s of portfolioData) {
+        let buyAmount = zero;
+        if (s.isFixedBuyEnabled) {
+            const fixedAmountDec = new Decimal(s.fixedBuyAmount || 0);
+            if (remainingInvestment.greaterThanOrEqualTo(fixedAmountDec)) {
+                buyAmount = fixedAmountDec;
+                remainingInvestment = remainingInvestment.minus(fixedAmountDec);
+            } else {
+                buyAmount = remainingInvestment;
+                remainingInvestment = zero;
+            }
+        }
+        // results 배열에서 해당 종목을 찾아 finalBuyAmount 설정
+        const resultItem = results.find((r) => r.id === s.id);
+        if (resultItem) {
+            resultItem.finalBuyAmount = buyAmount;
+        }
     }
+
+    return remainingInvestment;
+}
+
+/**
+ * @description 목표 금액 대비 부족분(deficit) 계산 및 비율에 따라 남은 투자금 배분
+ */
+function distributeRemainingInvestment(
+    results: any[],
+    totalInvestment: Decimal,
+    remainingInvestment: Decimal,
+    ratioMultiplier: Decimal
+): void {
+    const zero = new Decimal(0);
+
+    const targetAmounts = results.map((s) => {
+        const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
+        const currentAmount = s.calculated?.currentAmount || zero;
+        return {
+            id: s.id,
+            targetAmount: totalInvestment.times(targetRatioNormalized.div(100)),
+            currentAmount: currentAmount,
+        };
+    });
+
+    const adjustmentTargets = targetAmounts
+        .map((t) => {
+            const currentTotalBeforeRatioAlloc = t.currentAmount.plus(
+                results.find((s) => s.id === t.id)?.finalBuyAmount || zero
+            );
+            const deficit = t.targetAmount.minus(currentTotalBeforeRatioAlloc);
+            return { ...t, deficit: deficit.greaterThan(zero) ? deficit : zero };
+        })
+        .filter((t) => t.deficit.greaterThan(zero));
+
+    const totalDeficit = adjustmentTargets.reduce((sum, t) => sum.plus(t.deficit), zero);
+
+    if (remainingInvestment.greaterThan(zero) && totalDeficit.greaterThan(zero)) {
+        for (const target of adjustmentTargets) {
+            const ratio = target.deficit.div(totalDeficit);
+            const allocatedAmount = remainingInvestment.times(ratio);
+            const resultItem = results.find((r) => r.id === target.id);
+            if (resultItem) {
+                resultItem.finalBuyAmount = resultItem.finalBuyAmount.plus(allocatedAmount);
+            }
+        }
+    }
+}
+
+// ==================== 전략 인터페이스 ====================
+
+/**
+ * @description 모든 리밸런싱 전략이 따라야 하는 인터페이스
+ */
+export interface IRebalanceStrategy {
+    calculate(): { results: any[] };
 }
 
 /**
  * @description '추가 매수' 모드 계산 전략
- * @implements {IRebalanceStrategy}
  */
-export class AddRebalanceStrategy extends IRebalanceStrategy {
-    /** @type {CalculatedStock[]} */
-    #portfolioData;
-    /** @type {Decimal} */
-    #additionalInvestment;
+export class AddRebalanceStrategy implements IRebalanceStrategy {
+    #portfolioData: CalculatedStock[];
+    #additionalInvestment: Decimal;
 
-    /**
-     * @param {CalculatedStock[]} portfolioData
-     * @param {Decimal} additionalInvestment
-     */
-    constructor(portfolioData, additionalInvestment) {
-        super();
+    constructor(portfolioData: CalculatedStock[], additionalInvestment: Decimal) {
         this.#portfolioData = portfolioData;
         this.#additionalInvestment = additionalInvestment;
     }
 
-    calculate() {
+    calculate(): { results: any[] } {
         const startTime = performance.now();
-        
-        const totalInvestment = this.#portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0)).plus(this.#additionalInvestment);
-        const results = [];
-        
-        // ▼▼▼ [수정] totalRatio 계산 시 .plus 및 new Decimal(0) 사용 ▼▼▼
-        let totalRatio = this.#portfolioData.reduce(
-            (sum, s) => sum.plus(s.targetRatio || 0), 
-            new Decimal(0)
-        );
-        // ▲▲▲ [수정] ▲▲▲
-        
-        let totalFixedBuy = new Decimal(0);
-        for (const s of this.#portfolioData) {
-            // (참고: s.targetRatio는 이미 Decimal 객체)
-            if (s.isFixedBuyEnabled) {
-                totalFixedBuy = totalFixedBuy.plus(s.fixedBuyAmount || 0);
-            }
-        }
-        
-        let remainingInvestment = this.#additionalInvestment;
         const zero = new Decimal(0);
-        
-        for (const s of this.#portfolioData) {
-            let buyAmount = zero;
-            if (s.isFixedBuyEnabled) {
-                const fixedAmountDec = new Decimal(s.fixedBuyAmount || 0);
-                if (remainingInvestment.greaterThanOrEqualTo(fixedAmountDec)) {
-                    buyAmount = fixedAmountDec;
-                    remainingInvestment = remainingInvestment.minus(fixedAmountDec);
-                } else {
-                    buyAmount = remainingInvestment;
-                    remainingInvestment = zero;
-                }
-            }
+
+        // 현재 총 자산 + 추가 투자금 = 총 투자금
+        const currentTotal = this.#portfolioData.reduce(
+            (sum, s) => sum.plus(s.calculated?.currentAmount || zero),
+            zero
+        );
+        const totalInvestment = currentTotal.plus(this.#additionalInvestment);
+
+        // 공통 유틸리티 사용: 목표 비율 계산
+        const totalRatio = calculateTotalRatio(this.#portfolioData);
+        const ratioMultiplier = calculateRatioMultiplier(totalRatio);
+
+        // 초기 결과 배열 생성 (currentRatio, finalBuyAmount 초기화)
+        const results = this.#portfolioData.map((s) => {
             const currentAmount = s.calculated?.currentAmount || zero;
-            const currentRatio = totalInvestment.isZero() ? zero : currentAmount.div(totalInvestment).times(100);
-            results.push({ ...s, currentRatio: currentRatio, finalBuyAmount: buyAmount, buyRatio: zero });
-        }
-        
-        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
-        const targetAmounts = results.map(s => {
-            // ▼▼▼ [수정] s.targetRatio를 Decimal로 변환 ▼▼▼
-            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-            // ▲▲▲ [수정] ▲▲▲
+            const currentRatio = totalInvestment.isZero()
+                ? zero
+                : currentAmount.div(totalInvestment).times(100);
             return {
-                id: s.id,
-                targetAmount: totalInvestment.times(targetRatioNormalized.div(100)),
-                currentAmount: s.calculated?.currentAmount || zero,
-                adjustmentAmount: zero
+                ...s,
+                currentRatio: currentRatio,
+                finalBuyAmount: zero,
+                buyRatio: zero,
             };
         });
-        
-        const adjustmentTargets = targetAmounts.map(t => {
-            const currentTotalBeforeRatioAlloc = t.currentAmount.plus(results.find(s => s.id === t.id)?.finalBuyAmount || zero);
-            const deficit = t.targetAmount.minus(currentTotalBeforeRatioAlloc);
-            return { ...t, deficit: deficit.greaterThan(zero) ? deficit : zero };
-        }).filter(t => t.deficit.greaterThan(zero));
 
-        const totalDeficit = adjustmentTargets.reduce((sum, t) => sum.plus(t.deficit), zero);
-        
-        if (remainingInvestment.greaterThan(zero) && totalDeficit.greaterThan(zero)) {
-            for (const target of adjustmentTargets) {
-                const ratio = target.deficit.div(totalDeficit);
-                const allocatedAmount = remainingInvestment.times(ratio);
-                const resultItem = results.find(r => r.id === target.id);
-                if (resultItem) {
-                    resultItem.finalBuyAmount = resultItem.finalBuyAmount.plus(allocatedAmount);
-                }
-            }
-        }
+        // 공통 유틸리티 사용: 고정 매수 금액 먼저 할당
+        const remainingInvestment = allocateFixedBuyAmounts(
+            this.#portfolioData,
+            this.#additionalInvestment,
+            results
+        );
 
+        // 공통 유틸리티 사용: 남은 투자금을 목표 비율에 따라 배분
+        distributeRemainingInvestment(
+            results,
+            totalInvestment,
+            remainingInvestment,
+            ratioMultiplier
+        );
+
+        // buyRatio 계산
         const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
-        const finalResults = results.map(s => ({
+        const finalResults = results.map((s) => ({
             ...s,
-            buyRatio: totalBuyAmount.isZero() ? zero : s.finalBuyAmount.div(totalBuyAmount).times(100),
+            buyRatio: totalBuyAmount.isZero()
+                ? zero
+                : s.finalBuyAmount.div(totalBuyAmount).times(100),
         }));
-        
+
         const endTime = performance.now();
-        console.log(`[Perf] AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        console.log(
+            `[Perf] AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+        );
 
         return { results: finalResults };
     }
@@ -4027,134 +4159,94 @@ export class AddRebalanceStrategy extends IRebalanceStrategy {
 
 /**
  * @description '간단 계산' 모드 전략 - 목표 비율에 맞춰 추가 투자금 배분 (거래 내역 없이 금액만 입력)
- * @implements {IRebalanceStrategy}
  */
-export class SimpleRatioStrategy extends IRebalanceStrategy {
-    /** @type {CalculatedStock[]} */
-    #portfolioData;
-    /** @type {Decimal} */
-    #additionalInvestment;
+export class SimpleRatioStrategy implements IRebalanceStrategy {
+    #portfolioData: CalculatedStock[];
+    #additionalInvestment: Decimal;
 
-    /**
-     * @param {CalculatedStock[]} portfolioData
-     * @param {Decimal} additionalInvestment
-     */
-    constructor(portfolioData, additionalInvestment) {
-        super();
+    constructor(portfolioData: CalculatedStock[], additionalInvestment: Decimal) {
         this.#portfolioData = portfolioData;
         this.#additionalInvestment = additionalInvestment;
     }
 
-    calculate() {
+    calculate(): { results: any[] } {
         const startTime = performance.now();
-
         const zero = new Decimal(0);
 
         // 간단 모드에서는 manualAmount를 사용 (거래 내역 대신 직접 입력한 금액)
-        const currentTotal = this.#portfolioData.reduce(
-            (sum, s) => {
-                const amount = s.manualAmount != null
+        const currentTotal = this.#portfolioData.reduce((sum, s) => {
+            const amount =
+                s.manualAmount != null
                     ? new Decimal(s.manualAmount)
-                    : (s.calculated?.currentAmount || zero);
-                return sum.plus(amount);
-            },
-            zero
-        );
+                    : s.calculated?.currentAmount || zero;
+            return sum.plus(amount);
+        }, zero);
 
         const totalInvestment = currentTotal.plus(this.#additionalInvestment);
 
         // 포트폴리오가 비어있으면 계산 불가
         if (totalInvestment.isZero()) {
             const endTime = performance.now();
-            console.log(`[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
+            console.log(
+                `[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
+            );
             return { results: [] };
         }
 
-        // 목표 비율 합계 계산
-        let totalRatio = this.#portfolioData.reduce(
-            (sum, s) => sum.plus(s.targetRatio || 0),
-            zero
-        );
+        // 공통 유틸리티 사용: 목표 비율 계산
+        const totalRatio = calculateTotalRatio(this.#portfolioData);
+        const ratioMultiplier = calculateRatioMultiplier(totalRatio);
 
-        // ===== 1단계: 고정 매수 금액 먼저 할당 =====
-        let remainingInvestment = this.#additionalInvestment;
-        const results = [];
+        // 초기 결과 배열 생성 (간단 모드는 manualAmount 사용)
+        const results = this.#portfolioData.map((s) => {
+            const currentAmount =
+                s.manualAmount != null
+                    ? new Decimal(s.manualAmount)
+                    : s.calculated?.currentAmount || zero;
+            const currentRatio = currentTotal.isZero()
+                ? zero
+                : currentAmount.div(currentTotal).times(100);
 
-        for (const s of this.#portfolioData) {
-            const currentAmount = s.manualAmount != null
-                ? new Decimal(s.manualAmount)
-                : (s.calculated?.currentAmount || zero);
-
-            let buyAmount = zero;
-
-            // 고정 매수가 활성화되어 있으면 먼저 할당
-            if (s.isFixedBuyEnabled) {
-                const fixedAmountDec = new Decimal(s.fixedBuyAmount || 0);
-                if (remainingInvestment.greaterThanOrEqualTo(fixedAmountDec)) {
-                    buyAmount = fixedAmountDec;
-                    remainingInvestment = remainingInvestment.minus(fixedAmountDec);
-                } else {
-                    buyAmount = remainingInvestment;
-                    remainingInvestment = zero;
-                }
-            }
-
-            const currentRatio = currentTotal.isZero() ? zero : currentAmount.div(currentTotal).times(100);
-
-            results.push({
+            return {
                 ...s,
                 currentRatio: currentRatio,
-                finalBuyAmount: buyAmount,
+                finalBuyAmount: zero,
                 buyRatio: zero,
                 calculated: {
                     ...s.calculated,
-                    currentAmount: currentAmount
-                }
-            });
-        }
-
-        // ===== 2단계: 남은 투자금을 목표 비율 deficit에 따라 배분 =====
-        const ratioMultiplier = totalRatio.isZero() ? zero : new Decimal(100).div(totalRatio);
-
-        const targetAmounts = results.map(s => {
-            const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-            const currentAmount = s.calculated?.currentAmount || zero;
-            return {
-                id: s.id,
-                targetAmount: totalInvestment.times(targetRatioNormalized.div(100)),
-                currentAmount: currentAmount,
-                adjustmentAmount: zero
+                    currentAmount: currentAmount,
+                },
             };
         });
 
-        const adjustmentTargets = targetAmounts.map(t => {
-            const currentTotalBeforeRatioAlloc = t.currentAmount.plus(results.find(s => s.id === t.id)?.finalBuyAmount || zero);
-            const deficit = t.targetAmount.minus(currentTotalBeforeRatioAlloc);
-            return { ...t, deficit: deficit.greaterThan(zero) ? deficit : zero };
-        }).filter(t => t.deficit.greaterThan(zero));
+        // 공통 유틸리티 사용: 고정 매수 금액 먼저 할당
+        const remainingInvestment = allocateFixedBuyAmounts(
+            this.#portfolioData,
+            this.#additionalInvestment,
+            results
+        );
 
-        const totalDeficit = adjustmentTargets.reduce((sum, t) => sum.plus(t.deficit), zero);
-
-        if (remainingInvestment.greaterThan(zero) && totalDeficit.greaterThan(zero)) {
-            for (const target of adjustmentTargets) {
-                const ratio = target.deficit.div(totalDeficit);
-                const allocatedAmount = remainingInvestment.times(ratio);
-                const resultItem = results.find(r => r.id === target.id);
-                if (resultItem) {
-                    resultItem.finalBuyAmount = resultItem.finalBuyAmount.plus(allocatedAmount);
-                }
-            }
-        }
+        // 공통 유틸리티 사용: 남은 투자금을 목표 비율에 따라 배분
+        distributeRemainingInvestment(
+            results,
+            totalInvestment,
+            remainingInvestment,
+            ratioMultiplier
+        );
 
         // buyRatio 계산
         const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
-        const finalResults = results.map(s => ({
+        const finalResults = results.map((s) => ({
             ...s,
-            buyRatio: totalBuyAmount.isZero() ? zero : s.finalBuyAmount.div(totalBuyAmount).times(100),
+            buyRatio: totalBuyAmount.isZero()
+                ? zero
+                : s.finalBuyAmount.div(totalBuyAmount).times(100),
         }));
 
         const endTime = performance.now();
-        console.log(`[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        console.log(
+            `[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+        );
 
         return { results: finalResults };
     }
@@ -4162,67 +4254,58 @@ export class SimpleRatioStrategy extends IRebalanceStrategy {
 
 /**
  * @description '매도 리밸런싱' 모드 계산 전략
- * @implements {IRebalanceStrategy}
  */
-export class SellRebalanceStrategy extends IRebalanceStrategy {
-    /** @type {CalculatedStock[]} */
-    #portfolioData;
+export class SellRebalanceStrategy implements IRebalanceStrategy {
+    #portfolioData: CalculatedStock[];
 
-    /**
-     * @param {CalculatedStock[]} portfolioData
-     */
-    constructor(portfolioData) {
-        super();
+    constructor(portfolioData: CalculatedStock[]) {
         this.#portfolioData = portfolioData;
     }
 
-    calculate() {
+    calculate(): { results: any[] } {
         const startTime = performance.now();
-
-        const currentTotal = this.#portfolioData.reduce((sum, s) => sum.plus(s.calculated?.currentAmount || new Decimal(0)), new Decimal(0));
-
-        // ▼▼▼ [수정] totalRatio가 Decimal을 .plus()로 합산하도록 변경 ▼▼▼
-        const totalRatio = this.#portfolioData.reduce(
-            (sum, s) => sum.plus(s.targetRatio || 0),
-            new Decimal(0)
-        );
-        // ▲▲▲ [수정] ▲▲▲
-
-        const results = [];
         const zero = new Decimal(0);
 
-        if (currentTotal.isZero() || totalRatio.isZero()) { // .isZero() 사용
+        const currentTotal = this.#portfolioData.reduce(
+            (sum, s) => sum.plus(s.calculated?.currentAmount || zero),
+            zero
+        );
+
+        // 공통 유틸리티 사용: 목표 비율 계산
+        const totalRatio = calculateTotalRatio(this.#portfolioData);
+
+        if (currentTotal.isZero() || totalRatio.isZero()) {
             const endTime = performance.now();
-            console.log(`[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`);
+            console.log(
+                `[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
+            );
             return { results: [] };
         }
 
-        // ▼▼▼ [수정] totalRatio가 이미 Decimal이므로 new Decimal() 제거 ▼▼▼
-        const ratioMultiplier = new Decimal(100).div(totalRatio);
-        // ▲▲▲ [수정] ▲▲▲
+        // 공통 유틸리티 사용: 비율 정규화 계수
+        const ratioMultiplier = calculateRatioMultiplier(totalRatio);
 
-        for (const s of this.#portfolioData) {
+        const results = this.#portfolioData.map((s) => {
             const currentAmount = s.calculated?.currentAmount || zero;
             const currentRatioDec = currentAmount.div(currentTotal).times(100);
             const currentRatio = currentRatioDec.toNumber();
 
-            // ▼▼▼ [수정] s.targetRatio를 Decimal로 변환 ▼▼▼
             const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-            // ▲▲▲ [수정] ▲▲▲
-
             const targetAmount = currentTotal.times(targetRatioNormalized.div(100));
             const adjustment = currentAmount.minus(targetAmount);
 
-            results.push({
+            return {
                 ...s,
                 currentRatio: currentRatio,
                 targetRatioNum: targetRatioNormalized.toNumber(),
-                adjustment: adjustment
-            });
-        }
+                adjustment: adjustment,
+            };
+        });
 
         const endTime = performance.now();
-        console.log(`[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`);
+        console.log(
+            `[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+        );
 
         return { results };
     }
@@ -4231,27 +4314,27 @@ export class SellRebalanceStrategy extends IRebalanceStrategy {
 
 ---
 
-## `js/testUtils.js`
+## `src/testUtils.ts`
 
-```javascript
-// js/testUtils.js
-// @ts-check
+```typescript
+// src/testUtils.ts
 import Decimal from 'decimal.js';
+import type { CalculatedStock, Portfolio } from './types';
 
 /**
  * @description 테스트용으로 완벽하게 계산된 CalculatedStock 객체를 생성합니다.
- * @param {string} id
- * @param {string} name
- * @param {string} ticker
- * @param {number} targetRatio - 목표 비율 (%)
- * @param {number} currentPrice - 현재가
- * @param {number} quantity - 보유 수량
- * @param {number} avgBuyPrice - 평단가
- * @returns {import('./types.js').CalculatedStock}
  */
 export function createMockCalculatedStock({
     id, name, ticker, targetRatio, currentPrice, quantity, avgBuyPrice
-}) {
+}: {
+    id: string;
+    name: string;
+    ticker: string;
+    targetRatio: number;
+    currentPrice: number;
+    quantity: number;
+    avgBuyPrice: number;
+}): CalculatedStock {
     const currentAmount = new Decimal(currentPrice).times(quantity);
     const totalBuyAmount = new Decimal(avgBuyPrice).times(quantity);
     const profitLoss = currentAmount.minus(totalBuyAmount);
@@ -4262,10 +4345,10 @@ export function createMockCalculatedStock({
         name: name,
         ticker: ticker,
         sector: 'Test Sector',
-        targetRatio: new Decimal(targetRatio),
-        currentPrice: new Decimal(currentPrice),
+        targetRatio: targetRatio,
+        currentPrice: currentPrice,
         isFixedBuyEnabled: false,
-        fixedBuyAmount: new Decimal(0),
+        fixedBuyAmount: 0,
         transactions: [], // 테스트 편의를 위해 transactions는 비워둠
         calculated: {
             quantity: new Decimal(quantity),
@@ -4273,11 +4356,6 @@ export function createMockCalculatedStock({
             currentAmount: currentAmount,
             profitLoss: profitLoss,
             profitLossRate: profitLossRate,
-            totalBuyQuantity: new Decimal(quantity),
-            totalSellQuantity: new Decimal(0),
-            totalBuyAmount: totalBuyAmount,
-            currentAmountUSD: new Decimal(0),
-            currentAmountKRW: new Decimal(0),
         },
     };
 }
@@ -4304,7 +4382,7 @@ export const MOCK_STOCK_2 = createMockCalculatedStock({
     avgBuyPrice: 250
 }); // 현재가: 4000
 
-export const MOCK_PORTFOLIO_1 = {
+export const MOCK_PORTFOLIO_1: Portfolio = {
     id: 'p-default',
     name: '기본 포트폴리오',
     settings: {
@@ -4318,27 +4396,56 @@ export const MOCK_PORTFOLIO_1 = {
 
 ---
 
-## `js/templates.js`
+## `src/templates.ts`
 
-```javascript
-// js/templates.js
-// @ts-check
-import { escapeHTML, formatCurrency } from './utils.js';
-import { CONFIG } from './constants.js';
-import { t } from './i18n.js';
+```typescript
+// src/templates.ts
+import { escapeHTML, formatCurrency } from './utils.ts';
+import { CONFIG } from './constants.ts';
+import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
+import type { CalculatedStock, Currency } from './types.ts';
 
-/** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
-/** @typedef {import('decimal.js').Decimal} Decimal */
+// Add mode result stock type
+export interface AddModeResultStock extends CalculatedStock {
+    currentRatio: Decimal;
+    finalBuyAmount: Decimal;
+    buyRatio: Decimal;
+}
+
+// Sell mode result stock type
+export interface SellModeResultStock extends CalculatedStock {
+    currentRatio: number;
+    targetRatioNum: number;
+    adjustment: Decimal;
+}
+
+// Summary type for add mode results
+export interface AddModeSummary {
+    currentTotal: Decimal;
+    additionalInvestment: Decimal;
+    finalTotal: Decimal;
+}
+
+// Sector analysis data type
+export interface SectorData {
+    sector: string;
+    amount: Decimal;
+    percentage: Decimal;
+}
 
 /**
  * @description '추가 매수' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
- * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param results - 계산 결과 배열
+ * @param summary - 요약 정보 객체
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateAddModeResultsHTML(results, summary, currency) {
+export function generateAddModeResultsHTML(
+    results: AddModeResultStock[],
+    summary: AddModeSummary,
+    currency: Currency
+): string {
     if (!results) return ''; // Null check for results
 
     const sortedResults = [...results].sort((a, b) => {
@@ -4347,21 +4454,31 @@ export function generateAddModeResultsHTML(results, summary, currency) {
         const amountB = b.finalBuyAmount ?? new Decimal(0);
         return amountB.comparedTo(amountA);
     });
-    const resultsRows = sortedResults.map((stock, index) => {
-        // Ensure calculated exists
-        const metrics = stock.calculated ?? { profitLoss: new Decimal(0), profitLossRate: new Decimal(0) };
-        const { profitLoss, profitLossRate } = metrics;
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
+    const resultsRows = sortedResults
+        .map((stock, index) => {
+            // Ensure calculated exists
+            const metrics = stock.calculated ?? {
+                profitLoss: new Decimal(0),
+                profitLossRate: new Decimal(0),
+            };
+            const { profitLoss, profitLossRate } = metrics;
+            const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+            const profitSign = profitLoss.isPositive() ? '+' : '';
 
-        // Ensure ratios exist and handle potential NaN/Infinity from division
-        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : 'N/A';
-        const targetRatioVal = typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : 'N/A';
-        const profitLossRateVal = profitLossRate?.isFinite() ? profitLossRate.toFixed(2) : 'N/A';
-        const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
+            // Ensure ratios exist and handle potential NaN/Infinity from division
+            const currentRatioVal = stock.currentRatio?.isFinite()
+                ? stock.currentRatio.toFixed(1)
+                : 'N/A';
+            const targetRatioVal =
+                typeof stock.targetRatio === 'number'
+                    ? stock.targetRatio.toFixed(1)
+                    : 'N/A';
+            const profitLossRateVal = profitLossRate?.isFinite()
+                ? profitLossRate.toFixed(2)
+                : 'N/A';
+            const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
-
-        return `
+            return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
                 <td style="text-align: center;">${currentRatioVal}%</td>
@@ -4374,22 +4491,28 @@ export function generateAddModeResultsHTML(results, summary, currency) {
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
 
     // Filter buyable stocks using Decimal comparison method
-    const buyableStocks = sortedResults.filter(s =>
-        s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT) // Use greaterThan()
+    const buyableStocks = sortedResults.filter(
+        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT) // Use greaterThan()
     );
-    const guideContent = buyableStocks.length > 0
-        ? buyableStocks.map((s, i) => {
-            const buyRatioVal = s.buyRatio?.isFinite() ? s.buyRatio.toFixed(1) : 'N/A';
-            return `
+    const guideContent =
+        buyableStocks.length > 0
+            ? buyableStocks
+                  .map((s, i) => {
+                      const buyRatioVal = s.buyRatio?.isFinite()
+                          ? s.buyRatio.toFixed(1)
+                          : 'N/A';
+                      return `
                 <div class="guide-item">
                     <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
                     <span style="font-weight: bold;">(${buyRatioVal}%)</span>
                 </div>`;
-             }).join('')
-        : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+                  })
+                  .join('')
+            : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
     return `
         <div class="summary-grid">
@@ -4417,12 +4540,16 @@ export function generateAddModeResultsHTML(results, summary, currency) {
 
 /**
  * @description '간단 계산' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {(CalculatedStock & { currentRatio: Decimal, finalBuyAmount: Decimal, buyRatio: Decimal })[]} results - 계산 결과 배열
- * @param {{ currentTotal: Decimal, additionalInvestment: Decimal, finalTotal: Decimal }} summary - 요약 정보 객체
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param results - 계산 결과 배열
+ * @param summary - 요약 정보 객체
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateSimpleModeResultsHTML(results, summary, currency) {
+export function generateSimpleModeResultsHTML(
+    results: AddModeResultStock[],
+    summary: AddModeSummary,
+    currency: Currency
+): string {
     if (!results) return '';
 
     const sortedResults = [...results].sort((a, b) => {
@@ -4431,15 +4558,24 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
         return ratioB.comparedTo(ratioA);
     });
 
-    const resultsRows = sortedResults.map((stock, index) => {
-        const metrics = stock.calculated ?? { currentAmount: new Decimal(0) };
-        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+    const resultsRows = sortedResults
+        .map((stock, index) => {
+            const metrics = stock.calculated ?? { currentAmount: new Decimal(0) };
+            const currentAmount =
+                metrics.currentAmount instanceof Decimal
+                    ? metrics.currentAmount
+                    : new Decimal(metrics.currentAmount ?? 0);
 
-        const currentRatioVal = stock.currentRatio?.isFinite() ? stock.currentRatio.toFixed(1) : '0.0';
-        const targetRatioVal = typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : (stock.targetRatio?.toFixed(1) ?? '0.0');
-        const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
+            const currentRatioVal = stock.currentRatio?.isFinite()
+                ? stock.currentRatio.toFixed(1)
+                : '0.0';
+            const targetRatioVal =
+                typeof stock.targetRatio === 'number'
+                    ? stock.targetRatio.toFixed(1)
+                    : (stock.targetRatio?.toFixed(1) ?? '0.0');
+            const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
-        return `
+            return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(stock.name)}</strong><br><span class="ticker">${escapeHTML(stock.ticker)}</span></td>
                 <td style="text-align: right;">${formatCurrency(currentAmount, currency)}</td>
@@ -4448,22 +4584,28 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
 
-    const buyableStocks = sortedResults.filter(s =>
-        s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
+    const buyableStocks = sortedResults.filter(
+        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
     );
 
-    const guideContent = buyableStocks.length > 0
-        ? buyableStocks.map((s, i) => {
-            const currentRatioVal = s.currentRatio?.isFinite() ? s.currentRatio.toFixed(1) : '0.0';
-            return `
+    const guideContent =
+        buyableStocks.length > 0
+            ? buyableStocks
+                  .map((s, i) => {
+                      const currentRatioVal = s.currentRatio?.isFinite()
+                          ? s.currentRatio.toFixed(1)
+                          : '0.0';
+                      return `
                 <div class="guide-item">
                     <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
                     <span style="font-weight: bold; color: #666;">(현재 비율: ${currentRatioVal}%)</span>
                 </div>`;
-        }).join('')
-        : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+                  })
+                  .join('')
+            : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
     return `
         <div class="summary-grid">
@@ -4499,11 +4641,14 @@ export function generateSimpleModeResultsHTML(results, summary, currency) {
 
 /**
  * @description '매도 리밸런싱' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {(CalculatedStock & { currentRatio: number, targetRatioNum: number, adjustment: Decimal })[]} results - 계산 결과 배열
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param results - 계산 결과 배열
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateSellModeResultsHTML(results, currency) {
+export function generateSellModeResultsHTML(
+    results: SellModeResultStock[],
+    currency: Currency
+): string {
     if (!results) return ''; // Null check for results
     // Sort results safely checking for adjustment property
     const sortedResults = [...results].sort((a, b) => {
@@ -4512,13 +4657,20 @@ export function generateSellModeResultsHTML(results, currency) {
         return adjB.comparedTo(adjA);
     });
 
-    const resultsRows = sortedResults.map((s, index) => {
-        // Use default values if properties might be missing/NaN
-        const currentRatioVal = typeof s.currentRatio === 'number' && isFinite(s.currentRatio) ? s.currentRatio.toFixed(1) : 'N/A';
-        const targetRatioVal = typeof s.targetRatioNum === 'number' && isFinite(s.targetRatioNum) ? s.targetRatioNum.toFixed(1) : 'N/A';
-        const adjustmentVal = s.adjustment ?? new Decimal(0);
+    const resultsRows = sortedResults
+        .map((s, index) => {
+            // Use default values if properties might be missing/NaN
+            const currentRatioVal =
+                typeof s.currentRatio === 'number' && isFinite(s.currentRatio)
+                    ? s.currentRatio.toFixed(1)
+                    : 'N/A';
+            const targetRatioVal =
+                typeof s.targetRatioNum === 'number' && isFinite(s.targetRatioNum)
+                    ? s.targetRatioNum.toFixed(1)
+                    : 'N/A';
+            const adjustmentVal = s.adjustment ?? new Decimal(0);
 
-        return `
+            return `
             <tr class="result-row-highlight" data-delay="${index * 0.05}s">
                 <td><strong>${escapeHTML(s.name)}</strong><br><span class="ticker">${escapeHTML(s.ticker)}</span></td>
                 <td style="text-align: center;">${currentRatioVal}%</td>
@@ -4529,21 +4681,33 @@ export function generateSellModeResultsHTML(results, currency) {
                     </div>
                 </td>
             </tr>`;
-        }).join('');
+        })
+        .join('');
 
     const totalSell = results.reduce((sum, s) => {
         return s.adjustment?.isPositive() ? sum.plus(s.adjustment) : sum;
     }, new Decimal(0));
-    const stocksToSell = sortedResults.filter(s => s.adjustment?.isPositive());
-    const stocksToBuy = sortedResults.filter(s => s.adjustment?.isNegative()); // isNegative includes zero implicitly, filter < 0 if needed
+    const stocksToSell = sortedResults.filter((s) => s.adjustment?.isPositive());
+    const stocksToBuy = sortedResults.filter((s) => s.adjustment?.isNegative()); // isNegative includes zero implicitly, filter < 0 if needed
 
-    const sellGuide = stocksToSell.length > 0
-        ? stocksToSell.map((s, i) => `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment, currency)} 매도</div>`).join('')
-        : `<p>${t('template.noItemsToSell')}</p>`;
-    const buyGuide = stocksToBuy.length > 0
-        ? stocksToBuy.map((s, i) => `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment?.abs(), currency)} 매수</div>`).join('')
-        : `<p>${t('template.noItemsToBuy')}</p>`;
-
+    const sellGuide =
+        stocksToSell.length > 0
+            ? stocksToSell
+                  .map(
+                      (s, i) =>
+                          `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment, currency)} 매도</div>`
+                  )
+                  .join('')
+            : `<p>${t('template.noItemsToSell')}</p>`;
+    const buyGuide =
+        stocksToBuy.length > 0
+            ? stocksToBuy
+                  .map(
+                      (s, i) =>
+                          `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment?.abs(), currency)} 매수</div>`
+                  )
+                  .join('')
+            : `<p>${t('template.noItemsToBuy')}</p>`;
 
     return `
         <div class="summary-grid">
@@ -4569,26 +4733,32 @@ export function generateSellModeResultsHTML(results, currency) {
 
 /**
  * @description 섹터 분석 결과를 표시할 HTML 문자열을 생성합니다.
- * @param {{ sector: string, amount: Decimal, percentage: Decimal }[]} sectorData - 섹터 분석 결과 배열
- * @param {string} currency - 현재 통화 ('krw' or 'usd')
- * @returns {string} 생성된 HTML 문자열
+ * @param sectorData - 섹터 분석 결과 배열
+ * @param currency - 현재 통화 ('krw' or 'usd')
+ * @returns 생성된 HTML 문자열
  */
-export function generateSectorAnalysisHTML(sectorData, currency) {
+export function generateSectorAnalysisHTML(
+    sectorData: SectorData[],
+    currency: Currency
+): string {
     if (!sectorData || sectorData.length === 0) {
         return '';
     }
 
-    const rows = sectorData.map(data => {
-         // Ensure percentage is valid before formatting
-         const percentageVal = data.percentage?.isFinite() ? data.percentage.toFixed(2) : 'N/A';
-         return `
+    const rows = sectorData
+        .map((data) => {
+            // Ensure percentage is valid before formatting
+            const percentageVal = data.percentage?.isFinite()
+                ? data.percentage.toFixed(2)
+                : 'N/A';
+            return `
             <tr>
                 <td>${escapeHTML(data.sector)}</td>
                 <td style="text-align: right;">${formatCurrency(data.amount, currency)}</td>
                 <td style="text-align: right;">${percentageVal}%</td>
             </tr>`;
-        }).join('');
-
+        })
+        .join('');
 
     return `
         <div class="card">
@@ -4614,64 +4784,111 @@ export function generateSectorAnalysisHTML(sectorData, currency) {
 
 ---
 
-## `js/validator.js`
+## `src/validator.ts`
 
-```javascript
-// js/validator.js
-// @ts-check
-import { t } from './i18n.js';
+```typescript
+// src/validator.ts
+import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
-
-/** @typedef {import('./types.js').Transaction} Transaction */
-/** @typedef {import('./types.js').ValidationResult} ValidationResult */
-/** @typedef {import('./types.js').ValidationErrorDetail} ValidationErrorDetail */
-/** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
+import type {
+    Transaction,
+    ValidationResult,
+    ValidationErrorDetail,
+    CalculatedStock,
+    MainMode,
+} from './types.ts';
 
 export const Validator = {
     /**
-     * @description 숫자 입력값을 검증하고, 유효하면 숫자 타입으로 변환하여 반환합니다.
-     * @param {string | number | null | undefined} value - 검증할 값
-     * @returns {{isValid: boolean, value?: number, message?: string}} 검증 결과
+     * @description 티커 심볼 검증 및 정규화 (대문자, 숫자, ., - 만 허용)
+     * @param value - 검증할 티커
+     * @returns 검증 결과
      */
-    validateNumericInput(value) {
-        // --- ⬇️ 재수정: 빈 문자열, null, undefined 체크 강화 ⬇️ ---
-        const trimmedValue = String(value ?? '').trim(); // null/undefined를 빈 문자열로 처리 후 trim
+    validateTicker(value: string | null | undefined): ValidationResult {
+        const trimmedValue = String(value ?? '').trim();
         if (trimmedValue === '') {
-             return { isValid: false, message: t('validation.invalidNumber') };
+            return { isValid: true, value: '' }; // 빈 티커 허용
         }
-        // --- ⬆️ 재수정 ⬆️ ---
 
-        const num = Number(trimmedValue); // Use trimmed value for conversion
+        // 대문자, 숫자, ., - 만 허용하고 나머지 제거
+        const sanitized = trimmedValue.toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+
+        // 길이 제한 (일반적으로 티커는 1-10자)
+        if (sanitized.length > 10) {
+            return { isValid: false, message: 'Ticker too long (max 10 characters)' };
+        }
+
+        return { isValid: true, value: sanitized };
+    },
+
+    /**
+     * @description 자유 텍스트 검증 (길이 제한만 적용, DOMPurify는 controller에서 처리)
+     * @param value - 검증할 텍스트
+     * @param maxLength - 최대 길이
+     * @returns 검증 결과
+     */
+    validateText(value: string | null | undefined, maxLength: number = 100): ValidationResult {
+        const trimmedValue = String(value ?? '').trim();
+        if (trimmedValue.length > maxLength) {
+            return { isValid: false, message: `Text too long (max ${maxLength} characters)` };
+        }
+        return { isValid: true, value: trimmedValue };
+    },
+
+    /**
+     * @description 숫자 입력값을 검증하고, 유효하면 숫자 타입으로 변환하여 반환합니다.
+     * @param value - 검증할 값
+     * @param max - 최대값 (기본: 1000조)
+     * @returns 검증 결과
+     */
+    validateNumericInput(
+        value: string | number | null | undefined,
+        max: number = 1e15
+    ): ValidationResult {
+        const trimmedValue = String(value ?? '').trim();
+        if (trimmedValue === '') {
+            return { isValid: false, message: t('validation.invalidNumber') };
+        }
+
+        const num = Number(trimmedValue);
         if (isNaN(num)) {
             return { isValid: false, message: t('validation.invalidNumber') };
         }
         if (num < 0) {
             return { isValid: false, message: t('validation.negativeNumber') };
         }
+
+        // 최대값 제한
+        if (num > max) {
+            return {
+                isValid: false,
+                message: `Number too large (max ${max.toExponential()})`,
+            };
+        }
+
         // Check for excessively large numbers or precision issues using Decimal.js
         try {
-            const decValue = new Decimal(trimmedValue); // Use trimmed value
+            const decValue = new Decimal(trimmedValue);
             if (!decValue.isFinite()) {
-                 throw new Error('Number is not finite');
+                throw new Error('Number is not finite');
             }
-            if (!isFinite(num)){ // Check standard JS finiteness too
-                 throw new Error('Number is too large for standard JS number');
+            if (!isFinite(num)) {
+                throw new Error('Number is too large for standard JS number');
             }
         } catch (e) {
-             console.error("Decimal validation error:", e);
-             return { isValid: false, message: t('validation.calcErrorDecimal') };
+            console.error('Decimal validation error:', e);
+            return { isValid: false, message: t('validation.calcErrorDecimal') };
         }
 
         return { isValid: true, value: num };
     },
 
-    // ... (validateTransaction 함수 - 이전과 동일하게 유지) ...
     /**
      * @description 단일 거래 내역의 유효성을 검사합니다.
-     * @param {Partial<Transaction>} txData - 거래 데이터
-     * @returns {ValidationResult} 검증 결과
+     * @param txData - 거래 데이터
+     * @returns 검증 결과
      */
-    validateTransaction(txData) {
+    validateTransaction(txData: Partial<Transaction>): ValidationResult {
         // 날짜 검증
         if (!txData.date || isNaN(new Date(txData.date).getTime())) {
             return { isValid: false, message: t('validation.invalidDate') };
@@ -4686,193 +4903,258 @@ export const Validator = {
         const quantityValidation = this.validateNumericInput(txData.quantity);
         if (!quantityValidation.isValid) {
             // Provide specific message for 0, otherwise use numeric validation message
-            if (Number(txData.quantity) === 0) return { isValid: false, message: t('validation.quantityZero')};
-            // --- ⬇️ 수정: 음수 메시지 반환 로직 추가 ---
-            if (Number(txData.quantity) < 0) return { isValid: false, message: t('validation.negativeNumber') };
-            // --- ⬆️ 수정 ---
+            if (Number(txData.quantity) === 0)
+                return { isValid: false, message: t('validation.quantityZero') };
+            if (Number(txData.quantity) < 0)
+                return { isValid: false, message: t('validation.negativeNumber') };
             return { isValid: false, message: quantityValidation.message }; // Should be invalidNumber here
         }
         // validateNumericInput already checks for < 0, but explicit 0 check remains useful
         if (quantityValidation.value === 0) {
-             return { isValid: false, message: t('validation.quantityZero') };
+            return { isValid: false, message: t('validation.quantityZero') };
         }
-
 
         // 단가 검증
         const priceValidation = this.validateNumericInput(txData.price);
         if (!priceValidation.isValid) {
             // Provide specific message for 0, otherwise use numeric validation message
-            if (Number(txData.price) === 0) return { isValid: false, message: t('validation.priceZero')};
-            // --- ⬇️ 수정: 음수 메시지 반환 로직 추가 ---
-            if (Number(txData.price) < 0) return { isValid: false, message: t('validation.negativeNumber') };
-            // --- ⬆️ 수정 ---
+            if (Number(txData.price) === 0)
+                return { isValid: false, message: t('validation.priceZero') };
+            if (Number(txData.price) < 0)
+                return { isValid: false, message: t('validation.negativeNumber') };
             return { isValid: false, message: priceValidation.message }; // Should be invalidNumber here
         }
-         // validateNumericInput already checks for < 0, but explicit 0 check remains useful
+        // validateNumericInput already checks for < 0, but explicit 0 check remains useful
         if (priceValidation.value === 0) {
-             return { isValid: false, message: t('validation.priceZero') };
+            return { isValid: false, message: t('validation.priceZero') };
         }
-
 
         return { isValid: true };
     },
 
-    // ... (validateForCalculation 함수 - 이전과 동일하게 유지) ...
     /**
      * @description 리밸런싱 계산 전 전체 입력 데이터의 유효성을 검사합니다.
-     * @param {{mainMode: 'add' | 'sell' | 'simple', portfolioData: CalculatedStock[], additionalInvestment: Decimal}} inputs - 계산 입력값
-     * @returns {ValidationErrorDetail[]} 오류 배열 (유효하면 빈 배열)
+     * @param inputs - 계산 입력값
+     * @returns 오류 배열 (유효하면 빈 배열)
      */
-    validateForCalculation(inputs) {
-        /** @type {ValidationErrorDetail[]} */
-        const errors = [];
+    validateForCalculation(inputs: {
+        mainMode: MainMode | 'simple';
+        portfolioData: CalculatedStock[];
+        additionalInvestment: Decimal;
+    }): ValidationErrorDetail[] {
+        const errors: ValidationErrorDetail[] = [];
         const { mainMode, portfolioData, additionalInvestment } = inputs;
 
         // 추가 매수 모드 또는 간단 계산 모드일 때 추가 투자금액 검증
         if (mainMode === 'add' || mainMode === 'simple') {
-             // Use Decimal's comparison methods
-             if (!additionalInvestment || additionalInvestment.isNaN() || additionalInvestment.isNegative() || additionalInvestment.isZero()) {
-                 errors.push({ field: 'additionalInvestment', stockId: null, message: t('validation.investmentAmountZero') });
-             }
+            // Use Decimal's comparison methods
+            if (
+                !additionalInvestment ||
+                additionalInvestment.isNaN() ||
+                additionalInvestment.isNegative() ||
+                additionalInvestment.isZero()
+            ) {
+                errors.push({
+                    field: 'additionalInvestment',
+                    stockId: null,
+                    message: t('validation.investmentAmountZero'),
+                });
+            }
         }
 
         let totalFixedBuyAmount = new Decimal(0);
 
         // 각 주식 항목 검증
-        portfolioData.forEach(stock => {
+        portfolioData.forEach((stock) => {
             const stockName = stock.name || t('defaults.newStock'); // Use default if name is empty
 
             if (!stock.name?.trim()) {
-                errors.push({ field: 'name', stockId: stock.id, message: t('validation.nameMissing') });
+                errors.push({
+                    field: 'name',
+                    stockId: stock.id,
+                    message: t('validation.nameMissing'),
+                });
             }
             if (!stock.ticker?.trim()) {
-                errors.push({ field: 'ticker', stockId: stock.id, message: t('validation.tickerMissing', { name: stockName }) });
+                errors.push({
+                    field: 'ticker',
+                    stockId: stock.id,
+                    message: t('validation.tickerMissing', { name: stockName }),
+                });
             }
 
-            // --- ⬇️ 수정: stock.calculated 및 quantity 존재 여부 더 안전하게 확인 ⬇️ ---
             const quantity = stock.calculated?.quantity;
             const currentPrice = new Decimal(stock.currentPrice ?? 0); // Use Decimal for currentPrice check
 
-            if (quantity && quantity instanceof Decimal && quantity.greaterThan(0) && (currentPrice.isNaN() || currentPrice.isNegative() || currentPrice.isZero())) {
-                 errors.push({ field: 'currentPrice', stockId: stock.id, message: t('validation.currentPriceZero', { name: stockName }) });
-             }
-             // --- ⬆️ 수정 ⬆️ ---
-
+            if (
+                quantity &&
+                quantity instanceof Decimal &&
+                quantity.greaterThan(0) &&
+                (currentPrice.isNaN() || currentPrice.isNegative() || currentPrice.isZero())
+            ) {
+                errors.push({
+                    field: 'currentPrice',
+                    stockId: stock.id,
+                    message: t('validation.currentPriceZero', { name: stockName }),
+                });
+            }
 
             // 고정 매수 관련 검증 (추가 매수 모드 및 간단 계산 모드에서)
             if ((mainMode === 'add' || mainMode === 'simple') && stock.isFixedBuyEnabled) {
                 const fixedAmount = new Decimal(stock.fixedBuyAmount || 0);
-                // currentPrice는 위에서 Decimal로 변환됨
 
                 if (fixedAmount.isNaN() || fixedAmount.isNegative() || fixedAmount.isZero()) {
-                     errors.push({ field: 'fixedBuyAmount', stockId: stock.id, message: t('validation.fixedBuyAmountZero', { name: stockName }) });
-                } else if (!currentPrice.isNaN() && currentPrice.greaterThan(0) && fixedAmount.lessThan(currentPrice)) {
-                     // 고정 매수 금액이 현재가보다 작아 1주도 살 수 없는 경우
-                     errors.push({ field: 'fixedBuyAmount', stockId: stock.id, message: t('validation.fixedBuyAmountTooSmall', { name: stockName }) });
+                    errors.push({
+                        field: 'fixedBuyAmount',
+                        stockId: stock.id,
+                        message: t('validation.fixedBuyAmountZero', { name: stockName }),
+                    });
+                } else if (
+                    !currentPrice.isNaN() &&
+                    currentPrice.greaterThan(0) &&
+                    fixedAmount.lessThan(currentPrice)
+                ) {
+                    // 고정 매수 금액이 현재가보다 작아 1주도 살 수 없는 경우
+                    errors.push({
+                        field: 'fixedBuyAmount',
+                        stockId: stock.id,
+                        message: t('validation.fixedBuyAmountTooSmall', { name: stockName }),
+                    });
                 }
                 totalFixedBuyAmount = totalFixedBuyAmount.plus(fixedAmount);
             }
 
             // 목표 비율 검증 (음수 여부 등)
             const targetRatio = new Decimal(stock.targetRatio ?? 0); // Use ?? 0 for safety
-             if (targetRatio.isNaN() || targetRatio.isNegative()) {
-                 errors.push({ field: 'targetRatio', stockId: stock.id, message: t('validation.negativeNumber') }); // Can't be negative
-             }
+            if (targetRatio.isNaN() || targetRatio.isNegative()) {
+                errors.push({
+                    field: 'targetRatio',
+                    stockId: stock.id,
+                    message: t('validation.negativeNumber'),
+                }); // Can't be negative
+            }
         });
 
-         // 추가 매수 모드 및 간단 계산 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
-         if ((mainMode === 'add' || mainMode === 'simple') && !additionalInvestment.isNaN() && totalFixedBuyAmount.greaterThan(additionalInvestment)) {
-             errors.push({ field: 'fixedBuyAmount', stockId: null, message: t('validation.fixedBuyTotalExceeds') });
-         }
-
+        // 추가 매수 모드 및 간단 계산 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
+        if (
+            (mainMode === 'add' || mainMode === 'simple') &&
+            !additionalInvestment.isNaN() &&
+            totalFixedBuyAmount.greaterThan(additionalInvestment)
+        ) {
+            errors.push({
+                field: 'fixedBuyAmount',
+                stockId: null,
+                message: t('validation.fixedBuyTotalExceeds'),
+            });
+        }
 
         return errors;
     },
 
-    // ... (isDataStructureValid 함수 - 이전과 동일하게 유지) ...
     /**
      * @description 가져온(import) 데이터의 기본 구조가 유효한지 검사합니다.
-     * @param {any} data - JSON.parse로 읽어온 데이터
-     * @returns {boolean} 구조 유효 여부
+     * @param data - JSON.parse로 읽어온 데이터
+     * @returns 구조 유효 여부
      */
-    isDataStructureValid(data) {
+    isDataStructureValid(data: any): boolean {
         if (!data || typeof data !== 'object') return false;
-        if (!data.meta || typeof data.meta !== 'object' || typeof data.meta.activePortfolioId !== 'string') return false; // Check type
+        if (
+            !data.meta ||
+            typeof data.meta !== 'object' ||
+            typeof data.meta.activePortfolioId !== 'string'
+        )
+            return false; // Check type
         if (!data.portfolios || typeof data.portfolios !== 'object') return false;
 
         // Check individual portfolios
         for (const portId in data.portfolios) {
             const portfolio = data.portfolios[portId];
             if (!portfolio || typeof portfolio !== 'object') return false;
-            if (portfolio.id !== portId || !portfolio.name || typeof portfolio.name !== 'string') return false;
+            if (portfolio.id !== portId || !portfolio.name || typeof portfolio.name !== 'string')
+                return false;
             // Check settings object structure (basic)
             if (!portfolio.settings || typeof portfolio.settings !== 'object') return false;
             if (!['add', 'sell', 'simple'].includes(portfolio.settings.mainMode)) return false;
             if (!['krw', 'usd'].includes(portfolio.settings.currentCurrency)) return false;
-            if (typeof portfolio.settings.exchangeRate !== 'number' || portfolio.settings.exchangeRate <= 0) return false;
+            if (
+                typeof portfolio.settings.exchangeRate !== 'number' ||
+                portfolio.settings.exchangeRate <= 0
+            )
+                return false;
 
             // Check portfolioData array structure (basic)
             if (!Array.isArray(portfolio.portfolioData)) return false;
             // Optionally, add checks for individual stock structure within portfolioData if needed
-             for (const stock of portfolio.portfolioData) {
-                 if (!stock || typeof stock !== 'object' || !stock.id || typeof stock.id !== 'string') return false;
-                 // Add more checks for required stock properties (name, ticker, etc.)
-                 if (typeof stock.name !== 'string' || typeof stock.ticker !== 'string') return false;
-                 // Allow optional sector
-                 if (stock.sector !== undefined && typeof stock.sector !== 'string') return false;
-                 if (typeof stock.targetRatio !== 'number' || stock.targetRatio < 0) return false;
-                 if (typeof stock.currentPrice !== 'number' || stock.currentPrice < 0) return false;
-                 // Allow missing optional fields if they have defaults upon loading/calculation
-                 if (stock.isFixedBuyEnabled !== undefined && typeof stock.isFixedBuyEnabled !== 'boolean') return false;
-                 if (stock.fixedBuyAmount !== undefined && (typeof stock.fixedBuyAmount !== 'number' || stock.fixedBuyAmount < 0)) return false;
+            for (const stock of portfolio.portfolioData) {
+                if (!stock || typeof stock !== 'object' || !stock.id || typeof stock.id !== 'string')
+                    return false;
+                // Add more checks for required stock properties (name, ticker, etc.)
+                if (typeof stock.name !== 'string' || typeof stock.ticker !== 'string')
+                    return false;
+                // Allow optional sector
+                if (stock.sector !== undefined && typeof stock.sector !== 'string') return false;
+                if (typeof stock.targetRatio !== 'number' || stock.targetRatio < 0) return false;
+                if (typeof stock.currentPrice !== 'number' || stock.currentPrice < 0) return false;
+                // Allow missing optional fields if they have defaults upon loading/calculation
+                if (
+                    stock.isFixedBuyEnabled !== undefined &&
+                    typeof stock.isFixedBuyEnabled !== 'boolean'
+                )
+                    return false;
+                if (
+                    stock.fixedBuyAmount !== undefined &&
+                    (typeof stock.fixedBuyAmount !== 'number' || stock.fixedBuyAmount < 0)
+                )
+                    return false;
 
-                 if (!Array.isArray(stock.transactions)) return false;
-                 // Check transaction structure if necessary
-                 for (const tx of stock.transactions) {
-                      if (!tx || typeof tx !== 'object' || !tx.id || typeof tx.id !== 'string') return false;
-                      if (!['buy', 'sell'].includes(tx.type)) return false;
-                      if (typeof tx.date !== 'string' || isNaN(new Date(tx.date).getTime())) return false;
-                       // Allow quantity/price to be potentially stored as strings if parsed later
-                      if ((typeof tx.quantity !== 'number' && typeof tx.quantity !== 'string') || Number(tx.quantity) <= 0) return false;
-                      if ((typeof tx.price !== 'number' && typeof tx.price !== 'string') || Number(tx.price) <= 0) return false;
-                 }
-             }
+                if (!Array.isArray(stock.transactions)) return false;
+                // Check transaction structure if necessary
+                for (const tx of stock.transactions) {
+                    if (!tx || typeof tx !== 'object' || !tx.id || typeof tx.id !== 'string')
+                        return false;
+                    if (!['buy', 'sell'].includes(tx.type)) return false;
+                    if (typeof tx.date !== 'string' || isNaN(new Date(tx.date).getTime()))
+                        return false;
+                    // Allow quantity/price to be potentially stored as strings if parsed later
+                    if (
+                        (typeof tx.quantity !== 'number' && typeof tx.quantity !== 'string') ||
+                        Number(tx.quantity) <= 0
+                    )
+                        return false;
+                    if (
+                        (typeof tx.price !== 'number' && typeof tx.price !== 'string') ||
+                        Number(tx.price) <= 0
+                    )
+                        return false;
+                }
+            }
         }
 
         return true;
-    }
+    },
 };
 ```
 
 ---
 
-## `js/state.js`
+## `src/state.ts`
 
-```javascript
-// js/state.js (IndexedDB + Async + DOMPurify)
-// @ts-check
+```typescript
+// src/state.ts (Refactored with DataStore separation)
 import { nanoid } from 'nanoid';
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.js';
-import { t } from './i18n.js';
-import { ErrorService } from './errorService.js';
-import { Validator } from './validator.js';
-import { get, set, del } from 'idb-keyval';
-import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
-
-/** @typedef {import('./types.js').Stock} Stock */
-/** @typedef {import('./types.js').Transaction} Transaction */
-/** @typedef {import('./types.js').Portfolio} Portfolio */
-/** @typedef {import('./types.js').PortfolioSettings} PortfolioSettings */
-/** @typedef {import('./types.js').MetaState} MetaState */
+import { CONFIG } from './constants.ts';
+import { t } from './i18n.ts';
+import { ErrorService } from './errorService.ts';
+import { Validator } from './validator.ts';
+import DOMPurify from 'dompurify';
+import { DataStore } from './dataStore.ts';
+import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
 
 export class PortfolioState {
-    /** @type {Record<string, Portfolio>} */
-    #portfolios = {};
-    /** @type {string | null} */
-    #activePortfolioId = null;
-    /** @type {Promise<void> | null} */
-    #initializationPromise = null;
+    #portfolios: Record<string, Portfolio> = {};
+    #activePortfolioId: string | null = null;
+    #initializationPromise: Promise<void> | null = null;
 
     constructor() {
         this.#initializationPromise = this._initialize();
@@ -4881,14 +5163,14 @@ export class PortfolioState {
     /**
      * @description public async 메서드로 변경
      */
-    async ensureInitialized() {
+    async ensureInitialized(): Promise<void> {
         await this.#initializationPromise;
     }
 
     /**
      * @description 비동기 초기화 및 LocalStorage 마이그레이션 로직
      */
-    async _initialize() {
+    async _initialize(): Promise<void> {
         try {
             // 1. IndexedDB에서 데이터 로드 시도
             let loadedMetaData = await this._loadMeta();
@@ -4927,64 +5209,30 @@ export class PortfolioState {
     }
     
     /**
-     * @description LocalStorage -> IndexedDB 마이그레이션
-     * @returns {Promise<boolean>} 마이그레이션 성공 여부
+     * @description LocalStorage -> IndexedDB 마이그레이션 (DataStore 위임)
      */
-    async _migrateFromLocalStorage() {
-        try {
-            const lsMeta = localStorage.getItem(CONFIG.LEGACY_LS_META_KEY); 
-            const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY); 
-
-            if (lsMeta && lsPortfolios) {
-                const metaData = JSON.parse(lsMeta);
-                const portfolioData = JSON.parse(lsPortfolios);
-
-                // 1. 새 IDB 키로 데이터 쓰기
-                await set(CONFIG.IDB_META_KEY, metaData);
-                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
-
-                // 2. 마이그레이션 성공 후 레거시 LocalStorage 데이터 삭제
-                localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
-                localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
-                
-                console.log("Successfully migrated data from LocalStorage to IndexedDB.");
-                return true;
-            }
-            console.log("No legacy data found in LocalStorage to migrate.");
-            return false;
-        } catch (error) {
-            console.error("Failed to migrate from LocalStorage:", error);
-            return false;
-        }
+    async _migrateFromLocalStorage(): Promise<boolean> {
+        return await DataStore.migrateFromLocalStorage();
     }
 
     /**
-     * @description IDB에서 Meta 로드 (async)
+     * @description IDB에서 Meta 로드 (DataStore 위임)
      */
-    async _loadMeta() {
-        try {
-            const metaData = await get(CONFIG.IDB_META_KEY);
-            return metaData ? metaData : null;
-        } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), '_loadMeta - IDB get');
-            return null;
-        }
+    async _loadMeta(): Promise<MetaState | null> {
+        return await DataStore.loadMeta();
     }
 
     /**
-     * @description IDB에서 Portfolios 로드 (async)
+     * @description IDB에서 Portfolios 로드 (DataStore 위임)
      */
-    async _loadPortfolios() {
-        try {
-            const portfolioData = await get(CONFIG.IDB_PORTFOLIOS_KEY); 
-            return portfolioData ? portfolioData : null;
-        } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), '_loadPortfolios - IDB get');
-            return null;
-        }
+    async _loadPortfolios(): Promise<Record<string, Portfolio> | null> {
+        return await DataStore.loadPortfolios();
     }
 
-     _validateAndUpgradeData(loadedMetaData, loadedPortfolios) {
+     _validateAndUpgradeData(
+        loadedMetaData: MetaState | null,
+        loadedPortfolios: Record<string, Portfolio> | null
+    ): { meta: MetaState; portfolios: Record<string, Portfolio> } {
         const currentVersion = CONFIG.DATA_VERSION;
         const loadedVersion = loadedMetaData?.version;
 
@@ -5073,15 +5321,15 @@ export class PortfolioState {
      }
 
 
-    getActivePortfolio() {
+    getActivePortfolio(): Portfolio | null {
         return this.#activePortfolioId ? this.#portfolios[this.#activePortfolioId] : null;
     }
 
-    getAllPortfolios() {
+    getAllPortfolios(): Record<string, Portfolio> {
         return this.#portfolios;
     }
 
-    async setActivePortfolioId(id) {
+    async setActivePortfolioId(id: string): Promise<void> {
         if (this.#portfolios[id]) {
             this.#activePortfolioId = id;
             await this.saveMeta(); // 비동기 저장
@@ -5090,7 +5338,7 @@ export class PortfolioState {
         }
     }
 
-    async createNewPortfolio(name) {
+    async createNewPortfolio(name: string): Promise<Portfolio> {
         const newId = `p-${nanoid()}`;
         const newPortfolio = this._createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
@@ -5100,7 +5348,7 @@ export class PortfolioState {
         return newPortfolio;
     }
 
-    async deletePortfolio(id) {
+    async deletePortfolio(id: string): Promise<boolean> {
         if (Object.keys(this.#portfolios).length <= 1) {
             console.warn("Cannot delete the last portfolio.");
             return false;
@@ -5120,7 +5368,7 @@ export class PortfolioState {
         return true;
     }
 
-    async renamePortfolio(id, newName) {
+    async renamePortfolio(id: string, newName: string): Promise<void> {
         if (this.#portfolios[id]) {
             this.#portfolios[id].name = newName.trim();
             await this.savePortfolios(); // 비동기 저장
@@ -5129,7 +5377,7 @@ export class PortfolioState {
         }
     }
 
-    async updatePortfolioSettings(key, value) {
+    async updatePortfolioSettings(key: keyof PortfolioSettings, value: any): Promise<void> {
         const activePortfolio = this.getActivePortfolio();
         console.log(`[DEBUG] updatePortfolioSettings called: key=${key}, value=${value}`);
         if (activePortfolio) {
@@ -5151,7 +5399,7 @@ export class PortfolioState {
     }
 
 
-    async addNewStock() {
+    async addNewStock(): Promise<Stock | null> {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             const newStock = this._createDefaultStock();
@@ -5162,7 +5410,7 @@ export class PortfolioState {
         return null;
     }
 
-    async deleteStock(stockId) {
+    async deleteStock(stockId: string): Promise<boolean> {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
              if (activePortfolio.portfolioData.length <= 1) {
@@ -5183,12 +5431,12 @@ export class PortfolioState {
         return false;
     }
 
-    getStockById(stockId) {
+    getStockById(stockId: string): Stock | undefined {
         const activePortfolio = this.getActivePortfolio();
         return activePortfolio?.portfolioData.find(s => s.id === stockId);
     }
 
-    updateStockProperty(stockId, field, value) {
+    updateStockProperty(stockId: string, field: string, value: any): void {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             const stockIndex = activePortfolio.portfolioData.findIndex(s => s.id === stockId);
@@ -5198,19 +5446,15 @@ export class PortfolioState {
                      try {
                          const decimalValue = new Decimal(value ?? 0);
                          if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
-                          // @ts-ignore
-                         stock[field] = decimalValue;
+                         (stock as any)[field] = decimalValue;
                      } catch (e) {
                          ErrorService.handle(new Error(`Invalid numeric value for ${field}: ${value}`), 'updateStockProperty');
-                          // @ts-ignore
-                         stock[field] = new Decimal(0);
+                         (stock as any)[field] = new Decimal(0);
                      }
                  } else if (field === 'isFixedBuyEnabled') {
-                      // @ts-ignore
-                     stock[field] = Boolean(value);
-                 } else if (typeof stock[field] !== 'undefined') {
-                      // @ts-ignore
-                     stock[field] = value;
+                     (stock as any)[field] = Boolean(value);
+                 } else if (typeof (stock as any)[field] !== 'undefined') {
+                     (stock as any)[field] = value;
                  } else {
                       console.warn(`Attempted to update non-existent property '${field}' on stock ${stockId}`);
                  }
@@ -5218,7 +5462,7 @@ export class PortfolioState {
         }
     }
 
-    async addTransaction(stockId, transactionData) {
+    async addTransaction(stockId: string, transactionData: Partial<Transaction>): Promise<boolean> {
         const stock = this.getStockById(stockId);
         if (stock) {
             const validation = Validator.validateTransaction({
@@ -5254,7 +5498,7 @@ export class PortfolioState {
         return false;
     }
 
-    async deleteTransaction(stockId, transactionId) {
+    async deleteTransaction(stockId: string, transactionId: string): Promise<boolean> {
         const stock = this.getStockById(stockId);
         if (stock) {
             const initialLength = stock.transactions.length;
@@ -5272,13 +5516,13 @@ export class PortfolioState {
     }
 
 
-    getTransactions(stockId) {
+    getTransactions(stockId: string): Transaction[] {
         const stock = this.getStockById(stockId);
         const transactions = stock ? [...stock.transactions] : []; // Return a copy
         return transactions;
     }
 
-    normalizeRatios() {
+    normalizeRatios(): boolean {
         const activePortfolio = this.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) return false;
 
@@ -5320,7 +5564,7 @@ export class PortfolioState {
         return true;
     }
 
-    async resetData(save = true) {
+    async resetData(save: boolean = true): Promise<void> {
         const defaultPortfolio = this._createDefaultPortfolio(`p-${nanoid()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
@@ -5331,7 +5575,7 @@ export class PortfolioState {
         console.log("Data reset to default.");
     }
 
-    exportData() {
+    exportData(): { meta: MetaState; portfolios: Record<string, any> } {
          const exportablePortfolios = {};
          Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
              exportablePortfolios[id] = {
@@ -5356,7 +5600,7 @@ export class PortfolioState {
         };
     }
 
-    async importData(importedData) {
+    async importData(importedData: any): Promise<void> {
          if (!Validator.isDataStructureValid(importedData)) {
             throw new Error("Imported data structure is invalid.");
          }
@@ -5378,29 +5622,26 @@ export class PortfolioState {
     }
 
 
-    async saveMeta() {
+    async saveMeta(): Promise<void> {
         try {
-            const metaData = { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION };
-            await set(CONFIG.IDB_META_KEY, metaData); 
+            const metaData: MetaState = { activePortfolioId: this.#activePortfolioId || '', version: CONFIG.DATA_VERSION };
+            await DataStore.saveMeta(metaData); // DataStore 사용
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'saveMeta - IDB set');
+            ErrorService.handle(error as Error, 'saveMeta');
         }
     }
 
-    async savePortfolios() {
+    async savePortfolios(): Promise<void> {
         try {
              const saveablePortfolios = {};
              Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
                  saveablePortfolios[id] = {
                      ...portfolio,
                      portfolioData: portfolio.portfolioData.map(stock => {
-                        // ▼▼▼▼▼ [수정된 부분] ▼▼▼▼▼
                         // 'calculated' 속성을 분해해서 저장 대상에서 제외
                         const { calculated, ...saveableStock } = stock;
-                        // ▲▲▲▲▲ [수정된 부분] ▲▲▲▲▲
 
                          return {
-                             // ▼▼▼ [수정] stock 대신 saveableStock 사용, Decimal 체크 추가
                              ...saveableStock,
                              targetRatio: saveableStock.targetRatio instanceof Decimal ? saveableStock.targetRatio.toNumber() : Number(saveableStock.targetRatio ?? 0),
                              currentPrice: saveableStock.currentPrice instanceof Decimal ? saveableStock.currentPrice.toNumber() : Number(saveableStock.currentPrice ?? 0),
@@ -5411,28 +5652,27 @@ export class PortfolioState {
                                  quantity: tx.quantity instanceof Decimal ? tx.quantity.toNumber() : Number(tx.quantity ?? 0),
                                  price: tx.price instanceof Decimal ? tx.price.toNumber() : Number(tx.price ?? 0),
                              }))
-                             // ▲▲▲ [수정]
                          };
                      })
                  };
              });
-            await set(CONFIG.IDB_PORTFOLIOS_KEY, saveablePortfolios); 
+            await DataStore.savePortfolios(saveablePortfolios); // DataStore 사용
         } catch (error) {
              if (error instanceof DOMException && error.name === 'QuotaExceededError') {
                  ErrorService.handle(error, 'savePortfolios - Quota Exceeded');
              } else {
-                 ErrorService.handle(/** @type {Error} */ (error), 'savePortfolios - IDB set');
+                 ErrorService.handle(error as Error, 'savePortfolios');
              }
         }
     }
 
-    async saveActivePortfolio() {
+    async saveActivePortfolio(): Promise<void> {
         await this.savePortfolios();
     }
 
     // --- Private Helper Methods ---
 
-    _createDefaultPortfolio(id, name = t('defaults.defaultPortfolioName')) {
+    _createDefaultPortfolio(id: string, name: string = t('defaults.defaultPortfolioName')): Portfolio {
         return {
             id: id,
             name: name,
@@ -5445,7 +5685,7 @@ export class PortfolioState {
         };
     }
 
-    _createDefaultStock() {
+    _createDefaultStock(): Stock {
         return {
             id: `s-${nanoid()}`,
             name: t('defaults.newStock'),
@@ -5464,17 +5704,16 @@ export class PortfolioState {
 
 ---
 
-## `js/state.test.js`
+## `src/state.test.js`
 
-```javascript
-// js/state.test.js (async / idb-keyval / testUtils / Assertion Fix)
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PortfolioState } from './state.js';
-import { CONFIG } from './constants.js'; 
+```typescript
+// src/state.test.ts (async / idb-keyval / testUtils / Assertion Fix)
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { PortfolioState } from './state';
+import { CONFIG } from './constants';
 import Decimal from 'decimal.js';
-// ▼▼▼ [신규] testUtils 임포트 ▼▼▼
-import { MOCK_PORTFOLIO_1 } from './testUtils.js'; // (MOCK_PORTFOLIO_1은 Decimal 객체를 포함)
-// ▲▲▲ [신규] ▲▲▲
+import { MOCK_PORTFOLIO_1 } from './testUtils';
+import type { Portfolio, Stock } from './types';
 
 // --- ▼▼▼ [신규] idb-keyval 모의(Mock) ▼▼▼ ---
 vi.mock('idb-keyval', () => ({
@@ -5485,8 +5724,8 @@ vi.mock('idb-keyval', () => ({
 // --- ▲▲▲ [신규] ▲▲▲ ---
 
 // --- i18n 모의(Mock) ---
-vi.mock('./i18n.js', () => ({
-  t: vi.fn((key) => {
+vi.mock('./i18n', () => ({
+  t: vi.fn((key: string) => {
     if (key === 'defaults.defaultPortfolioName') return '기본 포트폴리오';
     if (key === 'defaults.newStock') return '새 종목';
     if (key === 'defaults.uncategorized') return '미분류';
@@ -5502,75 +5741,57 @@ import { get, set, del } from 'idb-keyval';
 // [신규] DOMPurify 모의
 vi.mock('dompurify', () => ({
     default: {
-        sanitize: vi.fn((input) => input), // 소독 함수를 그대로 반환하도록 모의
+        sanitize: vi.fn((input: string) => input),
     }
 }));
 
-// ▼▼▼▼▼ [추가된 부분] ▼▼▼▼▼
 // ErrorService가 View에 의존하여 발생하는 순환 참조 오류를 방지하기 위해 모의 처리
-vi.mock('./errorService.js', () => ({
+vi.mock('./errorService', () => ({
   ErrorService: {
-    handle: vi.fn(), // handle 함수를 모의
+    handle: vi.fn(),
   },
-  ValidationError: class extends Error {} // ValidationError 클래스도 모의
+  ValidationError: class extends Error {}
 }));
-// ▲▲▲▲▲ [추가된 부분] ▲▲▲▲▲
 
 
 describe('PortfolioState (Async)', () => {
-  let state;
-  let mockGet;
-  let mockSet;
-  let mockDel;
-  // ▼▼▼ [추가된 부분] ▼▼▼
-  let mockErrorService; 
-  // ▲▲▲ [추가된 부분] ▲▲▲
+  let state: PortfolioState;
+  let mockGet: ReturnType<typeof vi.mocked<typeof get>>;
+  let mockSet: ReturnType<typeof vi.mocked<typeof set>>;
+  let mockDel: ReturnType<typeof vi.mocked<typeof del>>;
 
-  beforeEach(async () => { 
-    // 모의 함수 초기화
+  beforeEach(async () => {
     vi.clearAllMocks();
-    
-    // ▼▼▼ [수정] idb-keyval 모의 함수 할당 ▼▼▼
+
     mockGet = vi.mocked(get);
     mockSet = vi.mocked(set);
     mockDel = vi.mocked(del);
-    // mockErrorService = vi.mocked(ErrorService); // ErrorService는 임포트하지 않으므로 이 줄은 필요 없음
-    
+
     // 기본적으로 비어있는 DB 시뮬레이션
-    mockGet.mockResolvedValue(null); 
-    // ▲▲▲ [수정] ▲▲▲
+    mockGet.mockResolvedValue(null);
 
     // Create a new state instance for each test
     state = new PortfolioState();
     await state.ensureInitialized(); // Wait for initialization
   });
 
-   afterEach(() => {
-     // ...
-   });
-
-  it('should create default portfolio on initialization if none exists', async () => { 
-    // ensureInitialized was called in beforeEach
+  it('should create default portfolio on initialization if none exists', async () => {
     expect(Object.keys(state.getAllPortfolios()).length).toBe(1);
     const activePortfolio = state.getActivePortfolio();
     expect(activePortfolio?.id).toBeDefined();
-    expect(activePortfolio?.name).toBe('기본 포트폴리오'); 
+    expect(activePortfolio?.name).toBe('기본 포트폴리오');
     expect(activePortfolio?.portfolioData?.length).toBe(1);
     expect(activePortfolio?.portfolioData?.[0]?.name).toBe('새 종목');
-    
-    // ▼▼▼ [수정] _initialize는 resetData(false)를 호출하므로, set은 호출되지 않아야 합니다. ▼▼▼
-    // (resetData(true)가 호출될 때만 set이 호출됨)
+
+    // _initialize는 resetData(false)를 호출하므로, set은 호출되지 않아야 합니다.
     expect(mockSet).not.toHaveBeenCalled();
-    // ▲▲▲ [수정] ▲▲▲
   });
 
    it('should load existing data from IndexedDB on initialization', async () => {
-     // ▼▼▼ [수정] testUtils에서 가져온 모의 데이터는 Decimal 객체를 포함하고 있음
-     // _validateAndUpgradeData는 숫자형 원시값을 기대하므로, 테스트용 원시 데이터 생성
-     const rawStockData = {
+     const rawStockData: Stock = {
          id: 's-test', name: 'Test Stock', ticker: 'TEST', sector: 'Tech',
          targetRatio: 100, currentPrice: 50,
-         isFixedBuyEnabled: false, fixedBuyAmount: 0, 
+         isFixedBuyEnabled: false, fixedBuyAmount: 0,
          transactions: []
      };
      const testData = {
@@ -5578,87 +5799,73 @@ describe('PortfolioState (Async)', () => {
        portfolios: {
          'p-test': {
              id: 'p-test', name: 'Test Portfolio',
-             settings: { mainMode: 'sell', currentCurrency: 'usd', exchangeRate: 1200 },
-             portfolioData: [rawStockData] // 원시 데이터(number) 사용
+             settings: { mainMode: 'sell' as const, currentCurrency: 'usd' as const, exchangeRate: 1200 },
+             portfolioData: [rawStockData]
             }
        }
      };
-     // ▲▲▲ [수정] ▲▲▲
-     
-     // ▼▼▼ [수정] idb-keyval (get) 모의 설정 ▼▼▼
-     mockGet.mockImplementation(async (key) => {
+
+     mockGet.mockImplementation(async (key: string) => {
         if (key === CONFIG.IDB_META_KEY) return testData.meta;
         if (key === CONFIG.IDB_PORTFOLIOS_KEY) return testData.portfolios;
         return null;
      });
-     // ▲▲▲ [수정] ▲▲▲
 
-     const newState = new PortfolioState(); // Create new instance to test loading
-     await newState.ensureInitialized(); // Initialize
+     const newState = new PortfolioState();
+     await newState.ensureInitialized();
 
-     // ▼▼▼ [수정] Decimal 객체로 로드되었는지 확인 ▼▼▼
      expect(Object.keys(newState.getAllPortfolios()).length).toBe(1);
      const loadedPortfolio = newState.getActivePortfolio();
-     
+
      expect(loadedPortfolio?.id).toBe('p-test');
      expect(loadedPortfolio?.name).toBe('Test Portfolio');
      expect(loadedPortfolio?.settings.mainMode).toBe('sell');
      expect(loadedPortfolio?.portfolioData?.[0]?.name).toBe('Test Stock');
-     // state.js가 number를 Decimal 객체로 변환하는지 확인
-     expect(loadedPortfolio?.portfolioData?.[0]?.targetRatio).toBeInstanceOf(Decimal);
-     expect(loadedPortfolio?.portfolioData?.[0]?.targetRatio.toNumber()).toBe(100);
-     // ▲▲▲ [수정] ▲▲▲
+     expect(loadedPortfolio?.portfolioData?.[0]?.targetRatio).toBe(100);
    });
 
 
    it('should add a new stock correctly (async)', async () => {
        const initialLength = state.getActivePortfolio()?.portfolioData?.length || 0;
-       
-       // ▼▼▼ [수정] await 추가 ▼▼▼
-       const newStock = await state.addNewStock(); 
-       
+
+       const newStock = await state.addNewStock();
+
        expect(state.getActivePortfolio()?.portfolioData?.length).toBe(initialLength + 1);
-       expect(newStock.name).toBe('새 종목'); 
-       expect(newStock.targetRatio).toBeInstanceOf(Decimal); // Decimal로 생성되었는지 확인
-       expect(newStock.targetRatio.toNumber()).toBe(0);
-       
+       expect(newStock.name).toBe('새 종목');
+       expect(newStock.targetRatio).toBe(0);
+
        // saveActivePortfolio -> savePortfolios -> set 호출 확인
        expect(mockSet).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, expect.any(Object));
-       // ▲▲▲ [수정] ▲▲▲
    });
 
     it('should not delete the last stock in a portfolio (async)', async () => {
         const portfolio = state.getActivePortfolio();
-        expect(portfolio?.portfolioData?.length).toBe(1); 
+        expect(portfolio?.portfolioData?.length).toBe(1);
 
         if (portfolio && portfolio.portfolioData.length === 1) {
             const stockId = portfolio.portfolioData[0].id;
-            
-            // ▼▼▼ [수정] await 추가 ▼▼▼
-            const deleted = await state.deleteStock(stockId); 
-            expect(deleted).toBe(false); // Expect deletion to fail
+
+            const deleted = await state.deleteStock(stockId);
+            expect(deleted).toBe(false);
             expect(state.getActivePortfolio()?.portfolioData?.length).toBe(1);
-            // ▲▲▲ [수정] ▲▲▲
         }
     });
 
     it('should delete a stock if there are multiple (async)', async () => {
-        await state.addNewStock(); // Add a second stock (async)
+        await state.addNewStock();
         const initialLength = state.getActivePortfolio()?.portfolioData?.length || 0;
         expect(initialLength).toBeGreaterThan(1);
 
         const portfolioBeforeDelete = state.getActivePortfolio();
         if (portfolioBeforeDelete) {
-            const stockIdToDelete = portfolioBeforeDelete.portfolioData[0].id; 
-            
-            // ▼▼▼ [수정] await 추가 ▼▼▼
+            const stockIdToDelete = portfolioBeforeDelete.portfolioData[0].id;
+
             const deleted = await state.deleteStock(stockIdToDelete);
-            expect(deleted).toBe(true); 
-            
+            expect(deleted).toBe(true);
+
             const portfolioAfterDelete = state.getActivePortfolio();
-            expect(portfolioAfterDelete?.portfolioData?.length).toBe(initialLength - 1); 
+            expect(portfolioAfterDelete?.portfolioData?.length).toBe(initialLength - 1);
             expect(portfolioAfterDelete?.portfolioData?.find(s => s.id === stockIdToDelete)).toBeUndefined();
-            // ▲▲▲ [수정] ▲▲▲
         } else {
              throw new Error("Failed to get active portfolio for deletion test");
         }
@@ -5668,11 +5875,13 @@ describe('PortfolioState (Async)', () => {
 
 ---
 
-## `js/i18n.js`
+## `src/i18n.js`
 
-```javascript
-// js/i18n.js (Updated with missing ui keys)
-// @ts-check
+```typescript
+// src/i18n.ts (Updated with missing ui keys)
+
+type Lang = 'en' | 'ko';
+type Replacements = Record<string, string | number>;
 
 // 1. 모든 문자열을 계층 구조로 정의합니다.
 const locales = {
@@ -6028,40 +6237,73 @@ const locales = {
 
 /**
  * @description 브라우저 언어 설정을 감지하여 'en' 또는 'ko'를 반환합니다.
- * @returns {'en' | 'ko'}
  */
-function getBrowserLanguage() {
-    const lang = navigator.language || navigator.userLanguage;
+function getBrowserLanguage(): Lang {
+    const lang = (navigator as any).language || (navigator as any).userLanguage;
     if (lang.toLowerCase().startsWith('ko')) {
         return 'ko';
     }
     return 'en'; // 기본값
 }
 
-// 2. 현재 언어 설정
-const currentLang = getBrowserLanguage();
-const messages = locales[currentLang] || locales.en;
+/**
+ * @description localStorage에서 저장된 언어를 로드하거나 브라우저 언어 감지
+ */
+function getStoredLanguage(): Lang {
+    const storedLang = localStorage.getItem('sprc_language');
+    if (storedLang === 'ko' || storedLang === 'en') {
+        return storedLang;
+    }
+    return getBrowserLanguage();
+}
 
+// 2. 현재 언어 설정 (localStorage 우선, 없으면 브라우저 언어)
+let currentLang: Lang = getStoredLanguage();
+let messages: any = locales[currentLang] || locales.en;
+
+/**
+ * @description 언어 변경 및 localStorage 저장
+ */
+export function setLanguage(newLang: Lang): void {
+    if (newLang !== 'en' && newLang !== 'ko') {
+        console.warn(`[i18n] Unsupported language: ${newLang}`);
+        return;
+    }
+    currentLang = newLang;
+    messages = locales[currentLang] || locales.en;
+    localStorage.setItem('sprc_language', newLang);
+    console.log(`[i18n] Language changed to ${newLang}`);
+}
+
+/**
+ * @description 현재 언어 코드 반환
+ */
+export function getCurrentLanguage(): Lang {
+    return currentLang;
+}
 
 /**
  * 키와 대체값을 기반으로 메시지 문자열을 반환합니다.
- * @param {string} key - 점으로 구분된 메시지 키 (예: 'toast.dataReset')
- * @param {Record<string, string | number>} [replacements] - {name}, {totalRatio} 등을 대체할 값
- * @returns {string}
  */
-export function t(key, replacements = {}) {
+export function t(key: string, replacements: Replacements = {}): string {
     const keys = key.split('.');
-    let message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, messages);
+    let message: any = keys.reduce(
+        (obj: any, k: string) => (obj && obj[k] !== undefined ? obj[k] : key),
+        messages
+    );
 
     if (typeof message !== 'string') {
-        message = keys.reduce((obj, k) => (obj && obj[k] !== undefined) ? obj[k] : key, locales.en); // Fallback to English
+        message = keys.reduce(
+            (obj: any, k: string) => (obj && obj[k] !== undefined ? obj[k] : key),
+            locales.en
+        ); // Fallback to English
         if (typeof message !== 'string') {
-             console.warn(`[i18n] Missing key in all locales: ${key}`);
-             return key;
+            console.warn(`[i18n] Missing key in all locales: ${key}`);
+            return key;
         }
     }
 
-    return message.replace(/{(\w+)}/g, (match, placeholder) => {
+    return message.replace(/{(\w+)}/g, (match: string, placeholder: string) => {
         return replacements[placeholder] !== undefined
             ? String(replacements[placeholder])
             : match;
@@ -6071,31 +6313,35 @@ export function t(key, replacements = {}) {
 
 ---
 
-## `js/eventBinder.js`
+## `src/eventBinder.js`
 
-```javascript
-// js/eventBinder.js (Updated with Pub/Sub emit)
-// @ts-check
-import { debounce } from './utils.js';
-/** @typedef {import('./view.js').PortfolioView} PortfolioView */ // 컨트롤러 대신 View를 임포트
+```typescript
+// src/eventBinder.ts (Updated with Pub/Sub emit)
+import { debounce } from './utils';
+import Decimal from 'decimal.js';
+import type { PortfolioView } from './view';
 
 /**
  * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
- * @param {PortfolioView} view - PortfolioView 인스턴스
- * @returns {void}
+ * @param view - PortfolioView 인스턴스
+ * @returns 이벤트 리스너 정리를 위한 AbortController
  */
-export function bindEventListeners(view) {
+export function bindEventListeners(view: PortfolioView): AbortController {
+    // AbortController 생성 (메모리 누수 방지)
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     // 1. view.dom 객체를 가져옵니다.
     const dom = view.dom;
 
     // ▼▼▼▼▼ [수정] controller.handle...() -> view.emit('eventName') ▼▼▼▼▼
 
-    // 포트폴리오 관리 버튼
-    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'));
-    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'));
-    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'));
-    dom.portfolioSelector?.addEventListener('change', (e) => 
-        view.emit('portfolioSwitched', { newId: (/** @type {HTMLSelectElement} */ (e.target)).value })
+    // 포트폴리오 관리 버튼 (AbortController signal 적용)
+    dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'), { signal });
+    dom.renamePortfolioBtn?.addEventListener('click', () => view.emit('renamePortfolioClicked'), { signal });
+    dom.deletePortfolioBtn?.addEventListener('click', () => view.emit('deletePortfolioClicked'), { signal });
+    dom.portfolioSelector?.addEventListener('change', (e) =>
+        view.emit('portfolioSwitched', { newId: (e.target as HTMLSelectElement).value })
     );
 
     // 포트폴리오 설정 버튼
@@ -6105,14 +6351,14 @@ export function bindEventListeners(view) {
     dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
     // 데이터 관리 드롭다운
-    const dataManagementBtn = /** @type {HTMLButtonElement | null} */ (dom.dataManagementBtn);
-    const dataDropdownContent = /** @type {HTMLElement | null} */ (dom.dataDropdownContent);
-    const exportDataBtn = /** @type {HTMLAnchorElement | null} */ (dom.exportDataBtn);
-    const importDataBtn = /** @type {HTMLAnchorElement | null} */ (dom.importDataBtn);
-    const importFileInput = /** @type {HTMLInputElement | null} */ (dom.importFileInput);
+    const dataManagementBtn = dom.dataManagementBtn as HTMLButtonElement | null;
+    const dataDropdownContent = dom.dataDropdownContent as HTMLElement | null;
+    const exportDataBtn = dom.exportDataBtn as HTMLAnchorElement | null;
+    const importDataBtn = dom.importDataBtn as HTMLAnchorElement | null;
+    const importFileInput = dom.importFileInput as HTMLInputElement | null;
     const dropdownItems = dataDropdownContent?.querySelectorAll('a[role="menuitem"]') ?? [];
 
-    const toggleDropdown = (show) => {
+    const toggleDropdown = (show: boolean): void => {
         if (dataDropdownContent && dataManagementBtn) {
             dataDropdownContent.classList.toggle('show', show);
             dataManagementBtn.setAttribute('aria-expanded', String(show));
@@ -6124,24 +6370,24 @@ export function bindEventListeners(view) {
         const isExpanded = dataManagementBtn.getAttribute('aria-expanded') === 'true';
         toggleDropdown(!isExpanded);
         if (!isExpanded && dropdownItems.length > 0) {
-            (/** @type {HTMLElement} */ (dropdownItems[0])).focus();
+            (dropdownItems[0] as HTMLElement).focus();
         }
     });
 
     dataDropdownContent?.addEventListener('keydown', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const target = e.target as HTMLElement;
         const currentIndex = Array.from(dropdownItems).indexOf(target);
 
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
                 const nextIndex = (currentIndex + 1) % dropdownItems.length;
-                (/** @type {HTMLElement} */ (dropdownItems[nextIndex])).focus();
+                (dropdownItems[nextIndex] as HTMLElement).focus();
                 break;
             case 'ArrowUp':
                 e.preventDefault();
                 const prevIndex = (currentIndex - 1 + dropdownItems.length) % dropdownItems.length;
-                (/** @type {HTMLElement} */ (dropdownItems[prevIndex])).focus();
+                (dropdownItems[prevIndex] as HTMLElement).focus();
                 break;
             case 'Escape':
                 toggleDropdown(false);
@@ -6156,47 +6402,47 @@ export function bindEventListeners(view) {
 
     exportDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        view.emit('exportDataClicked'); // view.emit으로 변경
+        view.emit('exportDataClicked');
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        view.emit('importDataClicked'); // view.emit으로 변경
+        view.emit('importDataClicked');
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
 
     window.addEventListener('click', (e) => {
-        const target = /** @type {Node | null} */ (e.target);
+        const target = e.target as Node | null;
         if (dataManagementBtn && dataDropdownContent?.classList.contains('show') && !dataManagementBtn.contains(target)) {
             toggleDropdown(false);
         }
     });
 
-    importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e)); // view.emit으로 변경
+    importFileInput?.addEventListener('change', (e) => view.emit('fileSelected', e));
 
     // 포트폴리오 테이블 입력 처리
     dom.virtualScrollWrapper?.addEventListener('change', (e) =>
-        view.emit('portfolioBodyChanged', e) // view.emit으로 변경
+        view.emit('portfolioBodyChanged', e)
     );
     dom.virtualScrollWrapper?.addEventListener('click', (e) =>
-        view.emit('portfolioBodyClicked', e) // view.emit으로 변경
+        view.emit('portfolioBodyClicked', e)
     );
 
     // 포트폴리오 테이블 키보드 네비게이션
     const virtualScrollWrapper = dom.virtualScrollWrapper;
     virtualScrollWrapper?.addEventListener('keydown', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const target = e.target as HTMLElement;
         if (!target || !(target.matches('input[type="text"], input[type="number"], input[type="checkbox"]'))) return;
 
-        const currentRow = target.closest('div[data-id]');
+        const currentRow = target.closest('div[data-id]') as HTMLDivElement | null;
         if (!currentRow?.dataset.id) return;
         const stockId = currentRow.dataset.id;
         const currentCell = target.closest('.virtual-cell');
         const currentCellIndex = currentCell ? Array.from(currentRow.children).indexOf(currentCell) : -1;
-        const field = target.dataset.field;
+        const field = (target as HTMLInputElement).dataset.field;
 
         switch (e.key) {
             case 'Enter':
@@ -6205,12 +6451,12 @@ export function bindEventListeners(view) {
                     // 컨트롤러가 할 일(모달 열기)을 View에 이벤트로 알림
                     view.emit('manageStockClicked', { stockId });
                  }
-                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLDivElement) { // Type guard
+                 else if (currentCellIndex !== -1 && currentRow instanceof HTMLDivElement) {
                     e.preventDefault();
                     const direction = e.shiftKey ? -1 : 1;
                     const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
                     const nextCell = currentRow.children[nextCellIndex];
-                    const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
+                    const nextInput = nextCell?.querySelector('input') as HTMLElement | null;
                     nextInput?.focus();
                  }
                 break;
@@ -6221,27 +6467,27 @@ export function bindEventListeners(view) {
                     ? currentRow.previousElementSibling?.previousElementSibling
                     : currentRow.nextElementSibling?.nextElementSibling;
 
-                if (siblingRow instanceof HTMLDivElement && siblingRow.matches('.virtual-row-inputs') && currentCellIndex !== -1) { // Type guard
+                if (siblingRow instanceof HTMLDivElement && siblingRow.matches('.virtual-row-inputs') && currentCellIndex !== -1) {
                      const targetCell = siblingRow.children[currentCellIndex];
-                     const targetInput = /** @type {HTMLElement | null} */ (targetCell?.querySelector('input'));
+                     const targetInput = targetCell?.querySelector('input') as HTMLElement | null;
                      targetInput?.focus();
                 }
                 break;
              case 'ArrowLeft':
              case 'ArrowRight':
-                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLDivElement) { // Type guards
+                 if (target instanceof HTMLInputElement && (target.type !== 'text' || target.selectionStart === (e.key === 'ArrowLeft' ? 0 : target.value.length)) && currentRow instanceof HTMLDivElement) {
                      e.preventDefault();
                      const direction = e.key === 'ArrowLeft' ? -1 : 1;
                      const nextCellIndex = (currentCellIndex + direction + currentRow.children.length) % currentRow.children.length;
                      const nextCell = currentRow.children[nextCellIndex];
-                     const nextInput = /** @type {HTMLElement | null} */ (nextCell?.querySelector('input'));
+                     const nextInput = nextCell?.querySelector('input') as HTMLElement | null;
                      nextInput?.focus();
                  }
                  break;
             case 'Delete':
                 if (e.ctrlKey && field === 'name') {
                      e.preventDefault();
-                     view.emit('deleteStockShortcut', { stockId }); // 삭제 이벤트 발행
+                     view.emit('deleteStockShortcut', { stockId });
                 }
                 break;
             case 'Escape':
@@ -6253,48 +6499,48 @@ export function bindEventListeners(view) {
 
     // 숫자 입력 필드 포커스 시 전체 선택
     dom.virtualScrollWrapper?.addEventListener('focusin', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
+        const target = e.target as HTMLInputElement;
         if (target.tagName === 'INPUT' && target.type === 'number') {
             target.select();
         }
     });
 
     // 계산 버튼
-    dom.calculateBtn?.addEventListener('click', () => view.emit('calculateClicked')); // view.emit으로 변경
+    dom.calculateBtn?.addEventListener('click', () => view.emit('calculateClicked'));
     dom.calculateBtn?.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
-            view.emit('calculateClicked'); // view.emit으로 변경
+            view.emit('calculateClicked');
         }
     });
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const mode = /** @type {'add' | 'sell' | 'simple'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
-        view.emit('mainModeChanged', { mode }); // view.emit으로 변경
+        const mode = (e.target as HTMLInputElement).value as 'add' | 'sell' | 'simple';
+        view.emit('mainModeChanged', { mode });
     }));
     dom.currencyModeSelector?.forEach(r => r.addEventListener('change', (e) => {
-        const currency = /** @type {'krw' | 'usd'} */ ((/** @type {HTMLInputElement} */ (e.target)).value);
-        view.emit('currencyModeChanged', { currency }); // view.emit으로 변경
+        const currency = (e.target as HTMLInputElement).value as 'krw' | 'usd';
+        view.emit('currencyModeChanged', { currency });
     }));
 
     // 추가 투자금액 입력 및 환율 변환
-    const debouncedConversion = debounce((source) => view.emit('currencyConversion', { source }), 300); // view.emit으로 변경
+    const debouncedConversion = debounce((source: 'krw' | 'usd') => view.emit('currencyConversion', { source }), 300);
     dom.additionalAmountInput?.addEventListener('input', () => debouncedConversion('krw'));
     dom.additionalAmountUSDInput?.addEventListener('input', () => debouncedConversion('usd'));
     dom.exchangeRateInput?.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
+        const target = e.target as HTMLInputElement;
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
-        view.toggleInputValidation(target, isValid); // View 자체 검증은 유지
-        if (isValid) debouncedConversion('krw'); 
+        view.toggleInputValidation(target, isValid);
+        if (isValid) debouncedConversion('krw');
     });
 
     // 추가 투자금액 관련 필드 Enter 키 처리
-    const handleEnterKey = (e) => {
-        if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && e.target.isComposing)) { // Type guard and isComposing check
+    const handleEnterKey = (e: KeyboardEvent): void => {
+        if (e.key === 'Enter' && !(e.target instanceof HTMLInputElement && (e.target as any).isComposing)) {
             e.preventDefault();
-            view.emit('calculateClicked'); // view.emit으로 변경
+            view.emit('calculateClicked');
         }
     };
     dom.additionalAmountInput?.addEventListener('keydown', handleEnterKey);
@@ -6303,7 +6549,7 @@ export function bindEventListeners(view) {
 
     // 포트폴리오 환율 설정
     dom.portfolioExchangeRateInput?.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
+        const target = e.target as HTMLInputElement;
         const rate = parseFloat(target.value);
         const isValid = !isNaN(rate) && rate > 0;
         view.toggleInputValidation(target, isValid);
@@ -6323,7 +6569,7 @@ export function bindEventListeners(view) {
     const originalExchangeRateHandler = dom.exchangeRateInput;
     if (originalExchangeRateHandler) {
         originalExchangeRateHandler.addEventListener('input', (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
+            const target = e.target as HTMLInputElement;
             const rate = parseFloat(target.value);
             if (!isNaN(rate) && rate > 0) {
                 // 포트폴리오 환율 입력란과 동기화
@@ -6338,21 +6584,21 @@ export function bindEventListeners(view) {
 
     // --- 모달 관련 이벤트 ---
     // 거래 내역 모달 닫기 버튼
-    dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked')); // view.emit으로 변경
+    dom.closeModalBtn?.addEventListener('click', () => view.emit('closeTransactionModalClicked'));
 
     // 새 거래 추가 폼 제출
-    dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e)); // view.emit으로 변경
+    dom.newTransactionForm?.addEventListener('submit', (e) => view.emit('newTransactionSubmitted', e));
 
     // 입력 방식 전환 (수량 입력 vs 금액 입력)
     const inputModeQuantity = document.getElementById('inputModeQuantity');
     const inputModeAmount = document.getElementById('inputModeAmount');
     const quantityInputGroup = document.getElementById('quantityInputGroup');
     const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
-    const txQuantityInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txQuantity'));
-    const txTotalAmountInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txTotalAmount'));
+    const txQuantityInput = document.getElementById('txQuantity') as HTMLInputElement | null;
+    const txTotalAmountInput = document.getElementById('txTotalAmount') as HTMLInputElement | null;
     const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
 
-    const toggleInputMode = () => {
+    const toggleInputMode = (): void => {
         const isQuantityMode = inputModeQuantity instanceof HTMLInputElement && inputModeQuantity.checked;
 
         if (quantityInputGroup && totalAmountInputGroup && txQuantityInput && txTotalAmountInput) {
@@ -6379,23 +6625,28 @@ export function bindEventListeners(view) {
     inputModeQuantity?.addEventListener('change', toggleInputMode);
     inputModeAmount?.addEventListener('change', toggleInputMode);
 
-    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산
-    const calculateQuantityFromAmount = () => {
+    // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산 (Decimal.js 사용)
+    const calculateQuantityFromAmount = (): void => {
         const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
         if (!isAmountMode) return;
 
-        const txPriceInput = /** @type {HTMLInputElement | null} */ (document.getElementById('txPrice'));
+        const txPriceInput = document.getElementById('txPrice') as HTMLInputElement | null;
         const calculatedQuantityValue = document.getElementById('calculatedQuantityValue');
 
         if (txTotalAmountInput && txPriceInput && calculatedQuantityValue) {
-            const totalAmount = parseFloat(txTotalAmountInput.value) || 0;
-            const price = parseFloat(txPriceInput.value) || 0;
+            try {
+                const totalAmount = txTotalAmountInput.value ? new Decimal(txTotalAmountInput.value) : new Decimal(0);
+                const price = txPriceInput.value ? new Decimal(txPriceInput.value) : new Decimal(0);
 
-            if (price > 0 && totalAmount > 0) {
-                const quantity = totalAmount / price;
-                calculatedQuantityValue.textContent = quantity.toFixed(8);
-            } else {
+                if (price.greaterThan(0) && totalAmount.greaterThan(0)) {
+                    const quantity = totalAmount.div(price);
+                    calculatedQuantityValue.textContent = quantity.toFixed(8);
+                } else {
+                    calculatedQuantityValue.textContent = '0';
+                }
+            } catch (error) {
                 calculatedQuantityValue.textContent = '0';
+                console.error('Error calculating quantity from amount:', error);
             }
         }
     };
@@ -6405,61 +6656,61 @@ export function bindEventListeners(view) {
 
     // 거래 내역 목록 내 삭제 버튼 클릭 (이벤트 위임)
     dom.transactionModal?.addEventListener('click', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const target = e.target as HTMLElement;
         const deleteButton = target.closest('button[data-action="delete-tx"]');
 
         // 1. 삭제 버튼이 클릭된 경우 핸들러 호출
         if (deleteButton) {
-            const row = deleteButton.closest('tr[data-tx-id]');
-            const modal = deleteButton.closest('#transactionModal');
+            const row = deleteButton.closest('tr[data-tx-id]') as HTMLTableRowElement | null;
+            const modal = deleteButton.closest('#transactionModal') as HTMLElement | null;
             const stockId = modal?.dataset.stockId;
             const txId = row?.dataset.txId;
 
             // 2. 컨트롤러 함수에 필요한 ID 직접 전달
             if (stockId && txId) {
-                // controller.handleTransactionListClick(stockId, txId) 대신 emit
-                view.emit('transactionDeleteClicked', { stockId, txId }); 
+                view.emit('transactionDeleteClicked', { stockId, txId });
             }
         }
 
         // 3. 모달 오버레이 클릭 시 닫기
         if (e.target === dom.transactionModal) {
-             view.emit('closeTransactionModalClicked'); // view.emit으로 변경
+             view.emit('closeTransactionModalClicked');
         }
     });
 
     // --- 기타 ---
     // 다크 모드 토글 버튼
-    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked')); // view.emit으로 변경
-    // 페이지 닫기 전 자동 저장 (동기식 저장 시도)
-    window.addEventListener('beforeunload', () => view.emit('pageUnloading')); // view.emit으로 변경
+    dom.darkModeToggle?.addEventListener('click', () => view.emit('darkModeToggleClicked'), { signal });
+    // 페이지 닫기 전 자동 저장 (beforeunload는 signal 미적용 - 브라우저 이벤트)
+    window.addEventListener('beforeunload', () => view.emit('pageUnloading'));
 
     // 키보드 네비게이션 포커스 스타일
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
             document.body.classList.add('keyboard-nav');
         }
-    });
+    }, { signal });
     document.addEventListener('mousedown', () => {
         document.body.classList.remove('keyboard-nav');
-    });
+    }, { signal });
+
+    // AbortController 반환 (메모리 누수 방지용 cleanup)
+    return abortController;
 }
 ```
 
 ---
 
-## `js/view.js`
+## `src/view.ts`
 
-```javascript
-// js/view.js (가상 스크롤 적용)
-// @ts-check
-import { CONFIG } from './constants.js';
-import { formatCurrency, escapeHTML } from './utils.js';
-import { t } from './i18n.js';
+```typescript
+// src/view.ts (가상 스크롤 적용)
+import { CONFIG } from './constants';
+import { formatCurrency, escapeHTML } from './utils';
+import { t } from './i18n';
 import Decimal from 'decimal.js';
-
-/** @typedef {import('./types.js').Stock} Stock */
-/** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
+import type { Stock, CalculatedStock, Transaction } from './types';
+import type { Chart } from 'chart.js';
 
 // ▼▼▼▼▼ [추가] 가상 스크롤 상수 ▼▼▼▼▼
 const ROW_INPUT_HEIGHT = 60; // .virtual-row-inputs의 height
@@ -6468,73 +6719,121 @@ const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT; // 한 종목(2줄
 const VISIBLE_ROWS_BUFFER = 5; // 화면 밖 위/아래로 미리 렌더링할 행 수
 // ▲▲▲▲▲ [추가] ▲▲▲▲▲
 
-export const PortfolioView = {
-    /** @type {Record<string, HTMLElement | NodeListOf<HTMLElement> | null>} */
-    dom: {},
-    /** @type {import('chart.js').Chart | null} */
-    chartInstance: null,
-    /** @type {IntersectionObserver | null} */
-    currentObserver: null,
-    /** @type {((value: any) => void) | null} */
-    activeModalResolver: null,
-    /** @type {HTMLElement | null} */
-    lastFocusedElement: null,
-    /** @type {Object<string, Function[]>} */
-    _events: {}, // 1. 이벤트 리스너 저장소 추가
+// DOM 요소 타입 정의
+interface DOMElements {
+    ariaAnnouncer: HTMLElement | null;
+    resultsSection: HTMLElement | null;
+    sectorAnalysisSection: HTMLElement | null;
+    chartSection: HTMLElement | null;
+    portfolioChart: HTMLElement | null;
+    additionalAmountInput: HTMLElement | null;
+    additionalAmountUSDInput: HTMLElement | null;
+    exchangeRateInput: HTMLElement | null;
+    portfolioExchangeRateInput: HTMLElement | null;
+    mainModeSelector: NodeListOf<HTMLElement> | null;
+    currencyModeSelector: NodeListOf<HTMLElement> | null;
+    exchangeRateGroup: HTMLElement | null;
+    usdInputGroup: HTMLElement | null;
+    addInvestmentCard: HTMLElement | null;
+    calculateBtn: HTMLElement | null;
+    darkModeToggle: HTMLElement | null;
+    addNewStockBtn: HTMLElement | null;
+    fetchAllPricesBtn: HTMLElement | null;
+    resetDataBtn: HTMLElement | null;
+    normalizeRatiosBtn: HTMLElement | null;
+    dataManagementBtn: HTMLElement | null;
+    dataDropdownContent: HTMLElement | null;
+    exportDataBtn: HTMLElement | null;
+    importDataBtn: HTMLElement | null;
+    importFileInput: HTMLElement | null;
+    transactionModal: HTMLElement | null;
+    modalStockName: HTMLElement | null;
+    closeModalBtn: HTMLElement | null;
+    transactionListBody: HTMLElement | null;
+    newTransactionForm: HTMLElement | null;
+    txDate: HTMLElement | null;
+    txQuantity: HTMLElement | null;
+    txPrice: HTMLElement | null;
+    portfolioSelector: HTMLElement | null;
+    newPortfolioBtn: HTMLElement | null;
+    renamePortfolioBtn: HTMLElement | null;
+    deletePortfolioBtn: HTMLElement | null;
+    virtualTableHeader: HTMLElement | null;
+    virtualScrollWrapper: HTMLElement | null;
+    virtualScrollSpacer: HTMLElement | null;
+    virtualScrollContent: HTMLElement | null;
+    ratioValidator: HTMLElement | null;
+    ratioSum: HTMLElement | null;
+    customModal: HTMLElement | null;
+    customModalTitle: HTMLElement | null;
+    customModalMessage: HTMLElement | null;
+    customModalInput: HTMLElement | null;
+    customModalConfirm: HTMLElement | null;
+    customModalCancel: HTMLElement | null;
+}
 
-    // ▼▼▼▼▼ [추가] 가상 스크롤 상태 변수 ▼▼▼▼▼
-    /** @type {CalculatedStock[]} */
-    _virtualData: [],
-    /** @type {HTMLElement | null} */
-    _scrollWrapper: null,
-    /** @type {HTMLElement | null} */
-    _scrollSpacer: null,
-    /** @type {HTMLElement | null} */
-    _scrollContent: null,
-    /** @type {number} */
-    _viewportHeight: 0,
-    /** @type {number} */
-    _renderedStartIndex: -1,
-    /** @type {number} */
-    _renderedEndIndex: -1,
-    /** @type {Function | null} */
-    _scrollHandler: null,
-    /** @type {string} */
-    _currentMainMode: 'add',
-    /** @type {string} */
-    _currentCurrency: 'krw',
-    // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+type EventCallback = (data?: any) => void;
 
-    // ▼▼▼▼▼ [수정] Pub/Sub 메서드 ▼▼▼▼▼
+/**
+ * @class PortfolioView
+ * @description 포트폴리오 UI를 담당하는 View 클래스
+ */
+export class PortfolioView {
+    dom: DOMElements = {} as DOMElements;
+    chartInstance: Chart | null = null;
+    currentObserver: IntersectionObserver | null = null;
+    activeModalResolver: ((value: any) => void) | null = null;
+    lastFocusedElement: HTMLElement | null = null;
+    _events: Record<string, EventCallback[]> = {};
+
+    // ▼▼▼▼▼ 가상 스크롤 상태 변수 ▼▼▼▼▼
+    _virtualData: CalculatedStock[] = [];
+    _scrollWrapper: HTMLElement | null = null;
+    _scrollSpacer: HTMLElement | null = null;
+    _scrollContent: HTMLElement | null = null;
+    _viewportHeight: number = 0;
+    _renderedStartIndex: number = -1;
+    _renderedEndIndex: number = -1;
+    _scrollHandler: (() => void) | null = null;
+    _currentMainMode: 'add' | 'sell' | 'simple' = 'add';
+    _currentCurrency: 'krw' | 'usd' = 'krw';
+    // ▲▲▲▲▲ ▲▲▲▲▲
+
+    /**
+     * @constructor
+     * @description View 초기화
+     */
+    constructor() {
+        // 초기화는 cacheDomElements()에서 수행
+    }
+
     /**
      * @description 추상 이벤트를 구독합니다.
-     * @param {string} event - 이벤트 이름 (예: 'calculateClicked')
-     * @param {Function} callback - 실행할 콜백 함수
+     * @param event - 이벤트 이름 (예: 'calculateClicked')
+     * @param callback - 실행할 콜백 함수
      */
-    on(event, callback) {
+    on(event: string, callback: EventCallback): void {
         if (!this._events[event]) {
             this._events[event] = [];
         }
         this._events[event].push(callback);
-    },
+    }
 
     /**
      * @description 추상 이벤트를 발행합니다.
-     * @param {string} event - 이벤트 이름
-     * @param {any} [data] - 전달할 데이터
+     * @param event - 이벤트 이름
+     * @param data - 전달할 데이터
      */
-    emit(event, data) {
+    emit(event: string, data?: any): void {
         if (this._events[event]) {
             this._events[event].forEach(callback => callback(data));
         }
-    },
-    // ▲▲▲▲▲ [수정] ▲▲▲▲▲
+    }
 
-    cacheDomElements() {
+    cacheDomElements(): void {
         const D = document;
         this.dom = {
             ariaAnnouncer: D.getElementById('aria-announcer'),
-            // portfolioBody: D.getElementById('portfolioBody'), // 삭제
             resultsSection: D.getElementById('resultsSection'),
             sectorAnalysisSection: D.getElementById('sectorAnalysisSection'),
             chartSection: D.getElementById('chartSection'),
@@ -6562,7 +6861,7 @@ export const PortfolioView = {
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
             closeModalBtn: D.getElementById('closeModalBtn'),
-            transactionListBody: D.getElementById('transactionListBody'), 
+            transactionListBody: D.getElementById('transactionListBody'),
             newTransactionForm: D.getElementById('newTransactionForm'),
             txDate: D.getElementById('txDate'),
             txQuantity: D.getElementById('txQuantity'),
@@ -6571,7 +6870,6 @@ export const PortfolioView = {
             newPortfolioBtn: D.getElementById('newPortfolioBtn'),
             renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
             deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
-            // portfolioTableHead: D.getElementById('portfolioTableHead'), // 삭제
             virtualTableHeader: D.getElementById('virtual-table-header'),
             virtualScrollWrapper: D.getElementById('virtual-scroll-wrapper'),
             virtualScrollSpacer: D.getElementById('virtual-scroll-spacer'),
@@ -6585,9 +6883,9 @@ export const PortfolioView = {
             customModalConfirm: D.getElementById('customModalConfirm'),
             customModalCancel: D.getElementById('customModalCancel'),
         };
-        
+
         this._events = {}; // 캐시 초기화 시 이벤트 리스너도 초기화
-        
+
         // ▼▼▼▼▼ [추가] 가상 스크롤 래퍼 캐시 ▼▼▼▼▼
         this._scrollWrapper = this.dom.virtualScrollWrapper;
         this._scrollSpacer = this.dom.virtualScrollSpacer;
@@ -6602,9 +6900,9 @@ export const PortfolioView = {
         cancelBtn?.addEventListener('click', () => this._handleCustomModal(false));
         confirmBtn?.addEventListener('click', () => this._handleCustomModal(true));
         customModalEl?.addEventListener('keydown', (e) => { if (e.key === 'Escape') this._handleCustomModal(false); });
-    },
+    }
 
-    announce(message, politeness = 'polite') {
+    announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
         const announcer = this.dom.ariaAnnouncer;
         if (announcer) {
             announcer.textContent = '';
@@ -6613,16 +6911,19 @@ export const PortfolioView = {
                 announcer.textContent = message;
             }, 100);
         }
-    },
-    async showConfirm(title, message) {
-        return this._showModal({ title, message, type: 'confirm' });
-    },
-    async showPrompt(title, message, defaultValue = '') {
-        return this._showModal({ title, message, defaultValue, type: 'prompt' });
-    },
-    _showModal(options) {
+    }
+
+    async showConfirm(title: string, message: string): Promise<boolean> {
+        return this._showModal({ title, message, type: 'confirm' }) as Promise<boolean>;
+    }
+
+    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
+        return this._showModal({ title, message, defaultValue, type: 'prompt' }) as Promise<string | null>;
+    }
+
+    _showModal(options: { title: string; message: string; defaultValue?: string; type: 'confirm' | 'prompt' }): Promise<boolean | string | null> {
         return new Promise((resolve) => {
-            this.lastFocusedElement = /** @type {HTMLElement} */ (document.activeElement);
+            this.lastFocusedElement = document.activeElement as HTMLElement;
             this.activeModalResolver = resolve;
             const { title, message, defaultValue, type } = options;
             const titleEl = this.dom.customModalTitle;
@@ -6650,8 +6951,9 @@ export const PortfolioView = {
                 confirmBtnEl.focus();
             }
         });
-    },
-    _handleCustomModal(confirmed) {
+    }
+
+    _handleCustomModal(confirmed: boolean): void {
         if (!this.activeModalResolver) return;
         const inputEl = this.dom.customModalInput;
         const modalEl = this.dom.customModal;
@@ -6662,13 +6964,14 @@ export const PortfolioView = {
         if (this.lastFocusedElement) this.lastFocusedElement.focus();
         this.activeModalResolver = null;
         this.lastFocusedElement = null;
-    },
-    _trapFocus(element) {
+    }
+
+    _trapFocus(element: HTMLElement): void {
         if (!element) return;
         const focusableEls = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (focusableEls.length === 0) return;
-        const firstFocusableEl = /** @type {HTMLElement} */ (focusableEls[0]);
-        const lastFocusableEl = /** @type {HTMLElement} */ (focusableEls[focusableEls.length - 1]);
+        const firstFocusableEl = focusableEls[0] as HTMLElement;
+        const lastFocusableEl = focusableEls[focusableEls.length - 1] as HTMLElement;
         element.addEventListener('keydown', (e) => {
             if (e.key !== 'Tab') return;
             if (e.shiftKey) {
@@ -6677,8 +6980,9 @@ export const PortfolioView = {
                 if (document.activeElement === lastFocusableEl) { firstFocusableEl.focus(); e.preventDefault(); }
             }
         });
-    },
-    renderPortfolioSelector(portfolios, activeId) {
+    }
+
+    renderPortfolioSelector(portfolios: Record<string, { name: string }>, activeId: string): void {
         const selector = this.dom.portfolioSelector;
         if (!(selector instanceof HTMLSelectElement)) return;
         selector.innerHTML = '';
@@ -6689,14 +6993,14 @@ export const PortfolioView = {
             option.selected = (id === activeId);
             selector.appendChild(option);
         });
-    },
+    }
 
     // ▼▼▼▼▼ [대대적 수정] createStockRowFragment (div 기반으로 변경) ▼▼▼▼▼
-    createStockRowFragment(stock, currency, mainMode) {
+    createStockRowFragment(stock: CalculatedStock, currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): DocumentFragment {
         const fragment = document.createDocumentFragment();
 
         // --- 헬퍼 함수 ---
-        const createInput = (type, field, value, placeholder = '', disabled = false, ariaLabel = '') => {
+        const createInput = (type: string, field: string, value: any, placeholder: string = '', disabled: boolean = false, ariaLabel: string = ''): HTMLInputElement => {
             const input = document.createElement('input');
             input.type = type;
             input.dataset.field = field;
@@ -6722,7 +7026,7 @@ export const PortfolioView = {
             return input;
         };
 
-        const createCheckbox = (field, checked, ariaLabel = '') => {
+        const createCheckbox = (field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement => {
             const input = document.createElement('input');
             input.type = 'checkbox';
             input.dataset.field = field;
@@ -6731,7 +7035,7 @@ export const PortfolioView = {
             return input;
         };
 
-        const createButton = (action, text, ariaLabel = '', variant = 'grey') => {
+        const createButton = (action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement => {
             const button = document.createElement('button');
             button.className = 'btn btn--small';
             button.dataset.action = action;
@@ -6741,7 +7045,7 @@ export const PortfolioView = {
             return button;
         };
 
-        const createCell = (className = '', align = 'left') => {
+        const createCell = (className: string = '', align: string = 'left'): HTMLDivElement => {
             const cell = document.createElement('div');
             cell.className = `virtual-cell ${className} align-${align}`;
             return cell;
@@ -6843,7 +7147,7 @@ export const PortfolioView = {
         const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss.isPositive() ? '+' : '';
 
-        const createOutputCell = (label, value, valueClass = '') => {
+        const createOutputCell = (label: string, value: string, valueClass: string = ''): HTMLDivElement => {
             const cell = createCell('output-cell align-right');
             cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
             return cell;
@@ -6876,17 +7180,17 @@ export const PortfolioView = {
 
         fragment.append(divInputs, divOutputs);
         return fragment;
-    },
+    }
     // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
 
     // ▼▼▼▼▼ [수정] updateStockRowOutputs (더 이상 사용 안 함) ▼▼▼▼▼
-    updateStockRowOutputs(id, stock, currency, mainMode) {
+    updateStockRowOutputs(id: string, stock: CalculatedStock, currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
         // 이 함수는 가상 스크롤에서 전체 재조정 로직(_onScroll)으로 대체됨
         // console.warn("updateStockRowOutputs is deprecated with Virtual Scroll");
-    },
+    }
     // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
-    updateAllTargetRatioInputs(portfolioData) {
+    updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
         // 가상 스크롤에서는 보이는 부분만 업데이트해야 함
         portfolioData.forEach(stock => {
             const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`);
@@ -6897,19 +7201,19 @@ export const PortfolioView = {
                 targetRatioInput.value = ratio.toFixed(2);
             }
         });
-    },
+    }
 
-    updateCurrentPriceInput(id, price) {
+    updateCurrentPriceInput(id: string, price: string): void {
         const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
         if (!inputRow) return; // 화면에 안보이면 스킵
         const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
         if (currentPriceInput instanceof HTMLInputElement) {
             currentPriceInput.value = price;
         }
-    },
-    
+    }
+
     // ▼▼▼▼▼ [추가] 가상 스크롤 헬퍼 ▼▼▼▼▼
-    getGridTemplate(mainMode) {
+    getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
         // 반응형 그리드 템플릿 반환
         const isMobile = window.innerWidth <= 768;
 
@@ -6938,10 +7242,10 @@ export const PortfolioView = {
                 return '2fr 1fr 1fr 1fr 1fr 1.2fr';
             }
         }
-    },
-    
+    }
+
     // updateTableHeader를 새 div 헤더에 맞게 수정
-    updateTableHeader(currency, mainMode) {
+    updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
         this._currentMainMode = mainMode; // 현재 모드 저장
         this._currentCurrency = currency; // 현재 통화 저장
         const header = this.dom.virtualTableHeader;
@@ -6995,15 +7299,15 @@ export const PortfolioView = {
             }
         }
         header.innerHTML = headersHTML;
-    },
+    }
 
     // ▼▼▼▼▼ [대대적 수정] renderTable (가상 스크롤 초기화 로직) ▼▼▼▼▼
-    renderTable(calculatedPortfolioData, currency, mainMode) {
+    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
         if (!this._scrollWrapper || !this._scrollSpacer || !this._scrollContent) return;
 
         // 1. 헤더 업데이트 (모드, 통화 저장)
         this.updateTableHeader(currency, mainMode);
-        
+
         // 2. 데이터 저장
         this._virtualData = calculatedPortfolioData;
         if(this.dom.virtualScrollWrapper) {
@@ -7013,7 +7317,7 @@ export const PortfolioView = {
         // 3. 전체 높이 설정
         const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
         this._scrollSpacer.style.height = `${totalHeight}px`;
-        
+
         // 4. 뷰포트 높이 갱신
         this._viewportHeight = this._scrollWrapper.clientHeight;
 
@@ -7029,12 +7333,12 @@ export const PortfolioView = {
 
         // 7. 초기 렌더링 실행
         this._onScroll(true); // forceRedraw = true
-    },
-    
+    }
+
     /**
      * @description [NEW] 컨트롤러가 데이터를 업데이트할 때 호출
      */
-    updateVirtualTableData(calculatedPortfolioData) {
+    updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
         this._virtualData = calculatedPortfolioData; // 데이터 교체
         const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
         if(this._scrollSpacer) this._scrollSpacer.style.height = `${totalHeight}px`;
@@ -7044,26 +7348,105 @@ export const PortfolioView = {
 
         // 현재 스크롤 위치에서 강제로 다시 렌더링
         this._onScroll(true); // forceRedraw = true
-    },
+    }
 
     /**
      * @description [NEW] 특정 종목의 속성을 _virtualData에서 업데이트 (재렌더링 없이)
-     * @param {string} stockId - 종목 ID
-     * @param {string} field - 업데이트할 필드명
-     * @param {any} value - 새 값
+     * @param stockId - 종목 ID
+     * @param field - 업데이트할 필드명
+     * @param value - 새 값
      */
-    updateStockInVirtualData(stockId, field, value) {
+    updateStockInVirtualData(stockId: string, field: string, value: any): void {
         const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
         if (stockIndex !== -1) {
-            this._virtualData[stockIndex][field] = value;
+            (this._virtualData[stockIndex] as any)[field] = value;
         }
-    },
+    }
+
+    /**
+     * @description [NEW] 특정 종목의 계산된 데이터를 업데이트하고 화면에 보이는 경우에만 DOM 업데이트
+     * @param stockId - 종목 ID
+     * @param calculatedData - 재계산된 데이터
+     */
+    updateSingleStockRow(stockId: string, calculatedData: any): void {
+        // 1. _virtualData 업데이트
+        const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
+        if (stockIndex === -1) return;
+
+        this._virtualData[stockIndex] = { ...this._virtualData[stockIndex], calculated: calculatedData };
+
+        // 2. 화면에 보이는 범위인지 확인
+        if (stockIndex < this._renderedStartIndex || stockIndex >= this._renderedEndIndex) {
+            // 화면에 안 보이면 DOM 업데이트 불필요
+            return;
+        }
+
+        // 3. 화면에 보이면 출력 행만 업데이트
+        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
+        if (!outputRow || this._currentMainMode === 'simple') return; // 간단 모드는 출력 행이 숨겨짐
+
+        const currency = this._currentCurrency;
+        const metrics = calculatedData ?? {
+            quantity: new Decimal(0),
+            avgBuyPrice: new Decimal(0),
+            currentAmount: new Decimal(0),
+            profitLoss: new Decimal(0),
+            profitLossRate: new Decimal(0)
+        };
+
+        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
+        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
+        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
+        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+
+        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss.isPositive() ? '+' : '';
+
+        const isMobile = window.innerWidth <= 768;
+
+        // 출력 셀 업데이트
+        const cells = outputRow.querySelectorAll('.output-cell');
+        let cellIndex = 0;
+
+        // 첫 번째 셀은 스페이서이므로 건너뜀
+        if (cells[cellIndex]) cellIndex++;
+
+        // 수량
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
+            cellIndex++;
+        }
+
+        // 평균 매입가 (모바일 아닐 때)
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 현재 가치
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 손익 (모바일 아닐 때)
+        if (!isMobile && cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
+            cellIndex++;
+        }
+
+        // 손익률
+        if (cells[cellIndex]) {
+            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
+        }
+    }
 
     /**
      * @description [NEW] 실제 가상 스크롤 렌더링 로직
-     * @param {boolean} [forceRedraw=false] - 강제 렌더링 여부
+     * @param forceRedraw - 강제 렌더링 여부
      */
-    _onScroll(forceRedraw = false) {
+    _onScroll(forceRedraw: boolean = false): void {
         if (!this._scrollWrapper || !this._scrollContent) return;
 
         // 클래스 멤버 변수에서 현재 모드와 통화 읽기
@@ -7084,11 +7467,13 @@ export const PortfolioView = {
             return;
         }
 
-        // ▼▼▼▼▼ [추가] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 ▼▼▼▼▼
+        // ▼▼▼▼▼ [수정] 재렌더링 전에 현재 DOM의 입력 값을 _virtualData에 저장 (IME 안전) ▼▼▼▼▼
         // 스크롤로 인해 DOM이 사라지기 전에 사용자가 입력 중인 값을 보존
         const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        const activeElement = document.activeElement;
+
         currentInputRows.forEach(row => {
-            const stockId = row.dataset.id;
+            const stockId = (row as HTMLElement).dataset.id;
             if (!stockId) return;
 
             const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
@@ -7098,10 +7483,16 @@ export const PortfolioView = {
             const inputs = row.querySelectorAll('input[data-field]');
             inputs.forEach(input => {
                 if (!(input instanceof HTMLInputElement)) return;
+
+                // IME 조합 중이거나 현재 포커스된 필드는 건너뛰기 (입력 중단 방지)
+                if (input === activeElement || (input as any).isComposing) {
+                    return;
+                }
+
                 const field = input.dataset.field;
                 if (!field) return;
 
-                let value;
+                let value: any;
                 if (input.type === 'checkbox') {
                     value = input.checked;
                 } else if (input.type === 'number') {
@@ -7112,10 +7503,10 @@ export const PortfolioView = {
                 }
 
                 // _virtualData 업데이트
-                this._virtualData[stockIndex][field] = value;
+                (this._virtualData[stockIndex] as any)[field] = value;
             });
         });
-        // ▲▲▲▲▲ [추가] ▲▲▲▲▲
+        // ▲▲▲▲▲ [수정] ▲▲▲▲▲
 
         // 3. 새 범위 저장
         this._renderedStartIndex = startIndex;
@@ -7129,15 +7520,15 @@ export const PortfolioView = {
         }
 
         // 5. 실제 DOM에 적용 및 Y축 위치 이동
-        this._scrollContent.innerHTML = ''; // 기존 행 삭제
-        this._scrollContent.appendChild(fragment);
+        // replaceChildren()를 사용하여 기존 행 삭제 및 새 행 추가 (innerHTML보다 효율적)
+        this._scrollContent.replaceChildren(fragment);
         this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
-    },
+    }
     // ▲▲▲▲▲ [대대적 수정] ▲▲▲▲▲
 
     // toggleFixedBuyColumn은 더 이상 사용되지 않음
 
-    updateRatioSum(totalRatio) {
+    updateRatioSum(totalRatio: number): void {
         const ratioSumEl = this.dom.ratioSum;
         const ratioValidatorEl = this.dom.ratioValidator;
         if (!ratioSumEl || !ratioValidatorEl) return;
@@ -7148,9 +7539,9 @@ export const PortfolioView = {
         } else if (totalRatio > 0) {
             ratioValidatorEl.classList.add('invalid');
         }
-    },
+    }
 
-    updateMainModeUI(mainMode) {
+    updateMainModeUI(mainMode: 'add' | 'sell' | 'simple'): void {
         const addCard = this.dom.addInvestmentCard;
         const modeRadios = this.dom.mainModeSelector;
 
@@ -7161,9 +7552,9 @@ export const PortfolioView = {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
         });
         this.hideResults();
-    },
+    }
 
-    updateCurrencyModeUI(currencyMode) {
+    updateCurrencyModeUI(currencyMode: 'krw' | 'usd'): void {
         const isUsdMode = currencyMode === 'usd';
         const rateGroup = this.dom.exchangeRateGroup;
         const usdGroup = this.dom.usdInputGroup;
@@ -7175,10 +7566,10 @@ export const PortfolioView = {
             if (radio instanceof HTMLInputElement) radio.checked = radio.value === currencyMode;
         });
         if (!isUsdMode && usdInput instanceof HTMLInputElement) usdInput.value = '';
-    },
+    }
 
-    openTransactionModal(stock, currency, transactions) {
-        this.lastFocusedElement = /** @type {HTMLElement} */ (document.activeElement);
+    openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
+        this.lastFocusedElement = document.activeElement as HTMLElement;
         const modal = this.dom.transactionModal;
         const modalTitle = this.dom.modalStockName;
         const dateInput = this.dom.txDate;
@@ -7193,9 +7584,9 @@ export const PortfolioView = {
         this._trapFocus(modal);
         const closeBtn = this.dom.closeModalBtn;
         if (closeBtn instanceof HTMLButtonElement) closeBtn.focus();
-    },
+    }
 
-    closeTransactionModal() {
+    closeTransactionModal(): void {
         const modal = this.dom.transactionModal;
         const form = this.dom.newTransactionForm;
         if (!modal) return;
@@ -7203,19 +7594,19 @@ export const PortfolioView = {
         if(form instanceof HTMLFormElement) form.reset();
         modal.removeAttribute('data-stock-id');
         if (this.lastFocusedElement) this.lastFocusedElement.focus();
-    },
+    }
 
-    renderTransactionList(transactions, currency) {
+    renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
         const listBody = this.dom.transactionListBody;
         if (!listBody) {
             console.error("View: renderTransactionList - listBody not found!");
             return;
         }
-        
-        listBody.innerHTML = ''; // 1. 기존 내용 지우기
+
+        (listBody as HTMLTableSectionElement).innerHTML = ''; // 1. 기존 내용 지우기
 
         if (transactions.length === 0) {
-            const tr = listBody.insertRow(); 
+            const tr = (listBody as HTMLTableSectionElement).insertRow();
             const td = tr.insertCell();
             td.colSpan = 6;
             td.style.textAlign = 'center';
@@ -7232,7 +7623,7 @@ export const PortfolioView = {
         });
 
         sorted.forEach(tx => {
-            const tr = listBody.insertRow();
+            const tr = (listBody as HTMLTableSectionElement).insertRow();
             tr.dataset.txId = tx.id;
             const quantityDec = tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
             const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
@@ -7267,31 +7658,31 @@ export const PortfolioView = {
             btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
             actionTd.appendChild(btnDelete);
         });
-    },
+    }
 
-    displaySkeleton() {
+    displaySkeleton(): void {
         const skeletonHTML = `...`; // 생략
         const resultsEl = this.dom.resultsSection;
         if (!resultsEl) return;
         resultsEl.innerHTML = skeletonHTML;
         resultsEl.classList.remove('hidden');
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    },
+    }
 
-    cleanupObserver() {
+    cleanupObserver(): void {
         if (this.currentObserver) { this.currentObserver.disconnect(); this.currentObserver = null; }
-    },
+    }
 
-    destroyChart() {
+    destroyChart(): void {
         if (this.chartInstance) { this.chartInstance.destroy(); this.chartInstance = null; }
-    },
+    }
 
-    cleanup() {
+    cleanup(): void {
         this.cleanupObserver();
         this.destroyChart();
-    },
+    }
 
-    hideResults() {
+    hideResults(): void {
         const resultsEl = this.dom.resultsSection;
         const sectorEl = this.dom.sectorAnalysisSection;
         const chartEl = this.dom.chartSection;
@@ -7299,9 +7690,9 @@ export const PortfolioView = {
         if (sectorEl) { sectorEl.innerHTML = ''; sectorEl.classList.add('hidden'); }
         if (chartEl) { chartEl.classList.add('hidden'); }
         this.cleanupObserver();
-    },
+    }
 
-    displayResults(html) {
+    displayResults(html: string): void {
         requestAnimationFrame(() => {
             const resultsEl = this.dom.resultsSection;
             if (!resultsEl) return;
@@ -7315,27 +7706,27 @@ export const PortfolioView = {
             this.currentObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        const target = /** @type {HTMLElement} */ (entry.target);
+                        const target = entry.target as HTMLElement;
                         target.style.transitionDelay = target.dataset.delay || '0s';
                         target.classList.add('in-view');
                         this.currentObserver?.unobserve(target);
                     }
                 });
             }, { threshold: 0.1 });
-            rows.forEach((row) => this.currentObserver?.observe(row));
+            rows.forEach((row) => this.currentObserver?.observe(row as Element));
         });
-    },
+    }
 
-    displaySectorAnalysis(html) {
+    displaySectorAnalysis(html: string): void {
          requestAnimationFrame(() => {
             const sectorEl = this.dom.sectorAnalysisSection;
             if (!sectorEl) return;
             sectorEl.innerHTML = html;
             sectorEl.classList.remove('hidden');
         });
-    },
+    }
 
-    displayChart(Chart, labels, data, title) {
+    displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
         const chartEl = this.dom.chartSection;
         const canvas = this.dom.portfolioChart;
         if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;
@@ -7344,7 +7735,7 @@ export const PortfolioView = {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'top' },
+                legend: { position: 'top' as const },
                 title: { display: true, text: title, font: { size: 16 } }
             }
         };
@@ -7365,23 +7756,23 @@ export const PortfolioView = {
         } else {
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                this.chartInstance = new Chart(ctx, {
+                this.chartInstance = new ChartClass(ctx, {
                     type: 'doughnut',
                     data: chartData,
                     options: chartOptions
                 });
             }
         }
-    },
+    }
 
-    toggleInputValidation(inputElement, isValid, errorMessage = '') {
+    toggleInputValidation(inputElement: HTMLInputElement, isValid: boolean, errorMessage: string = ''): void {
         if (!inputElement) return;
         inputElement.classList.toggle('input-invalid', !isValid);
         inputElement.setAttribute('aria-invalid', String(!isValid));
-    },
+    }
 
 
-    showToast(message, type = 'info') {
+    showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
         const existingToast = document.querySelector('.toast');
         if (existingToast) existingToast.remove();
         const toast = document.createElement('div');
@@ -7391,9 +7782,9 @@ export const PortfolioView = {
         toast.innerHTML = message.replace(/\n/g, '<br>');
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
-    },
+    }
 
-    focusOnNewStock(stockId) {
+    focusOnNewStock(stockId: string): void {
         // ▼▼▼▼▼ [수정] 가상 스크롤에 맞게 수정 ▼▼▼▼▼
         // 1. 데이터에 종목이 추가되었는지 확인
         const stockIndex = this._virtualData.findIndex(s => s.id === stockId);
@@ -7414,9 +7805,9 @@ export const PortfolioView = {
             }
         }, 300); // 스크롤 시간 고려
         // ▲▲▲▲▲ [수정] ▲▲▲▲▲
-    },
+    }
 
-    toggleFetchButton(loading) {
+    toggleFetchButton(loading: boolean): void {
         const btn = this.dom.fetchAllPricesBtn;
         if (!(btn instanceof HTMLButtonElement)) return;
         btn.disabled = loading;
@@ -7428,39 +7819,40 @@ export const PortfolioView = {
             btn.removeAttribute('aria-busy');
         }
     }
-}; // End of PortfolioView object
+} // End of PortfolioView class
 ```
 
 ---
 
-## `js/errorService.js`
+## `src/errorService.ts`
 
-```javascript
-// @ts-check
-import { PortfolioView } from './view.js';
-import { t } from './i18n.js';
+```typescript
+import { t } from './i18n.ts';
 
 /**
  * @description 유효성 검사 오류를 나타내는 커스텀 에러 클래스
  */
 export class ValidationError extends Error {
-    /**
-     * @param {string} message - 오류 메시지
-     */
-    constructor(message) {
+    constructor(message: string) {
         super(message);
         this.name = 'ValidationError';
     }
 }
 
 export const ErrorService = {
+    _viewInstance: null as any | null,
+
+    /**
+     * @description View 인스턴스를 설정합니다.
+     */
+    setViewInstance(view: any): void {
+        this._viewInstance = view;
+    },
+
     /**
      * @description 중앙 집중식 에러 핸들러. 콘솔에 에러를 기록하고 사용자에게 토스트 메시지를 표시합니다.
-     * @param {Error} error - 발생한 에러 객체
-     * @param {string} [context='General'] - 에러가 발생한 컨텍스트(함수명 등)
-     * @returns {void}
      */
-    handle(error, context = 'General') {
+    handle(error: Error, context: string = 'General'): void {
         console.error(`Error in ${context}:`, error);
 
         // 기본 오류 메시지
@@ -7469,90 +7861,117 @@ export const ErrorService = {
         // 오류 타입에 따라 사용자 메시지 구체화
         if (error instanceof ValidationError) {
             userMessage = `${t('validation.validationErrorPrefix')}\n${error.message}`;
-        } else if (error.name === 'QuotaExceededError') { // LocalStorage quota exceeded
+        } else if (error.name === 'QuotaExceededError') {
+            // LocalStorage quota exceeded
             userMessage = t('validation.saveErrorQuota');
-        } else if (error.name === 'SecurityError') { // LocalStorage access denied
+        } else if (error.name === 'SecurityError') {
+            // LocalStorage access denied
             userMessage = t('validation.saveErrorSecurity');
-        } else if (error.name === 'DecimalError') { // Decimal.js 관련 오류
+        } else if (error.name === 'DecimalError') {
+            // Decimal.js 관련 오류
             userMessage = t('validation.calcErrorDecimal');
-        } else if (error.message.includes("structure")) { // 파일 구조 관련 오류 (import 시)
+        } else if (error.message.includes('structure')) {
+            // 파일 구조 관련 오류 (import 시)
             userMessage = t('validation.invalidFileStructure');
-        } else if (context.includes('save') || context.includes('Save')) { // 저장 관련 컨텍스트
+        } else if (context.includes('save') || context.includes('Save')) {
+            // 저장 관련 컨텍스트
             userMessage = t('validation.saveErrorGeneral');
         }
 
-        // 사용자에게 토스트 메시지 표시
-        PortfolioView.showToast(userMessage, 'error');
-    }
+        // 사용자에게 토스트 메시지 표시 (view 인스턴스가 설정된 경우에만)
+        if (this._viewInstance) {
+            this._viewInstance.showToast(userMessage, 'error');
+        } else {
+            console.warn('[ErrorService] View instance not set. Cannot show toast.');
+        }
+    },
 };
 ```
 
 ---
 
-## `js/controller.js`
+## `src/controller.ts`
 
-```javascript
-// js/controller.js (async/await + DOMPurify 적용)
-// @ts-check
-import { PortfolioState } from './state.js';
-import { PortfolioView } from './view.js';
-import { Calculator } from './calculator.js';
-import { Validator } from './validator.js';
-import { debounce, formatCurrency, getRatioSum } from './utils.js';
-import { CONFIG } from './constants.js';
-import { ErrorService, ValidationError } from './errorService.js';
-import { t } from './i18n.js';
-import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from './templates.js';
+```typescript
+// src/controller.ts (async/await + DOMPurify 적용)
+import { PortfolioState } from './state';
+import { PortfolioView } from './view';
+import { Calculator } from './calculator';
+import { Validator } from './validator';
+import { debounce, formatCurrency, getRatioSum } from './utils';
+import { CONFIG } from './constants';
+import { ErrorService, ValidationError } from './errorService';
+import { t } from './i18n';
+import { generateSectorAnalysisHTML, generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from './templates';
 import Decimal from 'decimal.js';
-import { apiService } from './apiService.js';
-import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from './calculationStrategies.js';
-import DOMPurify from 'dompurify'; // ▼▼▼ [신규] DOMPurify 임포트 ▼▼▼
-import Chart from 'chart.js/auto'; // ▼▼▼ [추가] Chart.js 임포트 ▼▼▼
+import { apiService } from './apiService';
+import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from './calculationStrategies';
+import DOMPurify from 'dompurify';
+import type Chart from 'chart.js/auto';
+import type { CalculatedStock, Portfolio, Stock, MainMode, Currency } from './types';
 
 // ▼▼▼ [추가] eventBinder.js 임포트 ▼▼▼
-import { bindEventListeners } from './eventBinder.js';
+import { bindEventListeners } from './eventBinder';
 // ▲▲▲ [추가] ▲▲▲
 
-/** @typedef {import('./types.js').CalculatedStock} CalculatedStock */
-/** @typedef {import('./types.js').Portfolio} Portfolio */
-/** @typedef {import('./types.js').ValidationErrorDetail} ValidationErrorDetail */
-
 export class PortfolioController {
-    /** @type {PortfolioState} */
-    state;
-    /** @type {PortfolioView} */
-    view;
-    /** @type {Function} */
-    debouncedSave;
-    /** @type {string | null} */
-    #lastCalculationKey = null;
+    state: PortfolioState;
+    view: PortfolioView;
+    debouncedSave: () => void;
+    #lastCalculationKey: string | null = null;
+    #eventAbortController: AbortController | null = null;
 
     /**
-     * @param {PortfolioState} state
-     * @param {PortfolioView} view
+     * @param state
+     * @param view
      */
-    constructor(state, view) {
+    constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
         this.view = view;
         this.debouncedSave = debounce(() => this.state.saveActivePortfolio(), 500);
         this.initialize();
     }
 
-    async initialize() {
+    async initialize(): Promise<void> {
         await this.state.ensureInitialized();
         this.view.cacheDomElements();
         this.setupInitialUI();
         this.bindControllerEvents();
 
-        // ▼▼▼ [추가] 실제 DOM 이벤트 바인딩 호출 ▼▼▼
-        bindEventListeners(this.view);
-        // ▲▲▲ [추가] ▲▲▲
+        // 이벤트 바인딩 및 AbortController 저장 (메모리 누수 방지)
+        this.#eventAbortController = bindEventListeners(this.view);
     }
 
-    setupInitialUI() {
-        if (localStorage.getItem(CONFIG.DARK_MODE_KEY) === 'true') {
-            document.body.classList.add('dark-mode');
+    /**
+     * @description 이벤트 리스너 정리 (메모리 누수 방지)
+     */
+    cleanup(): void {
+        if (this.#eventAbortController) {
+            this.#eventAbortController.abort();
+            this.#eventAbortController = null;
+            console.log('[Controller] Event listeners cleaned up');
         }
+    }
+
+    setupInitialUI(): void {
+        // prefers-color-scheme 감지 (localStorage 설정이 없을 경우 시스템 테마 사용)
+        const storedDarkMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
+        if (storedDarkMode === 'true') {
+            document.body.classList.add('dark-mode');
+        } else if (storedDarkMode === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // localStorage에 설정이 없으면 시스템 테마 사용
+            document.body.classList.add('dark-mode');
+            localStorage.setItem(CONFIG.DARK_MODE_KEY, 'true');
+        }
+
+        // 시스템 테마 변경 감지 (실시간)
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            // 사용자가 수동으로 설정하지 않은 경우에만 시스템 테마 따라가기
+            const storedMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
+            if (storedMode === null) {
+                document.body.classList.toggle('dark-mode', e.matches);
+            }
+        });
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {
@@ -7572,9 +7991,9 @@ export class PortfolioController {
         }
     }
 
-    bindControllerEvents() {
+    bindControllerEvents(): void {
         // Pub/Sub 패턴: View가 발행(emit)한 이벤트를 Controller가 구독(on)합니다.
-        
+
         // 포트폴리오 관리
         this.view.on('newPortfolioClicked', () => this.handleNewPortfolio());
         this.view.on('renamePortfolioClicked', () => this.handleRenamePortfolio());
@@ -7610,7 +8029,7 @@ export class PortfolioController {
         this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
         this.view.on('newTransactionSubmitted', (e) => this.handleAddNewTransaction(e));
         this.view.on('transactionDeleteClicked', (data) => this.handleTransactionListClick(data.stockId, data.txId));
-        
+
         // 기타
         this.view.on('darkModeToggleClicked', () => this.handleToggleDarkMode());
         this.view.on('pageUnloading', () => this.handleSaveDataOnExit());
@@ -7618,7 +8037,7 @@ export class PortfolioController {
 
     // --- UI 렌더링 ---
 
-    fullRender() {
+    fullRender(): void {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -7646,7 +8065,7 @@ export class PortfolioController {
         this.debouncedSave();
     }
 
-    updateUIState() {
+    updateUIState(): void {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -7669,19 +8088,20 @@ export class PortfolioController {
     }
 
     // --- 포트폴리오 관리 핸들러 ---
-    async handleNewPortfolio() {
+    async handleNewPortfolio(): Promise<void> {
         let name = await this.view.showPrompt(t('modal.promptNewPortfolioNameTitle'), t('modal.promptNewPortfolioNameMsg'));
         if (name) {
             // ▼▼▼ [수정] 입력값 소독 ▼▼▼
             name = DOMPurify.sanitize(name);
-            await this.state.createNewPortfolio(name); 
+            await this.state.createNewPortfolio(name);
             // ▲▲▲ [수정] ▲▲▲
             this.view.renderPortfolioSelector(this.state.getAllPortfolios(), this.state.getActivePortfolio()?.id || '');
             this.fullRender();
             this.view.showToast(t('toast.portfolioCreated', { name }), "success");
         }
      }
-    async handleRenamePortfolio() {
+
+    async handleRenamePortfolio(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -7689,13 +8109,14 @@ export class PortfolioController {
         if (newName && newName.trim()) {
             // ▼▼▼ [수정] 입력값 소독 ▼▼▼
             newName = DOMPurify.sanitize(newName.trim());
-            await this.state.renamePortfolio(activePortfolio.id, newName); 
+            await this.state.renamePortfolio(activePortfolio.id, newName);
             // ▲▲▲ [수정] ▲▲▲
             this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
             this.view.showToast(t('toast.portfolioRenamed'), "success");
         }
      }
-    async handleDeletePortfolio() {
+
+    async handleDeletePortfolio(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -7707,7 +8128,7 @@ export class PortfolioController {
         const confirmDelete = await this.view.showConfirm(t('modal.confirmDeletePortfolioTitle'), t('modal.confirmDeletePortfolioMsg', { name: activePortfolio.name }));
         if (confirmDelete) {
             const deletedId = activePortfolio.id;
-            if (await this.state.deletePortfolio(deletedId)) { 
+            if (await this.state.deletePortfolio(deletedId)) {
                 const newActivePortfolio = this.state.getActivePortfolio();
                 if (newActivePortfolio) {
                     this.view.renderPortfolioSelector(this.state.getAllPortfolios(), newActivePortfolio.id);
@@ -7717,19 +8138,19 @@ export class PortfolioController {
             }
         }
      }
-    
-    async handleSwitchPortfolio(newId) {
+
+    async handleSwitchPortfolio(newId: string): Promise<void> {
         // ▼▼▼ [수정] event.target 대신 newId를 받도록 수정 ▼▼▼
         const selector = this.view.dom.portfolioSelector;
         let targetId = newId;
-        
+
         // newId가 없는 경우(eventBinder.js에서 직접 호출된 경우) event.target에서 값을 찾음
         if (!targetId && selector instanceof HTMLSelectElement) {
              targetId = selector.value;
         }
-        
+
         if (targetId) {
-            await this.state.setActivePortfolioId(targetId); 
+            await this.state.setActivePortfolioId(targetId);
             const activePortfolio = this.state.getActivePortfolio();
             if (activePortfolio) {
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
@@ -7749,33 +8170,35 @@ export class PortfolioController {
 
 
     // --- 주식/데이터 관리 핸들러 ---
-    async handleAddNewStock() {
-        const newStock = await this.state.addNewStock(); 
+    async handleAddNewStock(): Promise<void> {
+        const newStock = await this.state.addNewStock();
         this.fullRender();
         if (newStock) {
              this.view.focusOnNewStock(newStock.id);
         }
      }
-    async handleDeleteStock(stockId) {
+
+    async handleDeleteStock(stockId: string): Promise<void> {
         const stockName = this.state.getStockById(stockId)?.name || t('defaults.unknownStock');
         const confirmDelete = await this.view.showConfirm(
             t('modal.confirmDeleteStockTitle'),
             t('modal.confirmDeleteStockMsg', { name: stockName })
         );
         if (confirmDelete) {
-            if(await this.state.deleteStock(stockId)){ 
+            if(await this.state.deleteStock(stockId)){
                 Calculator.clearPortfolioStateCache();
                 this.fullRender();
-                this.view.showToast(t('toast.transactionDeleted'), "success"); 
+                this.view.showToast(t('toast.transactionDeleted'), "success");
             } else {
                  this.view.showToast(t('toast.lastStockDeleteError'), "error");
             }
         }
      }
-    async handleResetData() {
+
+    async handleResetData(): Promise<void> {
         const confirmReset = await this.view.showConfirm(t('modal.confirmResetTitle'), t('modal.confirmResetMsg'));
         if (confirmReset) {
-            await this.state.resetData(); 
+            await this.state.resetData();
             Calculator.clearPortfolioStateCache();
             const activePortfolio = this.state.getActivePortfolio();
              if (activePortfolio) {
@@ -7794,7 +8217,8 @@ export class PortfolioController {
             this.view.showToast(t('toast.dataReset'), "success");
         }
      }
-    handleNormalizeRatios() {
+
+    handleNormalizeRatios(): void {
         try {
             const success = this.state.normalizeRatios();
             if (!success) {
@@ -7809,23 +8233,23 @@ export class PortfolioController {
             this.debouncedSave();
             this.view.showToast(t('toast.ratiosNormalized'), "success");
         } catch (error) {
-             ErrorService.handle(/** @type {Error} */ (error), 'handleNormalizeRatios');
+             ErrorService.handle(error as Error, 'handleNormalizeRatios');
              this.view.showToast(t('toast.normalizeRatiosError'), "error");
         }
      }
 
-    handlePortfolioBodyChange(e, _debouncedUpdate) {
-        const target = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
+    handlePortfolioBodyChange(e: Event, _debouncedUpdate: any): void {
+        const target = e.target as HTMLInputElement | HTMLSelectElement;
         // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
-        const row = target.closest('div[data-id]'); 
+        const row = target.closest('div[data-id]');
         // ▲▲▲ [수정] ▲▲▲
         if (!row) return;
 
-        const stockId = row.dataset.id;
-        const field = target.dataset.field;
+        const stockId = (row as HTMLElement).dataset.id;
+        const field = (target as HTMLInputElement).dataset.field;
         if (!stockId || !field) return;
 
-        let value = (target.type === 'checkbox' && target instanceof HTMLInputElement) ? target.checked : target.value;
+        let value: any = (target.type === 'checkbox' && target instanceof HTMLInputElement) ? target.checked : target.value;
         let isValid = true;
 
         switch (field) {
@@ -7840,17 +8264,25 @@ export class PortfolioController {
             case 'isFixedBuyEnabled':
                 value = Boolean(value);
                 break;
-            // ▼▼▼ [수정] 문자열 입력 소독 ▼▼▼
-            case 'sector':
-            case 'name':
             case 'ticker':
-            default:
-                value = DOMPurify.sanitize(String(value).trim()); // 소독 추가
+                // 티커: 정규식 필터링 (대문자, 숫자, ., - 만 허용)
+                const tickerResult = Validator.validateTicker(value);
+                isValid = tickerResult.isValid;
+                if(isValid) value = tickerResult.value ?? '';
                 break;
-            // ▲▲▲ [수정] ▲▲▲
+            case 'name':
+            case 'sector':
+                // 자유 텍스트: 길이 제한 + DOMPurify
+                const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
+                isValid = textResult.isValid;
+                if(isValid) value = DOMPurify.sanitize(textResult.value ?? '');
+                break;
+            default:
+                value = DOMPurify.sanitize(String(value).trim());
+                break;
         }
 
-        this.view.toggleInputValidation(target, isValid);
+        this.view.toggleInputValidation(target as HTMLInputElement, isValid);
 
         if (isValid) {
             this.state.updateStockProperty(stockId, field, value);
@@ -7863,10 +8295,47 @@ export class PortfolioController {
                 return; // 재렌더링 건너뛰기
             }
 
-            Calculator.clearPortfolioStateCache();
-
             const activePortfolio = this.state.getActivePortfolio();
             if (!activePortfolio) return;
+
+            // ▼▼▼ [최적화] 현재가 변경 시 부분 업데이트 ▼▼▼
+            if (field === 'currentPrice') {
+                // 해당 주식만 재계산
+                const stock = activePortfolio.portfolioData.find(s => s.id === stockId);
+                if (stock) {
+                    const calculatedMetrics = Calculator.calculateStockMetrics(stock);
+
+                    // 환율 변환 적용
+                    const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
+                    if (activePortfolio.settings.currentCurrency === 'krw') {
+                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
+                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
+                    } else {
+                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
+                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
+                    }
+
+                    // 화면 업데이트 (해당 행만)
+                    this.view.updateSingleStockRow(stockId, calculatedMetrics);
+
+                    // 섹터 분석은 전체 재계산 필요
+                    Calculator.clearPortfolioStateCache();
+                    const calculatedState = Calculator.calculatePortfolioState({
+                        portfolioData: activePortfolio.portfolioData,
+                        exchangeRate: activePortfolio.settings.exchangeRate,
+                        currentCurrency: activePortfolio.settings.currentCurrency
+                    });
+                    const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+                    this.view.displaySectorAnalysis(generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency));
+                }
+
+                this.debouncedSave();
+                return;
+            }
+            // ▲▲▲ [최적화] ▲▲▲
+
+            // 기타 필드 변경 시 전체 재계산 (기존 방식)
+            Calculator.clearPortfolioStateCache();
 
             const calculatedState = Calculator.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
@@ -7900,18 +8369,18 @@ export class PortfolioController {
      }
 
 
-    handlePortfolioBodyClick(e) {
-        const target = /** @type {HTMLElement} */ (e.target);
+    handlePortfolioBodyClick(e: Event): void {
+        const target = e.target as HTMLElement;
         const actionButton = target.closest('button[data-action]');
         if (!actionButton) return;
-        
+
         // ▼▼▼ [수정] 'tr' -> 'div[data-id]' ▼▼▼
-        const row = actionButton.closest('div[data-id]'); 
+        const row = actionButton.closest('div[data-id]');
         // ▲▲▲ [수정] ▲▲▲
         if (!row?.dataset.id) return;
 
-        const stockId = row.dataset.id;
-        const action = actionButton.dataset.action;
+        const stockId = (row as HTMLElement).dataset.id;
+        const action = (actionButton as HTMLElement).dataset.action;
 
         if (action === 'manage') {
             this.openTransactionModalByStockId(stockId);
@@ -7919,8 +8388,8 @@ export class PortfolioController {
             this.handleDeleteStock(stockId);
         }
      }
-     
-    openTransactionModalByStockId(stockId) {
+
+    openTransactionModalByStockId(stockId: string): void {
         const stock = this.state.getStockById(stockId);
         const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
         if (stock && currency) {
@@ -7930,7 +8399,7 @@ export class PortfolioController {
 
 
     // --- 계산 및 통화 핸들러 ---
-    async handleCalculate() {
+    async handleCalculate(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -8010,7 +8479,7 @@ export class PortfolioController {
             : activePortfolio.settings.mainMode === 'add'
             ? '포트폴리오 목표 비율 (추가 매수 모드)'
             : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
-        this.view.displayChart(Chart, chartLabels, chartData, chartTitle);
+        this.view.displayChart((await import('chart.js/auto')).default, chartLabels, chartData, chartTitle);
         // ▲▲▲ [추가] ▲▲▲
 
         this.debouncedSave();
@@ -8018,7 +8487,7 @@ export class PortfolioController {
      }
 
 
-    async handleFetchAllPrices() {
+    async handleFetchAllPrices(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
             this.view.showToast(t('api.noUpdates'), "info");
@@ -8039,35 +8508,37 @@ export class PortfolioController {
         try {
             let successCount = 0;
             let failureCount = 0;
-            const failedTickers = [];
+            const failedTickers: string[] = [];
 
             const results = await apiService.fetchAllStockPrices(tickersToFetch);
 
             // Get current currency and exchange rate for conversion
             const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
-            const currentCurrency = activePortfolio.currentCurrency || 'krw';
+            const currentCurrency = activePortfolio.settings.currentCurrency || 'krw';
 
             results.forEach((result) => {
                 if (result.status === 'fulfilled' && result.value) {
                     let price = result.value; // This is in USD from Finnhub API
 
-                    // Convert USD price to KRW if current currency is KRW
+                    // Convert USD price to KRW if current currency is KRW using Decimal.js
                     if (currentCurrency === 'krw') {
-                        price = price * exchangeRate;
+                        const priceDec = new Decimal(price);
+                        const exchangeRateDec = new Decimal(exchangeRate);
+                        price = priceDec.times(exchangeRateDec).toNumber();
                     }
 
-                    this.state.updateStockProperty(result.id, 'currentPrice', price);
-                    this.view.updateCurrentPriceInput(result.id, price.toFixed(2));
+                    this.state.updateStockProperty((result as any).id, 'currentPrice', price);
+                    this.view.updateCurrentPriceInput((result as any).id, price.toFixed(2));
                     successCount++;
                 } else {
                     failureCount++;
-                    failedTickers.push(result.ticker);
-                    console.error(`[API] Failed to fetch price for ${result.ticker}:`, result.reason);
+                    failedTickers.push((result as any).ticker);
+                    console.error(`[API] Failed to fetch price for ${(result as any).ticker}:`, (result as any).reason);
                 }
             });
 
             Calculator.clearPortfolioStateCache();
-            this.updateUIState(); 
+            this.updateUIState();
 
             if (successCount === tickersToFetch.length) {
                 this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), "success");
@@ -8080,44 +8551,52 @@ export class PortfolioController {
                 console.log("Failed tickers:", failedTickers.join(', '));
             }
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'handleFetchAllPrices');
-            this.view.showToast(t('api.fetchErrorGlobal', { message: error.message }), 'error');
+            ErrorService.handle(error as Error, 'handleFetchAllPrices');
+            this.view.showToast(t('api.fetchErrorGlobal', { message: (error as Error).message }), 'error');
         } finally {
             this.view.toggleFetchButton(false);
         }
      }
 
-    async handleMainModeChange(newMode) {
+    async handleMainModeChange(newMode: MainMode): Promise<void> {
         if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return;
         await this.state.updatePortfolioSettings('mainMode', newMode);
-        this.fullRender();
-        const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
-        this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
+
+        // requestAnimationFrame을 사용하여 상태 업데이트가 완전히 반영된 후 렌더링
+        requestAnimationFrame(() => {
+            this.fullRender();
+            const modeName = newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
+            this.view.showToast(t('toast.modeChanged', { mode: modeName }), "info");
+        });
      }
 
-    async handleCurrencyModeChange(newCurrency) {
+    async handleCurrencyModeChange(newCurrency: Currency): Promise<void> {
         if (newCurrency !== 'krw' && newCurrency !== 'usd') return;
 
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const oldCurrency = activePortfolio.currentCurrency || 'krw';
+        const oldCurrency = activePortfolio.settings.currentCurrency || 'krw';
 
         // If currency is actually changing, convert all existing currentPrice values
         if (oldCurrency !== newCurrency) {
             const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const exchangeRateDec = new Decimal(exchangeRate);
 
             activePortfolio.portfolioData.forEach(stock => {
                 if (stock.currentPrice && stock.currentPrice > 0) {
-                    let newPrice = stock.currentPrice;
+                    const currentPriceDec = new Decimal(stock.currentPrice);
+                    let newPrice;
 
-                    // Convert from old currency to new currency
+                    // Convert from old currency to new currency using Decimal.js
                     if (oldCurrency === 'usd' && newCurrency === 'krw') {
                         // USD to KRW
-                        newPrice = stock.currentPrice * exchangeRate;
+                        newPrice = currentPriceDec.times(exchangeRateDec).toNumber();
                     } else if (oldCurrency === 'krw' && newCurrency === 'usd') {
                         // KRW to USD
-                        newPrice = stock.currentPrice / exchangeRate;
+                        newPrice = currentPriceDec.div(exchangeRateDec).toNumber();
+                    } else {
+                        newPrice = stock.currentPrice; // No conversion needed
                     }
 
                     this.state.updateStockProperty(stock.id, 'currentPrice', newPrice);
@@ -8130,7 +8609,7 @@ export class PortfolioController {
         this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), "info");
     }
 
-    async handleCurrencyConversion(source) {
+    async handleCurrencyConversion(source: 'krw' | 'usd'): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -8143,10 +8622,10 @@ export class PortfolioController {
         let currentExchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE;
 
         if (isValidRate) {
-            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum); 
+            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
             currentExchangeRate = exchangeRateNum;
         } else {
-             await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE); 
+             await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
              exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString();
              this.view.showToast(t('toast.invalidExchangeRate'), "error");
         }
@@ -8181,7 +8660,7 @@ export class PortfolioController {
         }
      }
 
-    async handlePortfolioExchangeRateChange(rate) {
+    async handlePortfolioExchangeRateChange(rate: number): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -8200,19 +8679,19 @@ export class PortfolioController {
 
     // --- 거래 내역 모달 핸들러 ---
 
-    async handleAddNewTransaction(e) {
+    async handleAddNewTransaction(e: Event): Promise<void> {
         e.preventDefault();
-        const form = /** @type {HTMLFormElement} */ (e.target);
-        const modal = form.closest('#transactionModal');
+        const form = e.target as HTMLFormElement;
+        const modal = form.closest('#transactionModal') as HTMLElement | null;
         const stockId = modal?.dataset.stockId;
         if (!stockId) return;
 
         const typeInput = form.querySelector('input[name="txType"]:checked');
         const inputModeInput = form.querySelector('input[name="inputMode"]:checked');
-        const dateInput = /** @type {HTMLInputElement} */ (form.querySelector('#txDate'));
-        const quantityInput = /** @type {HTMLInputElement} */ (form.querySelector('#txQuantity'));
-        const totalAmountInput = /** @type {HTMLInputElement} */ (form.querySelector('#txTotalAmount'));
-        const priceInput = /** @type {HTMLInputElement} */ (form.querySelector('#txPrice'));
+        const dateInput = form.querySelector('#txDate') as HTMLInputElement;
+        const quantityInput = form.querySelector('#txQuantity') as HTMLInputElement;
+        const totalAmountInput = form.querySelector('#txTotalAmount') as HTMLInputElement;
+        const priceInput = form.querySelector('#txPrice') as HTMLInputElement;
 
         if (!typeInput || !dateInput || !priceInput) return;
 
@@ -8221,7 +8700,7 @@ export class PortfolioController {
         const date = dateInput.value;
         const priceStr = priceInput.value;
 
-        let finalQuantity;
+        let finalQuantity: number;
 
         if (inputMode === 'amount') {
             // 금액 입력 모드: 총 금액 / 단가 = 수량 (Decimal.js로 정밀 계산)
@@ -8308,11 +8787,11 @@ export class PortfolioController {
      }
 
 
-    async handleTransactionListClick(stockId, txId) {
+    async handleTransactionListClick(stockId: string, txId: string): Promise<void> {
         if (stockId && txId) {
              const confirmDelete = await this.view.showConfirm(t('modal.confirmDeleteTransactionTitle'), t('modal.confirmDeleteTransactionMsg'));
              if(confirmDelete) {
-                 const success = await this.state.deleteTransaction(stockId, txId); 
+                 const success = await this.state.deleteTransaction(stockId, txId);
                  if (success) {
                     const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
                     if (currency) {
@@ -8333,22 +8812,25 @@ export class PortfolioController {
 
 
     // --- 기타 핸들러 ---
-    handleToggleDarkMode() {
+    handleToggleDarkMode(): void {
         document.body.classList.toggle('dark-mode');
         const isDarkMode = document.body.classList.contains('dark-mode');
         localStorage.setItem(CONFIG.DARK_MODE_KEY, isDarkMode ? 'true' : 'false');
         this.view.destroyChart();
         this.fullRender();
      }
-    handleSaveDataOnExit() {
+
+    handleSaveDataOnExit(): void {
         console.log("Page unloading. Relaying on debounced save.");
     }
-    handleImportData() {
+
+    handleImportData(): void {
         const fileInput = this.view.dom.importFileInput;
         if (fileInput instanceof HTMLInputElement) fileInput.click();
      }
-    handleFileSelected(e) {
-        const fileInput = /** @type {HTMLInputElement} */ (e.target);
+
+    handleFileSelected(e: Event): void {
+        const fileInput = e.target as HTMLInputElement;
         const file = fileInput.files?.[0];
 
         if (file) {
@@ -8359,12 +8841,12 @@ export class PortfolioController {
             }
 
             const reader = new FileReader();
-            reader.onload = async (event) => { 
+            reader.onload = async (event) => {
                 try {
                     const jsonString = event.target?.result;
                     if (typeof jsonString === 'string') {
                         const loadedData = JSON.parse(jsonString);
-                        await this.state.importData(loadedData); 
+                        await this.state.importData(loadedData);
                         Calculator.clearPortfolioStateCache();
                         this.setupInitialUI();
                         this.view.showToast(t('toast.importSuccess'), "success");
@@ -8372,7 +8854,7 @@ export class PortfolioController {
                          throw new Error("Failed to read file content.");
                     }
                 } catch (error) {
-                    ErrorService.handle(/** @type {Error} */ (error), 'handleFileSelected');
+                    ErrorService.handle(error as Error, 'handleFileSelected');
                     this.view.showToast(t('toast.importError'), "error");
                 } finally {
                     fileInput.value = '';
@@ -8386,7 +8868,8 @@ export class PortfolioController {
             reader.readAsText(file);
         }
      }
-    handleExportData() {
+
+    handleExportData(): void {
         try {
             const dataToExport = this.state.exportData();
             const jsonString = JSON.stringify(dataToExport, null, 2);
@@ -8404,24 +8887,24 @@ export class PortfolioController {
             URL.revokeObjectURL(url);
             this.view.showToast(t('toast.exportSuccess'), "success");
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ (error), 'handleExportData');
+            ErrorService.handle(error as Error, 'handleExportData');
             this.view.showToast(t('toast.exportError'), "error");
         }
      }
 
-    getInvestmentAmountInKRW() {
+    getInvestmentAmountInKRW(): Decimal {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return new Decimal(0);
-        
+
         const { currentCurrency } = activePortfolio.settings;
         const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
-        
-        if (!(additionalAmountInput instanceof HTMLInputElement) || 
-            !(additionalAmountUSDInput instanceof HTMLInputElement) || 
+
+        if (!(additionalAmountInput instanceof HTMLInputElement) ||
+            !(additionalAmountUSDInput instanceof HTMLInputElement) ||
             !(exchangeRateInput instanceof HTMLInputElement)) {
             return new Decimal(0);
         }
-        
+
         const amountKRWStr = additionalAmountInput.value || '0';
         const amountUSDStr = additionalAmountUSDInput.value || '0';
         const exchangeRateStr = exchangeRateInput.value || String(CONFIG.DEFAULT_EXCHANGE_RATE);
@@ -8448,18 +8931,17 @@ export class PortfolioController {
 
 ---
 
-## `js/controller.test.js`
+## `src/controller.test.ts`
 
-```javascript
-// js/controller.test.js (Refactored for Pub/Sub, Async State, testUtils, and Mock Fixes)
-// @ts-check
+```typescript
+// src/controller.test.ts (Refactored for Pub/Sub, Async State, testUtils, and Mock Fixes)
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Decimal from 'decimal.js';
 
 // --- ▼▼▼ 모의(Mock) 설정 ▼▼▼ ---
-vi.mock('./state.js');
-vi.mock('./view.js', () => ({
+vi.mock('./state');
+vi.mock('./view', () => ({
   PortfolioView: {
     // Pub/Sub
     on: vi.fn(),
@@ -8470,7 +8952,7 @@ vi.mock('./view.js', () => ({
     updateCurrencyModeUI: vi.fn(),
     updateMainModeUI: vi.fn(),
     renderTable: vi.fn(),
-    updateVirtualTableData: vi.fn(), // [수정] updateUIState -> updateVirtualTableData
+    updateVirtualTableData: vi.fn(),
     updateAllTargetRatioInputs: vi.fn(),
     updateCurrentPriceInput: vi.fn(),
     displaySkeleton: vi.fn(),
@@ -8481,8 +8963,8 @@ vi.mock('./view.js', () => ({
     displaySectorAnalysis: vi.fn(),
     // UI 피드백
     showToast: vi.fn(),
-    showConfirm: vi.fn(async () => true), 
-    showPrompt: vi.fn(async () => 'Test'), 
+    showConfirm: vi.fn(async () => true),
+    showPrompt: vi.fn(async () => 'Test'),
     announce: vi.fn(),
     focusOnNewStock: vi.fn(),
     // 모달
@@ -8502,81 +8984,75 @@ vi.mock('./view.js', () => ({
     }
   }
 }));
-vi.mock('./validator.js');
-vi.mock('./errorService.js');
-vi.mock('./calculator.js');
+vi.mock('./validator');
+vi.mock('./errorService');
+vi.mock('./calculator');
 
-// ▼▼▼ [수정] 전략 클래스 모의(Mock) 방식 변경 ▼▼▼
-// 1. 스파이를 모듈 최상단 스코프에 정의
+// 전략 클래스 모의(Mock) 방식 변경
 const mockAddCalculate = vi.fn(() => ({ results: [] }));
 const mockSellCalculate = vi.fn(() => ({ results: [] }));
 
-// 2. vi.mock 팩토리에서 이 스파이들을 사용하는 '클래스'를 반환
-vi.mock('./calculationStrategies.js', () => ({
-    AddRebalanceStrategy: class { // 'new'로 호출 가능한 클래스
-        constructor(...args) {
-            // (선택) 생성자 인수 로깅/테스트
-        }
-        calculate = mockAddCalculate; // [중요] 인스턴스 메서드로 모의 함수 할당
+vi.mock('./calculationStrategies', () => ({
+    AddRebalanceStrategy: class {
+        calculate = mockAddCalculate;
     },
-    SellRebalanceStrategy: class { // 'new'로 호출 가능한 클래스
-        constructor(...args) {
-            // ...
-        }
+    SellRebalanceStrategy: class {
         calculate = mockSellCalculate;
     },
 }));
-// ▲▲▲ [수정] ▲▲▲
 
-vi.mock('./apiService.js', () => ({
+vi.mock('./apiService', () => ({
     apiService: {
         fetchAllStockPrices: vi.fn()
     }
 }));
-vi.mock('./i18n.js', () => ({
-    t: vi.fn((key) => key), // 단순 키 반환
+vi.mock('./i18n', () => ({
+    t: vi.fn((key: string) => key),
 }));
 vi.mock('dompurify', () => ({
     default: {
-        sanitize: vi.fn((input) => input), 
+        sanitize: vi.fn((input: string) => input),
     }
 }));
 
 
 // --- ▼▼▼ 실제 모듈 및 모의 객체 임포트 ▼▼▼ ---
-import { PortfolioController } from './controller.js';
-import { PortfolioState } from './state.js';
-import { PortfolioView } from './view.js';
-import { Validator } from './validator.js';
-import { ErrorService, ValidationError } from './errorService.js';
-import { Calculator } from './calculator.js';
-// [중요] 모의(mock)된 모듈을 임포트 (이때 AddRebalanceStrategy는 위에서 정의한 mock class가 됨)
-import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js'; 
-import { apiService } from './apiService.js';
-import { t } from './i18n.js';
-import { MOCK_PORTFOLIO_1, MOCK_STOCK_1 } from './testUtils.js';
+import { PortfolioController } from './controller';
+import { PortfolioState } from './state';
+import { PortfolioView } from './view';
+import { Validator } from './validator';
+import { ErrorService, ValidationError } from './errorService';
+import { Calculator } from './calculator';
+import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies';
+import { apiService } from './apiService';
+import { t } from './i18n';
+import { MOCK_PORTFOLIO_1, MOCK_STOCK_1 } from './testUtils';
+import type { Portfolio } from './types';
 
 
 // --- 테스트 스위트 ---
 describe('PortfolioController', () => {
-  let controller;
-  let mockState;
-  let mockView;
-  let mockCalculator;
-  let mockValidator;
-  
-  let mockDefaultPortfolio;
-  
+  let controller: PortfolioController;
+  let mockState: PortfolioState;
+  let mockView: typeof PortfolioView;
+  let mockCalculator: typeof Calculator;
+  let mockValidator: typeof Validator;
+
+  let mockDefaultPortfolio: Portfolio;
+
   beforeEach(async () => {
-    vi.clearAllMocks(); // [수정] 이 clearAllMocks가 모의된 생성자도 초기화합니다.
+    vi.clearAllMocks();
 
     // MOCK_PORTFOLIO_1의 깊은 복사본을 만들어 테스트에 사용
     mockDefaultPortfolio = JSON.parse(JSON.stringify(MOCK_PORTFOLIO_1));
     mockDefaultPortfolio.portfolioData.forEach(stock => {
-        stock.targetRatio = new Decimal(stock.targetRatio);
-        stock.currentPrice = new Decimal(stock.currentPrice);
-        stock.fixedBuyAmount = new Decimal(stock.fixedBuyAmount);
-        stock.calculated.currentAmount = new Decimal(stock.calculated.currentAmount);
+        stock.targetRatio = new Decimal(stock.targetRatio).toNumber();
+        stock.currentPrice = new Decimal(stock.currentPrice).toNumber();
+        stock.fixedBuyAmount = new Decimal(stock.fixedBuyAmount).toNumber();
+        const calculated = (stock as any).calculated;
+        if (calculated) {
+            calculated.currentAmount = new Decimal(calculated.currentAmount);
+        }
     });
 
     // 1. 모의 인스턴스 할당
@@ -8591,7 +9067,6 @@ describe('PortfolioController', () => {
     vi.mocked(mockState.getAllPortfolios).mockReturnValue({ [mockDefaultPortfolio.id]: mockDefaultPortfolio });
     vi.mocked(mockState.getStockById).mockReturnValue(mockDefaultPortfolio.portfolioData[0]);
     vi.mocked(mockState.getTransactions).mockReturnValue([]);
-    // ... (state 수정 메서드 모의) ...
     vi.mocked(mockState.createNewPortfolio).mockResolvedValue(mockDefaultPortfolio);
     vi.mocked(mockState.renamePortfolio).mockResolvedValue(undefined);
     vi.mocked(mockState.deletePortfolio).mockResolvedValue(true);
@@ -8608,22 +9083,15 @@ describe('PortfolioController', () => {
 
     // 3. Calculator 모의 설정
     vi.mocked(mockCalculator.calculatePortfolioState).mockReturnValue({
-      portfolioData: mockDefaultPortfolio.portfolioData,
-      currentTotal: new Decimal(5500), 
+      portfolioData: mockDefaultPortfolio.portfolioData as any,
+      currentTotal: new Decimal(5500),
       cacheKey: 'mock-key'
     });
     vi.mocked(mockCalculator.calculateSectorAnalysis).mockReturnValue([]);
-    
-    // ▼▼▼▼▼ [수정된 부분] ▼▼▼▼▼
-    // 'mockReturnValue' 대신 'mockImplementation'을 사용하여
-    // Calculator.calculateRebalancing이 strategy.calculate()를 호출하도록 수정
-    vi.mocked(mockCalculator.calculateRebalancing).mockImplementation((strategy) => {
-      // 전달받은 strategy의 calculate()를 수동으로 호출해줍니다.
+
+    vi.mocked(mockCalculator.calculateRebalancing).mockImplementation((strategy: any) => {
       return strategy.calculate();
     });
-    // ▲▲▲▲▲ [수정 완료] ▲▲▲▲▲
-
-    // 4. [삭제] 오류를 유발하는 mockClear 블록 삭제
 
     // 5. 컨트롤러 생성 (이때 bindControllerEvents가 호출됨)
     controller = new PortfolioController(mockState, mockView);
@@ -8639,7 +9107,7 @@ describe('PortfolioController', () => {
   });
 
   it('handleCalculate: 유효성 검사 실패 시 ErrorService를 호출해야 한다', async () => {
-    vi.mocked(mockValidator.validateForCalculation).mockReturnValue([{ field: null, stockId: null, message: '- 테스트 오류' }]);
+    vi.mocked(mockValidator.validateForCalculation).mockReturnValue([{ field: '', stockId: null, message: '- 테스트 오류' }]);
 
     await controller.handleCalculate();
 
@@ -8648,43 +9116,39 @@ describe('PortfolioController', () => {
     expect(ErrorService.handle).toHaveBeenCalledWith(expect.any(ValidationError), 'handleCalculate - Validation');
     expect(mockCalculator.calculateRebalancing).not.toHaveBeenCalled();
   });
-  
+
   it('handleCalculate: 목표 비율 100% 미만 시 확인 창을 띄우고, 취소 시 중단해야 한다', async () => {
      vi.mocked(mockValidator.validateForCalculation).mockReturnValue([]);
-     const portfolioWithBadRatio = {
+     const portfolioWithBadRatio: Portfolio = {
          ...mockDefaultPortfolio,
          portfolioData: [
-             {...mockDefaultPortfolio.portfolioData[0], targetRatio: new Decimal(30)}, // 합 30
-             {...mockDefaultPortfolio.portfolioData[1], targetRatio: new Decimal(0)}
+             {...mockDefaultPortfolio.portfolioData[0], targetRatio: 30},
+             {...mockDefaultPortfolio.portfolioData[1], targetRatio: 0}
          ]
      };
      vi.mocked(mockState.getActivePortfolio).mockReturnValue(portfolioWithBadRatio);
      vi.mocked(mockView.showConfirm).mockResolvedValueOnce(false);
 
      await controller.handleCalculate();
-     
-     expect(mockView.showConfirm).toHaveBeenCalled(); 
-     expect(mockView.hideResults).toHaveBeenCalledOnce(); 
-     expect(mockCalculator.calculateRebalancing).not.toHaveBeenCalled(); 
+
+     expect(mockView.showConfirm).toHaveBeenCalled();
+     expect(mockView.hideResults).toHaveBeenCalledOnce();
+     expect(mockCalculator.calculateRebalancing).not.toHaveBeenCalled();
    });
 
   it('handleCalculate: "add" 모드일 때 AddRebalanceStrategy를 호출해야 한다', async () => {
     vi.mocked(mockValidator.validateForCalculation).mockReturnValue([]);
-    // MOCK_PORTFOLIO_1의 합계는 100% (50+50)
     vi.mocked(mockState.getActivePortfolio).mockReturnValue(mockDefaultPortfolio);
     vi.mocked(mockView.showConfirm).mockResolvedValue(true);
 
     await controller.handleCalculate();
 
-    // ▼▼▼ [수정] 모의 생성자(vi.fn) 대신, 인스턴스의 calculate 메서드(vi.fn)를 검사 ▼▼▼
     expect(mockAddCalculate).toHaveBeenCalledOnce();
     expect(mockSellCalculate).not.toHaveBeenCalled();
-    // ▲▲▲ [수정] ▲▲▲
-    
+
     expect(mockCalculator.calculateRebalancing).toHaveBeenCalledOnce();
-    // [수정] 'new'로 생성된 실제 클래스 인스턴스를 검사
-    expect(mockCalculator.calculateRebalancing).toHaveBeenCalledWith(expect.any(AddRebalanceStrategy)); 
-    
+    expect(mockCalculator.calculateRebalancing).toHaveBeenCalledWith(expect.any(AddRebalanceStrategy));
+
     expect(mockView.displayResults).toHaveBeenCalledOnce();
     expect(mockView.showToast).toHaveBeenCalledWith('toast.calculateSuccess', 'success');
   });
@@ -8699,20 +9163,18 @@ describe('PortfolioController', () => {
 
     await controller.handleCalculate();
 
-    // ▼▼▼ [수정] 모의 생성자(vi.fn) 대신, 인스턴스의 calculate 메서드(vi.fn)를 검사 ▼▼▼
     expect(mockSellCalculate).toHaveBeenCalledOnce();
     expect(mockAddCalculate).not.toHaveBeenCalled();
-    // ▲▲▲ [수정] ▲▲▲
 
     expect(mockCalculator.calculateRebalancing).toHaveBeenCalledOnce();
     expect(mockCalculator.calculateRebalancing).toHaveBeenCalledWith(expect.any(SellRebalanceStrategy));
     expect(mockView.displayResults).toHaveBeenCalledOnce();
   });
-  
+
   it('handleFetchAllPrices: API 호출 성공 시 state와 view를 업데이트해야 한다', async () => {
     const mockApiResponse = [
-      { id: 's1', ticker: 'AAA', status: 'fulfilled', value: 150 },
-      { id: 's2', ticker: 'BBB', status: 'fulfilled', value: 210 }
+      { id: 's1', ticker: 'AAA', status: 'fulfilled' as const, value: 150 },
+      { id: 's2', ticker: 'BBB', status: 'fulfilled' as const, value: 210 }
     ];
     vi.mocked(apiService.fetchAllStockPrices).mockResolvedValue(mockApiResponse);
 
@@ -8724,36 +9186,31 @@ describe('PortfolioController', () => {
     expect(mockState.updateStockProperty).toHaveBeenCalledWith('s2', 'currentPrice', 210);
     expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s1', '150.00');
     expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s2', '210.00');
-    
-    // ▼▼▼ [수정] "is not a spy" 오류 수정 ▼▼▼
-    // 'controller.updateUIState'가 'view.updateVirtualTableData'를 호출했는지 확인
-    expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce(); 
-    // ▲▲▲ [수정] ▲▲▲
-    
+
+    expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce();
+
     expect(mockView.showToast).toHaveBeenCalledWith('api.fetchSuccessAll', "success");
     expect(mockView.toggleFetchButton).toHaveBeenCalledWith(false);
   });
-  
+
   it('handleTransactionListClick: 거래 삭제 시 state.deleteTransaction을 호출해야 한다 (async)', async () => {
     vi.mocked(mockView.showConfirm).mockResolvedValue(true);
-    
+
     await controller.handleTransactionListClick('s1', 'tx1');
-    
+
     expect(mockView.showConfirm).toHaveBeenCalledOnce();
     expect(mockState.deleteTransaction).toHaveBeenCalledWith('s1', 'tx1');
     expect(mockView.renderTransactionList).toHaveBeenCalledOnce();
     expect(mockView.showToast).toHaveBeenCalledWith('toast.transactionDeleted', 'success');
 
-    // ▼▼▼ [수정] "is not a spy" 오류 수정 ▼▼▼
     expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce();
-    // ▲▲▲ [수정] ▲▲▲
   });
-  
+
   it('handleTransactionListClick: 거래 삭제 취소 시 state를 호출하지 않아야 한다 (async)', async () => {
     vi.mocked(mockView.showConfirm).mockResolvedValue(false);
-    
+
     await controller.handleTransactionListClick('s1', 'tx1');
-    
+
     expect(mockView.showConfirm).toHaveBeenCalledOnce();
     expect(mockState.deleteTransaction).not.toHaveBeenCalled();
     expect(mockView.renderTransactionList).not.toHaveBeenCalled();
@@ -8765,49 +9222,47 @@ describe('PortfolioController', () => {
 
 ---
 
-## `js/calculator.test.js`
+## `src/calculator.test.ts`
 
-```javascript
-// js/calculator.test.js (전략 패턴 적용)
-// @ts-check
+```typescript
+// src/calculator.test.ts (전략 패턴 적용)
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import { Calculator } from './calculator.js';
-import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies.js';
-import { createMockCalculatedStock } from './testUtils.js';
+import { Calculator } from './calculator';
+import { AddRebalanceStrategy, SellRebalanceStrategy } from './calculationStrategies';
+import { createMockCalculatedStock } from './testUtils';
+import type { Stock } from './types';
 
 describe('Calculator.calculateStockMetrics (동기)', () => {
     it('매수 거래만 있을 때 정확한 평단가와 수량을 계산해야 한다', () => {
-        const stock = {
+        const stock: Stock = {
             id: 's1', name: 'Test', ticker: 'TEST', sector: 'Tech', targetRatio: 100, currentPrice: 150,
             transactions: [
-                { id:'t1', type: 'buy', date: '2023-01-01', quantity: 10, price: 100 }, 
+                { id:'t1', type: 'buy', date: '2023-01-01', quantity: 10, price: 100 },
                 { id:'t2', type: 'buy', date: '2023-01-02', quantity: 10, price: 120 },
             ], isFixedBuyEnabled: false, fixedBuyAmount: 0
         };
-        // @ts-ignore
         const result = Calculator.calculateStockMetrics(stock);
         expect(result.quantity.toString()).toBe('20');
         expect(result.avgBuyPrice.toString()).toBe('110');
-        expect(result.currentAmount.toString()).toBe('3000'); 
-        expect(result.profitLoss.toString()).toBe('800'); 
+        expect(result.currentAmount.toString()).toBe('3000');
+        expect(result.profitLoss.toString()).toBe('800');
     });
 
     it('매수와 매도 거래가 섞여 있을 때 정확한 상태를 계산해야 한다', () => {
-        const stock = {
+        const stock: Stock = {
             id: 's1', name: 'Test', ticker: 'TEST', sector: 'Tech', targetRatio: 100, currentPrice: 200,
             transactions: [
                 { id:'t1', type: 'buy', date: '2023-01-01', quantity: 10, price: 100 },
                 { id:'t2', type: 'sell', date: '2023-01-02', quantity: 5, price: 150 },
             ], isFixedBuyEnabled: false, fixedBuyAmount: 0
         };
-         // @ts-ignore
         const result = Calculator.calculateStockMetrics(stock);
         expect(result.quantity.toString()).toBe('5');
-        expect(result.avgBuyPrice.toString()).toBe('100'); 
-        expect(result.currentAmount.toString()).toBe('1000'); 
-        expect(result.profitLoss.toString()).toBe('500'); 
+        expect(result.avgBuyPrice.toString()).toBe('100');
+        expect(result.currentAmount.toString()).toBe('1000');
+        expect(result.profitLoss.toString()).toBe('500');
     });
 });
 
@@ -8817,13 +9272,13 @@ describe('Calculator.calculateRebalancing (SellRebalanceStrategy)', () => {
       createMockCalculatedStock({ id: 's1', name: 'Stock 1', ticker: 'S1', targetRatio: 25, currentPrice: 1, quantity: 5000, avgBuyPrice: 1 }), // 5000원
       createMockCalculatedStock({ id: 's2', name: 'Stock 2', ticker: 'S2', targetRatio: 75, currentPrice: 1, quantity: 5000, avgBuyPrice: 1 })  // 5000원
     ];
-    
+
     const strategy = new SellRebalanceStrategy(portfolioData);
-    const { results } = Calculator.calculateRebalancing(strategy); 
-    
+    const { results } = Calculator.calculateRebalancing(strategy);
+
     const overweightStock = results.find(s => s.id === 's1');
     const underweightStock = results.find(s => s.id === 's2');
-    
+
     // 총액 10000원. 목표: 2500원(s1), 7500원(s2)
     expect(overweightStock?.adjustment.toString()).toBe('2500'); // Sell 2500
     expect(underweightStock?.adjustment.toString()).toBe('-2500'); // Buy 2500
@@ -8837,13 +9292,13 @@ describe('Calculator.calculateRebalancing (AddRebalanceStrategy)', () => {
       createMockCalculatedStock({ id: 's2', name: 'S2', ticker: 'S2', targetRatio: 50, currentPrice: 1, quantity: 3000, avgBuyPrice: 1 })  // 과체중
     ];
     const additionalInvestment = new Decimal(1000);
-    
+
     const strategy = new AddRebalanceStrategy(portfolioData, additionalInvestment);
-    const { results } = Calculator.calculateRebalancing(strategy); 
+    const { results } = Calculator.calculateRebalancing(strategy);
 
     const underweightStock = results.find(s => s.id === 's1');
     const overweightStock = results.find(s => s.id === 's2');
-    
+
     expect(underweightStock?.finalBuyAmount.toString()).toBe('1000');
     expect(overweightStock?.finalBuyAmount.toString()).toBe('0');
   });
@@ -8853,20 +9308,19 @@ describe('Calculator Edge Cases (동기)', () => {
 
     describe('calculateStockMetrics', () => {
         it('매도 수량이 보유 수량을 초과하면 보유 수량은 0이 되어야 함', () => {
-             const stock = {
+             const stock: Stock = {
                 id: 's1', name: 'OverSell', ticker: 'OVER', sector: '', targetRatio: 100, currentPrice: 100,
                 transactions: [
                     { id:'t1', type: 'buy', date: '2023-01-01', quantity: 10, price: 100 },
                     { id:'t2', type: 'sell', date: '2023-01-02', quantity: 15, price: 80 }
                 ], isFixedBuyEnabled: false, fixedBuyAmount: 0
             };
-            // @ts-ignore
             const result = Calculator.calculateStockMetrics(stock);
 
             expect(result.quantity.toString()).toBe('0');
-            expect(result.avgBuyPrice.toString()).toBe('100'); 
-            expect(result.currentAmount.toString()).toBe('0'); 
-            expect(result.profitLoss.toString()).toBe('0'); 
+            expect(result.avgBuyPrice.toString()).toBe('100');
+            expect(result.currentAmount.toString()).toBe('0');
+            expect(result.profitLoss.toString()).toBe('0');
         });
     });
 
@@ -8876,10 +9330,10 @@ describe('Calculator Edge Cases (동기)', () => {
                 createMockCalculatedStock({ id: 's1', name: 'S1', ticker: 'S1', targetRatio: 50, currentPrice: 1, quantity: 1000, avgBuyPrice: 1 }),
                 createMockCalculatedStock({ id: 's2', name: 'S2', ticker: 'S2', targetRatio: 50, currentPrice: 1, quantity: 1000, avgBuyPrice: 1 })
             ];
-            const additionalInvestment = new Decimal(0); 
+            const additionalInvestment = new Decimal(0);
             const strategy = new AddRebalanceStrategy(portfolioData, additionalInvestment);
             const { results } = Calculator.calculateRebalancing(strategy);
-            
+
             expect(results[0].finalBuyAmount.toString()).toBe('0');
             expect(results[1].finalBuyAmount.toString()).toBe('0');
             expect(results[0].buyRatio.toString()).toBe('0');
@@ -8901,16 +9355,15 @@ describe('Calculator Edge Cases (동기)', () => {
 
          it('고정 매수 금액이 추가 투자금을 초과하면, 추가 투자금까지만 할당됨', () => {
             const portfolioData = [
-                // @ts-ignore
                 { ...createMockCalculatedStock({ id: 's1', name: 'S1', ticker: 'S1', targetRatio: 50, currentPrice: 1, quantity: 1000, avgBuyPrice: 1 }), isFixedBuyEnabled: true, fixedBuyAmount: 1500 }, // 고정 1500
                 createMockCalculatedStock({ id: 's2', name: 'S2', ticker: 'S2', targetRatio: 50, currentPrice: 1, quantity: 1000, avgBuyPrice: 1 })
             ];
             const additionalInvestment = new Decimal(1000); // 총 투자금 1000
             const strategy = new AddRebalanceStrategy(portfolioData, additionalInvestment);
             const { results } = Calculator.calculateRebalancing(strategy);
-            
+
             expect(results.find(r => r.id === 's1')?.finalBuyAmount.toString()).toBe('1000');
-            expect(results.find(r => r.id === 's2')?.finalBuyAmount.toString()).toBe('0'); 
+            expect(results.find(r => r.id === 's2')?.finalBuyAmount.toString()).toBe('0');
          });
     });
 });
@@ -8918,18 +9371,19 @@ describe('Calculator Edge Cases (동기)', () => {
 
 ---
 
-## `js/validator.test.js`
+## `src/validator.test.ts`
 
-```javascript
-// js/validator.test.js
+```typescript
+// src/validator.test.ts
 import { describe, it, expect, vi } from 'vitest';
-import { Validator } from './validator.js';
-import Decimal from 'decimal.js'; // Import Decimal for validateForCalculation test
-import { CONFIG } from './constants.js'; // Import CONFIG for data structure test
+import { Validator } from './validator';
+import Decimal from 'decimal.js';
+import { CONFIG } from './constants';
+import type { Stock, CalculatedStock } from './types';
 
 // --- ⬇️ Mock i18n BEFORE importing validator.js ⬇️ ---
-vi.mock('./i18n.js', () => ({
-  t: vi.fn((key, replacements) => { // Added replacements parameter
+vi.mock('./i18n', () => ({
+  t: vi.fn((key: string, replacements?: Record<string, string>) => {
     // Provide Korean messages needed for the tests
     if (key === 'validation.negativeNumber') return '음수는 입력할 수 없습니다.';
     if (key === 'validation.invalidNumber') return '유효한 숫자가 아닙니다.';
@@ -8939,7 +9393,7 @@ vi.mock('./i18n.js', () => ({
     if (key === 'validation.invalidDate') return '유효한 날짜를 입력해주세요.';
     // Add messages for validateForCalculation
     if (key === 'validation.investmentAmountZero') return '- 추가 투자 금액을 0보다 크게 입력해주세요.';
-    if (key === 'validation.currentPriceZero') return `- '${replacements?.name}'의 현재가는 0보다 커야 합니다.`; // Include replacement
+    if (key === 'validation.currentPriceZero') return `- '${replacements?.name}'의 현재가는 0보다 커야 합니다.`;
     // Add other messages used in validator.js if needed by tests
     return key; // Fallback
   }),
@@ -8954,22 +9408,19 @@ describe('Validator.validateNumericInput', () => {
     });
 
     it('음수를 유효하지 않다고 처리해야 합니다.', () => {
-        expect(Validator.validateNumericInput(-10)).toEqual({ isValid: false, message: '음수는 입력할 수 없습니다.' }); // Matches mocked 't'
+        expect(Validator.validateNumericInput(-10)).toEqual({ isValid: false, message: '음수는 입력할 수 없습니다.' });
     });
 
     it('숫자가 아닌 문자열을 유효하지 않다고 처리해야 합니다.', () => {
-        expect(Validator.validateNumericInput('abc')).toEqual({ isValid: false, message: '유효한 숫자가 아닙니다.' }); // Matches mocked 't'
-        // --- ⬇️ Updated Expectation for empty string (assuming validator.js is fixed) ⬇️ ---
-        expect(Validator.validateNumericInput('')).toEqual({ isValid: false, message: '유효한 숫자가 아닙니다.' }); // Empty string test
-        // --- ⬆️ Updated Expectation ⬆️ ---
+        expect(Validator.validateNumericInput('abc')).toEqual({ isValid: false, message: '유효한 숫자가 아닙니다.' });
+        expect(Validator.validateNumericInput('')).toEqual({ isValid: false, message: '유효한 숫자가 아닙니다.' });
         expect(Validator.validateNumericInput(null)).toEqual({ isValid: false, message: '유효한 숫자가 아닙니다.' });
         expect(Validator.validateNumericInput(undefined)).toEqual({ isValid: false, message: '유효한 숫자가 아닙니다.' });
-
     });
 });
 
 describe('Validator.validateTransaction', () => {
-   const validTx = { type: 'buy', date: '2023-10-26', quantity: 10, price: 50 }; // Added type
+   const validTx = { type: 'buy' as const, date: '2023-10-26', quantity: 10, price: 50 };
 
    it('유효한 거래 데이터를 통과시켜야 합니다.', () => {
      expect(Validator.validateTransaction(validTx).isValid).toBe(true);
@@ -8980,51 +9431,67 @@ describe('Validator.validateTransaction', () => {
      futureDate.setDate(futureDate.getDate() + 1); // Tomorrow
      const futureTx = { ...validTx, date: futureDate.toISOString().slice(0, 10)};
      expect(Validator.validateTransaction(futureTx).isValid).toBe(false);
-     expect(Validator.validateTransaction(futureTx).message).toBe('미래 날짜는 입력할 수 없습니다.'); // Matches mocked 't'
+     expect(Validator.validateTransaction(futureTx).message).toBe('미래 날짜는 입력할 수 없습니다.');
    });
 
    it('잘못된 날짜 형식을 거부해야 합니다.', () => {
        const invalidDateTx = { ...validTx, date: 'invalid-date' };
        expect(Validator.validateTransaction(invalidDateTx).isValid).toBe(false);
-       expect(Validator.validateTransaction(invalidDateTx).message).toBe('유효한 날짜를 입력해주세요.'); // Matches mocked 't'
+       expect(Validator.validateTransaction(invalidDateTx).message).toBe('유효한 날짜를 입력해주세요.');
    });
 
    it('수량이 0이거나 음수일 때 거부해야 합니다.', () => {
        const zeroQtyTx = { ...validTx, quantity: 0 };
        const negQtyTx = { ...validTx, quantity: -5 };
        expect(Validator.validateTransaction(zeroQtyTx).isValid).toBe(false);
-       expect(Validator.validateTransaction(zeroQtyTx).message).toBe('수량은 0보다 커야 합니다.'); // Matches mocked 't'
+       expect(Validator.validateTransaction(zeroQtyTx).message).toBe('수량은 0보다 커야 합니다.');
        expect(Validator.validateTransaction(negQtyTx).isValid).toBe(false);
-       // --- ⬇️ Updated Expectation for negative number ⬇️ ---
-       expect(Validator.validateTransaction(negQtyTx).message).toBe('음수는 입력할 수 없습니다.'); // Expect negative number message
-       // --- ⬆️ Updated Expectation ⬆️ ---
+       expect(Validator.validateTransaction(negQtyTx).message).toBe('음수는 입력할 수 없습니다.');
    });
 
    it('단가가 0이거나 음수일 때 거부해야 합니다.', () => {
        const zeroPriceTx = { ...validTx, price: 0 };
        const negPriceTx = { ...validTx, price: -50 };
        expect(Validator.validateTransaction(zeroPriceTx).isValid).toBe(false);
-       expect(Validator.validateTransaction(zeroPriceTx).message).toBe('단가는 0보다 커야 합니다.'); // Matches mocked 't'
+       expect(Validator.validateTransaction(zeroPriceTx).message).toBe('단가는 0보다 커야 합니다.');
        expect(Validator.validateTransaction(negPriceTx).isValid).toBe(false);
-       // --- ⬇️ Updated Expectation for negative number ⬇️ ---
-       expect(Validator.validateTransaction(negPriceTx).message).toBe('음수는 입력할 수 없습니다.'); // Expect negative number message
-       // --- ⬆️ Updated Expectation ⬆️ ---
+       expect(Validator.validateTransaction(negPriceTx).message).toBe('음수는 입력할 수 없습니다.');
    });
 
 });
 
 
 describe('Validator.validateForCalculation', () => {
-    // --- ⬇️ Updated test data with calculated.quantity ⬇️ ---
-    const validPortfolioData = [
-        { id: 's1', name: 'Stock A', ticker: 'AAA', sector: 'Tech', targetRatio: 50, currentPrice: 100, isFixedBuyEnabled: false, fixedBuyAmount: 0, transactions: [], calculated: { currentAmount: new Decimal(1000), quantity: new Decimal(10) } }, // Added quantity
-        { id: 's2', name: 'Stock B', ticker: 'BBB', sector: 'Finance', targetRatio: 50, currentPrice: 200, isFixedBuyEnabled: false, fixedBuyAmount: 0, transactions: [], calculated: { currentAmount: new Decimal(2000), quantity: new Decimal(10) } }, // Added quantity
+    const validPortfolioData: CalculatedStock[] = [
+        {
+            id: 's1', name: 'Stock A', ticker: 'AAA', sector: 'Tech',
+            targetRatio: 50, currentPrice: 100,
+            isFixedBuyEnabled: false, fixedBuyAmount: 0, transactions: [],
+            calculated: {
+                currentAmount: new Decimal(1000),
+                quantity: new Decimal(10),
+                avgBuyPrice: new Decimal(100),
+                profitLoss: new Decimal(0),
+                profitLossRate: new Decimal(0),
+            }
+        },
+        {
+            id: 's2', name: 'Stock B', ticker: 'BBB', sector: 'Finance',
+            targetRatio: 50, currentPrice: 200,
+            isFixedBuyEnabled: false, fixedBuyAmount: 0, transactions: [],
+            calculated: {
+                currentAmount: new Decimal(2000),
+                quantity: new Decimal(10),
+                avgBuyPrice: new Decimal(200),
+                profitLoss: new Decimal(0),
+                profitLossRate: new Decimal(0),
+            }
+        },
     ];
-    // --- ⬆️ Updated test data ⬆️ ---
 
     it('유효한 추가 매수 입력값을 통과시켜야 합니다.', () => {
         const inputs = {
-            mainMode: 'add',
+            mainMode: 'add' as const,
             portfolioData: validPortfolioData,
             additionalInvestment: new Decimal(500)
         };
@@ -9033,30 +9500,38 @@ describe('Validator.validateForCalculation', () => {
 
      it('추가 매수 모드에서 추가 투자금이 0 이하일 때 오류를 반환해야 합니다.', () => {
          const inputs = {
-             mainMode: 'add',
+             mainMode: 'add' as const,
              portfolioData: validPortfolioData,
              additionalInvestment: new Decimal(0)
          };
          const errors = Validator.validateForCalculation(inputs);
          expect(errors.length).toBeGreaterThan(0);
-         // Check for the specific message using the mocked 't' function
          expect(errors.some(e => e.message === '- 추가 투자 금액을 0보다 크게 입력해주세요.')).toBe(true);
      });
 
-    // Add more tests...
     it('현재가가 0 이하인 주식이 있을 때 오류를 반환해야 합니다.', () => {
-        const portfolioWithZeroPrice = [
+        const portfolioWithZeroPrice: CalculatedStock[] = [
              { ...validPortfolioData[0] },
-             { ...validPortfolioData[1], currentPrice: 0, calculated: { currentAmount: new Decimal(0), quantity: new Decimal(10)} } // Set price to 0
+             {
+                 ...validPortfolioData[1],
+                 currentPrice: 0,
+                 calculated: {
+                     currentAmount: new Decimal(0),
+                     quantity: new Decimal(10),
+                     avgBuyPrice: new Decimal(200),
+                     profitLoss: new Decimal(-2000),
+                     profitLossRate: new Decimal(-100),
+                 }
+             }
         ];
          const inputs = {
-             mainMode: 'add',
+             mainMode: 'add' as const,
              portfolioData: portfolioWithZeroPrice,
              additionalInvestment: new Decimal(500)
          };
          const errors = Validator.validateForCalculation(inputs);
          expect(errors.length).toBeGreaterThan(0);
-         expect(errors.some(e => e.stockId === 's2' && e.message.includes('현재가는 0보다 커야 합니다.'))).toBe(true); // Check specific error
+         expect(errors.some(e => e.stockId === 's2' && e.message.includes('현재가는 0보다 커야 합니다.'))).toBe(true);
      });
 
 });
@@ -9065,17 +9540,15 @@ describe('Validator.validateForCalculation', () => {
 describe('Validator.isDataStructureValid', () => {
     it('유효한 데이터 구조를 통과시켜야 합니다.', () => {
         const validData = {
-            meta: { activePortfolioId: 'p1', version: CONFIG.DATA_VERSION }, // Use CONFIG version
+            meta: { activePortfolioId: 'p1', version: CONFIG.DATA_VERSION },
             portfolios: {
                 'p1': {
                     id: 'p1', name: 'Valid',
-                    // --- ⬇️ Added required settings properties ⬇️ ---
                     settings: {
-                         mainMode: 'add',
-                         currentCurrency: 'krw',
+                         mainMode: 'add' as const,
+                         currentCurrency: 'krw' as const,
                          exchangeRate: 1300
                     },
-                    // --- ⬆️ Added required settings properties ⬆️ ---
                     portfolioData: []
                  }
             }
@@ -9097,7 +9570,7 @@ describe('Validator.isDataStructureValid', () => {
           const invalidData = {
               meta: { activePortfolioId: 'p1', version: CONFIG.DATA_VERSION },
               portfolios: {
-                  'p1': { id: 'p1' /* Missing name, settings, portfolioData */ }
+                  'p1': { id: 'p1' }
               }
           };
           expect(Validator.isDataStructureValid(invalidData)).toBe(false);
@@ -9125,4 +9598,122 @@ describe('Validator.isDataStructureValid', () => {
 
 
 });
+```
+
+---
+
+## `src/dataStore.ts`
+
+```typescript
+// src/dataStore.ts - IndexedDB 저장/로드 전담
+import { get, set, del } from 'idb-keyval';
+import { CONFIG } from './constants.ts';
+import { ErrorService } from './errorService.ts';
+import type { Portfolio, MetaState } from './types.ts';
+
+/**
+ * @description IndexedDB 저장/로드 및 마이그레이션을 담당하는 클래스
+ */
+export class DataStore {
+    /**
+     * @description Meta 데이터 로드
+     */
+    static async loadMeta(): Promise<MetaState | null> {
+        try {
+            const metaData = await get<MetaState>(CONFIG.IDB_META_KEY);
+            return metaData || null;
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.loadMeta');
+            return null;
+        }
+    }
+
+    /**
+     * @description Meta 데이터 저장
+     */
+    static async saveMeta(metaData: MetaState): Promise<void> {
+        try {
+            await set(CONFIG.IDB_META_KEY, metaData);
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.saveMeta');
+            throw error;
+        }
+    }
+
+    /**
+     * @description 포트폴리오 데이터 로드
+     */
+    static async loadPortfolios(): Promise<Record<string, Portfolio> | null> {
+        try {
+            const portfolioData = await get<Record<string, Portfolio>>(
+                CONFIG.IDB_PORTFOLIOS_KEY
+            );
+            return portfolioData || null;
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.loadPortfolios');
+            return null;
+        }
+    }
+
+    /**
+     * @description 포트폴리오 데이터 저장
+     */
+    static async savePortfolios(portfolios: Record<string, Portfolio>): Promise<void> {
+        try {
+            await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolios);
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.savePortfolios');
+            throw error;
+        }
+    }
+
+    /**
+     * @description LocalStorage에서 IndexedDB로 마이그레이션
+     */
+    static async migrateFromLocalStorage(): Promise<boolean> {
+        try {
+            const lsMeta = localStorage.getItem(CONFIG.LEGACY_LS_META_KEY);
+            const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
+
+            if (lsMeta && lsPortfolios) {
+                const metaData = JSON.parse(lsMeta);
+                const portfolioData = JSON.parse(lsPortfolios);
+
+                // IndexedDB에 저장
+                await set(CONFIG.IDB_META_KEY, metaData);
+                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
+
+                // 마이그레이션 성공 후 LocalStorage 데이터 삭제
+                localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
+                localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
+
+                console.log(
+                    '[DataStore] Successfully migrated from LocalStorage to IndexedDB'
+                );
+                return true;
+            }
+
+            console.log('[DataStore] No legacy data found in LocalStorage');
+            return false;
+        } catch (error) {
+            console.error('[DataStore] Migration failed:', error);
+            ErrorService.handle(error as Error, 'DataStore.migrateFromLocalStorage');
+            return false;
+        }
+    }
+
+    /**
+     * @description 모든 데이터 삭제
+     */
+    static async clearAll(): Promise<void> {
+        try {
+            await del(CONFIG.IDB_META_KEY);
+            await del(CONFIG.IDB_PORTFOLIOS_KEY);
+            console.log('[DataStore] All data cleared');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.clearAll');
+            throw error;
+        }
+    }
+}
 ```

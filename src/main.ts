@@ -1,4 +1,4 @@
-// js/main.ts (Class-based View)
+// src/main.ts (Class-based View)
 import { PortfolioState } from './state.ts';
 import { PortfolioView } from './view.ts';
 import { PortfolioController } from './controller.ts';

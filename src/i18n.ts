@@ -1,4 +1,4 @@
-// js/i18n.ts (Updated with missing ui keys)
+// src/i18n.ts (Updated with missing ui keys)
 
 type Lang = 'en' | 'ko';
 type Replacements = Record<string, string | number>;

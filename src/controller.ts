@@ -1,4 +1,4 @@
-// js/controller.ts (async/await + DOMPurify 적용)
+// src/controller.ts (async/await + DOMPurify 적용)
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';

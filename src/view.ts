@@ -1,4 +1,4 @@
-// js/view.ts (가상 스크롤 적용)
+// src/view.ts (가상 스크롤 적용)
 import { CONFIG } from './constants';
 import { formatCurrency, escapeHTML } from './utils';
 import { t } from './i18n';

@@ -1,4 +1,4 @@
-// js/eventBinder.ts (Updated with Pub/Sub emit)
+// src/eventBinder.ts (Updated with Pub/Sub emit)
 import { debounce } from './utils';
 import Decimal from 'decimal.js';
 import type { PortfolioView } from './view';

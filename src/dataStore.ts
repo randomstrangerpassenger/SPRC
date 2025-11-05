@@ -1,4 +1,4 @@
-// js/dataStore.ts - IndexedDB 저장/로드 전담
+// src/dataStore.ts - IndexedDB 저장/로드 전담
 import { get, set, del } from 'idb-keyval';
 import { CONFIG } from './constants.ts';
 import { ErrorService } from './errorService.ts';
