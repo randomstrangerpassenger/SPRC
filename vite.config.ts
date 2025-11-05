@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'jsdom',
-      include: ['src/**/*.test.ts'],
+      include: ['src/**/*.test.js', 'src/**/*.test.ts'],
       esbuild: {
         target: 'esnext', // 테스트 환경에서도 esnext 문법(예: #)을 사용하도록 설정
       },
