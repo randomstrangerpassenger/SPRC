@@ -1,6 +1,7 @@
 // vite.config.ts (Vitest 4.x용 단순화 버전)
 
 import { defineConfig, loadEnv } from 'vite';
+import purgecss from 'vite-plugin-purgecss';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -8,9 +9,23 @@ export default defineConfig(({ mode }) => {
   return {
     base: './',
 
+    // ===== [Phase 3.3 최적화] CSS Purging 플러그인 추가 =====
+    plugins: mode === 'production' ? [
+      purgecss({
+        content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+        defaultExtractor: (content) => content.match(/[\w-/:]+(?<!:)/g) || [],
+        safelist: {
+          standard: ['dark-mode', 'sr-only', 'skip-link', 'modal-open'],
+          deep: [/^btn/, /^toast/, /^modal/, /^virtual-/, /^error-/, /^text-/],
+          greedy: [/data-/, /aria-/]
+        }
+      })
+    ] : [],
+    // ===== [Phase 3.3 최적화 끝] =====
+
     esbuild: {
       target: 'esnext', // # 문법 지원은 유지
-      drop: ['console', 'debugger'],
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
     },
 
     test: {
