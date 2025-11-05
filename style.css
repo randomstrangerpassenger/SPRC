@@ -308,6 +308,7 @@ body.dark-mode .guide-box--sell { background-color: #4a1f1f; }
 }
 .result-row-highlight.in-view { opacity: 1; transform: translateX(0); }
 #chartSection { position: relative; max-width: 500px; margin: 25px auto; }
+#chartSection > div { position: relative; height: 400px; }
 .dark-mode-toggle {
     position: fixed; bottom: var(--spacing-lg); right: var(--spacing-lg); z-index: 1000; width: 60px; height: 60px; border-radius: 50%;
     font-size: 1.8rem; box-shadow: 0 5px 20px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; padding: 0;

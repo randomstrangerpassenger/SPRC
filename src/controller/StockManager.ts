@@ -194,7 +194,10 @@ export class StockManager {
             const newRatioSum = getRatioSum(activePortfolio.portfolioData);
             this.view.updateRatioSum(newRatioSum.toNumber());
 
-            const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+            const newSectorData = Calculator.calculateSectorAnalysis(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency
+            );
             this.view.displaySectorAnalysis(
                 generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
             );
