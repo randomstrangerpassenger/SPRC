@@ -116,6 +116,7 @@ export class PortfolioView {
             additionalAmountUSDInput: D.getElementById('additionalAmountUSD'),
             exchangeRateInput: D.getElementById('exchangeRate'),
             portfolioExchangeRateInput: D.getElementById('portfolioExchangeRate'),
+            rebalancingToleranceInput: D.getElementById('rebalancingTolerance'),
             mainModeSelector: D.querySelectorAll('input[name="mainMode"]'),
             currencyModeSelector: D.querySelectorAll('input[name="currencyMode"]'),
             exchangeRateGroup: D.getElementById('exchangeRateGroup'),

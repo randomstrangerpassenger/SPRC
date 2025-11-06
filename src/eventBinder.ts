@@ -250,6 +250,17 @@ export function bindEventListeners(view: PortfolioView): AbortController {
         }
     });
 
+    // 리밸런싱 허용 오차 설정
+    dom.rebalancingToleranceInput?.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const tolerance = parseFloat(target.value);
+        const isValid = !isNaN(tolerance) && tolerance >= 0;
+        view.toggleInputValidation(target, isValid);
+        if (isValid) {
+            view.emit('rebalancingToleranceChanged', { tolerance });
+        }
+    });
+
     // 추가 투자금 섹션의 환율 변경 시 포트폴리오 환율과 동기화
     const originalExchangeRateHandler = dom.exchangeRateInput;
     if (originalExchangeRateHandler) {

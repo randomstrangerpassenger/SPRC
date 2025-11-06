@@ -54,6 +54,8 @@ export interface PortfolioSettings {
     currentCurrency: Currency;
     exchangeRate: number;
     rebalancingTolerance?: number; // 리밸런싱 허용 오차 (%), optional for backward compatibility
+    tradingFeeRate?: number; // 거래 수수료율 (%), optional
+    taxRate?: number; // 세율 (%), optional
 }
 
 export interface Portfolio {

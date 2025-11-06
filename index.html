@@ -52,6 +52,11 @@
                         <input type="number" id="portfolioExchangeRate" placeholder="예: 1300" min="0.01" step="0.01" value="1300">
                     </div>
 
+                    <div id="rebalancingToleranceGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="rebalancingTolerance">🔔 리밸런싱 알림 허용 오차 (%):</label>
+                        <input type="number" id="rebalancingTolerance" placeholder="예: 5" min="0" step="0.1" value="5">
+                    </div>
+
                     <button id="resetDataBtn" class="btn" data-variant="orange">🔄 초기화</button>
                     <button id="normalizeRatiosBtn" class="btn" data-variant="blue">⚖️ 비율 자동 맞춤(100%)</button>
                     

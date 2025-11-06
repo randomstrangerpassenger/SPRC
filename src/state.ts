@@ -538,6 +538,7 @@ export class PortfolioState {
                 mainMode: 'simple',
                 currentCurrency: 'krw',
                 exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
+                rebalancingTolerance: 5, // 기본 5% 허용 오차
             },
             portfolioData: [this._createDefaultStock()]
         };

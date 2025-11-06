@@ -112,12 +112,15 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+            const { exchangeRateInput, portfolioExchangeRateInput, rebalancingToleranceInput } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
             if (portfolioExchangeRateInput instanceof HTMLInputElement) {
                 portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+            }
+            if (rebalancingToleranceInput instanceof HTMLInputElement) {
+                rebalancingToleranceInput.value = (activePortfolio.settings.rebalancingTolerance ?? 5).toString();
             }
 
             this.fullRender();
@@ -201,6 +204,9 @@ export class PortfolioController {
         this.view.on('portfolioExchangeRateChanged', (data) =>
             this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
         );
+        this.view.on('rebalancingToleranceChanged', (data) =>
+            this.handleRebalancingToleranceChange(data.tolerance)
+        );
 
         // 모달 상호작용
         this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
@@ -253,6 +259,9 @@ export class PortfolioController {
             // ===== [Phase 2.2 Web Worker 통합 끝] =====
             this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
+            // 리밸런싱 경고 확인 및 표시
+            this.checkRebalancingNeeds(calculatedState.portfolioData, calculatedState.currentTotal, activePortfolio.settings.rebalancingTolerance);
+
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
             activePortfolio.portfolioData = calculatedState.portfolioData;
@@ -303,6 +312,45 @@ export class PortfolioController {
     // === 기타 핸들러 ===
 
     /**
+     * @description 리밸런싱 필요 여부 확인
+     */
+    checkRebalancingNeeds(
+        portfolioData: any[],
+        currentTotal: any,
+        rebalancingTolerance?: number
+    ): void {
+        const tolerance = rebalancingTolerance ?? 5;
+        if (tolerance <= 0) return; // 허용 오차가 0이면 체크 안 함
+
+        const currentTotalDec = new Decimal(currentTotal);
+        if (currentTotalDec.isZero()) return;
+
+        const stocksNeedingRebalancing: string[] = [];
+
+        for (const stock of portfolioData) {
+            const currentAmount = stock.calculated?.currentAmount;
+            if (!currentAmount) continue;
+
+            const currentAmountDec = new Decimal(currentAmount);
+            const currentRatio = currentAmountDec.div(currentTotalDec).times(100);
+            const targetRatio = new Decimal(stock.targetRatio ?? 0);
+            const diff = currentRatio.minus(targetRatio).abs();
+
+            if (diff.greaterThan(tolerance)) {
+                stocksNeedingRebalancing.push(
+                    `${stock.name}: 현재 ${currentRatio.toFixed(1)}% (목표 ${targetRatio.toFixed(1)}%)`
+                );
+            }
+        }
+
+        // 경고 메시지 표시
+        if (stocksNeedingRebalancing.length > 0) {
+            const message = `🔔 리밸런싱이 필요한 종목: ${stocksNeedingRebalancing.join(', ')}`;
+            this.view.showToast(message, 'info');
+        }
+    }
+
+    /**
      * @description 성과 히스토리 표시
      */
     async handleShowPerformanceHistory(): Promise<void> {
@@ -329,6 +377,18 @@ export class PortfolioController {
             console.error('[Controller] Failed to display performance history:', error);
             this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
         }
+    }
+
+    /**
+     * @description 리밸런싱 허용 오차 변경
+     */
+    async handleRebalancingToleranceChange(tolerance: number): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        activePortfolio.settings.rebalancingTolerance = tolerance;
+        await this.state.saveActivePortfolio();
+        this.updateUIState(); // UI 업데이트로 경고 표시 갱신
     }
 
     /**
