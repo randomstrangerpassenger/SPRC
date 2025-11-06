@@ -164,8 +164,11 @@ export class PortfolioView {
             customModalCancel: D.getElementById('customModalCancel'),
             performanceHistorySection: D.getElementById('performanceHistorySection'),
             showPerformanceHistoryBtn: D.getElementById('showPerformanceHistoryBtn'),
+            showSnapshotListBtn: D.getElementById('showSnapshotListBtn'),
             performanceChartContainer: D.getElementById('performanceChartContainer'),
             performanceChart: D.getElementById('performanceChart'),
+            snapshotListContainer: D.getElementById('snapshotListContainer'),
+            snapshotList: D.getElementById('snapshotList'),
         };
 
         this.eventEmitter.clear();

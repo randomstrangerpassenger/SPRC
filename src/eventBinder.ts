@@ -213,6 +213,7 @@ export function bindEventListeners(view: PortfolioView): AbortController {
 
     // 성과 히스토리 버튼
     dom.showPerformanceHistoryBtn?.addEventListener('click', () => view.emit('showPerformanceHistoryClicked'));
+    dom.showSnapshotListBtn?.addEventListener('click', () => view.emit('showSnapshotListClicked'));
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {

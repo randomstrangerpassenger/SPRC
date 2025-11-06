@@ -149,10 +149,15 @@
             <section id="performanceHistorySection" class="card hidden" role="region" aria-label="포트폴리오 성과 히스토리">
                 <h2>📈 포트폴리오 성과 히스토리</h2>
                 <div class="btn-controls" style="margin-bottom: 15px;">
-                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">성과 히스토리 보기</button>
+                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">📊 차트 보기</button>
+                    <button id="showSnapshotListBtn" class="btn" data-variant="green">📋 스냅샷 목록</button>
                 </div>
                 <div id="performanceChartContainer" class="hidden">
                     <canvas id="performanceChart"></canvas>
+                </div>
+                <div id="snapshotListContainer" class="hidden" style="margin-top: 20px;">
+                    <h3>💾 저장된 스냅샷</h3>
+                    <div id="snapshotList" style="max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </section>
         </main>

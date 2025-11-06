@@ -232,6 +232,7 @@ export class PortfolioController {
         // 계산 및 통화
         this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
         this.view.on('showPerformanceHistoryClicked', () => this.handleShowPerformanceHistory());
+        this.view.on('showSnapshotListClicked', () => this.handleShowSnapshotList());
         this.view.on('mainModeChanged', async (data) => {
             const result = await this.calculationManager.handleMainModeChange(data.mode);
             if (result.needsFullRender) this.fullRender();
@@ -571,6 +572,15 @@ export class PortfolioController {
                 return;
             }
 
+            // Toggle visibility
+            const section = this.view.dom.performanceHistorySection;
+            const chartContainer = this.view.dom.performanceChartContainer;
+            const listContainer = this.view.dom.snapshotListContainer;
+
+            if (section) section.classList.remove('hidden');
+            if (chartContainer) chartContainer.classList.remove('hidden');
+            if (listContainer) listContainer.classList.add('hidden');
+
             const ChartClass = (await import('chart.js/auto')).default;
             await this.view.displayPerformanceHistory(
                 ChartClass,
@@ -583,6 +593,105 @@ export class PortfolioController {
             console.error('[Controller] Failed to display performance history:', error);
             this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
         }
+    }
+
+    /**
+     * @description 스냅샷 목록 표시
+     */
+    async handleShowSnapshotList(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.view.showToast('저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                return;
+            }
+
+            // Toggle visibility
+            const section = this.view.dom.performanceHistorySection;
+            const chartContainer = this.view.dom.performanceChartContainer;
+            const listContainer = this.view.dom.snapshotListContainer;
+
+            if (section) section.classList.remove('hidden');
+            if (chartContainer) chartContainer.classList.add('hidden');
+            if (listContainer) listContainer.classList.remove('hidden');
+
+            // Render snapshot list
+            this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
+
+            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+        } catch (error) {
+            console.error('[Controller] Failed to display snapshot list:', error);
+            this.view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description 스냅샷 목록 렌더링
+     */
+    private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
+        const listEl = this.view.dom.snapshotList;
+        if (!listEl) return;
+
+        const currencySymbol = currency === 'krw' ? '₩' : '$';
+        const formatNumber = (num: number) => {
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        };
+
+        const formatPercent = (num: number) => {
+            return num.toFixed(2);
+        };
+
+        const rows = snapshots.map(snapshot => {
+            const totalValue = currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
+            const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
+            const returnRate = snapshot.totalInvestedCapital > 0
+                ? (totalReturn / snapshot.totalInvestedCapital) * 100
+                : 0;
+
+            const isProfit = totalReturn >= 0;
+            const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
+
+            return `
+                <tr>
+                    <td>${snapshot.date}</td>
+                    <td style="text-align: right; font-weight: bold;">${currencySymbol}${formatNumber(totalValue)}</td>
+                    <td style="text-align: right;">${currencySymbol}${formatNumber(snapshot.totalInvestedCapital)}</td>
+                    <td style="text-align: right;" class="${profitClass}">
+                        ${currencySymbol}${formatNumber(totalReturn)}
+                        <br>
+                        <small>(${isProfit ? '+' : ''}${formatPercent(returnRate)}%)</small>
+                    </td>
+                    <td style="text-align: center;">${snapshot.stockCount}</td>
+                </tr>
+            `;
+        }).join('');
+
+        listEl.innerHTML = `
+            <div class="table-responsive">
+                <table>
+                    <caption>포트폴리오 스냅샷 목록</caption>
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th style="text-align: right;">총 자산</th>
+                            <th style="text-align: right;">투자 원금</th>
+                            <th style="text-align: right;">총 수익</th>
+                            <th style="text-align: center;">종목 수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
     /**
