@@ -262,6 +262,9 @@ export class PortfolioController {
             // 리밸런싱 경고 확인 및 표시
             this.checkRebalancingNeeds(calculatedState.portfolioData, calculatedState.currentTotal, activePortfolio.settings.rebalancingTolerance);
 
+            // 리스크 분석 (Phase 4.3)
+            this.checkRiskWarnings(calculatedState.portfolioData, calculatedState.currentTotal, sectorData);
+
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
             activePortfolio.portfolioData = calculatedState.portfolioData;
@@ -347,6 +350,47 @@ export class PortfolioController {
         if (stocksNeedingRebalancing.length > 0) {
             const message = `🔔 리밸런싱이 필요한 종목: ${stocksNeedingRebalancing.join(', ')}`;
             this.view.showToast(message, 'info');
+        }
+    }
+
+    /**
+     * @description 리스크 경고 확인 (Phase 4.3)
+     */
+    checkRiskWarnings(
+        portfolioData: any[],
+        currentTotal: any,
+        sectorData: any[]
+    ): void {
+        const warnings: string[] = [];
+        const currentTotalDec = new Decimal(currentTotal);
+
+        if (currentTotalDec.isZero()) return;
+
+        // 1. 단일 종목 비중 경고 (30% 초과)
+        const SINGLE_STOCK_THRESHOLD = 30;
+        for (const stock of portfolioData) {
+            const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
+            const ratio = currentAmount.div(currentTotalDec).times(100);
+
+            if (ratio.greaterThan(SINGLE_STOCK_THRESHOLD)) {
+                warnings.push(`⚠️ ${stock.name}: ${ratio.toFixed(1)}% (단일 종목 비중 높음)`);
+            }
+        }
+
+        // 2. 섹터 집중도 경고 (40% 초과)
+        const SECTOR_CONCENTRATION_THRESHOLD = 40;
+        for (const sector of sectorData) {
+            const percentage = new Decimal(sector.percentage || 0);
+
+            if (percentage.greaterThan(SECTOR_CONCENTRATION_THRESHOLD)) {
+                warnings.push(`⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`);
+            }
+        }
+
+        // 경고 메시지 표시
+        if (warnings.length > 0) {
+            const message = `🔍 리스크 경고: ${warnings.join(', ')}`;
+            this.view.showToast(message, 'warning');
         }
     }
 
