@@ -128,6 +128,8 @@ export class PortfolioView {
             darkModeToggle: D.getElementById('darkModeToggle'),
             addNewStockBtn: D.getElementById('addNewStockBtn'),
             fetchAllPricesBtn: D.getElementById('fetchAllPricesBtn'),
+            allocationTemplateSelect: D.getElementById('allocationTemplate'),
+            applyTemplateBtn: D.getElementById('applyTemplateBtn'),
             resetDataBtn: D.getElementById('resetDataBtn'),
             normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
             dataManagementBtn: D.getElementById('dataManagementBtn'),

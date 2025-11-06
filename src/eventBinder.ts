@@ -32,6 +32,14 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     dom.normalizeRatiosBtn?.addEventListener('click', () => view.emit('normalizeRatiosClicked'));
     dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
+    // 템플릿 적용 버튼 (Phase 3.2)
+    dom.applyTemplateBtn?.addEventListener('click', () => {
+        const select = dom.allocationTemplateSelect as HTMLSelectElement | null;
+        if (select && select.value) {
+            view.emit('applyTemplateClicked', { template: select.value });
+        }
+    });
+
     // 데이터 관리 드롭다운
     const dataManagementBtn = dom.dataManagementBtn as HTMLButtonElement | null;
     const dataDropdownContent = dom.dataDropdownContent as HTMLElement | null;
