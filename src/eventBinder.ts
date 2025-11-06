@@ -96,6 +96,13 @@ export function bindEventListeners(view: PortfolioView): AbortController {
         dataManagementBtn?.focus();
     });
 
+    dom.exportTransactionsCSVBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        view.emit('exportTransactionsCSVClicked');
+        toggleDropdown(false);
+        dataManagementBtn?.focus();
+    });
+
     window.addEventListener('click', (e) => {
         const target = e.target as Node | null;
         if (dataManagementBtn && dataDropdownContent?.classList.contains('show') && !dataManagementBtn.contains(target)) {

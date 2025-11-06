@@ -130,6 +130,38 @@ export class PortfolioController {
             }
 
             this.fullRender();
+
+            // Phase 4.2: 환율 자동 로드
+            this.loadExchangeRate();
+        }
+    }
+
+    /**
+     * @description 환율 자동 로드 (Phase 4.2)
+     */
+    async loadExchangeRate(): Promise<void> {
+        try {
+            const rate = await (await import('./apiService')).apiService.fetchExchangeRate();
+            if (rate) {
+                const activePortfolio = this.state.getActivePortfolio();
+                if (activePortfolio) {
+                    activePortfolio.settings.exchangeRate = rate;
+                    await this.state.saveActivePortfolio();
+
+                    // UI 업데이트
+                    const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                    if (exchangeRateInput instanceof HTMLInputElement) {
+                        exchangeRateInput.value = rate.toFixed(2);
+                    }
+                    if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                        portfolioExchangeRateInput.value = rate.toFixed(2);
+                    }
+
+                    console.log('[Controller] Exchange rate auto-loaded:', rate);
+                }
+            }
+        } catch (error) {
+            console.warn('[Controller] Failed to auto-load exchange rate:', error);
         }
     }
 
@@ -172,6 +204,7 @@ export class PortfolioController {
         });
         this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
         this.view.on('importDataClicked', () => this.dataManager.handleImportData());
+        this.view.on('exportTransactionsCSVClicked', () => this.dataManager.handleExportTransactionsCSV());
         this.view.on('fileSelected', async (e) => {
             const result = await this.dataManager.handleFileSelected(e);
             if (result.needsUISetup) this.setupInitialUI();

@@ -134,6 +134,7 @@ export class PortfolioView {
             dataDropdownContent: D.getElementById('dataDropdownContent'),
             exportDataBtn: D.getElementById('exportDataBtn'),
             importDataBtn: D.getElementById('importDataBtn'),
+            exportTransactionsCSVBtn: D.getElementById('exportTransactionsCSVBtn'),
             importFileInput: D.getElementById('importFileInput'),
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),

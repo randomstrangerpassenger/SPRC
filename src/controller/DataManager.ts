@@ -73,6 +73,48 @@ export class DataManager {
     }
 
     /**
+     * @description 거래 내역 CSV 내보내기 (Phase 4.1)
+     */
+    handleExportTransactionsCSV(): void {
+        try {
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+                this.view.showToast('내보낼 거래 내역이 없습니다.', 'info');
+                return;
+            }
+
+            // CSV 헤더
+            let csvContent = 'Stock Name,Ticker,Transaction Type,Date,Quantity,Price (USD),Total Amount (USD)\n';
+
+            // 모든 종목의 거래 내역 수집
+            for (const stock of activePortfolio.portfolioData) {
+                for (const tx of stock.transactions) {
+                    const totalAmount = (parseFloat(tx.quantity.toString()) * parseFloat(tx.price.toString())).toFixed(2);
+                    csvContent += `"${stock.name}","${stock.ticker}","${tx.type}","${tx.date}",${tx.quantity},${tx.price},${totalAmount}\n`;
+                }
+            }
+
+            // CSV 파일 다운로드
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const filename = `transactions_${activePortfolio.name}_${Date.now()}.csv`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.replace(/\s+/g, '_');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.view.showToast('거래 내역 CSV 내보내기 완료', 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleExportTransactionsCSV');
+            this.view.showToast('CSV 내보내기 실패', 'error');
+        }
+    }
+
+    /**
      * @description 데이터 가져오기 트리거
      */
     handleImportData(): void {

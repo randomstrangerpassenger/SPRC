@@ -267,7 +267,41 @@ export function formatAPIError(error: APIError): string {
     }
 }
 
+/**
+ * @description 환율 정보 가져오기 (Phase 4.2)
+ * @returns Promise<number | null> - USD/KRW 환율 또는 null
+ */
+async function fetchExchangeRate(): Promise<number | null> {
+    try {
+        // ExchangeRate-API 무료 버전 사용
+        const response = await fetchWithRetry(
+            'https://api.exchangerate-api.com/v4/latest/USD',
+            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) },
+            2
+        );
+
+        if (!response.ok) {
+            console.warn('[apiService] Exchange rate API failed');
+            return null;
+        }
+
+        const data = await response.json();
+        const krwRate = data.rates?.KRW;
+
+        if (typeof krwRate === 'number' && krwRate > 0) {
+            console.log('[apiService] Exchange rate fetched:', krwRate);
+            return krwRate;
+        }
+
+        return null;
+    } catch (error) {
+        console.warn('[apiService] Failed to fetch exchange rate:', error);
+        return null;
+    }
+}
+
 export const apiService = {
     fetchStockPrice,
     fetchAllStockPrices,
+    fetchExchangeRate,
 };
