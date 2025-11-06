@@ -112,7 +112,7 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput, portfolioExchangeRateInput, rebalancingToleranceInput } = this.view.dom;
+            const { exchangeRateInput, portfolioExchangeRateInput, rebalancingToleranceInput, tradingFeeRateInput, taxRateInput } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
@@ -121,6 +121,12 @@ export class PortfolioController {
             }
             if (rebalancingToleranceInput instanceof HTMLInputElement) {
                 rebalancingToleranceInput.value = (activePortfolio.settings.rebalancingTolerance ?? 5).toString();
+            }
+            if (tradingFeeRateInput instanceof HTMLInputElement) {
+                tradingFeeRateInput.value = (activePortfolio.settings.tradingFeeRate ?? 0.3).toString();
+            }
+            if (taxRateInput instanceof HTMLInputElement) {
+                taxRateInput.value = (activePortfolio.settings.taxRate ?? 15).toString();
             }
 
             this.fullRender();
