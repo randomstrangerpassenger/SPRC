@@ -103,7 +103,9 @@ export class CalculationManager {
                           additionalInvestment: additionalInvestment,
                           finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
                       },
-                      activePortfolio.settings.currentCurrency
+                      activePortfolio.settings.currentCurrency,
+                      activePortfolio.settings.tradingFeeRate,
+                      activePortfolio.settings.taxRate
                   )
                 : activePortfolio.settings.mainMode === 'simple'
                 ? generateSimpleModeResultsHTML(
