@@ -7,6 +7,7 @@ import { debounce, getRatioSum } from './utils';
 import { CONFIG, DECIMAL_ZERO } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
+import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
 
@@ -398,7 +399,8 @@ export class PortfolioController {
     }
 
     /**
-     * @description 자산 배분 템플릿 적용
+     * @description 자산 배분 템플릿 적용 (Strategy Pattern)
+     * (Phase 2-3: handleApplyTemplate 리팩토링 - 기존 165줄 → 25줄)
      */
     handleApplyTemplate(templateName: string): void {
         const activePortfolio = this.state.getActivePortfolio();
@@ -409,157 +411,17 @@ export class PortfolioController {
 
         const stocks = activePortfolio.portfolioData;
 
-        // 섹터별 종목 분류
-        const sectorGroups: Record<string, typeof stocks> = {};
-        for (const stock of stocks) {
-            const sector = (stock.sector || 'Other').toLowerCase();
-            if (!sectorGroups[sector]) sectorGroups[sector] = [];
-            sectorGroups[sector].push(stock);
+        // TemplateRegistry에서 템플릿 전략 조회
+        const templateRegistry = TemplateRegistry.getInstance();
+        const template = templateRegistry.get(templateName);
+
+        if (!template) {
+            this.view.showToast('알 수 없는 템플릿입니다.', 'error');
+            return;
         }
 
-        // 템플릿별 로직
-        switch (templateName) {
-            case '60-40': {
-                // 60/40: 주식 60%, 채권 40%
-                const equitySectors = [
-                    'stock',
-                    'stocks',
-                    'equity',
-                    'equities',
-                    'tech',
-                    'technology',
-                    'finance',
-                    'healthcare',
-                    'consumer',
-                ];
-                const bondSectors = ['bond', 'bonds', 'fixed income', 'treasury'];
-
-                const equityStocks = stocks.filter((s) =>
-                    equitySectors.some((es) => (s.sector || '').toLowerCase().includes(es))
-                );
-                const bondStocks = stocks.filter((s) =>
-                    bondSectors.some((bs) => (s.sector || '').toLowerCase().includes(bs))
-                );
-                const otherStocks = stocks.filter(
-                    (s) => !equityStocks.includes(s) && !bondStocks.includes(s)
-                );
-
-                if (equityStocks.length > 0) {
-                    const perEquity = 60 / equityStocks.length;
-                    equityStocks.forEach((s) => (s.targetRatio = new Decimal(perEquity)));
-                }
-
-                if (bondStocks.length > 0) {
-                    const perBond = 40 / bondStocks.length;
-                    bondStocks.forEach((s) => (s.targetRatio = new Decimal(perBond)));
-                }
-
-                if (
-                    otherStocks.length > 0 &&
-                    equityStocks.length === 0 &&
-                    bondStocks.length === 0
-                ) {
-                    // 섹터가 명확하지 않으면 동일 비중
-                    const perStock = 100 / stocks.length;
-                    stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
-                }
-                break;
-            }
-
-            case 'all-weather': {
-                // All-Weather: 주식 30%, 장기채 40%, 중기채 15%, 금 7.5%, 원자재 7.5%
-                const equityStocks = stocks.filter((s) =>
-                    ['stock', 'equity', 'tech'].some((k) =>
-                        (s.sector || '').toLowerCase().includes(k)
-                    )
-                );
-                const bondStocks = stocks.filter((s) =>
-                    ['bond', 'treasury', 'fixed'].some((k) =>
-                        (s.sector || '').toLowerCase().includes(k)
-                    )
-                );
-                const commodityStocks = stocks.filter((s) =>
-                    ['gold', 'commodity', 'metal', '금'].some((k) =>
-                        (s.sector || s.name || '').toLowerCase().includes(k)
-                    )
-                );
-                const otherStocks = stocks.filter(
-                    (s) =>
-                        !equityStocks.includes(s) &&
-                        !bondStocks.includes(s) &&
-                        !commodityStocks.includes(s)
-                );
-
-                if (equityStocks.length > 0) {
-                    const perEquity = 30 / equityStocks.length;
-                    equityStocks.forEach((s) => (s.targetRatio = new Decimal(perEquity)));
-                }
-
-                if (bondStocks.length > 0) {
-                    const perBond = 55 / bondStocks.length; // 40 + 15 통합
-                    bondStocks.forEach((s) => (s.targetRatio = new Decimal(perBond)));
-                }
-
-                if (commodityStocks.length > 0) {
-                    const perCommodity = 15 / commodityStocks.length; // 7.5 + 7.5 통합
-                    commodityStocks.forEach((s) => (s.targetRatio = new Decimal(perCommodity)));
-                }
-
-                if (
-                    otherStocks.length > 0 &&
-                    equityStocks.length + bondStocks.length + commodityStocks.length === 0
-                ) {
-                    const perStock = 100 / stocks.length;
-                    stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
-                }
-                break;
-            }
-
-            case '50-30-20': {
-                // 50/30/20: 주식 50%, 채권 30%, 기타 20%
-                const equityStocks = stocks.filter((s) =>
-                    ['stock', 'equity', 'tech'].some((k) =>
-                        (s.sector || '').toLowerCase().includes(k)
-                    )
-                );
-                const bondStocks = stocks.filter((s) =>
-                    ['bond', 'treasury'].some((k) => (s.sector || '').toLowerCase().includes(k))
-                );
-                const otherStocks = stocks.filter(
-                    (s) => !equityStocks.includes(s) && !bondStocks.includes(s)
-                );
-
-                if (equityStocks.length > 0) {
-                    const perEquity = 50 / equityStocks.length;
-                    equityStocks.forEach((s) => (s.targetRatio = new Decimal(perEquity)));
-                }
-
-                if (bondStocks.length > 0) {
-                    const perBond = 30 / bondStocks.length;
-                    bondStocks.forEach((s) => (s.targetRatio = new Decimal(perBond)));
-                }
-
-                if (otherStocks.length > 0) {
-                    const perOther = 20 / otherStocks.length;
-                    otherStocks.forEach((s) => (s.targetRatio = new Decimal(perOther)));
-                } else if (equityStocks.length === 0 && bondStocks.length === 0) {
-                    const perStock = 100 / stocks.length;
-                    stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
-                }
-                break;
-            }
-
-            case 'equal': {
-                // 동일 비중
-                const perStock = 100 / stocks.length;
-                stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
-                break;
-            }
-
-            default:
-                this.view.showToast('알 수 없는 템플릿입니다.', 'error');
-                return;
-        }
+        // 템플릿 전략 적용
+        template.apply(stocks);
 
         // 저장 및 UI 업데이트
         this.state.saveActivePortfolio();
