@@ -5273,6 +5273,9 @@ export const CONFIG = {
     API_TIMEOUT: 8000, // 단일 API 호출 타임아웃
     BATCH_API_TIMEOUT: 10000, // 배치 API 호출 타임아웃
 
+    // 환율 API 키 (.env.local에서 로드)
+    EXCHANGE_RATE_API_KEY: import.meta.env.VITE_EXCHANGE_RATE_API_KEY || '',
+
     // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
     IDB_META_KEY: 'portfolioMeta_v2',
     IDB_PORTFOLIOS_KEY: 'portfolioData_v2',
@@ -5671,9 +5674,15 @@ export function formatAPIError(error: APIError): string {
  */
 async function fetchExchangeRate(): Promise<number | null> {
     try {
-        // ExchangeRate-API 무료 버전 사용
+        const apiKey = CONFIG.EXCHANGE_RATE_API_KEY;
+
+        // API 키가 있으면 유료 버전, 없으면 무료 버전 사용
+        const apiUrl = apiKey
+            ? `https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`
+            : 'https://api.exchangerate-api.com/v4/latest/USD';
+
         const response = await fetchWithRetry(
-            'https://api.exchangerate-api.com/v4/latest/USD',
+            apiUrl,
             { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) },
             2
         );
@@ -5684,10 +5693,12 @@ async function fetchExchangeRate(): Promise<number | null> {
         }
 
         const data = await response.json();
-        const krwRate = data.rates?.KRW;
+
+        // 유료 버전은 conversion_rates, 무료 버전은 rates 사용
+        const krwRate = apiKey ? data.conversion_rates?.KRW : data.rates?.KRW;
 
         if (typeof krwRate === 'number' && krwRate > 0) {
-            console.log('[apiService] Exchange rate fetched:', krwRate);
+            console.log('[apiService] Exchange rate fetched:', krwRate, apiKey ? '(with API key)' : '(free tier)');
             return krwRate;
         }
 
