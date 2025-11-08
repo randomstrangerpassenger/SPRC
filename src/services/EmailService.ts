@@ -3,7 +3,7 @@ import { Portfolio } from '../types';
 import { ExcelExportService } from './ExcelExportService';
 import { PDFReportService } from './PDFReportService';
 import jsPDF from 'jspdf';
-import * as ExcelJS from 'exceljs';
+import { Workbook } from 'exceljs';
 
 /**
  * 이메일 설정 인터페이스
@@ -141,7 +141,7 @@ export class EmailService {
      * Excel 버퍼 생성
      */
     private static async generateExcelBuffer(portfolio: Portfolio): Promise<ArrayBuffer> {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new Workbook();
         workbook.creator = 'Portfolio Rebalancer';
         workbook.created = new Date();
 

@@ -9,6 +9,17 @@ import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
 // ===== [Phase 4.1 리팩토링 끝] =====
 
+// ===== [Phase 2-2 최적화] UI 렌더링용 헬퍼 함수 =====
+/**
+ * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
+ */
+function toNumber(value: Decimal | number | null | undefined): number {
+    if (value == null) return 0;
+    if (value instanceof Decimal) return value.toNumber();
+    return Number(value);
+}
+// ===== [Phase 2-2 최적화 끝] =====
+
 // 가상 스크롤 상수
 const ROW_INPUT_HEIGHT = 60;
 const ROW_OUTPUT_HEIGHT = 50;
@@ -221,37 +232,25 @@ export class VirtualScrollManager {
         if (!outputRow || this.#currentMainMode === 'simple') return;
 
         const currency = this.#currentCurrency;
+        // ===== [Phase 2-2 최적화] UI 렌더링에서 Decimal 대신 number 사용 =====
         const metrics = calculatedData ?? {
-            quantity: new Decimal(0),
-            avgBuyPrice: new Decimal(0),
-            currentAmount: new Decimal(0),
-            profitLoss: new Decimal(0),
-            profitLossRate: new Decimal(0),
+            quantity: 0,
+            avgBuyPrice: 0,
+            currentAmount: 0,
+            profitLoss: 0,
+            profitLossRate: 0,
         };
 
-        const quantity =
-            metrics.quantity instanceof Decimal
-                ? metrics.quantity
-                : new Decimal(metrics.quantity ?? 0);
-        const avgBuyPrice =
-            metrics.avgBuyPrice instanceof Decimal
-                ? metrics.avgBuyPrice
-                : new Decimal(metrics.avgBuyPrice ?? 0);
-        const currentAmount =
-            metrics.currentAmount instanceof Decimal
-                ? metrics.currentAmount
-                : new Decimal(metrics.currentAmount ?? 0);
-        const profitLoss =
-            metrics.profitLoss instanceof Decimal
-                ? metrics.profitLoss
-                : new Decimal(metrics.profitLoss ?? 0);
-        const profitLossRate =
-            metrics.profitLossRate instanceof Decimal
-                ? metrics.profitLossRate
-                : new Decimal(metrics.profitLossRate ?? 0);
+        // Decimal을 네이티브 number로 변환 (UI 렌더링용)
+        const quantity = toNumber(metrics.quantity);
+        const avgBuyPrice = toNumber(metrics.avgBuyPrice);
+        const currentAmount = toNumber(metrics.currentAmount);
+        const profitLoss = toNumber(metrics.profitLoss);
+        const profitLossRate = toNumber(metrics.profitLossRate);
 
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
+        const profitClass = profitLoss < 0 ? 'text-sell' : 'text-buy';
+        const profitSign = profitLoss > 0 ? '+' : '';
+        // ===== [Phase 2-2 최적화 끝] =====
 
         const isMobile = window.innerWidth <= 768;
 
@@ -412,11 +411,10 @@ export class VirtualScrollManager {
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
             if (targetRatioInput instanceof HTMLInputElement) {
-                const ratio =
-                    stock.targetRatio instanceof Decimal
-                        ? stock.targetRatio
-                        : new Decimal(stock.targetRatio ?? 0);
+                // ===== [Phase 2-2 최적화] Decimal 대신 number 사용 =====
+                const ratio = toNumber(stock.targetRatio);
                 targetRatioInput.value = ratio.toFixed(2);
+                // ===== [Phase 2-2 최적화 끝] =====
             }
         });
     }

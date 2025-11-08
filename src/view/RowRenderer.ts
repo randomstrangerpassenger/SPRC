@@ -16,6 +16,17 @@ import {
     getGridTemplate,
 } from './DOMHelpers';
 
+// ===== [Phase 2-2 최적화] UI 렌더링용 헬퍼 함수 =====
+/**
+ * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
+ */
+function toNumber(value: Decimal | number | null | undefined): number {
+    if (value == null) return 0;
+    if (value instanceof Decimal) return value.toNumber();
+    return Number(value);
+}
+// ===== [Phase 2-2 최적화 끝] =====
+
 /**
  * @description 주식 행 Fragment를 생성합니다.
  * @param stock - 계산된 주식 데이터
@@ -192,34 +203,23 @@ export function createStockRowFragment(
     divOutputs.style.gridTemplateColumns = getGridTemplate(mainMode);
 
     const metrics = stock.calculated ?? {
-        quantity: DECIMAL_ZERO,
-        avgBuyPrice: DECIMAL_ZERO,
-        currentAmount: DECIMAL_ZERO,
-        profitLoss: DECIMAL_ZERO,
-        profitLossRate: DECIMAL_ZERO,
+        quantity: 0,
+        avgBuyPrice: 0,
+        currentAmount: 0,
+        profitLoss: 0,
+        profitLossRate: 0,
     };
 
-    const quantity =
-        metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
-    const avgBuyPrice =
-        metrics.avgBuyPrice instanceof Decimal
-            ? metrics.avgBuyPrice
-            : new Decimal(metrics.avgBuyPrice ?? 0);
-    const currentAmount =
-        metrics.currentAmount instanceof Decimal
-            ? metrics.currentAmount
-            : new Decimal(metrics.currentAmount ?? 0);
-    const profitLoss =
-        metrics.profitLoss instanceof Decimal
-            ? metrics.profitLoss
-            : new Decimal(metrics.profitLoss ?? 0);
-    const profitLossRate =
-        metrics.profitLossRate instanceof Decimal
-            ? metrics.profitLossRate
-            : new Decimal(metrics.profitLossRate ?? 0);
+    // ===== [Phase 2-2 최적화] Decimal을 네이티브 number로 변환 =====
+    const quantity = toNumber(metrics.quantity);
+    const avgBuyPrice = toNumber(metrics.avgBuyPrice);
+    const currentAmount = toNumber(metrics.currentAmount);
+    const profitLoss = toNumber(metrics.profitLoss);
+    const profitLossRate = toNumber(metrics.profitLossRate);
 
-    const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-    const profitSign = profitLoss.isPositive() ? '+' : '';
+    const profitClass = profitLoss < 0 ? 'text-sell' : 'text-buy';
+    const profitSign = profitLoss > 0 ? '+' : '';
+    // ===== [Phase 2-2 최적화 끝] =====
 
     const createOutputCell = (
         label: string,

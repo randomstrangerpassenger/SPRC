@@ -128,11 +128,11 @@ export class StockManager {
             }
 
             if (field === 'sector') {
-                // 섹터 변경은 섹터 분석만 재계산하고 가상 스크롤 데이터만 업데이트
+                // ===== [Phase 2-3 최적화] 섹터 변경 시 캐시 무효화 최소화 =====
+                // 섹터는 메타데이터이므로 계산 캐시를 유지하고 섹터 분석만 재계산
                 this.view.updateStockInVirtualData(stockId, field, value);
 
-                // 섹터 분석만 재계산 (전체 계산 상태는 이미 캐시되어 있음)
-                Calculator.clearPortfolioStateCache();
+                // 캐시를 비우지 않고 기존 계산 상태 재사용
                 const calculatedState = Calculator.calculatePortfolioState({
                     portfolioData: activePortfolio.portfolioData,
                     exchangeRate: activePortfolio.settings.exchangeRate,
@@ -151,6 +151,7 @@ export class StockManager {
 
                 this.debouncedSave();
                 return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+                // ===== [Phase 2-3 최적화 끝] =====
             }
             // ===== [Phase 1.1 최적화 끝] =====
 
@@ -158,6 +159,8 @@ export class StockManager {
             if (field === 'currentPrice') {
                 const stock = activePortfolio.portfolioData.find((s) => s.id === stockId);
                 if (stock) {
+                    // ===== [Phase 2-3 최적화] 개별 주식만 재계산 =====
+                    // 해당 주식의 메트릭만 재계산하고 행 업데이트
                     const calculatedMetrics = Calculator.calculateStockMetrics(stock);
                     const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
 
@@ -173,8 +176,7 @@ export class StockManager {
 
                     this.view.updateSingleStockRow(stockId, calculatedMetrics);
 
-                    // 섹터 분석 재계산
-                    Calculator.clearPortfolioStateCache();
+                    // 섹터 분석은 캐시를 재사용하여 재계산
                     const calculatedState = Calculator.calculatePortfolioState({
                         portfolioData: activePortfolio.portfolioData,
                         exchangeRate: activePortfolio.settings.exchangeRate,
@@ -190,6 +192,7 @@ export class StockManager {
                             activePortfolio.settings.currentCurrency
                         )
                     );
+                    // ===== [Phase 2-3 최적화 끝] =====
                 }
 
                 this.debouncedSave();

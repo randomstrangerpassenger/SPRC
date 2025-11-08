@@ -1,5 +1,6 @@
 // src/services/ExcelExportService.ts
-import * as ExcelJS from 'exceljs';
+import { Workbook } from 'exceljs';
+import type { Style } from 'exceljs';
 import { Portfolio, Stock, Transaction } from '../types';
 import Decimal from 'decimal.js';
 
@@ -13,7 +14,7 @@ export class ExcelExportService {
      */
     static async exportPortfolioToExcel(portfolio: Portfolio): Promise<void> {
         try {
-            const workbook = new ExcelJS.Workbook();
+            const workbook = new Workbook();
 
             // 메타데이터 설정
             workbook.creator = 'Portfolio Rebalancer';
@@ -54,13 +55,13 @@ export class ExcelExportService {
     /**
      * 포트폴리오 요약 시트 생성
      */
-    private static createSummarySheet(workbook: ExcelJS.Workbook, portfolio: Portfolio): void {
+    private static createSummarySheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Portfolio Summary', {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
         });
 
         // 헤더 스타일
-        const headerStyle: Partial<ExcelJS.Style> = {
+        const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } },
             alignment: { vertical: 'middle', horizontal: 'center' },
@@ -137,13 +138,13 @@ export class ExcelExportService {
     /**
      * 거래 내역 시트 생성
      */
-    private static createTransactionsSheet(workbook: ExcelJS.Workbook, portfolio: Portfolio): void {
+    private static createTransactionsSheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Transactions', {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
         });
 
         // 헤더 스타일
-        const headerStyle: Partial<ExcelJS.Style> = {
+        const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } },
             alignment: { vertical: 'middle', horizontal: 'center' },
@@ -254,13 +255,13 @@ export class ExcelExportService {
     /**
      * 종목별 상세 시트 생성
      */
-    private static createStocksDetailSheet(workbook: ExcelJS.Workbook, portfolio: Portfolio): void {
+    private static createStocksDetailSheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Stock Details', {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
         });
 
         // 헤더 스타일
-        const headerStyle: Partial<ExcelJS.Style> = {
+        const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC000' } },
             alignment: { vertical: 'middle', horizontal: 'center' },

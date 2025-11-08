@@ -5,22 +5,19 @@ import { CONFIG } from './constants';
 import type { MetaState, Portfolio, PortfolioSnapshot } from './types';
 
 // idb-keyval 모킹
-vi.mock('idb-keyval', () => {
-    const store = new Map<string, any>();
-    return {
-        get: vi.fn((key: string) => Promise.resolve(store.get(key))),
-        set: vi.fn((key: string, value: any) => {
-            store.set(key, value);
-            return Promise.resolve();
-        }),
-        del: vi.fn((key: string) => {
-            store.delete(key);
-            return Promise.resolve();
-        }),
-        // Store를 테스트에서 접근할 수 있도록 내보내기
-        __store: store,
-    };
-});
+const mockStore = new Map<string, any>();
+
+vi.mock('idb-keyval', () => ({
+    get: vi.fn((key: string) => Promise.resolve(mockStore.get(key))),
+    set: vi.fn((key: string, value: any) => {
+        mockStore.set(key, value);
+        return Promise.resolve();
+    }),
+    del: vi.fn((key: string) => {
+        mockStore.delete(key);
+        return Promise.resolve();
+    }),
+}));
 
 // ErrorService 모킹
 vi.mock('./errorService', () => ({
@@ -29,14 +26,11 @@ vi.mock('./errorService', () => ({
     },
 }));
 
-import * as idbKeyval from 'idb-keyval';
+import { get, set, del } from 'idb-keyval';
 
 describe('DataStore', () => {
-    let mockStore: Map<string, any>;
-
     beforeEach(() => {
         // 각 테스트 전에 store 초기화
-        mockStore = (idbKeyval as any).__store;
         mockStore.clear();
         vi.clearAllMocks();
         // localStorage도 초기화
@@ -58,7 +52,7 @@ describe('DataStore', () => {
             const loaded = await DataStore.loadMeta();
 
             expect(loaded).toEqual(metaData);
-            expect(idbKeyval.set).toHaveBeenCalledWith(CONFIG.IDB_META_KEY, metaData);
+            expect(set).toHaveBeenCalledWith(CONFIG.IDB_META_KEY, metaData);
         });
 
         it('should return null when no meta data exists', async () => {
@@ -67,7 +61,7 @@ describe('DataStore', () => {
         });
 
         it('should handle errors in loadMeta', async () => {
-            vi.mocked(idbKeyval.get).mockRejectedValueOnce(new Error('IndexedDB error'));
+            vi.mocked(get).mockRejectedValueOnce(new Error('IndexedDB error'));
 
             const loaded = await DataStore.loadMeta();
 
@@ -75,7 +69,7 @@ describe('DataStore', () => {
         });
 
         it('should throw error in saveMeta on failure', async () => {
-            vi.mocked(idbKeyval.set).mockRejectedValueOnce(new Error('IndexedDB error'));
+            vi.mocked(set).mockRejectedValueOnce(new Error('IndexedDB error'));
 
             const metaData: MetaState = {
                 version: '2.0.0',
@@ -101,7 +95,7 @@ describe('DataStore', () => {
             const loaded = await DataStore.loadPortfolios();
 
             expect(loaded).toEqual(portfolios);
-            expect(idbKeyval.set).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, portfolios);
+            expect(set).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, portfolios);
         });
 
         it('should return null when no portfolios exist', async () => {
@@ -110,7 +104,7 @@ describe('DataStore', () => {
         });
 
         it('should handle errors in loadPortfolios', async () => {
-            vi.mocked(idbKeyval.get).mockRejectedValueOnce(new Error('IndexedDB error'));
+            vi.mocked(get).mockRejectedValueOnce(new Error('IndexedDB error'));
 
             const loaded = await DataStore.loadPortfolios();
 
@@ -118,7 +112,7 @@ describe('DataStore', () => {
         });
 
         it('should throw error in savePortfolios on failure', async () => {
-            vi.mocked(idbKeyval.set).mockRejectedValueOnce(new Error('IndexedDB error'));
+            vi.mocked(set).mockRejectedValueOnce(new Error('IndexedDB error'));
 
             const portfolios: Record<string, Portfolio> = {
                 'portfolio-1': {
@@ -144,8 +138,8 @@ describe('DataStore', () => {
             const result = await DataStore.migrateFromLocalStorage();
 
             expect(result).toBe(true);
-            expect(idbKeyval.set).toHaveBeenCalledWith(CONFIG.IDB_META_KEY, metaData);
-            expect(idbKeyval.set).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
+            expect(set).toHaveBeenCalledWith(CONFIG.IDB_META_KEY, metaData);
+            expect(set).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
             expect(localStorage.getItem(CONFIG.LEGACY_LS_META_KEY)).toBeNull();
             expect(localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY)).toBeNull();
         });
@@ -180,7 +174,7 @@ describe('DataStore', () => {
             localStorage.setItem(CONFIG.LEGACY_LS_META_KEY, JSON.stringify(metaData));
             localStorage.setItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY, JSON.stringify(portfolioData));
 
-            vi.mocked(idbKeyval.set).mockRejectedValueOnce(new Error('IndexedDB error'));
+            vi.mocked(set).mockRejectedValueOnce(new Error('IndexedDB error'));
 
             const result = await DataStore.migrateFromLocalStorage();
 
@@ -319,13 +313,13 @@ describe('DataStore', () => {
 
             await DataStore.clearAll();
 
-            expect(idbKeyval.del).toHaveBeenCalledWith(CONFIG.IDB_META_KEY);
-            expect(idbKeyval.del).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY);
-            expect(idbKeyval.del).toHaveBeenCalledWith(CONFIG.IDB_SNAPSHOTS_KEY);
+            expect(del).toHaveBeenCalledWith(CONFIG.IDB_META_KEY);
+            expect(del).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY);
+            expect(del).toHaveBeenCalledWith(CONFIG.IDB_SNAPSHOTS_KEY);
         });
 
         it('should throw error on failure', async () => {
-            vi.mocked(idbKeyval.del).mockRejectedValueOnce(new Error('IndexedDB error'));
+            vi.mocked(del).mockRejectedValueOnce(new Error('IndexedDB error'));
 
             await expect(DataStore.clearAll()).rejects.toThrow('IndexedDB error');
         });

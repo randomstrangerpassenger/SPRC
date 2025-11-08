@@ -1,6 +1,6 @@
 // src/calculator.ts (Strategy Pattern Applied with LRU Cache)
 import Decimal from 'decimal.js';
-import { nanoid } from 'nanoid';
+import { generateId } from './utils.ts';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
 import { LRUCache } from './cache/LRUCache.ts';
@@ -305,7 +305,7 @@ export class Calculator {
             const totalValueKRW = totalValue.times(exchangeRateDec);
 
             const snapshot: PortfolioSnapshot = {
-                id: nanoid(),
+                id: generateId(),
                 portfolioId,
                 timestamp: now.getTime(),
                 date: dateStr,
