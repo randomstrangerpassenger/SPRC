@@ -11,6 +11,45 @@ export class ValidationError extends Error {
     }
 }
 
+/**
+ * @description 네트워크 오류를 나타내는 커스텀 에러 클래스
+ * (Phase 3-1: 에러 분류 개선)
+ */
+export class NetworkError extends Error {
+    constructor(
+        message: string,
+        public readonly statusCode?: number
+    ) {
+        super(message);
+        this.name = 'NetworkError';
+    }
+}
+
+/**
+ * @description 계산 오류를 나타내는 커스텀 에러 클래스
+ * (Phase 3-1: 에러 분류 개선)
+ */
+export class CalculationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'CalculationError';
+    }
+}
+
+/**
+ * @description 저장소 오류를 나타내는 커스텀 에러 클래스
+ * (Phase 3-1: 에러 분류 개선)
+ */
+export class StorageError extends Error {
+    constructor(
+        message: string,
+        public readonly cause?: Error
+    ) {
+        super(message);
+        this.name = 'StorageError';
+    }
+}
+
 export const ErrorService = {
     _viewInstance: null as IView | null,
 
@@ -23,6 +62,7 @@ export const ErrorService = {
 
     /**
      * @description 중앙 집중식 에러 핸들러. 콘솔에 에러를 기록하고 사용자에게 토스트 메시지를 표시합니다.
+     * (Phase 3-1: 에러 분류 개선)
      */
     handle(error: Error, context: string = 'General'): void {
         console.error(`Error in ${context}:`, error);
@@ -30,9 +70,19 @@ export const ErrorService = {
         // 기본 오류 메시지
         let userMessage = t('validation.calculationError');
 
-        // 오류 타입에 따라 사용자 메시지 구체화
+        // Phase 3-1: 새로운 커스텀 에러 타입 처리
         if (error instanceof ValidationError) {
             userMessage = `${t('validation.validationErrorPrefix')}\n${error.message}`;
+        } else if (error instanceof NetworkError) {
+            const statusInfo = error.statusCode ? ` (${error.statusCode})` : '';
+            userMessage = `네트워크 오류${statusInfo}: ${error.message}`;
+        } else if (error instanceof CalculationError) {
+            userMessage = `계산 오류: ${error.message}`;
+        } else if (error instanceof StorageError) {
+            userMessage = `저장소 오류: ${error.message}`;
+            if (error.cause) {
+                console.error('[StorageError] Cause:', error.cause);
+            }
         } else if (error.name === 'QuotaExceededError') {
             // LocalStorage quota exceeded
             userMessage = t('validation.saveErrorQuota');
