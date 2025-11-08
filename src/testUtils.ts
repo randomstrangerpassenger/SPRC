@@ -1,4 +1,4 @@
-// js/testUtils.ts
+// src/testUtils.ts
 import Decimal from 'decimal.js';
 import type { CalculatedStock, Portfolio } from './types';
 

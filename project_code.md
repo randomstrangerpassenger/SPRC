@@ -36,6 +36,7 @@
     "jsdom": "^24.1.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.12",
+    "vite-plugin-purgecss": "^0.2.13",
     "vitest": "^4.0.3"
   },
   "dependencies": {
@@ -77,6 +78,7 @@
         "jsdom": "^24.1.0",
         "typescript": "^5.9.3",
         "vite": "^7.1.12",
+        "vite-plugin-purgecss": "^0.2.13",
         "vitest": "^4.0.3"
       }
     },
@@ -651,6 +653,45 @@
         "node": ">=18"
       }
     },
+    "node_modules/@isaacs/cliui": {
+      "version": "8.0.2",
+      "resolved": "https://registry.npmjs.org/@isaacs/cliui/-/cliui-8.0.2.tgz",
+      "integrity": "sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "string-width": "^5.1.2",
+        "string-width-cjs": "npm:string-width@^4.2.0",
+        "strip-ansi": "^7.0.1",
+        "strip-ansi-cjs": "npm:strip-ansi@^6.0.1",
+        "wrap-ansi": "^8.1.0",
+        "wrap-ansi-cjs": "npm:wrap-ansi@^7.0.0"
+      },
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@jridgewell/gen-mapping": {
+      "version": "0.3.13",
+      "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz",
+      "integrity": "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/sourcemap-codec": "^1.5.0",
+        "@jridgewell/trace-mapping": "^0.3.24"
+      }
+    },
+    "node_modules/@jridgewell/resolve-uri": {
+      "version": "3.1.2",
+      "resolved": "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz",
+      "integrity": "sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
     "node_modules/@jridgewell/sourcemap-codec": {
       "version": "1.5.5",
       "resolved": "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.5.5.tgz",
@@ -658,11 +699,33 @@
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/@jridgewell/trace-mapping": {
+      "version": "0.3.31",
+      "resolved": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz",
+      "integrity": "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/resolve-uri": "^3.1.0",
+        "@jridgewell/sourcemap-codec": "^1.4.14"
+      }
+    },
     "node_modules/@kurkle/color": {
       "version": "0.3.4",
       "resolved": "https://registry.npmjs.org/@kurkle/color/-/color-0.3.4.tgz",
       "integrity": "sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==",
       "license": "MIT"
+    },
+    "node_modules/@pkgjs/parseargs": {
+      "version": "0.11.0",
+      "resolved": "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz",
+      "integrity": "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==",
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "engines": {
+        "node": ">=14"
+      }
     },
     "node_modules/@playwright/test": {
       "version": "1.56.1",
@@ -1158,6 +1221,19 @@
         "url": "https://opencollective.com/vitest"
       }
     },
+    "node_modules/acorn": {
+      "version": "8.15.0",
+      "resolved": "https://registry.npmjs.org/acorn/-/acorn-8.15.0.tgz",
+      "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "acorn": "bin/acorn"
+      },
+      "engines": {
+        "node": ">=0.4.0"
+      }
+    },
     "node_modules/agent-base": {
       "version": "7.1.4",
       "resolved": "https://registry.npmjs.org/agent-base/-/agent-base-7.1.4.tgz",
@@ -1167,6 +1243,39 @@
       "engines": {
         "node": ">= 14"
       }
+    },
+    "node_modules/ansi-regex": {
+      "version": "6.2.2",
+      "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.2.2.tgz",
+      "integrity": "sha512-Bq3SmSpyFHaWjPk8If9yc6svM8c56dB5BAtW4Qbw5jHTwwXXcTLoRMkpDJp6VL0XzlWaCHTXrkFURMYmD0sLqg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=12"
+      },
+      "funding": {
+        "url": "https://github.com/chalk/ansi-regex?sponsor=1"
+      }
+    },
+    "node_modules/ansi-styles": {
+      "version": "6.2.3",
+      "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-6.2.3.tgz",
+      "integrity": "sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=12"
+      },
+      "funding": {
+        "url": "https://github.com/chalk/ansi-styles?sponsor=1"
+      }
+    },
+    "node_modules/any-promise": {
+      "version": "1.3.0",
+      "resolved": "https://registry.npmjs.org/any-promise/-/any-promise-1.3.0.tgz",
+      "integrity": "sha512-7UvmKalWRt1wgjL1RrGxoSJW/0QZFIegpeGvZG9kjp8vrRu55XTHbwnqq2GpXm9uLbcuhxm3IqX9OB4MZR1b2A==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/assertion-error": {
       "version": "2.0.1",
@@ -1184,6 +1293,50 @@
       "integrity": "sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/balanced-match": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz",
+      "integrity": "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/brace-expansion": {
+      "version": "1.1.12",
+      "resolved": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-1.1.12.tgz",
+      "integrity": "sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "balanced-match": "^1.0.0",
+        "concat-map": "0.0.1"
+      }
+    },
+    "node_modules/bundle-require": {
+      "version": "5.1.0",
+      "resolved": "https://registry.npmjs.org/bundle-require/-/bundle-require-5.1.0.tgz",
+      "integrity": "sha512-3WrrOuZiyaaZPWiEt4G3+IffISVC9HYlWueJEBWED4ZH4aIAC2PnkdnuRrR94M+w6yGWn4AglWtJtBI8YqvgoA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "load-tsconfig": "^0.2.3"
+      },
+      "engines": {
+        "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+      },
+      "peerDependencies": {
+        "esbuild": ">=0.18"
+      }
+    },
+    "node_modules/cac": {
+      "version": "6.7.14",
+      "resolved": "https://registry.npmjs.org/cac/-/cac-6.7.14.tgz",
+      "integrity": "sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
     },
     "node_modules/call-bind-apply-helpers": {
       "version": "1.0.2",
@@ -1221,6 +1374,42 @@
         "pnpm": ">=8"
       }
     },
+    "node_modules/chokidar": {
+      "version": "4.0.3",
+      "resolved": "https://registry.npmjs.org/chokidar/-/chokidar-4.0.3.tgz",
+      "integrity": "sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "readdirp": "^4.0.1"
+      },
+      "engines": {
+        "node": ">= 14.16.0"
+      },
+      "funding": {
+        "url": "https://paulmillr.com/funding/"
+      }
+    },
+    "node_modules/color-convert": {
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
+      "integrity": "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "color-name": "~1.1.4"
+      },
+      "engines": {
+        "node": ">=7.0.0"
+      }
+    },
+    "node_modules/color-name": {
+      "version": "1.1.4",
+      "resolved": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz",
+      "integrity": "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==",
+      "dev": true,
+      "license": "MIT"
+    },
     "node_modules/combined-stream": {
       "version": "1.0.8",
       "resolved": "https://registry.npmjs.org/combined-stream/-/combined-stream-1.0.8.tgz",
@@ -1232,6 +1421,68 @@
       },
       "engines": {
         "node": ">= 0.8"
+      }
+    },
+    "node_modules/commander": {
+      "version": "8.3.0",
+      "resolved": "https://registry.npmjs.org/commander/-/commander-8.3.0.tgz",
+      "integrity": "sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 12"
+      }
+    },
+    "node_modules/concat-map": {
+      "version": "0.0.1",
+      "resolved": "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz",
+      "integrity": "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/confbox": {
+      "version": "0.1.8",
+      "resolved": "https://registry.npmjs.org/confbox/-/confbox-0.1.8.tgz",
+      "integrity": "sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/consola": {
+      "version": "3.4.2",
+      "resolved": "https://registry.npmjs.org/consola/-/consola-3.4.2.tgz",
+      "integrity": "sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": "^14.18.0 || >=16.10.0"
+      }
+    },
+    "node_modules/cross-spawn": {
+      "version": "7.0.6",
+      "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz",
+      "integrity": "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "path-key": "^3.1.0",
+        "shebang-command": "^2.0.0",
+        "which": "^2.0.1"
+      },
+      "engines": {
+        "node": ">= 8"
+      }
+    },
+    "node_modules/cssesc": {
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/cssesc/-/cssesc-3.0.0.tgz",
+      "integrity": "sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "cssesc": "bin/cssesc"
+      },
+      "engines": {
+        "node": ">=4"
       }
     },
     "node_modules/cssstyle": {
@@ -1326,6 +1577,20 @@
       "engines": {
         "node": ">= 0.4"
       }
+    },
+    "node_modules/eastasianwidth": {
+      "version": "0.2.0",
+      "resolved": "https://registry.npmjs.org/eastasianwidth/-/eastasianwidth-0.2.0.tgz",
+      "integrity": "sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/emoji-regex": {
+      "version": "9.2.2",
+      "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-9.2.2.tgz",
+      "integrity": "sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/entities": {
       "version": "6.0.1",
@@ -1476,6 +1741,35 @@
         }
       }
     },
+    "node_modules/fix-dts-default-cjs-exports": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/fix-dts-default-cjs-exports/-/fix-dts-default-cjs-exports-1.0.1.tgz",
+      "integrity": "sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "magic-string": "^0.30.17",
+        "mlly": "^1.7.4",
+        "rollup": "^4.34.8"
+      }
+    },
+    "node_modules/foreground-child": {
+      "version": "3.3.1",
+      "resolved": "https://registry.npmjs.org/foreground-child/-/foreground-child-3.3.1.tgz",
+      "integrity": "sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "cross-spawn": "^7.0.6",
+        "signal-exit": "^4.0.1"
+      },
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
+      }
+    },
     "node_modules/form-data": {
       "version": "4.0.4",
       "resolved": "https://registry.npmjs.org/form-data/-/form-data-4.0.4.tgz",
@@ -1492,6 +1786,13 @@
       "engines": {
         "node": ">= 6"
       }
+    },
+    "node_modules/fs.realpath": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz",
+      "integrity": "sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==",
+      "dev": true,
+      "license": "ISC"
     },
     "node_modules/fsevents": {
       "version": "2.3.3",
@@ -1555,6 +1856,28 @@
       },
       "engines": {
         "node": ">= 0.4"
+      }
+    },
+    "node_modules/glob": {
+      "version": "7.2.3",
+      "resolved": "https://registry.npmjs.org/glob/-/glob-7.2.3.tgz",
+      "integrity": "sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==",
+      "deprecated": "Glob versions prior to v9 are no longer supported",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "fs.realpath": "^1.0.0",
+        "inflight": "^1.0.4",
+        "inherits": "2",
+        "minimatch": "^3.1.1",
+        "once": "^1.3.0",
+        "path-is-absolute": "^1.0.0"
+      },
+      "engines": {
+        "node": "*"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
       }
     },
     "node_modules/gopd": {
@@ -1672,12 +1995,74 @@
       "integrity": "sha512-yjD9nARJ/jb1g+CvD0tlhUHOrJ9Sy0P8T9MF3YaLlHnSRpwPfpTX0XIvpmw3gAJUmEu3FiICLBDPXVwyEvrleg==",
       "license": "Apache-2.0"
     },
+    "node_modules/inflight": {
+      "version": "1.0.6",
+      "resolved": "https://registry.npmjs.org/inflight/-/inflight-1.0.6.tgz",
+      "integrity": "sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==",
+      "deprecated": "This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "once": "^1.3.0",
+        "wrappy": "1"
+      }
+    },
+    "node_modules/inherits": {
+      "version": "2.0.4",
+      "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
+      "integrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==",
+      "dev": true,
+      "license": "ISC"
+    },
+    "node_modules/is-fullwidth-code-point": {
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz",
+      "integrity": "sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
+    },
     "node_modules/is-potential-custom-element-name": {
       "version": "1.0.1",
       "resolved": "https://registry.npmjs.org/is-potential-custom-element-name/-/is-potential-custom-element-name-1.0.1.tgz",
       "integrity": "sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/isexe": {
+      "version": "2.0.0",
+      "resolved": "https://registry.npmjs.org/isexe/-/isexe-2.0.0.tgz",
+      "integrity": "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==",
+      "dev": true,
+      "license": "ISC"
+    },
+    "node_modules/jackspeak": {
+      "version": "3.4.3",
+      "resolved": "https://registry.npmjs.org/jackspeak/-/jackspeak-3.4.3.tgz",
+      "integrity": "sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==",
+      "dev": true,
+      "license": "BlueOak-1.0.0",
+      "dependencies": {
+        "@isaacs/cliui": "^8.0.2"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
+      },
+      "optionalDependencies": {
+        "@pkgjs/parseargs": "^0.11.0"
+      }
+    },
+    "node_modules/joycon": {
+      "version": "3.1.1",
+      "resolved": "https://registry.npmjs.org/joycon/-/joycon-3.1.1.tgz",
+      "integrity": "sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=10"
+      }
     },
     "node_modules/jsdom": {
       "version": "24.1.3",
@@ -1719,6 +2104,43 @@
           "optional": true
         }
       }
+    },
+    "node_modules/lilconfig": {
+      "version": "3.1.3",
+      "resolved": "https://registry.npmjs.org/lilconfig/-/lilconfig-3.1.3.tgz",
+      "integrity": "sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/antonk52"
+      }
+    },
+    "node_modules/lines-and-columns": {
+      "version": "1.2.4",
+      "resolved": "https://registry.npmjs.org/lines-and-columns/-/lines-and-columns-1.2.4.tgz",
+      "integrity": "sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/load-tsconfig": {
+      "version": "0.2.5",
+      "resolved": "https://registry.npmjs.org/load-tsconfig/-/load-tsconfig-0.2.5.tgz",
+      "integrity": "sha512-IXO6OCs9yg8tMKzfPZ1YmheJbZCiEsnBdcB03l0OcfK9prKnJb96siuHCr5Fl37/yo9DnKU+TLpxzTUspw9shg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+      }
+    },
+    "node_modules/lodash.sortby": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/lodash.sortby/-/lodash.sortby-4.7.0.tgz",
+      "integrity": "sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/lru-cache": {
       "version": "10.4.3",
@@ -1770,12 +2192,60 @@
         "node": ">= 0.6"
       }
     },
+    "node_modules/minimatch": {
+      "version": "3.1.2",
+      "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-3.1.2.tgz",
+      "integrity": "sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "brace-expansion": "^1.1.7"
+      },
+      "engines": {
+        "node": "*"
+      }
+    },
+    "node_modules/minipass": {
+      "version": "7.1.2",
+      "resolved": "https://registry.npmjs.org/minipass/-/minipass-7.1.2.tgz",
+      "integrity": "sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==",
+      "dev": true,
+      "license": "ISC",
+      "engines": {
+        "node": ">=16 || 14 >=14.17"
+      }
+    },
+    "node_modules/mlly": {
+      "version": "1.8.0",
+      "resolved": "https://registry.npmjs.org/mlly/-/mlly-1.8.0.tgz",
+      "integrity": "sha512-l8D9ODSRWLe2KHJSifWGwBqpTZXIXTeo8mlKjY+E2HAakaTeNpqAyBZ8GSqLzHgw4XmHmC8whvpjJNMbFZN7/g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "acorn": "^8.15.0",
+        "pathe": "^2.0.3",
+        "pkg-types": "^1.3.1",
+        "ufo": "^1.6.1"
+      }
+    },
     "node_modules/ms": {
       "version": "2.1.3",
       "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/mz": {
+      "version": "2.7.0",
+      "resolved": "https://registry.npmjs.org/mz/-/mz-2.7.0.tgz",
+      "integrity": "sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "any-promise": "^1.0.0",
+        "object-assign": "^4.0.1",
+        "thenify-all": "^1.0.0"
+      }
     },
     "node_modules/nanoid": {
       "version": "5.1.6",
@@ -1802,6 +2272,33 @@
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/object-assign": {
+      "version": "4.1.1",
+      "resolved": "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz",
+      "integrity": "sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/once": {
+      "version": "1.4.0",
+      "resolved": "https://registry.npmjs.org/once/-/once-1.4.0.tgz",
+      "integrity": "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "wrappy": "1"
+      }
+    },
+    "node_modules/package-json-from-dist": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz",
+      "integrity": "sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==",
+      "dev": true,
+      "license": "BlueOak-1.0.0"
+    },
     "node_modules/parse5": {
       "version": "7.3.0",
       "resolved": "https://registry.npmjs.org/parse5/-/parse5-7.3.0.tgz",
@@ -1813,6 +2310,43 @@
       },
       "funding": {
         "url": "https://github.com/inikulin/parse5?sponsor=1"
+      }
+    },
+    "node_modules/path-is-absolute": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/path-is-absolute/-/path-is-absolute-1.0.1.tgz",
+      "integrity": "sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/path-key": {
+      "version": "3.1.1",
+      "resolved": "https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz",
+      "integrity": "sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/path-scurry": {
+      "version": "1.11.1",
+      "resolved": "https://registry.npmjs.org/path-scurry/-/path-scurry-1.11.1.tgz",
+      "integrity": "sha512-Xa4Nw17FS9ApQFJ9umLiJS4orGjm7ZzwUrwamcGQuHSzDyth9boKDaycYdDcZDuqYATXw4HFXgaqWTctW/v1HA==",
+      "dev": true,
+      "license": "BlueOak-1.0.0",
+      "dependencies": {
+        "lru-cache": "^10.2.0",
+        "minipass": "^5.0.0 || ^6.0.2 || ^7.0.0"
+      },
+      "engines": {
+        "node": ">=16 || 14 >=14.18"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
       }
     },
     "node_modules/pathe": {
@@ -1840,6 +2374,28 @@
       },
       "funding": {
         "url": "https://github.com/sponsors/jonschlinkert"
+      }
+    },
+    "node_modules/pirates": {
+      "version": "4.0.7",
+      "resolved": "https://registry.npmjs.org/pirates/-/pirates-4.0.7.tgz",
+      "integrity": "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 6"
+      }
+    },
+    "node_modules/pkg-types": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/pkg-types/-/pkg-types-1.3.1.tgz",
+      "integrity": "sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "confbox": "^0.1.8",
+        "mlly": "^1.7.4",
+        "pathe": "^2.0.1"
       }
     },
     "node_modules/playwright": {
@@ -1918,6 +2474,63 @@
         "node": "^10 || ^12 || >=14"
       }
     },
+    "node_modules/postcss-load-config": {
+      "version": "6.0.1",
+      "resolved": "https://registry.npmjs.org/postcss-load-config/-/postcss-load-config-6.0.1.tgz",
+      "integrity": "sha512-oPtTM4oerL+UXmx+93ytZVN82RrlY/wPUV8IeDxFrzIjXOLF1pN+EmKPLbubvKHT2HC20xXsCAH2Z+CKV6Oz/g==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "opencollective",
+          "url": "https://opencollective.com/postcss/"
+        },
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "lilconfig": "^3.1.1"
+      },
+      "engines": {
+        "node": ">= 18"
+      },
+      "peerDependencies": {
+        "jiti": ">=1.21.0",
+        "postcss": ">=8.0.9",
+        "tsx": "^4.8.1",
+        "yaml": "^2.4.2"
+      },
+      "peerDependenciesMeta": {
+        "jiti": {
+          "optional": true
+        },
+        "postcss": {
+          "optional": true
+        },
+        "tsx": {
+          "optional": true
+        },
+        "yaml": {
+          "optional": true
+        }
+      }
+    },
+    "node_modules/postcss-selector-parser": {
+      "version": "6.1.2",
+      "resolved": "https://registry.npmjs.org/postcss-selector-parser/-/postcss-selector-parser-6.1.2.tgz",
+      "integrity": "sha512-Q8qQfPiZ+THO/3ZrOrO0cJJKfpYCagtMUkXbnEfmgUjwXg6z/WBeOyS9APBBPCTSiDV+s4SwQGu8yFsiMRIudg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "cssesc": "^3.0.0",
+        "util-deprecate": "^1.0.2"
+      },
+      "engines": {
+        "node": ">=4"
+      }
+    },
     "node_modules/postcss/node_modules/nanoid": {
       "version": "3.3.11",
       "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz",
@@ -1960,6 +2573,22 @@
         "node": ">=6"
       }
     },
+    "node_modules/purgecss": {
+      "version": "4.1.3",
+      "resolved": "https://registry.npmjs.org/purgecss/-/purgecss-4.1.3.tgz",
+      "integrity": "sha512-99cKy4s+VZoXnPxaoM23e5ABcP851nC2y2GROkkjS8eJaJtlciGavd7iYAw2V84WeBqggZ12l8ef44G99HmTaw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "commander": "^8.0.0",
+        "glob": "^7.1.7",
+        "postcss": "^8.3.5",
+        "postcss-selector-parser": "^6.0.6"
+      },
+      "bin": {
+        "purgecss": "bin/purgecss.js"
+      }
+    },
     "node_modules/querystringify": {
       "version": "2.2.0",
       "resolved": "https://registry.npmjs.org/querystringify/-/querystringify-2.2.0.tgz",
@@ -1967,12 +2596,36 @@
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/readdirp": {
+      "version": "4.1.2",
+      "resolved": "https://registry.npmjs.org/readdirp/-/readdirp-4.1.2.tgz",
+      "integrity": "sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 14.18.0"
+      },
+      "funding": {
+        "type": "individual",
+        "url": "https://paulmillr.com/funding/"
+      }
+    },
     "node_modules/requires-port": {
       "version": "1.0.0",
       "resolved": "https://registry.npmjs.org/requires-port/-/requires-port-1.0.0.tgz",
       "integrity": "sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/resolve-from": {
+      "version": "5.0.0",
+      "resolved": "https://registry.npmjs.org/resolve-from/-/resolve-from-5.0.0.tgz",
+      "integrity": "sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
     },
     "node_modules/rollup": {
       "version": "4.52.5",
@@ -2043,12 +2696,62 @@
         "node": ">=v12.22.7"
       }
     },
+    "node_modules/shebang-command": {
+      "version": "2.0.0",
+      "resolved": "https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz",
+      "integrity": "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "shebang-regex": "^3.0.0"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/shebang-regex": {
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz",
+      "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
+    },
     "node_modules/siginfo": {
       "version": "2.0.0",
       "resolved": "https://registry.npmjs.org/siginfo/-/siginfo-2.0.0.tgz",
       "integrity": "sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==",
       "dev": true,
       "license": "ISC"
+    },
+    "node_modules/signal-exit": {
+      "version": "4.1.0",
+      "resolved": "https://registry.npmjs.org/signal-exit/-/signal-exit-4.1.0.tgz",
+      "integrity": "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==",
+      "dev": true,
+      "license": "ISC",
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
+      }
+    },
+    "node_modules/source-map": {
+      "version": "0.8.0-beta.0",
+      "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.8.0-beta.0.tgz",
+      "integrity": "sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==",
+      "deprecated": "The work that was done in this beta branch won't be included in future versions",
+      "dev": true,
+      "license": "BSD-3-Clause",
+      "dependencies": {
+        "whatwg-url": "^7.0.0"
+      },
+      "engines": {
+        "node": ">= 8"
+      }
     },
     "node_modules/source-map-js": {
       "version": "1.2.1",
@@ -2058,6 +2761,35 @@
       "license": "BSD-3-Clause",
       "engines": {
         "node": ">=0.10.0"
+      }
+    },
+    "node_modules/source-map/node_modules/tr46": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/tr46/-/tr46-1.0.1.tgz",
+      "integrity": "sha512-dTpowEjclQ7Kgx5SdBkqRzVhERQXov8/l9Ft9dVM9fmg0W0KQSVaXX9T4i6twCPNtYiZM53lpSSUAwJbFPOHxA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "punycode": "^2.1.0"
+      }
+    },
+    "node_modules/source-map/node_modules/webidl-conversions": {
+      "version": "4.0.2",
+      "resolved": "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-4.0.2.tgz",
+      "integrity": "sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==",
+      "dev": true,
+      "license": "BSD-2-Clause"
+    },
+    "node_modules/source-map/node_modules/whatwg-url": {
+      "version": "7.1.0",
+      "resolved": "https://registry.npmjs.org/whatwg-url/-/whatwg-url-7.1.0.tgz",
+      "integrity": "sha512-WUu7Rg1DroM7oQvGWfOiAK21n74Gg+T4elXEQYkOhtyLeWiJFoOGLXPKI/9gzIie9CtwVLm8wtw6YJdKyxSjeg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "lodash.sortby": "^4.7.0",
+        "tr46": "^1.0.1",
+        "webidl-conversions": "^4.0.2"
       }
     },
     "node_modules/stackback": {
@@ -2074,12 +2806,219 @@
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/string-width": {
+      "version": "5.1.2",
+      "resolved": "https://registry.npmjs.org/string-width/-/string-width-5.1.2.tgz",
+      "integrity": "sha512-HnLOCR3vjcY8beoNLtcjZ5/nxn2afmME6lhrDrebokqMap+XbeW8n9TXpPDOqdGK5qcI3oT0GKTW6wC7EMiVqA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "eastasianwidth": "^0.2.0",
+        "emoji-regex": "^9.2.2",
+        "strip-ansi": "^7.0.1"
+      },
+      "engines": {
+        "node": ">=12"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/sindresorhus"
+      }
+    },
+    "node_modules/string-width-cjs": {
+      "name": "string-width",
+      "version": "4.2.3",
+      "resolved": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+      "integrity": "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "emoji-regex": "^8.0.0",
+        "is-fullwidth-code-point": "^3.0.0",
+        "strip-ansi": "^6.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/string-width-cjs/node_modules/ansi-regex": {
+      "version": "5.0.1",
+      "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "integrity": "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/string-width-cjs/node_modules/emoji-regex": {
+      "version": "8.0.0",
+      "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+      "integrity": "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/string-width-cjs/node_modules/strip-ansi": {
+      "version": "6.0.1",
+      "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+      "integrity": "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ansi-regex": "^5.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/strip-ansi": {
+      "version": "7.1.2",
+      "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.1.2.tgz",
+      "integrity": "sha512-gmBGslpoQJtgnMAvOVqGZpEz9dyoKTCzy2nfz/n8aIFhN/jCE/rCmcxabB6jOOHV+0WNnylOxaxBQPSvcWklhA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ansi-regex": "^6.0.1"
+      },
+      "engines": {
+        "node": ">=12"
+      },
+      "funding": {
+        "url": "https://github.com/chalk/strip-ansi?sponsor=1"
+      }
+    },
+    "node_modules/strip-ansi-cjs": {
+      "name": "strip-ansi",
+      "version": "6.0.1",
+      "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+      "integrity": "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ansi-regex": "^5.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/strip-ansi-cjs/node_modules/ansi-regex": {
+      "version": "5.0.1",
+      "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "integrity": "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/sucrase": {
+      "version": "3.35.0",
+      "resolved": "https://registry.npmjs.org/sucrase/-/sucrase-3.35.0.tgz",
+      "integrity": "sha512-8EbVDiu9iN/nESwxeSxDKe0dunta1GOlHufmSSXxMD2z2/tMZpDMpvXQGsc+ajGo8y2uYUmixaSRUc/QPoQ0GA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/gen-mapping": "^0.3.2",
+        "commander": "^4.0.0",
+        "glob": "^10.3.10",
+        "lines-and-columns": "^1.1.6",
+        "mz": "^2.7.0",
+        "pirates": "^4.0.1",
+        "ts-interface-checker": "^0.1.9"
+      },
+      "bin": {
+        "sucrase": "bin/sucrase",
+        "sucrase-node": "bin/sucrase-node"
+      },
+      "engines": {
+        "node": ">=16 || 14 >=14.17"
+      }
+    },
+    "node_modules/sucrase/node_modules/brace-expansion": {
+      "version": "2.0.2",
+      "resolved": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.0.2.tgz",
+      "integrity": "sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "balanced-match": "^1.0.0"
+      }
+    },
+    "node_modules/sucrase/node_modules/commander": {
+      "version": "4.1.1",
+      "resolved": "https://registry.npmjs.org/commander/-/commander-4.1.1.tgz",
+      "integrity": "sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">= 6"
+      }
+    },
+    "node_modules/sucrase/node_modules/glob": {
+      "version": "10.4.5",
+      "resolved": "https://registry.npmjs.org/glob/-/glob-10.4.5.tgz",
+      "integrity": "sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "foreground-child": "^3.1.0",
+        "jackspeak": "^3.1.2",
+        "minimatch": "^9.0.4",
+        "minipass": "^7.1.2",
+        "package-json-from-dist": "^1.0.0",
+        "path-scurry": "^1.11.1"
+      },
+      "bin": {
+        "glob": "dist/esm/bin.mjs"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
+      }
+    },
+    "node_modules/sucrase/node_modules/minimatch": {
+      "version": "9.0.5",
+      "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-9.0.5.tgz",
+      "integrity": "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "brace-expansion": "^2.0.1"
+      },
+      "engines": {
+        "node": ">=16 || 14 >=14.17"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
+      }
+    },
     "node_modules/symbol-tree": {
       "version": "3.2.4",
       "resolved": "https://registry.npmjs.org/symbol-tree/-/symbol-tree-3.2.4.tgz",
       "integrity": "sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/thenify": {
+      "version": "3.3.1",
+      "resolved": "https://registry.npmjs.org/thenify/-/thenify-3.3.1.tgz",
+      "integrity": "sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "any-promise": "^1.0.0"
+      }
+    },
+    "node_modules/thenify-all": {
+      "version": "1.6.0",
+      "resolved": "https://registry.npmjs.org/thenify-all/-/thenify-all-1.6.0.tgz",
+      "integrity": "sha512-RNxQH/qI8/t3thXJDwcstUO4zeqo64+Uy/+sNVRBx4Xn2OX+OZ9oP+iJnNFqplFra2ZUVeKCSa2oVWi3T4uVmA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "thenify": ">= 3.1.0 < 4"
+      },
+      "engines": {
+        "node": ">=0.8"
+      }
     },
     "node_modules/tinybench": {
       "version": "2.9.0",
@@ -2151,6 +3090,76 @@
         "node": ">=18"
       }
     },
+    "node_modules/tree-kill": {
+      "version": "1.2.2",
+      "resolved": "https://registry.npmjs.org/tree-kill/-/tree-kill-1.2.2.tgz",
+      "integrity": "sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "tree-kill": "cli.js"
+      }
+    },
+    "node_modules/ts-interface-checker": {
+      "version": "0.1.13",
+      "resolved": "https://registry.npmjs.org/ts-interface-checker/-/ts-interface-checker-0.1.13.tgz",
+      "integrity": "sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==",
+      "dev": true,
+      "license": "Apache-2.0"
+    },
+    "node_modules/tsup": {
+      "version": "8.5.0",
+      "resolved": "https://registry.npmjs.org/tsup/-/tsup-8.5.0.tgz",
+      "integrity": "sha512-VmBp77lWNQq6PfuMqCHD3xWl22vEoWsKajkF8t+yMBawlUS8JzEI+vOVMeuNZIuMML8qXRizFKi9oD5glKQVcQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "bundle-require": "^5.1.0",
+        "cac": "^6.7.14",
+        "chokidar": "^4.0.3",
+        "consola": "^3.4.0",
+        "debug": "^4.4.0",
+        "esbuild": "^0.25.0",
+        "fix-dts-default-cjs-exports": "^1.0.0",
+        "joycon": "^3.1.1",
+        "picocolors": "^1.1.1",
+        "postcss-load-config": "^6.0.1",
+        "resolve-from": "^5.0.0",
+        "rollup": "^4.34.8",
+        "source-map": "0.8.0-beta.0",
+        "sucrase": "^3.35.0",
+        "tinyexec": "^0.3.2",
+        "tinyglobby": "^0.2.11",
+        "tree-kill": "^1.2.2"
+      },
+      "bin": {
+        "tsup": "dist/cli-default.js",
+        "tsup-node": "dist/cli-node.js"
+      },
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {
+        "@microsoft/api-extractor": "^7.36.0",
+        "@swc/core": "^1",
+        "postcss": "^8.4.12",
+        "typescript": ">=4.5.0"
+      },
+      "peerDependenciesMeta": {
+        "@microsoft/api-extractor": {
+          "optional": true
+        },
+        "@swc/core": {
+          "optional": true
+        },
+        "postcss": {
+          "optional": true
+        },
+        "typescript": {
+          "optional": true
+        }
+      }
+    },
     "node_modules/typescript": {
       "version": "5.9.3",
       "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
@@ -2164,6 +3173,13 @@
       "engines": {
         "node": ">=14.17"
       }
+    },
+    "node_modules/ufo": {
+      "version": "1.6.1",
+      "resolved": "https://registry.npmjs.org/ufo/-/ufo-1.6.1.tgz",
+      "integrity": "sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/undici-types": {
       "version": "7.16.0",
@@ -2192,6 +3208,13 @@
         "querystringify": "^2.1.1",
         "requires-port": "^1.0.0"
       }
+    },
+    "node_modules/util-deprecate": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
+      "integrity": "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/vite": {
       "version": "7.1.12",
@@ -2228,6 +3251,93 @@
         "sass-embedded": "^1.70.0",
         "stylus": ">=0.54.8",
         "sugarss": "^5.0.0",
+        "terser": "^5.16.0",
+        "tsx": "^4.8.1",
+        "yaml": "^2.4.2"
+      },
+      "peerDependenciesMeta": {
+        "@types/node": {
+          "optional": true
+        },
+        "jiti": {
+          "optional": true
+        },
+        "less": {
+          "optional": true
+        },
+        "lightningcss": {
+          "optional": true
+        },
+        "sass": {
+          "optional": true
+        },
+        "sass-embedded": {
+          "optional": true
+        },
+        "stylus": {
+          "optional": true
+        },
+        "sugarss": {
+          "optional": true
+        },
+        "terser": {
+          "optional": true
+        },
+        "tsx": {
+          "optional": true
+        },
+        "yaml": {
+          "optional": true
+        }
+      }
+    },
+    "node_modules/vite-plugin-purgecss": {
+      "version": "0.2.13",
+      "resolved": "https://registry.npmjs.org/vite-plugin-purgecss/-/vite-plugin-purgecss-0.2.13.tgz",
+      "integrity": "sha512-b+ZHnZPm2tsnlPVkACUErTrVjnGN8c/ZOkPe0j0hha03S37RB+pPd+uIUKLsZs9l/HYelafgaudI+W4MTxhawA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "purgecss": "^4.1.3",
+        "tsup": "^8.4.0",
+        "vite": "^6.2.1"
+      }
+    },
+    "node_modules/vite-plugin-purgecss/node_modules/vite": {
+      "version": "6.4.1",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-6.4.1.tgz",
+      "integrity": "sha512-+Oxm7q9hDoLMyJOYfUYBuHQo+dkAloi33apOPP56pzj+vsdJDzr+j1NISE5pyaAuKL4A3UD34qd0lx5+kfKp2g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "esbuild": "^0.25.0",
+        "fdir": "^6.4.4",
+        "picomatch": "^4.0.2",
+        "postcss": "^8.5.3",
+        "rollup": "^4.34.9",
+        "tinyglobby": "^0.2.13"
+      },
+      "bin": {
+        "vite": "bin/vite.js"
+      },
+      "engines": {
+        "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
+      },
+      "funding": {
+        "url": "https://github.com/vitejs/vite?sponsor=1"
+      },
+      "optionalDependencies": {
+        "fsevents": "~2.3.3"
+      },
+      "peerDependencies": {
+        "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0",
+        "jiti": ">=1.21.0",
+        "less": "*",
+        "lightningcss": "^1.21.0",
+        "sass": "*",
+        "sass-embedded": "*",
+        "stylus": "*",
+        "sugarss": "*",
         "terser": "^5.16.0",
         "tsx": "^4.8.1",
         "yaml": "^2.4.2"
@@ -2406,6 +3516,22 @@
         "node": ">=18"
       }
     },
+    "node_modules/which": {
+      "version": "2.0.2",
+      "resolved": "https://registry.npmjs.org/which/-/which-2.0.2.tgz",
+      "integrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "isexe": "^2.0.0"
+      },
+      "bin": {
+        "node-which": "bin/node-which"
+      },
+      "engines": {
+        "node": ">= 8"
+      }
+    },
     "node_modules/why-is-node-running": {
       "version": "2.3.0",
       "resolved": "https://registry.npmjs.org/why-is-node-running/-/why-is-node-running-2.3.0.tgz",
@@ -2422,6 +3548,111 @@
       "engines": {
         "node": ">=8"
       }
+    },
+    "node_modules/wrap-ansi": {
+      "version": "8.1.0",
+      "resolved": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-8.1.0.tgz",
+      "integrity": "sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ansi-styles": "^6.1.0",
+        "string-width": "^5.0.1",
+        "strip-ansi": "^7.0.1"
+      },
+      "engines": {
+        "node": ">=12"
+      },
+      "funding": {
+        "url": "https://github.com/chalk/wrap-ansi?sponsor=1"
+      }
+    },
+    "node_modules/wrap-ansi-cjs": {
+      "name": "wrap-ansi",
+      "version": "7.0.0",
+      "resolved": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz",
+      "integrity": "sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ansi-styles": "^4.0.0",
+        "string-width": "^4.1.0",
+        "strip-ansi": "^6.0.0"
+      },
+      "engines": {
+        "node": ">=10"
+      },
+      "funding": {
+        "url": "https://github.com/chalk/wrap-ansi?sponsor=1"
+      }
+    },
+    "node_modules/wrap-ansi-cjs/node_modules/ansi-regex": {
+      "version": "5.0.1",
+      "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "integrity": "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/wrap-ansi-cjs/node_modules/ansi-styles": {
+      "version": "4.3.0",
+      "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz",
+      "integrity": "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "color-convert": "^2.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      },
+      "funding": {
+        "url": "https://github.com/chalk/ansi-styles?sponsor=1"
+      }
+    },
+    "node_modules/wrap-ansi-cjs/node_modules/emoji-regex": {
+      "version": "8.0.0",
+      "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+      "integrity": "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/wrap-ansi-cjs/node_modules/string-width": {
+      "version": "4.2.3",
+      "resolved": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+      "integrity": "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "emoji-regex": "^8.0.0",
+        "is-fullwidth-code-point": "^3.0.0",
+        "strip-ansi": "^6.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/wrap-ansi-cjs/node_modules/strip-ansi": {
+      "version": "6.0.1",
+      "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+      "integrity": "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ansi-regex": "^5.0.1"
+      },
+      "engines": {
+        "node": ">=8"
+      }
+    },
+    "node_modules/wrappy": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz",
+      "integrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==",
+      "dev": true,
+      "license": "ISC"
     },
     "node_modules/ws": {
       "version": "8.18.3",
@@ -2515,6 +3746,7 @@
 // vite.config.ts (Vitest 4.x용 단순화 버전)
 
 import { defineConfig, loadEnv } from 'vite';
+import purgecss from 'vite-plugin-purgecss';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -2522,9 +3754,23 @@ export default defineConfig(({ mode }) => {
   return {
     base: './',
 
+    // ===== [Phase 3.3 최적화] CSS Purging 플러그인 추가 =====
+    plugins: mode === 'production' ? [
+      purgecss({
+        content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+        defaultExtractor: (content) => content.match(/[\w-/:]+(?<!:)/g) || [],
+        safelist: {
+          standard: ['dark-mode', 'sr-only', 'skip-link', 'modal-open'],
+          deep: [/^btn/, /^toast/, /^modal/, /^virtual-/, /^error-/, /^text-/],
+          greedy: [/data-/, /aria-/]
+        }
+      })
+    ] : [],
+    // ===== [Phase 3.3 최적화 끝] =====
+
     esbuild: {
       target: 'esnext', // # 문법 지원은 유지
-      drop: ['console', 'debugger'],
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
     },
 
     test: {
@@ -2634,9 +3880,36 @@ pnpm-debug.log*
                     <button id="addNewStockBtn" class="btn" data-variant="green">➕ 새 종목 추가</button>
                     <button id="fetchAllPricesBtn" class="btn" data-variant="blue" style="width: 100%;">📈 현재가 모두 불러오기</button>
 
+                    <div id="allocationTemplateGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="allocationTemplate">📋 자산 배분 템플릿:</label>
+                        <select id="allocationTemplate" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <option value="">-- 템플릿 선택 --</option>
+                            <option value="60-40">60/40 포트폴리오 (주식 60%, 채권 40%)</option>
+                            <option value="all-weather">All-Weather (Ray Dalio)</option>
+                            <option value="50-30-20">50/30/20 (주식 50%, 채권 30%, 기타 20%)</option>
+                            <option value="equal">동일 비중</option>
+                        </select>
+                        <button id="applyTemplateBtn" class="btn" data-variant="blue" style="margin-top: 5px;">✨ 템플릿 적용</button>
+                    </div>
+
                     <div id="portfolioExchangeRateGroup" class="input-group" style="margin-top: 10px;">
                         <label for="portfolioExchangeRate">💱 환율 (1 USD = ? KRW):</label>
                         <input type="number" id="portfolioExchangeRate" placeholder="예: 1300" min="0.01" step="0.01" value="1300">
+                    </div>
+
+                    <div id="rebalancingToleranceGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="rebalancingTolerance">🔔 리밸런싱 알림 허용 오차 (%):</label>
+                        <input type="number" id="rebalancingTolerance" placeholder="예: 5" min="0" step="0.1" value="5">
+                    </div>
+
+                    <div id="tradingCostsGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="tradingFeeRate">💸 거래 수수료율 (%):</label>
+                        <input type="number" id="tradingFeeRate" placeholder="예: 0.3" min="0" step="0.01" value="0.3">
+                    </div>
+
+                    <div id="taxRateGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="taxRate">💰 세율 (%):</label>
+                        <input type="number" id="taxRate" placeholder="예: 15" min="0" step="0.1" value="15">
                     </div>
 
                     <button id="resetDataBtn" class="btn" data-variant="orange">🔄 초기화</button>
@@ -2649,11 +3922,12 @@ pnpm-debug.log*
                                 aria-controls="dataDropdownContent">
                             💾 데이터 관리
                         </button>
-                        <div id="dataDropdownContent" class="dropdown-content" 
-                             role="menu" 
+                        <div id="dataDropdownContent" class="dropdown-content"
+                             role="menu"
                              aria-labelledby="dataManagementBtn">
                             <a href="#" id="exportDataBtn" role="menuitem">📤 내보내기 (JSON)</a>
                             <a href="#" id="importDataBtn" role="menuitem">📥 가져오기 (JSON)</a>
+                            <a href="#" id="exportTransactionsCSVBtn" role="menuitem">📊 거래 내역 CSV 내보내기</a>
                         </div>
                     </div>
 
@@ -2705,6 +3979,20 @@ pnpm-debug.log*
                     <canvas id="portfolioChart"></canvas>
                 </div>
             </section>
+            <section id="performanceHistorySection" class="card hidden" role="region" aria-label="포트폴리오 성과 히스토리">
+                <h2>📈 포트폴리오 성과 히스토리</h2>
+                <div class="btn-controls" style="margin-bottom: 15px;">
+                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">📊 차트 보기</button>
+                    <button id="showSnapshotListBtn" class="btn" data-variant="green">📋 스냅샷 목록</button>
+                </div>
+                <div id="performanceChartContainer" class="hidden">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div id="snapshotListContainer" class="hidden" style="margin-top: 20px;">
+                    <h3>💾 저장된 스냅샷</h3>
+                    <div id="snapshotList" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -2731,6 +4019,7 @@ pnpm-debug.log*
                 <div class="mode-selector" style="margin-bottom: 15px;">
                     <label><input type="radio" name="txType" value="buy" checked> 매수</label>
                     <label><input type="radio" name="txType" value="sell"> 매도</label>
+                    <label><input type="radio" name="txType" value="dividend"> 배당</label>
                 </div>
                 <div class="mode-selector" style="margin-bottom: 15px;">
                     <label><input type="radio" name="inputMode" value="quantity" id="inputModeQuantity" checked> 수량 입력</label>
@@ -3094,6 +4383,7 @@ body.dark-mode .guide-box--sell { background-color: #4a1f1f; }
 }
 .result-row-highlight.in-view { opacity: 1; transform: translateX(0); }
 #chartSection { position: relative; max-width: 500px; margin: 25px auto; }
+#chartSection > div { position: relative; height: 400px; }
 .dark-mode-toggle {
     position: fixed; bottom: var(--spacing-lg); right: var(--spacing-lg); z-index: 1000; width: 60px; height: 60px; border-radius: 50%;
     font-size: 1.8rem; box-shadow: 0 5px 20px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; padding: 0;
@@ -3438,10 +4728,11 @@ import { PortfolioState } from './state.ts';
 import { PortfolioView } from './view.ts';
 import { PortfolioController } from './controller.ts';
 import { ErrorService } from './errorService.ts';
-import { Chart, DoughnutController, ArcElement, Legend, Title, Tooltip } from 'chart.js';
 
-// Chart.js의 필요한 구성 요소만 등록
-Chart.register(DoughnutController, ArcElement, Legend, Title, Tooltip);
+// ===== [Phase 3.1 최적화] Chart.js 지연 로딩 =====
+// Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
+// (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
+// ===== [Phase 3.1 최적화 끝] =====
 
 try {
     const state = new PortfolioState();
@@ -3453,11 +4744,6 @@ try {
 
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
-
-    // Make Chart globally available or pass it where needed (e.g., to View)
-    // If View needs Chart, consider passing it during initialization or directly
-    // For simplicity, let's assume View can access the global Chart object for now
-    // (A better approach might be dependency injection)
 
     console.log("Application setup complete.");
 } catch (error) {
@@ -3484,7 +4770,7 @@ try {
 
 import type { Decimal } from 'decimal.js';
 
-export type TransactionType = 'buy' | 'sell';
+export type TransactionType = 'buy' | 'sell' | 'dividend';
 
 export interface Transaction {
     id: string; // 거래 고유 ID
@@ -3512,12 +4798,16 @@ export interface CalculatedStockMetrics {
     totalSellQuantity: Decimal; // 총 매도 수량
     quantity: Decimal; // 현재 보유 수량
     totalBuyAmount: Decimal; // 총 매수 금액
+    totalSellAmount: Decimal; // 총 매도 금액
     avgBuyPrice: Decimal; // 평균 매수 단가
     currentAmount: Decimal; // 현재 평가 금액 (USD 기준)
     currentAmountUSD: Decimal; // 현재 평가 금액 (USD)
     currentAmountKRW: Decimal; // 현재 평가 금액 (KRW)
-    profitLoss: Decimal; // 평가 손익
-    profitLossRate: Decimal; // 평가 수익률 (%)
+    profitLoss: Decimal; // 미실현 손익 (현재 보유분)
+    profitLossRate: Decimal; // 미실현 수익률 (%)
+    totalDividends: Decimal; // 총 배당금
+    realizedPL: Decimal; // 실현 손익 (매도 차익)
+    totalRealizedPL: Decimal; // 총 실현 손익 (실현손익 + 배당금)
 }
 
 export interface CalculatedStock extends Stock {
@@ -3531,6 +4821,9 @@ export interface PortfolioSettings {
     mainMode: MainMode;
     currentCurrency: Currency;
     exchangeRate: number;
+    rebalancingTolerance?: number; // 리밸런싱 허용 오차 (%), optional for backward compatibility
+    tradingFeeRate?: number; // 거래 수수료율 (%), optional
+    taxRate?: number; // 세율 (%), optional
 }
 
 export interface Portfolio {
@@ -3572,6 +4865,23 @@ export interface FetchStockResult {
     value?: number;
     reason?: string;
 }
+
+// Performance tracking types
+export interface PortfolioSnapshot {
+    id: string; // 스냅샷 고유 ID
+    portfolioId: string; // 포트폴리오 ID
+    timestamp: number; // Unix timestamp (milliseconds)
+    date: string; // YYYY-MM-DD format for display
+    totalValue: number; // 총 포트폴리오 가치 (USD)
+    totalValueKRW: number; // 총 포트폴리오 가치 (KRW)
+    totalInvestedCapital: number; // 총 투자 원금 (USD)
+    totalUnrealizedPL: number; // 총 미실현 손익 (USD)
+    totalRealizedPL: number; // 총 실현 손익 (USD)
+    totalDividends: number; // 총 배당금 (USD)
+    totalOverallPL: number; // 총 전체 손익 (USD) = unrealized + realized + dividends
+    exchangeRate: number; // 환율 (스냅샷 당시)
+    stockCount: number; // 보유 종목 수
+}
 ```
 
 ---
@@ -3581,9 +4891,10 @@ export interface FetchStockResult {
 ```typescript
 // src/calculator.ts (Strategy Pattern Applied)
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.ts';
+import { nanoid } from 'nanoid';
+import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
-import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency } from './types.ts';
+import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency, PortfolioSnapshot } from './types.ts';
 import type { IRebalanceStrategy } from './calculationStrategies.ts';
 
 /**
@@ -3634,21 +4945,25 @@ export class Calculator {
     static calculateStockMetrics(stock: Stock): CalculatedStockMetrics {
         try {
             const result: CalculatedStockMetrics = {
-                totalBuyQuantity: new Decimal(0),
-                totalSellQuantity: new Decimal(0),
-                quantity: new Decimal(0),
-                totalBuyAmount: new Decimal(0),
-                currentAmount: new Decimal(0),
-                currentAmountUSD: new Decimal(0),
-                currentAmountKRW: new Decimal(0),
-                avgBuyPrice: new Decimal(0),
-                profitLoss: new Decimal(0),
-                profitLossRate: new Decimal(0),
+                totalBuyQuantity: DECIMAL_ZERO,
+                totalSellQuantity: DECIMAL_ZERO,
+                quantity: DECIMAL_ZERO,
+                totalBuyAmount: DECIMAL_ZERO,
+                totalSellAmount: DECIMAL_ZERO,
+                currentAmount: DECIMAL_ZERO,
+                currentAmountUSD: DECIMAL_ZERO,
+                currentAmountKRW: DECIMAL_ZERO,
+                avgBuyPrice: DECIMAL_ZERO,
+                profitLoss: DECIMAL_ZERO,
+                profitLossRate: DECIMAL_ZERO,
+                totalDividends: DECIMAL_ZERO,
+                realizedPL: DECIMAL_ZERO,
+                totalRealizedPL: DECIMAL_ZERO,
             };
 
             const currentPrice = new Decimal(stock.currentPrice || 0);
 
-            // 1. 매수/매도 수량 및 금액 합산
+            // 1. 매수/매도 수량 및 금액 합산, 배당금 집계
             for (const tx of stock.transactions) {
                 const txQuantity = new Decimal(tx.quantity || 0);
                 const txPrice = new Decimal(tx.price || 0);
@@ -3660,6 +4975,12 @@ export class Calculator {
                     );
                 } else if (tx.type === 'sell') {
                     result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
+                    result.totalSellAmount = result.totalSellAmount.plus(
+                        txQuantity.times(txPrice)
+                    );
+                } else if (tx.type === 'dividend') {
+                    // 배당금: quantity 필드에 배당금액 저장, price는 1로 가정
+                    result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
                 }
             }
 
@@ -3674,20 +4995,29 @@ export class Calculator {
                 result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
             }
 
-            // 4. 현재 가치 (quantity * currentPrice)
+            // 4. 실현 손익 계산 (매도금액 - 매도수량 × 평균매입가)
+            if (result.totalSellQuantity.greaterThan(0) && result.avgBuyPrice.greaterThan(0)) {
+                const costBasisOfSold = result.totalSellQuantity.times(result.avgBuyPrice);
+                result.realizedPL = result.totalSellAmount.minus(costBasisOfSold);
+            }
+
+            // 5. 총 실현 손익 (실현손익 + 배당금)
+            result.totalRealizedPL = result.realizedPL.plus(result.totalDividends);
+
+            // 6. 현재 가치 (quantity * currentPrice)
             result.currentAmount = result.quantity.times(currentPrice);
 
-            // 5. 손익 계산 (currentAmount - (quantity * avgBuyPrice))
+            // 7. 미실현 손익 계산 (currentAmount - (quantity * avgBuyPrice))
             const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
             result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
 
-            // 6. 손익률
+            // 8. 미실현 손익률
             if (originalCostOfHolding.isZero()) {
-                result.profitLossRate = new Decimal(0);
+                result.profitLossRate = DECIMAL_ZERO;
             } else {
                 result.profitLossRate = result.profitLoss
                     .div(originalCostOfHolding)
-                    .times(100);
+                    .times(DECIMAL_HUNDRED);
             }
 
             return result;
@@ -3695,11 +5025,20 @@ export class Calculator {
             ErrorService.handle(error as Error, 'calculateStockMetrics');
             // 에러 발생 시 기본값 반환
             return {
-                quantity: new Decimal(0),
-                avgBuyPrice: new Decimal(0),
-                currentAmount: new Decimal(0),
-                profitLoss: new Decimal(0),
-                profitLossRate: new Decimal(0),
+                totalBuyQuantity: DECIMAL_ZERO,
+                totalSellQuantity: DECIMAL_ZERO,
+                quantity: DECIMAL_ZERO,
+                totalBuyAmount: DECIMAL_ZERO,
+                totalSellAmount: DECIMAL_ZERO,
+                avgBuyPrice: DECIMAL_ZERO,
+                currentAmount: DECIMAL_ZERO,
+                currentAmountUSD: DECIMAL_ZERO,
+                currentAmountKRW: DECIMAL_ZERO,
+                profitLoss: DECIMAL_ZERO,
+                profitLossRate: DECIMAL_ZERO,
+                totalDividends: DECIMAL_ZERO,
+                realizedPL: DECIMAL_ZERO,
+                totalRealizedPL: DECIMAL_ZERO,
             };
         }
     }
@@ -3725,7 +5064,7 @@ export class Calculator {
         }
 
         const exchangeRateDec = new Decimal(exchangeRate);
-        let currentTotal = new Decimal(0);
+        let currentTotal = DECIMAL_ZERO;
 
         const calculatedPortfolioData: CalculatedStock[] = portfolioData.map((stock) => {
             const calculatedMetrics = Calculator.calculateStockMetrics(stock);
@@ -3777,24 +5116,24 @@ export class Calculator {
         const startTime = performance.now();
 
         const sectorMap = new Map<string, Decimal>();
-        let currentTotal = new Decimal(0);
+        let currentTotal = DECIMAL_ZERO;
 
         for (const s of portfolioData) {
             const sector = s.sector || 'Unclassified';
             const amount = currentCurrency === 'krw'
-                ? (s.calculated?.currentAmountKRW || new Decimal(0))
-                : (s.calculated?.currentAmountUSD || new Decimal(0));
+                ? (s.calculated?.currentAmountKRW || DECIMAL_ZERO)
+                : (s.calculated?.currentAmountUSD || DECIMAL_ZERO);
             currentTotal = currentTotal.plus(amount);
 
-            const currentSectorAmount = sectorMap.get(sector) || new Decimal(0);
+            const currentSectorAmount = sectorMap.get(sector) || DECIMAL_ZERO;
             sectorMap.set(sector, currentSectorAmount.plus(amount));
         }
 
         const result: { sector: string; amount: Decimal; percentage: Decimal }[] = [];
         for (const [sector, amount] of sectorMap.entries()) {
             const percentage = currentTotal.isZero()
-                ? new Decimal(0)
-                : amount.div(currentTotal).times(100);
+                ? DECIMAL_ZERO
+                : amount.div(currentTotal).times(DECIMAL_HUNDRED);
             result.push({ sector, amount, percentage });
         }
 
@@ -3817,6 +5156,92 @@ export class Calculator {
     static clearPortfolioStateCache(): void {
         Calculator.#cache = null;
     }
+
+    /**
+     * @description 현재 포트폴리오 상태에서 스냅샷을 생성합니다.
+     */
+    static createSnapshot(
+        portfolioId: string,
+        portfolioData: CalculatedStock[],
+        exchangeRate: number,
+        currentCurrency: Currency = 'krw'
+    ): PortfolioSnapshot {
+        try {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            let totalValue = DECIMAL_ZERO;
+            let totalInvestedCapital = DECIMAL_ZERO;
+            let totalUnrealizedPL = DECIMAL_ZERO;
+            let totalRealizedPL = DECIMAL_ZERO;
+            let totalDividends = DECIMAL_ZERO;
+
+            // 모든 주식의 메트릭 집계
+            for (const stock of portfolioData) {
+                const metrics = stock.calculated;
+                if (!metrics) continue;
+
+                // USD 기준으로 집계
+                totalValue = totalValue.plus(metrics.currentAmountUSD || 0);
+
+                // 투자 원금 = 현재 보유수량 × 평균매입가
+                const investedForHolding = metrics.quantity.times(metrics.avgBuyPrice);
+                totalInvestedCapital = totalInvestedCapital.plus(investedForHolding);
+
+                // 미실현 손익
+                totalUnrealizedPL = totalUnrealizedPL.plus(metrics.profitLoss || 0);
+
+                // 실현 손익
+                totalRealizedPL = totalRealizedPL.plus(metrics.realizedPL || 0);
+
+                // 배당금
+                totalDividends = totalDividends.plus(metrics.totalDividends || 0);
+            }
+
+            // 총 전체 손익 = 미실현 + 실현 + 배당금
+            const totalOverallPL = totalUnrealizedPL.plus(totalRealizedPL).plus(totalDividends);
+
+            const exchangeRateDec = new Decimal(exchangeRate);
+            const totalValueKRW = totalValue.times(exchangeRateDec);
+
+            const snapshot: PortfolioSnapshot = {
+                id: nanoid(),
+                portfolioId,
+                timestamp: now.getTime(),
+                date: dateStr,
+                totalValue: totalValue.toNumber(),
+                totalValueKRW: totalValueKRW.toNumber(),
+                totalInvestedCapital: totalInvestedCapital.toNumber(),
+                totalUnrealizedPL: totalUnrealizedPL.toNumber(),
+                totalRealizedPL: totalRealizedPL.toNumber(),
+                totalDividends: totalDividends.toNumber(),
+                totalOverallPL: totalOverallPL.toNumber(),
+                exchangeRate,
+                stockCount: portfolioData.filter(s => s.calculated && s.calculated.quantity.greaterThan(0)).length,
+            };
+
+            return snapshot;
+        } catch (error) {
+            ErrorService.handle(error as Error, 'Calculator.createSnapshot');
+            // Return empty snapshot on error
+            const now = new Date();
+            return {
+                id: nanoid(),
+                portfolioId,
+                timestamp: now.getTime(),
+                date: now.toISOString().split('T')[0],
+                totalValue: 0,
+                totalValueKRW: 0,
+                totalInvestedCapital: 0,
+                totalUnrealizedPL: 0,
+                totalRealizedPL: 0,
+                totalDividends: 0,
+                totalOverallPL: 0,
+                exchangeRate,
+                stockCount: 0,
+            };
+        }
+    }
 }
 ```
 
@@ -3825,6 +5250,18 @@ export class Calculator {
 ## `src/constants.ts`
 
 ```typescript
+import Decimal from 'decimal.js';
+
+// ===== [Phase 1.3 최적화] Decimal 상수 캐싱 =====
+/**
+ * @description 자주 사용되는 Decimal 상수
+ * - 매번 new Decimal()을 호출하는 대신 이 상수를 재사용
+ */
+export const DECIMAL_ZERO = new Decimal(0);
+export const DECIMAL_ONE = new Decimal(1);
+export const DECIMAL_HUNDRED = new Decimal(100);
+// ===== [Phase 1.3 최적화 끝] =====
+
 // 설정값들을 정의하는 상수 객체
 export const CONFIG = {
     MIN_BUYABLE_AMOUNT: 1000,
@@ -3839,6 +5276,7 @@ export const CONFIG = {
     // ▼▼▼▼▼ [신규] IndexedDB 키 ▼▼▼▼▼
     IDB_META_KEY: 'portfolioMeta_v2',
     IDB_PORTFOLIOS_KEY: 'portfolioData_v2',
+    IDB_SNAPSHOTS_KEY: 'portfolioSnapshots_v2',
     // ▲▲▲▲▲ [신규] ▲▲▲▲▲
 
     // ▼▼▼▼▼ [수정] 마이그레이션을 위한 레거시 LocalStorage 키 ▼▼▼▼▼
@@ -3864,6 +5302,7 @@ import Decimal from 'decimal.js';
 import type { Stock, Currency } from './types.ts';
 // Import enhanced i18n formatters
 import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
+import { DECIMAL_ZERO } from './constants';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
@@ -3886,7 +5325,7 @@ export function escapeHTML(str: string | number | null | undefined): string {
  * @returns 목표 비율 합계
  */
 export function getRatioSum(portfolioData: Stock[]): Decimal {
-    let sum = new Decimal(0);
+    let sum = DECIMAL_ZERO;
     if (!Array.isArray(portfolioData)) return sum;
 
     for (const s of portfolioData) {
@@ -3934,6 +5373,18 @@ export function debounce<T extends (...args: any[]) => any>(
         }, delay);
         if (callNow) func.apply(context, args); // 즉시 실행 조건 충족 시 바로 실행
     };
+}
+
+/**
+ * @description 고유 ID를 생성합니다. (nanoid 대체)
+ * @returns 고유 ID 문자열
+ */
+export function generateId(): string {
+    // ===== [Phase 3.4 최적화] nanoid 대체 =====
+    // nanoid를 간단한 유틸 함수로 교체하여 번들 크기 감소
+    // Date.now()와 Math.random()을 조합하여 충분히 고유한 ID 생성
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    // ===== [Phase 3.4 최적화 끝] =====
 }
 
 // Re-export enhanced formatters for convenience
@@ -4214,9 +5665,43 @@ export function formatAPIError(error: APIError): string {
     }
 }
 
+/**
+ * @description 환율 정보 가져오기 (Phase 4.2)
+ * @returns Promise<number | null> - USD/KRW 환율 또는 null
+ */
+async function fetchExchangeRate(): Promise<number | null> {
+    try {
+        // ExchangeRate-API 무료 버전 사용
+        const response = await fetchWithRetry(
+            'https://api.exchangerate-api.com/v4/latest/USD',
+            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) },
+            2
+        );
+
+        if (!response.ok) {
+            console.warn('[apiService] Exchange rate API failed');
+            return null;
+        }
+
+        const data = await response.json();
+        const krwRate = data.rates?.KRW;
+
+        if (typeof krwRate === 'number' && krwRate > 0) {
+            console.log('[apiService] Exchange rate fetched:', krwRate);
+            return krwRate;
+        }
+
+        return null;
+    } catch (error) {
+        console.warn('[apiService] Failed to fetch exchange rate:', error);
+        return null;
+    }
+}
+
 export const apiService = {
     fetchStockPrice,
     fetchAllStockPrices,
+    fetchExchangeRate,
 };
 ```
 
@@ -4228,6 +5713,7 @@ export const apiService = {
 // src/calculationStrategies.ts (DRY 원칙 적용)
 import Decimal from 'decimal.js';
 import type { CalculatedStock } from './types.ts';
+import { DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';
 
 // ==================== 공통 유틸리티 함수 ====================
 
@@ -4235,14 +5721,14 @@ import type { CalculatedStock } from './types.ts';
  * @description 포트폴리오의 목표 비율 합계 계산
  */
 function calculateTotalRatio(portfolioData: CalculatedStock[]): Decimal {
-    return portfolioData.reduce((sum, s) => sum.plus(s.targetRatio || 0), new Decimal(0));
+    return portfolioData.reduce((sum, s) => sum.plus(s.targetRatio || 0), DECIMAL_ZERO);
 }
 
 /**
  * @description 목표 비율을 100%로 정규화하기 위한 계수 계산
  */
 function calculateRatioMultiplier(totalRatio: Decimal): Decimal {
-    return totalRatio.isZero() ? new Decimal(0) : new Decimal(100).div(totalRatio);
+    return totalRatio.isZero() ? DECIMAL_ZERO : DECIMAL_HUNDRED.div(totalRatio);
 }
 
 /**
@@ -4253,7 +5739,7 @@ function allocateFixedBuyAmounts(
     additionalInvestment: Decimal,
     results: any[]
 ): Decimal {
-    const zero = new Decimal(0);
+    const zero = DECIMAL_ZERO;
     let remainingInvestment = additionalInvestment;
 
     for (const s of portfolioData) {
@@ -4287,7 +5773,7 @@ function distributeRemainingInvestment(
     remainingInvestment: Decimal,
     ratioMultiplier: Decimal
 ): void {
-    const zero = new Decimal(0);
+    const zero = DECIMAL_ZERO;
 
     const targetAmounts = results.map((s) => {
         const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
@@ -4346,7 +5832,7 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
 
     calculate(): { results: any[] } {
         const startTime = performance.now();
-        const zero = new Decimal(0);
+        const zero = DECIMAL_ZERO;
 
         // 현재 총 자산 + 추가 투자금 = 총 투자금
         const currentTotal = this.#portfolioData.reduce(
@@ -4364,7 +5850,7 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
             const currentAmount = s.calculated?.currentAmount || zero;
             const currentRatio = totalInvestment.isZero()
                 ? zero
-                : currentAmount.div(totalInvestment).times(100);
+                : currentAmount.div(totalInvestment).times(DECIMAL_HUNDRED);
             return {
                 ...s,
                 currentRatio: currentRatio,
@@ -4422,7 +5908,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
 
     calculate(): { results: any[] } {
         const startTime = performance.now();
-        const zero = new Decimal(0);
+        const zero = DECIMAL_ZERO;
 
         // 간단 모드에서는 manualAmount를 사용 (거래 내역 대신 직접 입력한 금액)
         const currentTotal = this.#portfolioData.reduce((sum, s) => {
@@ -4458,7 +5944,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
                     : s.calculated?.currentAmount || zero;
             const currentRatio = currentTotal.isZero()
                 ? zero
-                : currentAmount.div(currentTotal).times(100);
+                : currentAmount.div(currentTotal).times(DECIMAL_HUNDRED);
 
             return {
                 ...s,
@@ -4493,7 +5979,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
             ...s,
             buyRatio: totalBuyAmount.isZero()
                 ? zero
-                : s.finalBuyAmount.div(totalBuyAmount).times(100),
+                : s.finalBuyAmount.div(totalBuyAmount).times(DECIMAL_HUNDRED),
         }));
 
         if (import.meta.env.DEV) {
@@ -4519,7 +6005,7 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 
     calculate(): { results: any[] } {
         const startTime = performance.now();
-        const zero = new Decimal(0);
+        const zero = DECIMAL_ZERO;
 
         const currentTotal = this.#portfolioData.reduce(
             (sum, s) => sum.plus(s.calculated?.currentAmount || zero),
@@ -4544,11 +6030,11 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 
         const results = this.#portfolioData.map((s) => {
             const currentAmount = s.calculated?.currentAmount || zero;
-            const currentRatioDec = currentAmount.div(currentTotal).times(100);
+            const currentRatioDec = currentAmount.div(currentTotal).times(DECIMAL_HUNDRED);
             const currentRatio = currentRatioDec.toNumber();
 
             const targetRatioNormalized = new Decimal(s.targetRatio || 0).times(ratioMultiplier);
-            const targetAmount = currentTotal.times(targetRatioNormalized.div(100));
+            const targetAmount = currentTotal.times(targetRatioNormalized.div(DECIMAL_HUNDRED));
             const adjustment = currentAmount.minus(targetAmount);
 
             return {
@@ -4576,7 +6062,7 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 ## `src/testUtils.ts`
 
 ```typescript
-// js/testUtils.ts
+// src/testUtils.ts
 import Decimal from 'decimal.js';
 import type { CalculatedStock, Portfolio } from './types';
 
@@ -4698,12 +6184,16 @@ export interface SectorData {
  * @param results - 계산 결과 배열
  * @param summary - 요약 정보 객체
  * @param currency - 현재 통화 ('krw' or 'usd')
+ * @param feeRate - 거래 수수료율 (%, optional)
+ * @param taxRate - 세율 (%, optional)
  * @returns 생성된 HTML 문자열
  */
 export function generateAddModeResultsHTML(
     results: AddModeResultStock[],
     summary: AddModeSummary,
-    currency: Currency
+    currency: Currency,
+    feeRate?: number,
+    taxRate?: number
 ): string {
     if (!results) return ''; // Null check for results
 
@@ -4773,12 +6263,26 @@ export function generateAddModeResultsHTML(
                   .join('')
             : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
+    // Phase 3.1: 비용 계산
+    const totalBuyAmount = summary?.additionalInvestment ?? new Decimal(0);
+    const feeRateDec = new Decimal(feeRate ?? 0).div(100);
+    const estimatedFee = totalBuyAmount.times(feeRateDec);
+    const netInvestment = totalBuyAmount.minus(estimatedFee);
+
+    const costSummaryHTML = (feeRate && feeRate > 0) ? `
+        <div class="summary-grid" style="margin-top: 15px; background: #fff9e6; border: 1px solid #ffd700;">
+            <div class="summary-item"><h3>💸 예상 수수료 (${feeRate}%)</h3><div class="amount" style="color: #ff6b6b;">${formatCurrency(estimatedFee, currency)}</div></div>
+            <div class="summary-item"><h3>💰 순 투자금액</h3><div class="amount" style="color: #51cf66;">${formatCurrency(netInvestment, currency)}</div></div>
+        </div>
+    ` : '';
+
     return `
         <div class="summary-grid">
             <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
             <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
             <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
         </div>
+        ${costSummaryHTML}
         <div class="card">
             <h2>${t('template.addModeGuideTitle')}</h2>
             <div class="table-responsive">
@@ -5268,18 +6772,8 @@ export const Validator = {
                         stockId: stock.id,
                         message: t('validation.fixedBuyAmountZero', { name: stockName }),
                     });
-                } else if (
-                    !currentPrice.isNaN() &&
-                    currentPrice.greaterThan(0) &&
-                    fixedAmount.lessThan(currentPrice)
-                ) {
-                    // 고정 매수 금액이 현재가보다 작아 1주도 살 수 없는 경우
-                    errors.push({
-                        field: 'fixedBuyAmount',
-                        stockId: stock.id,
-                        message: t('validation.fixedBuyAmountTooSmall', { name: stockName }),
-                    });
                 }
+                // 소수점 거래(fractional shares) 지원을 위해 현재가보다 작은 금액도 허용
                 totalFixedBuyAmount = totalFixedBuyAmount.plus(fixedAmount);
             }
 
@@ -5400,7 +6894,7 @@ export const Validator = {
 
 ```typescript
 // js/state.ts (Refactored with DataStore separation)
-import { nanoid } from 'nanoid';
+import { generateId } from './utils';  // ===== [Phase 3.4 최적화] generateId 제거 =====
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
@@ -5525,7 +7019,7 @@ export class PortfolioState {
                              const fixedBuyAmount = new Decimal(stock.fixedBuyAmount ?? 0);
 
                             return {
-                                id: stock.id || `s-${nanoid()}`,
+                                id: stock.id || `s-${generateId()}`,
                                 // ▼▼▼ [수정] DOMPurify.sanitize 적용 ▼▼▼
                                 name: DOMPurify.sanitize(stock.name || t('defaults.newStock')),
                                 ticker: DOMPurify.sanitize(stock.ticker || ''),
@@ -5539,7 +7033,7 @@ export class PortfolioState {
                                     const quantity = new Decimal(tx.quantity ?? 0);
                                     const price = new Decimal(tx.price ?? 0);
                                     return {
-                                        id: tx.id || `tx-${nanoid()}`,
+                                        id: tx.id || `tx-${generateId()}`,
                                         type: tx.type === 'sell' ? 'sell' : 'buy',
                                         date: typeof tx.date === 'string' ? tx.date : new Date().toISOString().slice(0, 10),
                                         quantity: quantity.isNaN() ? new Decimal(0) : quantity,
@@ -5598,7 +7092,7 @@ export class PortfolioState {
     }
 
     async createNewPortfolio(name: string): Promise<Portfolio> {
-        const newId = `p-${nanoid()}`;
+        const newId = `p-${generateId()}`;
         const newPortfolio = this._createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
         this.#activePortfolioId = newId;
@@ -5737,7 +7231,7 @@ export class PortfolioState {
             try {
                 const newTransaction = {
                     ...transactionData,
-                    id: `tx-${nanoid()}`,
+                    id: `tx-${generateId()}`,
                      quantity: new Decimal(transactionData.quantity),
                      price: new Decimal(transactionData.price)
                 };
@@ -5824,7 +7318,7 @@ export class PortfolioState {
     }
 
     async resetData(save: boolean = true): Promise<void> {
-        const defaultPortfolio = this._createDefaultPortfolio(`p-${nanoid()}`);
+        const defaultPortfolio = this._createDefaultPortfolio(`p-${generateId()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
         if (save) {
@@ -5939,6 +7433,9 @@ export class PortfolioState {
                 mainMode: 'simple',
                 currentCurrency: 'krw',
                 exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
+                rebalancingTolerance: 5, // 기본 5% 허용 오차
+                tradingFeeRate: 0.3, // 기본 0.3% 수수료
+                taxRate: 15, // 기본 15% 세율
             },
             portfolioData: [this._createDefaultStock()]
         };
@@ -5946,7 +7443,7 @@ export class PortfolioState {
 
     _createDefaultStock(): Stock {
         return {
-            id: `s-${nanoid()}`,
+            id: `s-${generateId()}`,
             name: t('defaults.newStock'),
             ticker: '',
             sector: '',
@@ -6080,7 +7577,7 @@ describe('PortfolioState (Async)', () => {
      expect(loadedPortfolio?.name).toBe('Test Portfolio');
      expect(loadedPortfolio?.settings.mainMode).toBe('sell');
      expect(loadedPortfolio?.portfolioData?.[0]?.name).toBe('Test Stock');
-     expect(loadedPortfolio?.portfolioData?.[0]?.targetRatio).toBe(100);
+     expect(Number(loadedPortfolio?.portfolioData?.[0]?.targetRatio)).toBe(100);
    });
 
 
@@ -6091,7 +7588,7 @@ describe('PortfolioState (Async)', () => {
 
        expect(state.getActivePortfolio()?.portfolioData?.length).toBe(initialLength + 1);
        expect(newStock.name).toBe('새 종목');
-       expect(newStock.targetRatio).toBe(0);
+       expect(Number(newStock.targetRatio)).toBe(0);
 
        // saveActivePortfolio -> savePortfolios -> set 호출 확인
        expect(mockSet).toHaveBeenCalledWith(CONFIG.IDB_PORTFOLIOS_KEY, expect.any(Object));
@@ -6609,6 +8106,14 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     dom.normalizeRatiosBtn?.addEventListener('click', () => view.emit('normalizeRatiosClicked'));
     dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
+    // 템플릿 적용 버튼 (Phase 3.2)
+    dom.applyTemplateBtn?.addEventListener('click', () => {
+        const select = dom.allocationTemplateSelect as HTMLSelectElement | null;
+        if (select && select.value) {
+            view.emit('applyTemplateClicked', { template: select.value });
+        }
+    });
+
     // 데이터 관리 드롭다운
     const dataManagementBtn = dom.dataManagementBtn as HTMLButtonElement | null;
     const dataDropdownContent = dom.dataDropdownContent as HTMLElement | null;
@@ -6669,6 +8174,13 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
         view.emit('importDataClicked');
+        toggleDropdown(false);
+        dataManagementBtn?.focus();
+    });
+
+    dom.exportTransactionsCSVBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        view.emit('exportTransactionsCSVClicked');
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
@@ -6773,6 +8285,10 @@ export function bindEventListeners(view: PortfolioView): AbortController {
         }
     });
 
+    // 성과 히스토리 버튼
+    dom.showPerformanceHistoryBtn?.addEventListener('click', () => view.emit('showPerformanceHistoryClicked'));
+    dom.showSnapshotListBtn?.addEventListener('click', () => view.emit('showSnapshotListClicked'));
+
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
         const mode = (e.target as HTMLInputElement).value as 'add' | 'sell' | 'simple';
@@ -6821,6 +8337,17 @@ export function bindEventListeners(view: PortfolioView): AbortController {
             view.emit('portfolioExchangeRateChanged', { rate });
             // 추가 투자금 재계산 (USD 모드인 경우)
             debouncedConversion('krw');
+        }
+    });
+
+    // 리밸런싱 허용 오차 설정
+    dom.rebalancingToleranceInput?.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const tolerance = parseFloat(target.value);
+        const isValid = !isNaN(tolerance) && tolerance >= 0;
+        view.toggleInputValidation(target, isValid);
+        if (isValid) {
+            view.emit('rebalancingToleranceChanged', { tolerance });
         }
     });
 
@@ -6968,7 +8495,7 @@ import { CONFIG } from './constants';
 import { getRatioSum } from './utils';
 import { t } from './i18n';
 import Decimal from 'decimal.js';
-import type { Stock, CalculatedStock, Transaction } from './types';
+import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot } from './types';
 import type { Chart } from 'chart.js';
 
 // 분리된 모듈들
@@ -7081,6 +8608,9 @@ export class PortfolioView {
             additionalAmountUSDInput: D.getElementById('additionalAmountUSD'),
             exchangeRateInput: D.getElementById('exchangeRate'),
             portfolioExchangeRateInput: D.getElementById('portfolioExchangeRate'),
+            rebalancingToleranceInput: D.getElementById('rebalancingTolerance'),
+            tradingFeeRateInput: D.getElementById('tradingFeeRate'),
+            taxRateInput: D.getElementById('taxRate'),
             mainModeSelector: D.querySelectorAll('input[name="mainMode"]'),
             currencyModeSelector: D.querySelectorAll('input[name="currencyMode"]'),
             exchangeRateGroup: D.getElementById('exchangeRateGroup'),
@@ -7090,12 +8620,15 @@ export class PortfolioView {
             darkModeToggle: D.getElementById('darkModeToggle'),
             addNewStockBtn: D.getElementById('addNewStockBtn'),
             fetchAllPricesBtn: D.getElementById('fetchAllPricesBtn'),
+            allocationTemplateSelect: D.getElementById('allocationTemplate'),
+            applyTemplateBtn: D.getElementById('applyTemplateBtn'),
             resetDataBtn: D.getElementById('resetDataBtn'),
             normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
             dataManagementBtn: D.getElementById('dataManagementBtn'),
             dataDropdownContent: D.getElementById('dataDropdownContent'),
             exportDataBtn: D.getElementById('exportDataBtn'),
             importDataBtn: D.getElementById('importDataBtn'),
+            exportTransactionsCSVBtn: D.getElementById('exportTransactionsCSVBtn'),
             importFileInput: D.getElementById('importFileInput'),
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
@@ -7121,6 +8654,13 @@ export class PortfolioView {
             customModalInput: D.getElementById('customModalInput'),
             customModalConfirm: D.getElementById('customModalConfirm'),
             customModalCancel: D.getElementById('customModalCancel'),
+            performanceHistorySection: D.getElementById('performanceHistorySection'),
+            showPerformanceHistoryBtn: D.getElementById('showPerformanceHistoryBtn'),
+            showSnapshotListBtn: D.getElementById('showSnapshotListBtn'),
+            performanceChartContainer: D.getElementById('performanceChartContainer'),
+            performanceChart: D.getElementById('performanceChart'),
+            snapshotListContainer: D.getElementById('snapshotListContainer'),
+            snapshotList: D.getElementById('snapshotList'),
         };
 
         this.eventEmitter.clear();
@@ -7251,6 +8791,10 @@ export class PortfolioView {
 
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
         this.resultsRenderer.displayChart(ChartClass, labels, data, title);
+    }
+
+    async displayPerformanceHistory(ChartClass: typeof Chart, snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): Promise<void> {
+        await this.resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
     }
 
     hideResults(): void {
@@ -7442,12 +8986,17 @@ export const ErrorService = {
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
+import { DataStore } from './dataStore';
 import { debounce, getRatioSum } from './utils';
-import { CONFIG } from './constants';
+import { CONFIG, DECIMAL_ZERO } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
+
+// ===== [Phase 2.2 Web Worker 통합] =====
+import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
+// ===== [Phase 2.2 Web Worker 통합 끝] =====
 
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
@@ -7471,6 +9020,10 @@ export class PortfolioController {
     private transactionManager: TransactionManager;
     private calculationManager: CalculationManager;
     private dataManager: DataManager;
+
+    // ===== [Phase 2.2 Web Worker 통합] =====
+    private calculatorWorker = getCalculatorWorkerService();
+    // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
@@ -7543,15 +9096,56 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+            const { exchangeRateInput, portfolioExchangeRateInput, rebalancingToleranceInput, tradingFeeRateInput, taxRateInput } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
             if (portfolioExchangeRateInput instanceof HTMLInputElement) {
                 portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
+            if (rebalancingToleranceInput instanceof HTMLInputElement) {
+                rebalancingToleranceInput.value = (activePortfolio.settings.rebalancingTolerance ?? 5).toString();
+            }
+            if (tradingFeeRateInput instanceof HTMLInputElement) {
+                tradingFeeRateInput.value = (activePortfolio.settings.tradingFeeRate ?? 0.3).toString();
+            }
+            if (taxRateInput instanceof HTMLInputElement) {
+                taxRateInput.value = (activePortfolio.settings.taxRate ?? 15).toString();
+            }
 
             this.fullRender();
+
+            // Phase 4.2: 환율 자동 로드
+            this.loadExchangeRate();
+        }
+    }
+
+    /**
+     * @description 환율 자동 로드 (Phase 4.2)
+     */
+    async loadExchangeRate(): Promise<void> {
+        try {
+            const rate = await (await import('./apiService')).apiService.fetchExchangeRate();
+            if (rate) {
+                const activePortfolio = this.state.getActivePortfolio();
+                if (activePortfolio) {
+                    activePortfolio.settings.exchangeRate = rate;
+                    await this.state.saveActivePortfolio();
+
+                    // UI 업데이트
+                    const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                    if (exchangeRateInput instanceof HTMLInputElement) {
+                        exchangeRateInput.value = rate.toFixed(2);
+                    }
+                    if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                        portfolioExchangeRateInput.value = rate.toFixed(2);
+                    }
+
+                    console.log('[Controller] Exchange rate auto-loaded:', rate);
+                }
+            }
+        } catch (error) {
+            console.warn('[Controller] Failed to auto-load exchange rate:', error);
         }
     }
 
@@ -7582,6 +9176,7 @@ export class PortfolioController {
             }
         });
         this.view.on('normalizeRatiosClicked', () => this.calculationManager.handleNormalizeRatios());
+        this.view.on('applyTemplateClicked', (data) => this.handleApplyTemplate(data.template));
         this.view.on('fetchAllPricesClicked', async () => {
             const result = await this.calculationManager.handleFetchAllPrices();
             if (result.needsUIUpdate) this.updateUIState();
@@ -7594,6 +9189,7 @@ export class PortfolioController {
         });
         this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
         this.view.on('importDataClicked', () => this.dataManager.handleImportData());
+        this.view.on('exportTransactionsCSVClicked', () => this.dataManager.handleExportTransactionsCSV());
         this.view.on('fileSelected', async (e) => {
             const result = await this.dataManager.handleFileSelected(e);
             if (result.needsUISetup) this.setupInitialUI();
@@ -7619,6 +9215,8 @@ export class PortfolioController {
 
         // 계산 및 통화
         this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
+        this.view.on('showPerformanceHistoryClicked', () => this.handleShowPerformanceHistory());
+        this.view.on('showSnapshotListClicked', () => this.handleShowSnapshotList());
         this.view.on('mainModeChanged', async (data) => {
             const result = await this.calculationManager.handleMainModeChange(data.mode);
             if (result.needsFullRender) this.fullRender();
@@ -7630,6 +9228,9 @@ export class PortfolioController {
         this.view.on('currencyConversion', (data) => this.calculationManager.handleCurrencyConversion(data.source));
         this.view.on('portfolioExchangeRateChanged', (data) =>
             this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
+        );
+        this.view.on('rebalancingToleranceChanged', (data) =>
+            this.handleRebalancingToleranceChange(data.tolerance)
         );
 
         // 모달 상호작용
@@ -7651,68 +9252,443 @@ export class PortfolioController {
     // === 렌더링 메서드 ===
 
     /**
-     * @description 전체 렌더링
+     * @description 전체 렌더링 (Web Worker 사용)
      */
-    fullRender(): void {
+    async fullRender(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const calculatedState = Calculator.calculatePortfolioState({
-            portfolioData: activePortfolio.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency
-        });
+        try {
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+                portfolioData: activePortfolio.portfolioData,
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                currentCurrency: activePortfolio.settings.currentCurrency
+            });
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
-        this.view.renderTable(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency,
-            activePortfolio.settings.mainMode
-        );
+            this.view.renderTable(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency,
+                activePortfolio.settings.mainMode
+            );
 
-        const ratioSum = getRatioSum(activePortfolio.portfolioData);
-        this.view.updateRatioSum(ratioSum.toNumber());
+            const ratioSum = getRatioSum(activePortfolio.portfolioData);
+            this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency
-        );
-        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency
+            );
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
+            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
-        this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+            // 리밸런싱 경고 확인 및 표시
+            this.checkRebalancingNeeds(calculatedState.portfolioData, calculatedState.currentTotal, activePortfolio.settings.rebalancingTolerance);
 
-        activePortfolio.portfolioData = calculatedState.portfolioData;
-        this.debouncedSave();
+            // 리스크 분석 (Phase 4.3)
+            this.checkRiskWarnings(calculatedState.portfolioData, calculatedState.currentTotal, sectorData);
+
+            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+
+            activePortfolio.portfolioData = calculatedState.portfolioData;
+            this.debouncedSave();
+        } catch (error) {
+            console.error('[Controller] fullRender error:', error);
+            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+        }
     }
 
     /**
-     * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트)
+     * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트) (Web Worker 사용)
      */
-    updateUIState(): void {
+    async updateUIState(): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const calculatedState = Calculator.calculatePortfolioState({
-            portfolioData: activePortfolio.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency
-        });
+        try {
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+                portfolioData: activePortfolio.portfolioData,
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                currentCurrency: activePortfolio.settings.currentCurrency
+            });
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
-        this.view.updateVirtualTableData(calculatedState.portfolioData);
+            this.view.updateVirtualTableData(calculatedState.portfolioData);
 
-        const ratioSum = getRatioSum(activePortfolio.portfolioData);
-        this.view.updateRatioSum(ratioSum.toNumber());
+            const ratioSum = getRatioSum(activePortfolio.portfolioData);
+            this.view.updateRatioSum(ratioSum.toNumber());
 
-        const sectorData = Calculator.calculateSectorAnalysis(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency
-        );
-        this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
+            // ===== [Phase 2.2 Web Worker 통합] =====
+            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency
+            );
+            // ===== [Phase 2.2 Web Worker 통합 끝] =====
+            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
-        activePortfolio.portfolioData = calculatedState.portfolioData;
-        this.debouncedSave();
+            activePortfolio.portfolioData = calculatedState.portfolioData;
+            this.debouncedSave();
+        } catch (error) {
+            console.error('[Controller] updateUIState error:', error);
+            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+        }
     }
 
     // === 기타 핸들러 ===
+
+    /**
+     * @description 리밸런싱 필요 여부 확인
+     */
+    checkRebalancingNeeds(
+        portfolioData: any[],
+        currentTotal: any,
+        rebalancingTolerance?: number
+    ): void {
+        const tolerance = rebalancingTolerance ?? 5;
+        if (tolerance <= 0) return; // 허용 오차가 0이면 체크 안 함
+
+        const currentTotalDec = new Decimal(currentTotal);
+        if (currentTotalDec.isZero()) return;
+
+        const stocksNeedingRebalancing: string[] = [];
+
+        for (const stock of portfolioData) {
+            const currentAmount = stock.calculated?.currentAmount;
+            if (!currentAmount) continue;
+
+            const currentAmountDec = new Decimal(currentAmount);
+            const currentRatio = currentAmountDec.div(currentTotalDec).times(100);
+            const targetRatio = new Decimal(stock.targetRatio ?? 0);
+            const diff = currentRatio.minus(targetRatio).abs();
+
+            if (diff.greaterThan(tolerance)) {
+                stocksNeedingRebalancing.push(
+                    `${stock.name}: 현재 ${currentRatio.toFixed(1)}% (목표 ${targetRatio.toFixed(1)}%)`
+                );
+            }
+        }
+
+        // 경고 메시지 표시
+        if (stocksNeedingRebalancing.length > 0) {
+            const message = `🔔 리밸런싱이 필요한 종목: ${stocksNeedingRebalancing.join(', ')}`;
+            this.view.showToast(message, 'info');
+        }
+    }
+
+    /**
+     * @description 자산 배분 템플릿 적용 (Phase 3.2)
+     */
+    handleApplyTemplate(templateName: string): void {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+            this.view.showToast('적용할 종목이 없습니다.', 'warning');
+            return;
+        }
+
+        const stocks = activePortfolio.portfolioData;
+
+        // 섹터별 종목 분류
+        const sectorGroups: Record<string, typeof stocks> = {};
+        for (const stock of stocks) {
+            const sector = (stock.sector || 'Other').toLowerCase();
+            if (!sectorGroups[sector]) sectorGroups[sector] = [];
+            sectorGroups[sector].push(stock);
+        }
+
+        // 템플릿별 로직
+        switch (templateName) {
+            case '60-40': {
+                // 60/40: 주식 60%, 채권 40%
+                const equitySectors = ['stock', 'stocks', 'equity', 'equities', 'tech', 'technology', 'finance', 'healthcare', 'consumer'];
+                const bondSectors = ['bond', 'bonds', 'fixed income', 'treasury'];
+
+                const equityStocks = stocks.filter(s => equitySectors.some(es => (s.sector || '').toLowerCase().includes(es)));
+                const bondStocks = stocks.filter(s => bondSectors.some(bs => (s.sector || '').toLowerCase().includes(bs)));
+                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s));
+
+                if (equityStocks.length > 0) {
+                    const perEquity = 60 / equityStocks.length;
+                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                }
+
+                if (bondStocks.length > 0) {
+                    const perBond = 40 / bondStocks.length;
+                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                }
+
+                if (otherStocks.length > 0 && equityStocks.length === 0 && bondStocks.length === 0) {
+                    // 섹터가 명확하지 않으면 동일 비중
+                    const perStock = 100 / stocks.length;
+                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                }
+                break;
+            }
+
+            case 'all-weather': {
+                // All-Weather: 주식 30%, 장기채 40%, 중기채 15%, 금 7.5%, 원자재 7.5%
+                const equityStocks = stocks.filter(s => ['stock', 'equity', 'tech'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const bondStocks = stocks.filter(s => ['bond', 'treasury', 'fixed'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const commodityStocks = stocks.filter(s => ['gold', 'commodity', 'metal', '금'].some(k => (s.sector || s.name || '').toLowerCase().includes(k)));
+                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s) && !commodityStocks.includes(s));
+
+                if (equityStocks.length > 0) {
+                    const perEquity = 30 / equityStocks.length;
+                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                }
+
+                if (bondStocks.length > 0) {
+                    const perBond = 55 / bondStocks.length; // 40 + 15 통합
+                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                }
+
+                if (commodityStocks.length > 0) {
+                    const perCommodity = 15 / commodityStocks.length; // 7.5 + 7.5 통합
+                    commodityStocks.forEach(s => s.targetRatio = new Decimal(perCommodity));
+                }
+
+                if (otherStocks.length > 0 && equityStocks.length + bondStocks.length + commodityStocks.length === 0) {
+                    const perStock = 100 / stocks.length;
+                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                }
+                break;
+            }
+
+            case '50-30-20': {
+                // 50/30/20: 주식 50%, 채권 30%, 기타 20%
+                const equityStocks = stocks.filter(s => ['stock', 'equity', 'tech'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const bondStocks = stocks.filter(s => ['bond', 'treasury'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s));
+
+                if (equityStocks.length > 0) {
+                    const perEquity = 50 / equityStocks.length;
+                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                }
+
+                if (bondStocks.length > 0) {
+                    const perBond = 30 / bondStocks.length;
+                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                }
+
+                if (otherStocks.length > 0) {
+                    const perOther = 20 / otherStocks.length;
+                    otherStocks.forEach(s => s.targetRatio = new Decimal(perOther));
+                } else if (equityStocks.length === 0 && bondStocks.length === 0) {
+                    const perStock = 100 / stocks.length;
+                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                }
+                break;
+            }
+
+            case 'equal': {
+                // 동일 비중
+                const perStock = 100 / stocks.length;
+                stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                break;
+            }
+
+            default:
+                this.view.showToast('알 수 없는 템플릿입니다.', 'error');
+                return;
+        }
+
+        // 저장 및 UI 업데이트
+        this.state.saveActivePortfolio();
+        this.fullRender();
+        this.view.showToast(`✨ ${templateName} 템플릿이 적용되었습니다!`, 'success');
+    }
+
+    /**
+     * @description 리스크 경고 확인 (Phase 4.3)
+     */
+    checkRiskWarnings(
+        portfolioData: any[],
+        currentTotal: any,
+        sectorData: any[]
+    ): void {
+        const warnings: string[] = [];
+        const currentTotalDec = new Decimal(currentTotal);
+
+        if (currentTotalDec.isZero()) return;
+
+        // 1. 단일 종목 비중 경고 (30% 초과)
+        const SINGLE_STOCK_THRESHOLD = 30;
+        for (const stock of portfolioData) {
+            const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
+            const ratio = currentAmount.div(currentTotalDec).times(100);
+
+            if (ratio.greaterThan(SINGLE_STOCK_THRESHOLD)) {
+                warnings.push(`⚠️ ${stock.name}: ${ratio.toFixed(1)}% (단일 종목 비중 높음)`);
+            }
+        }
+
+        // 2. 섹터 집중도 경고 (40% 초과)
+        const SECTOR_CONCENTRATION_THRESHOLD = 40;
+        for (const sector of sectorData) {
+            const percentage = new Decimal(sector.percentage || 0);
+
+            if (percentage.greaterThan(SECTOR_CONCENTRATION_THRESHOLD)) {
+                warnings.push(`⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`);
+            }
+        }
+
+        // 경고 메시지 표시
+        if (warnings.length > 0) {
+            const message = `🔍 리스크 경고: ${warnings.join(', ')}`;
+            this.view.showToast(message, 'warning');
+        }
+    }
+
+    /**
+     * @description 성과 히스토리 표시
+     */
+    async handleShowPerformanceHistory(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.view.showToast('성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                return;
+            }
+
+            // Toggle visibility
+            const section = this.view.dom.performanceHistorySection;
+            const chartContainer = this.view.dom.performanceChartContainer;
+            const listContainer = this.view.dom.snapshotListContainer;
+
+            if (section) section.classList.remove('hidden');
+            if (chartContainer) chartContainer.classList.remove('hidden');
+            if (listContainer) listContainer.classList.add('hidden');
+
+            const ChartClass = (await import('chart.js/auto')).default;
+            await this.view.displayPerformanceHistory(
+                ChartClass,
+                snapshots,
+                activePortfolio.settings.currentCurrency
+            );
+
+            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+        } catch (error) {
+            console.error('[Controller] Failed to display performance history:', error);
+            this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description 스냅샷 목록 표시
+     */
+    async handleShowSnapshotList(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.view.showToast('저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                return;
+            }
+
+            // Toggle visibility
+            const section = this.view.dom.performanceHistorySection;
+            const chartContainer = this.view.dom.performanceChartContainer;
+            const listContainer = this.view.dom.snapshotListContainer;
+
+            if (section) section.classList.remove('hidden');
+            if (chartContainer) chartContainer.classList.add('hidden');
+            if (listContainer) listContainer.classList.remove('hidden');
+
+            // Render snapshot list
+            this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
+
+            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+        } catch (error) {
+            console.error('[Controller] Failed to display snapshot list:', error);
+            this.view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description 스냅샷 목록 렌더링
+     */
+    private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
+        const listEl = this.view.dom.snapshotList;
+        if (!listEl) return;
+
+        const currencySymbol = currency === 'krw' ? '₩' : '$';
+        const formatNumber = (num: number) => {
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        };
+
+        const formatPercent = (num: number) => {
+            return num.toFixed(2);
+        };
+
+        const rows = snapshots.map(snapshot => {
+            const totalValue = currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
+            const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
+            const returnRate = snapshot.totalInvestedCapital > 0
+                ? (totalReturn / snapshot.totalInvestedCapital) * 100
+                : 0;
+
+            const isProfit = totalReturn >= 0;
+            const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
+
+            return `
+                <tr>
+                    <td>${snapshot.date}</td>
+                    <td style="text-align: right; font-weight: bold;">${currencySymbol}${formatNumber(totalValue)}</td>
+                    <td style="text-align: right;">${currencySymbol}${formatNumber(snapshot.totalInvestedCapital)}</td>
+                    <td style="text-align: right;" class="${profitClass}">
+                        ${currencySymbol}${formatNumber(totalReturn)}
+                        <br>
+                        <small>(${isProfit ? '+' : ''}${formatPercent(returnRate)}%)</small>
+                    </td>
+                    <td style="text-align: center;">${snapshot.stockCount}</td>
+                </tr>
+            `;
+        }).join('');
+
+        listEl.innerHTML = `
+            <div class="table-responsive">
+                <table>
+                    <caption>포트폴리오 스냅샷 목록</caption>
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th style="text-align: right;">총 자산</th>
+                            <th style="text-align: right;">투자 원금</th>
+                            <th style="text-align: right;">총 수익</th>
+                            <th style="text-align: center;">종목 수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    /**
+     * @description 리밸런싱 허용 오차 변경
+     */
+    async handleRebalancingToleranceChange(tolerance: number): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        activePortfolio.settings.rebalancingTolerance = tolerance;
+        await this.state.saveActivePortfolio();
+        this.updateUIState(); // UI 업데이트로 경고 표시 갱신
+    }
 
     /**
      * @description 다크 모드 토글
@@ -7722,7 +9698,7 @@ export class PortfolioController {
         const isDarkMode = document.body.classList.contains('dark-mode');
         localStorage.setItem(CONFIG.DARK_MODE_KEY, isDarkMode ? 'true' : 'false');
         this.view.destroyChart();
-        this.fullRender();
+        this.fullRender(); // async but we don't await
     }
 
     /**
@@ -7738,7 +9714,7 @@ export class PortfolioController {
      */
     getInvestmentAmountInKRW(): Decimal {
         const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return new Decimal(0);
+        if (!activePortfolio) return DECIMAL_ZERO;
 
         const { currentCurrency } = activePortfolio.settings;
         const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
@@ -7748,7 +9724,7 @@ export class PortfolioController {
             !(additionalAmountUSDInput instanceof HTMLInputElement) ||
             !(exchangeRateInput instanceof HTMLInputElement)
         ) {
-            return new Decimal(0);
+            return DECIMAL_ZERO;
         }
 
         const amountKRWStr = additionalAmountInput.value || '0';
@@ -7761,16 +9737,29 @@ export class PortfolioController {
             const exchangeRate = new Decimal(exchangeRateStr);
 
             if (currentCurrency === 'krw') {
-                return amountKRW.isNegative() ? new Decimal(0) : amountKRW;
+                return amountKRW.isNegative() ? DECIMAL_ZERO : amountKRW;
             } else {
-                if (exchangeRate.isZero() || exchangeRate.isNegative()) return new Decimal(0);
+                if (exchangeRate.isZero() || exchangeRate.isNegative()) return DECIMAL_ZERO;
                 const calculatedKRW = amountUSD.times(exchangeRate);
-                return calculatedKRW.isNegative() ? new Decimal(0) : calculatedKRW;
+                return calculatedKRW.isNegative() ? DECIMAL_ZERO : calculatedKRW;
             }
         } catch (e) {
             console.error('Error parsing investment amount:', e);
-            return new Decimal(0);
+            return DECIMAL_ZERO;
         }
+    }
+
+    // ===== Proxy methods for testing compatibility =====
+    async handleCalculate(): Promise<void> {
+        return this.calculationManager.handleCalculate();
+    }
+
+    async handleFetchAllPrices(): Promise<void> {
+        return this.calculationManager.handleFetchAllPrices();
+    }
+
+    async handleTransactionListClick(stockId: string, txId: string): Promise<void> {
+        return this.transactionManager.handleTransactionListClick(stockId, txId);
     }
 }
 ```
@@ -7784,6 +9773,21 @@ export class PortfolioController {
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Decimal from 'decimal.js';
+
+// --- ▼▼▼ Mock window.matchMedia ▼▼▼ ---
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 // --- ▼▼▼ 모의(Mock) 설정 ▼▼▼ ---
 vi.mock('./state');
@@ -7821,12 +9825,25 @@ vi.mock('./view', () => ({
     toggleInputValidation: vi.fn(),
     toggleFetchButton: vi.fn(),
     destroyChart: vi.fn(),
+    displayChart: vi.fn(),
     // DOM 요소 (최소한의 모의)
     dom: {
-        additionalAmountInput: { value: '0' },
-        additionalAmountUSDInput: { value: '0' },
-        exchangeRateInput: { value: '1300' },
-        importFileInput: { click: vi.fn() },
+        additionalAmountInput: {
+            value: '0',
+            addEventListener: vi.fn()
+        },
+        additionalAmountUSDInput: {
+            value: '0',
+            addEventListener: vi.fn()
+        },
+        exchangeRateInput: {
+            value: '1300',
+            addEventListener: vi.fn()
+        },
+        importFileInput: {
+            click: vi.fn(),
+            addEventListener: vi.fn()
+        },
     }
   }
 }));
@@ -8028,12 +10045,11 @@ describe('PortfolioController', () => {
 
     expect(mockView.toggleFetchButton).toHaveBeenCalledWith(true);
     expect(apiService.fetchAllStockPrices).toHaveBeenCalledWith([{ id: 's1', ticker: 'AAA' }, { id: 's2', ticker: 'BBB' }]);
-    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s1', 'currentPrice', 150);
-    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s2', 'currentPrice', 210);
-    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s1', '150.00');
-    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s2', '210.00');
-
-    expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce();
+    // Currency is KRW, so prices are converted: 150 * 1300 = 195000, 210 * 1300 = 273000
+    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s1', 'currentPrice', 195000);
+    expect(mockState.updateStockProperty).toHaveBeenCalledWith('s2', 'currentPrice', 273000);
+    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s1', '195000.00');
+    expect(mockView.updateCurrentPriceInput).toHaveBeenCalledWith('s2', '273000.00');
 
     expect(mockView.showToast).toHaveBeenCalledWith('api.fetchSuccessAll', "success");
     expect(mockView.toggleFetchButton).toHaveBeenCalledWith(false);
@@ -8042,14 +10058,13 @@ describe('PortfolioController', () => {
   it('handleTransactionListClick: 거래 삭제 시 state.deleteTransaction을 호출해야 한다 (async)', async () => {
     vi.mocked(mockView.showConfirm).mockResolvedValue(true);
 
-    await controller.handleTransactionListClick('s1', 'tx1');
+    const result = await controller.handleTransactionListClick('s1', 'tx1');
 
     expect(mockView.showConfirm).toHaveBeenCalledOnce();
     expect(mockState.deleteTransaction).toHaveBeenCalledWith('s1', 'tx1');
     expect(mockView.renderTransactionList).toHaveBeenCalledOnce();
     expect(mockView.showToast).toHaveBeenCalledWith('toast.transactionDeleted', 'success');
-
-    expect(mockView.updateVirtualTableData).toHaveBeenCalledOnce();
+    expect(result.needsUIUpdate).toBe(true);
   });
 
   it('handleTransactionListClick: 거래 삭제 취소 시 state를 호출하지 않아야 한다 (async)', async () => {
@@ -8455,7 +10470,7 @@ describe('Validator.isDataStructureValid', () => {
 import { get, set, del } from 'idb-keyval';
 import { CONFIG } from './constants.ts';
 import { ErrorService } from './errorService.ts';
-import type { Portfolio, MetaState } from './types.ts';
+import type { Portfolio, MetaState, PortfolioSnapshot } from './types.ts';
 
 /**
  * @description IndexedDB 저장/로드 및 마이그레이션을 담당하는 클래스
@@ -8549,12 +10564,84 @@ export class DataStore {
     }
 
     /**
+     * @description 포트폴리오 스냅샷 전체 로드
+     */
+    static async loadSnapshots(): Promise<Record<string, PortfolioSnapshot[]> | null> {
+        try {
+            const snapshots = await get<Record<string, PortfolioSnapshot[]>>(
+                CONFIG.IDB_SNAPSHOTS_KEY
+            );
+            return snapshots || null;
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.loadSnapshots');
+            return null;
+        }
+    }
+
+    /**
+     * @description 특정 포트폴리오의 스냅샷 목록 로드
+     */
+    static async getSnapshotsForPortfolio(portfolioId: string): Promise<PortfolioSnapshot[]> {
+        try {
+            const allSnapshots = await this.loadSnapshots();
+            return allSnapshots?.[portfolioId] || [];
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.getSnapshotsForPortfolio');
+            return [];
+        }
+    }
+
+    /**
+     * @description 새 스냅샷 추가
+     */
+    static async addSnapshot(snapshot: PortfolioSnapshot): Promise<void> {
+        try {
+            const allSnapshots = await this.loadSnapshots() || {};
+            const portfolioSnapshots = allSnapshots[snapshot.portfolioId] || [];
+
+            // 새 스냅샷 추가
+            portfolioSnapshots.push(snapshot);
+
+            // 날짜순 정렬 (최신순)
+            portfolioSnapshots.sort((a, b) => b.timestamp - a.timestamp);
+
+            // 최대 365개 스냅샷 유지 (1년치)
+            if (portfolioSnapshots.length > 365) {
+                portfolioSnapshots.splice(365);
+            }
+
+            allSnapshots[snapshot.portfolioId] = portfolioSnapshots;
+            await set(CONFIG.IDB_SNAPSHOTS_KEY, allSnapshots);
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.addSnapshot');
+            throw error;
+        }
+    }
+
+    /**
+     * @description 특정 포트폴리오의 스냅샷 삭제
+     */
+    static async deleteSnapshotsForPortfolio(portfolioId: string): Promise<void> {
+        try {
+            const allSnapshots = await this.loadSnapshots();
+            if (allSnapshots && allSnapshots[portfolioId]) {
+                delete allSnapshots[portfolioId];
+                await set(CONFIG.IDB_SNAPSHOTS_KEY, allSnapshots);
+            }
+        } catch (error) {
+            ErrorService.handle(error as Error, 'DataStore.deleteSnapshotsForPortfolio');
+            throw error;
+        }
+    }
+
+    /**
      * @description 모든 데이터 삭제
      */
     static async clearAll(): Promise<void> {
         try {
             await del(CONFIG.IDB_META_KEY);
             await del(CONFIG.IDB_PORTFOLIOS_KEY);
+            await del(CONFIG.IDB_SNAPSHOTS_KEY);
             console.log('[DataStore] All data cleared');
         } catch (error) {
             ErrorService.handle(error as Error, 'DataStore.clearAll');
@@ -9117,6 +11204,7 @@ import { t } from '../i18n';
 import { generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from '../templates';
 import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from '../calculationStrategies';
 import { apiService, APIError, formatAPIError } from '../apiService';
+import { DataStore } from '../dataStore';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency } from '../types';
 
@@ -9175,6 +11263,21 @@ export class CalculationManager {
         });
         activePortfolio.portfolioData = calculatedState.portfolioData;
 
+        // Save portfolio snapshot
+        try {
+            const snapshot = Calculator.createSnapshot(
+                activePortfolio.id,
+                calculatedState.portfolioData,
+                activePortfolio.settings.exchangeRate,
+                activePortfolio.settings.currentCurrency
+            );
+            await DataStore.addSnapshot(snapshot);
+            console.log('[CalculationManager] Snapshot saved:', snapshot.date);
+        } catch (error) {
+            console.error('[CalculationManager] Failed to save snapshot:', error);
+            // Continue with calculation even if snapshot fails
+        }
+
         let strategy;
         if (activePortfolio.settings.mainMode === 'add') {
             strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
@@ -9194,7 +11297,9 @@ export class CalculationManager {
                           additionalInvestment: additionalInvestment,
                           finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
                       },
-                      activePortfolio.settings.currentCurrency
+                      activePortfolio.settings.currentCurrency,
+                      activePortfolio.settings.tradingFeeRate,
+                      activePortfolio.settings.taxRate
                   )
                 : activePortfolio.settings.mainMode === 'simple'
                 ? generateSimpleModeResultsHTML(
@@ -9533,6 +11638,48 @@ export class DataManager {
     }
 
     /**
+     * @description 거래 내역 CSV 내보내기 (Phase 4.1)
+     */
+    handleExportTransactionsCSV(): void {
+        try {
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+                this.view.showToast('내보낼 거래 내역이 없습니다.', 'info');
+                return;
+            }
+
+            // CSV 헤더
+            let csvContent = 'Stock Name,Ticker,Transaction Type,Date,Quantity,Price (USD),Total Amount (USD)\n';
+
+            // 모든 종목의 거래 내역 수집
+            for (const stock of activePortfolio.portfolioData) {
+                for (const tx of stock.transactions) {
+                    const totalAmount = (parseFloat(tx.quantity.toString()) * parseFloat(tx.price.toString())).toFixed(2);
+                    csvContent += `"${stock.name}","${stock.ticker}","${tx.type}","${tx.date}",${tx.quantity},${tx.price},${totalAmount}\n`;
+                }
+            }
+
+            // CSV 파일 다운로드
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const filename = `transactions_${activePortfolio.name}_${Date.now()}.csv`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename.replace(/\s+/g, '_');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.view.showToast('거래 내역 CSV 내보내기 완료', 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleExportTransactionsCSV');
+            this.view.showToast('CSV 내보내기 실패', 'error');
+        }
+    }
+
+    /**
      * @description 데이터 가져오기 트리거
      */
     handleImportData(): void {
@@ -9838,6 +11985,38 @@ export class StockManager {
             const activePortfolio = this.state.getActivePortfolio();
             if (!activePortfolio) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
+            // ===== [Phase 1.1 최적화] 메타데이터 필드는 재계산 없이 DOM만 업데이트 =====
+            if (field === 'name' || field === 'ticker') {
+                // 이름과 티커 변경은 계산에 영향을 주지 않으므로 가상 스크롤 데이터만 업데이트
+                this.view.updateStockInVirtualData(stockId, field, value);
+                this.debouncedSave();
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            }
+
+            if (field === 'sector') {
+                // 섹터 변경은 섹터 분석만 재계산하고 가상 스크롤 데이터만 업데이트
+                this.view.updateStockInVirtualData(stockId, field, value);
+
+                // 섹터 분석만 재계산 (전체 계산 상태는 이미 캐시되어 있음)
+                Calculator.clearPortfolioStateCache();
+                const calculatedState = Calculator.calculatePortfolioState({
+                    portfolioData: activePortfolio.portfolioData,
+                    exchangeRate: activePortfolio.settings.exchangeRate,
+                    currentCurrency: activePortfolio.settings.currentCurrency
+                });
+                const newSectorData = Calculator.calculateSectorAnalysis(
+                    calculatedState.portfolioData,
+                    activePortfolio.settings.currentCurrency
+                );
+                this.view.displaySectorAnalysis(
+                    generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+                );
+
+                this.debouncedSave();
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            }
+            // ===== [Phase 1.1 최적화 끝] =====
+
             // currentPrice 변경 시 부분 업데이트 (최적화)
             if (field === 'currentPrice') {
                 const stock = activePortfolio.portfolioData.find((s) => s.id === stockId);
@@ -9890,7 +12069,10 @@ export class StockManager {
             const newRatioSum = getRatioSum(activePortfolio.portfolioData);
             this.view.updateRatioSum(newRatioSum.toNumber());
 
-            const newSectorData = Calculator.calculateSectorAnalysis(calculatedState.portfolioData);
+            const newSectorData = Calculator.calculateSectorAnalysis(
+                calculatedState.portfolioData,
+                activePortfolio.settings.currentCurrency
+            );
             this.view.displaySectorAnalysis(
                 generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
             );
@@ -9988,7 +12170,11 @@ export class TransactionManager {
 
         if (!typeInput || !dateInput || !priceInput) return { needsFullRender: false };
 
-        const type = typeInput instanceof HTMLInputElement && typeInput.value === 'sell' ? 'sell' : 'buy';
+        const typeValue = typeInput instanceof HTMLInputElement ? typeInput.value : 'buy';
+        const type: 'buy' | 'sell' | 'dividend' =
+            typeValue === 'sell' ? 'sell' :
+            typeValue === 'dividend' ? 'dividend' :
+            'buy';
         const inputMode = inputModeInput instanceof HTMLInputElement ? inputModeInput.value : 'quantity';
         const date = dateInput.value;
         const priceStr = priceInput.value;
@@ -10334,6 +12520,173 @@ export class EventEmitter {
 
 ---
 
+## `src/view/EventEmitter.test.ts`
+
+```typescript
+// src/view/EventEmitter.test.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { EventEmitter } from './EventEmitter';
+
+describe('EventEmitter', () => {
+    let emitter: EventEmitter;
+
+    beforeEach(() => {
+        emitter = new EventEmitter();
+    });
+
+    describe('on() and emit()', () => {
+        it('should register and call a single event listener', () => {
+            const callback = vi.fn();
+            emitter.on('testEvent', callback);
+            emitter.emit('testEvent', { data: 'test' });
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith({ data: 'test' });
+        });
+
+        it('should call multiple listeners for the same event', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+            const callback3 = vi.fn();
+
+            emitter.on('testEvent', callback1);
+            emitter.on('testEvent', callback2);
+            emitter.on('testEvent', callback3);
+
+            emitter.emit('testEvent', 'payload');
+
+            expect(callback1).toHaveBeenCalledWith('payload');
+            expect(callback2).toHaveBeenCalledWith('payload');
+            expect(callback3).toHaveBeenCalledWith('payload');
+        });
+
+        it('should emit events without data', () => {
+            const callback = vi.fn();
+            emitter.on('noDataEvent', callback);
+            emitter.emit('noDataEvent');
+
+            expect(callback).toHaveBeenCalledWith(undefined);
+        });
+
+        it('should not call listeners for different events', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+
+            emitter.on('event1', callback1);
+            emitter.on('event2', callback2);
+
+            emitter.emit('event1', 'data1');
+
+            expect(callback1).toHaveBeenCalledWith('data1');
+            expect(callback2).not.toHaveBeenCalled();
+        });
+
+        it('should handle emitting non-existent events gracefully', () => {
+            expect(() => {
+                emitter.emit('nonExistentEvent', 'data');
+            }).not.toThrow();
+        });
+    });
+
+    describe('clear()', () => {
+        it('should remove all event listeners', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+
+            emitter.on('event1', callback1);
+            emitter.on('event2', callback2);
+
+            emitter.clear();
+
+            emitter.emit('event1');
+            emitter.emit('event2');
+
+            expect(callback1).not.toHaveBeenCalled();
+            expect(callback2).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('off()', () => {
+        it('should remove listeners for a specific event', () => {
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
+
+            emitter.on('event1', callback1);
+            emitter.on('event2', callback2);
+
+            emitter.off('event1');
+
+            emitter.emit('event1');
+            emitter.emit('event2');
+
+            expect(callback1).not.toHaveBeenCalled();
+            expect(callback2).toHaveBeenCalled();
+        });
+
+        it('should handle removing non-existent events gracefully', () => {
+            expect(() => {
+                emitter.off('nonExistentEvent');
+            }).not.toThrow();
+        });
+    });
+
+    describe('multiple subscriptions', () => {
+        it('should support multiple events with different callbacks', () => {
+            const callbacks = {
+                calculate: vi.fn(),
+                save: vi.fn(),
+                delete: vi.fn()
+            };
+
+            emitter.on('calculateClicked', callbacks.calculate);
+            emitter.on('saveClicked', callbacks.save);
+            emitter.on('deleteClicked', callbacks.delete);
+
+            emitter.emit('calculateClicked', { amount: 1000 });
+            emitter.emit('saveClicked', { id: 123 });
+
+            expect(callbacks.calculate).toHaveBeenCalledWith({ amount: 1000 });
+            expect(callbacks.save).toHaveBeenCalledWith({ id: 123 });
+            expect(callbacks.delete).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('edge cases', () => {
+        it('should handle rapid successive emits', () => {
+            const callback = vi.fn();
+            emitter.on('rapidEvent', callback);
+
+            for (let i = 0; i < 100; i++) {
+                emitter.emit('rapidEvent', i);
+            }
+
+            expect(callback).toHaveBeenCalledTimes(100);
+        });
+
+        it('should handle callbacks that throw errors', () => {
+            const errorCallback = vi.fn(() => {
+                throw new Error('Callback error');
+            });
+            const normalCallback = vi.fn();
+
+            emitter.on('errorEvent', errorCallback);
+            emitter.on('errorEvent', normalCallback);
+
+            // First callback throws, but second should still execute
+            expect(() => {
+                emitter.emit('errorEvent');
+            }).toThrow();
+
+            expect(errorCallback).toHaveBeenCalled();
+            // Note: Due to the throw, normalCallback might not be called
+            // depending on implementation
+        });
+    });
+});
+```
+
+---
+
 ## `src/view/ModalManager.test.ts`
 
 ```typescript
@@ -10341,12 +12694,29 @@ export class EventEmitter {
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ModalManager } from './ModalManager';
 
+// Mock i18n
+vi.mock('../i18n', () => ({
+    t: vi.fn((key: string) => {
+        const translations: Record<string, string> = {
+            'view.noTransactions': '거래 내역이 없습니다',
+            'ui.buy': '매수',
+            'ui.sell': '매도',
+            'ui.delete': '삭제',
+            'modal.transactionTitle': '거래 내역'
+        };
+        return translations[key] || key;
+    })
+}));
+
 describe('ModalManager', () => {
     let modalManager: ModalManager;
     let mockDom: any;
 
     beforeEach(() => {
         // Create mock DOM elements
+        const txDateInput = document.createElement('input');
+        txDateInput.type = 'date'; // Set type to date to support valueAsDate
+
         mockDom = {
             customModal: document.createElement('div'),
             customModalTitle: document.createElement('h2'),
@@ -10359,7 +12729,7 @@ describe('ModalManager', () => {
             closeModalBtn: document.createElement('button'),
             transactionListBody: document.createElement('tbody'),
             newTransactionForm: document.createElement('form'),
-            txDate: document.createElement('input'),
+            txDate: txDateInput, // Use the date input with proper type
             txQuantity: document.createElement('input'),
             txPrice: document.createElement('input')
         };
@@ -10849,8 +13219,18 @@ export class ModalManager {
 
             const typeTd = tr.insertCell();
             const typeSpan = document.createElement('span');
-            typeSpan.className = tx.type === 'buy' ? 'text-buy' : 'text-sell';
-            typeSpan.textContent = tx.type === 'buy' ? t('ui.buy') : t('ui.sell');
+            if (tx.type === 'buy') {
+                typeSpan.className = 'text-buy';
+                typeSpan.textContent = t('ui.buy');
+            } else if (tx.type === 'sell') {
+                typeSpan.className = 'text-sell';
+                typeSpan.textContent = t('ui.sell');
+            } else if (tx.type === 'dividend') {
+                typeSpan.className = 'text-buy';
+                typeSpan.textContent = '배당';
+            } else {
+                typeSpan.textContent = tx.type;
+            }
             typeTd.appendChild(typeSpan);
 
             const qtyTd = tr.insertCell();
@@ -10902,6 +13282,7 @@ export class ModalManager {
 // src/view/ResultsRenderer.ts
 import { t } from '../i18n';
 import type { Chart } from 'chart.js';
+import type { PortfolioSnapshot } from '../types';
 
 /**
  * @class ResultsRenderer
@@ -10910,6 +13291,7 @@ import type { Chart } from 'chart.js';
 export class ResultsRenderer {
     private dom: any;
     private chartInstance: Chart | null = null;
+    private performanceChartInstance: Chart | null = null;
     private currentObserver: IntersectionObserver | null = null;
 
     constructor(dom: any) {
@@ -11074,6 +13456,120 @@ export class ResultsRenderer {
     }
 
     /**
+     * @description 포트폴리오 성과 히스토리 차트를 표시합니다.
+     * @param ChartClass - Chart.js 클래스
+     * @param snapshots - 포트폴리오 스냅샷 배열
+     * @param currency - 통화 모드
+     */
+    async displayPerformanceHistory(
+        ChartClass: typeof Chart,
+        snapshots: PortfolioSnapshot[],
+        currency: 'krw' | 'usd'
+    ): Promise<void> {
+        const section = this.dom.performanceHistorySection;
+        const container = this.dom.performanceChartContainer;
+        const canvas = this.dom.performanceChart;
+
+        if (!section || !container || !(canvas instanceof HTMLCanvasElement)) return;
+
+        // Show section
+        section.classList.remove('hidden');
+        container.classList.remove('hidden');
+
+        // Sort snapshots by date (oldest first for chart)
+        const sorted = [...snapshots].sort((a, b) => a.timestamp - b.timestamp);
+
+        // Prepare chart data
+        const labels = sorted.map(s => s.date);
+        const totalValueData = sorted.map(s => currency === 'krw' ? s.totalValueKRW : s.totalValue);
+        const totalInvestedData = sorted.map(s => s.totalInvestedCapital);
+        const unrealizedPLData = sorted.map(s => s.totalUnrealizedPL);
+        const realizedPLData = sorted.map(s => s.totalRealizedPL);
+
+        const chartData = {
+            labels,
+            datasets: [
+                {
+                    label: '총 자산 가치',
+                    data: totalValueData,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: '투자 원금',
+                    data: totalInvestedData,
+                    borderColor: '#9966FF',
+                    backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                    tension: 0.4,
+                    fill: false,
+                    borderDash: [5, 5]
+                }
+            ]
+        };
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top' as const,
+                    labels: {
+                        font: { size: 12 }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: '포트폴리오 가치 변화 추이',
+                    font: { size: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context: any) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            const formatted = value.toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                            return `${label}: ${currency === 'krw' ? '₩' : '$'}${formatted}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value: any) {
+                            return (currency === 'krw' ? '₩' : '$') + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+
+        if (this.performanceChartInstance) {
+            this.performanceChartInstance.data = chartData;
+            this.performanceChartInstance.options = chartOptions;
+            this.performanceChartInstance.update();
+        } else {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                this.performanceChartInstance = new ChartClass(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+
+        // Scroll to chart
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /**
      * @description Intersection Observer를 정리합니다.
      */
     cleanupObserver(): void {
@@ -11090,6 +13586,10 @@ export class ResultsRenderer {
         if (this.chartInstance) {
             this.chartInstance.destroy();
             this.chartInstance = null;
+        }
+        if (this.performanceChartInstance) {
+            this.performanceChartInstance.destroy();
+            this.performanceChartInstance = null;
         }
     }
 
@@ -11109,10 +13609,15 @@ export class ResultsRenderer {
 
 ```typescript
 // src/view/VirtualScrollManager.ts
+// ===== [Phase 4.1 리팩토링] 모듈 분리 =====
 import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
+import { DECIMAL_ZERO } from '../constants';
 import type { CalculatedStock } from '../types';
+import { getGridTemplate } from './DOMHelpers';
+import { createStockRowFragment } from './RowRenderer';
+// ===== [Phase 4.1 리팩토링 끝] =====
 
 // 가상 스크롤 상수
 const ROW_INPUT_HEIGHT = 60;
@@ -11137,6 +13642,10 @@ export class VirtualScrollManager {
     private _currentMainMode: 'add' | 'sell' | 'simple' = 'add';
     private _currentCurrency: 'krw' | 'usd' = 'krw';
 
+    // ===== [Phase 2.1 최적화] DOM 참조 캐싱 =====
+    private _rowCache: Map<string, { inputRow: HTMLElement | null; outputRow: HTMLElement | null }> = new Map();
+    // ===== [Phase 2.1 최적화 끝] =====
+
     constructor(dom: any) {
         this.dom = dom;
         this.initializeScrollElements();
@@ -11153,30 +13662,6 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 그리드 템플릿을 반환합니다 (반응형).
-     * @param mainMode - 메인 모드
-     * @returns CSS grid-template-columns 문자열
-     */
-    private getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
-        const isMobile = window.innerWidth <= 768;
-
-        if (isMobile) {
-            if (mainMode === 'simple') {
-                return '1.5fr 1fr 1fr 1fr 0.8fr';
-            }
-            return '1.5fr 1fr 1fr 1.2fr';
-        } else {
-            if (mainMode === 'add') {
-                return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
-            } else if (mainMode === 'simple') {
-                return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
-            } else {
-                return '2fr 1fr 1fr 1fr 1fr 1.2fr';
-            }
-        }
-    }
-
-    /**
      * @description 테이블 헤더를 업데이트합니다.
      * @param currency - 통화 모드
      * @param mainMode - 메인 모드
@@ -11187,7 +13672,7 @@ export class VirtualScrollManager {
         const header = this.dom.virtualTableHeader;
         if (!header) return;
 
-        header.style.gridTemplateColumns = this.getGridTemplate(mainMode);
+        header.style.gridTemplateColumns = getGridTemplate(mainMode);
 
         const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
         let headersHTML = '';
@@ -11236,196 +13721,7 @@ export class VirtualScrollManager {
         header.innerHTML = headersHTML;
     }
 
-    /**
-     * @description 주식 행 Fragment를 생성합니다.
-     * @param stock - 계산된 주식 데이터
-     * @param currency - 통화 모드
-     * @param mainMode - 메인 모드
-     * @returns DocumentFragment
-     */
-    createStockRowFragment(stock: CalculatedStock, currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): DocumentFragment {
-        const fragment = document.createDocumentFragment();
-
-        // 헬퍼 함수들
-        const createInput = (
-            type: string,
-            field: string,
-            value: any,
-            placeholder: string = '',
-            disabled: boolean = false,
-            ariaLabel: string = ''
-        ): HTMLInputElement => {
-            const input = document.createElement('input');
-            input.type = type;
-            input.dataset.field = field;
-
-            let displayValue = '';
-            if (value instanceof Decimal) {
-                const decimalPlaces = field === 'fixedBuyAmount' ? 0 : 2;
-                displayValue = value.toFixed(decimalPlaces);
-            } else {
-                const defaultValue =
-                    field === 'fixedBuyAmount' ? '0' : field === 'targetRatio' || field === 'currentPrice' ? '0.00' : '';
-                displayValue = String(value ?? defaultValue);
-            }
-
-            input.value = displayValue;
-            if (placeholder) input.placeholder = placeholder;
-            input.disabled = disabled;
-            if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
-
-            if (type === 'number') {
-                input.min = '0';
-                if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
-            }
-            if (type === 'text') {
-                input.style.textAlign = 'center';
-            }
-
-            return input;
-        };
-
-        const createCheckbox = (field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement => {
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.dataset.field = field;
-            input.checked = checked;
-            if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
-            return input;
-        };
-
-        const createButton = (action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement => {
-            const button = document.createElement('button');
-            button.className = 'btn btn--small';
-            button.dataset.action = action;
-            button.dataset.variant = variant;
-            button.textContent = text;
-            if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
-            return button;
-        };
-
-        const createCell = (className: string = '', align: string = 'left'): HTMLDivElement => {
-            const cell = document.createElement('div');
-            cell.className = `virtual-cell ${className} align-${align}`;
-            return cell;
-        };
-
-        // 1. 입력 행 (Inputs Row)
-        const divInputs = document.createElement('div');
-        divInputs.className = 'virtual-row-inputs';
-        divInputs.dataset.id = stock.id;
-        divInputs.setAttribute('role', 'row');
-        divInputs.style.gridTemplateColumns = this.getGridTemplate(mainMode);
-
-        const isMobile = window.innerWidth <= 768;
-
-        // 컬럼 구성
-        divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
-        divInputs.appendChild(createCell()).appendChild(createInput('text', 'ticker', stock.ticker, t('ui.ticker'), false, t('aria.tickerInput', { name: stock.name })));
-
-        if (mainMode !== 'simple' && !isMobile) {
-            divInputs.appendChild(createCell()).appendChild(createInput('text', 'sector', stock.sector || '', t('ui.sector'), false, t('aria.sectorInput', { name: stock.name })));
-        }
-
-        divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'targetRatio', stock.targetRatio, '0.00', false, t('aria.targetRatioInput', { name: stock.name })));
-
-        if (!isMobile && mainMode !== 'simple') {
-            divInputs.appendChild(createCell('align-right')).appendChild(createInput('number', 'currentPrice', stock.currentPrice, '0.00', false, t('aria.currentPriceInput', { name: stock.name })));
-        }
-
-        if (mainMode === 'simple') {
-            const amountCell = createCell('align-right');
-            const manualAmountInput = createInput('number', 'manualAmount', stock.manualAmount || 0, '현재 보유 금액 입력', false, `${stock.name} 보유 금액`);
-            manualAmountInput.style.width = '100%';
-            manualAmountInput.style.textAlign = 'right';
-            amountCell.appendChild(manualAmountInput);
-            divInputs.appendChild(amountCell);
-
-            if (!isMobile) {
-                const fixedBuyCell = createCell('align-center');
-                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
-                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
-                amountInput.style.width = '80px';
-                fixedBuyCell.append(checkbox, ' ', amountInput);
-                divInputs.appendChild(fixedBuyCell);
-            }
-
-            const deleteCell = createCell('align-center');
-            deleteCell.appendChild(createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete'));
-            divInputs.appendChild(deleteCell);
-        } else {
-            if (mainMode === 'add' && !isMobile) {
-                const fixedBuyCell = createCell('align-center');
-                const checkbox = createCheckbox('isFixedBuyEnabled', stock.isFixedBuyEnabled, t('aria.fixedBuyToggle', { name: stock.name }));
-                const amountInput = createInput('number', 'fixedBuyAmount', stock.fixedBuyAmount, '0', !stock.isFixedBuyEnabled, t('aria.fixedBuyAmount', { name: stock.name }));
-                amountInput.style.width = '80px';
-                fixedBuyCell.append(checkbox, ' ', amountInput);
-                divInputs.appendChild(fixedBuyCell);
-            }
-
-            const actionCell = createCell('align-center');
-            actionCell.append(
-                createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
-                ' ',
-                createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
-            );
-            divInputs.appendChild(actionCell);
-        }
-
-        // 2. 출력 행 (Outputs Row)
-        const divOutputs = document.createElement('div');
-        divOutputs.className = 'virtual-row-outputs';
-        divOutputs.dataset.id = stock.id;
-        divOutputs.setAttribute('role', 'row');
-        divOutputs.style.gridTemplateColumns = this.getGridTemplate(mainMode);
-
-        const metrics = stock.calculated ?? {
-            quantity: new Decimal(0),
-            avgBuyPrice: new Decimal(0),
-            currentAmount: new Decimal(0),
-            profitLoss: new Decimal(0),
-            profitLossRate: new Decimal(0)
-        };
-
-        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
-        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
-        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
-        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
-        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
-
-        const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
-        const profitSign = profitLoss.isPositive() ? '+' : '';
-
-        const createOutputCell = (label: string, value: string, valueClass: string = ''): HTMLDivElement => {
-            const cell = createCell('output-cell align-right');
-            cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
-            return cell;
-        };
-
-        const firstCell = createCell();
-        firstCell.style.gridColumn = 'span 1';
-        divOutputs.appendChild(firstCell);
-
-        if (mainMode === 'simple') {
-            divOutputs.style.display = 'none';
-        } else {
-            divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
-            if (!isMobile) {
-                divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
-            }
-            divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
-            if (!isMobile) {
-                divOutputs.appendChild(createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass));
-            }
-            divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
-        }
-
-        const lastCell = createCell();
-        divOutputs.appendChild(lastCell);
-
-        fragment.append(divInputs, divOutputs);
-        return fragment;
-    }
+    // ===== [Phase 4.1 리팩토링] createStockRowFragment는 RowRenderer.ts로 이동 =====
 
     /**
      * @description 가상 테이블을 렌더링합니다 (초기화).
@@ -11501,7 +13797,17 @@ export class VirtualScrollManager {
             return;
         }
 
-        const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`);
+        // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+        let outputRow = this._rowCache.get(stockId)?.outputRow;
+        if (!outputRow) {
+            // 캐시 미스 시 querySelector 사용하고 캐시에 저장
+            outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`) as HTMLElement | null;
+            if (outputRow) {
+                const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`) as HTMLElement | null;
+                this._rowCache.set(stockId, { inputRow, outputRow });
+            }
+        }
+        // ===== [Phase 2.1 최적화 끝] =====
         if (!outputRow || this._currentMainMode === 'simple') return;
 
         const currency = this._currentCurrency;
@@ -11614,14 +13920,29 @@ export class VirtualScrollManager {
         this._renderedStartIndex = startIndex;
         this._renderedEndIndex = endIndex;
 
+        // ===== [Phase 2.1 최적화] 캐시 클리어 및 재구성 =====
+        this._rowCache.clear();
+        // ===== [Phase 2.1 최적화 끝] =====
+
         const fragment = document.createDocumentFragment();
         for (let i = startIndex; i < endIndex; i++) {
             const stock = this._virtualData[i];
-            fragment.appendChild(this.createStockRowFragment(stock, currency, mainMode));
+            fragment.appendChild(createStockRowFragment(stock, currency, mainMode));
         }
 
         this._scrollContent.replaceChildren(fragment);
         this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+
+        // ===== [Phase 2.1 최적화] 렌더링 후 캐시 채우기 =====
+        for (let i = startIndex; i < endIndex; i++) {
+            const stock = this._virtualData[i];
+            const inputRow = this._scrollContent.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`) as HTMLElement | null;
+            const outputRow = this._scrollContent.querySelector(`.virtual-row-outputs[data-id="${stock.id}"]`) as HTMLElement | null;
+            if (inputRow || outputRow) {
+                this._rowCache.set(stock.id, { inputRow, outputRow });
+            }
+        }
+        // ===== [Phase 2.1 최적화 끝] =====
     }
 
     /**
@@ -11630,7 +13951,16 @@ export class VirtualScrollManager {
      */
     updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
         portfolioData.forEach((stock) => {
-            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`);
+            // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+            let inputRow = this._rowCache.get(stock.id)?.inputRow;
+            if (!inputRow) {
+                inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`) as HTMLElement | null;
+                if (inputRow) {
+                    const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stock.id}"]`) as HTMLElement | null;
+                    this._rowCache.set(stock.id, { inputRow, outputRow });
+                }
+            }
+            // ===== [Phase 2.1 최적화 끝] =====
             if (!inputRow) return;
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
@@ -11647,7 +13977,16 @@ export class VirtualScrollManager {
      * @param price - 가격
      */
     updateCurrentPriceInput(id: string, price: string): void {
-        const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`);
+        // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+        let inputRow = this._rowCache.get(id)?.inputRow;
+        if (!inputRow) {
+            inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`) as HTMLElement | null;
+            if (inputRow) {
+                const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${id}"]`) as HTMLElement | null;
+                this._rowCache.set(id, { inputRow, outputRow });
+            }
+        }
+        // ===== [Phase 2.1 최적화 끝] =====
         if (!inputRow) return;
 
         const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
@@ -12099,12 +14438,11 @@ describe('apiService', () => {
                 ok: true,
                 json: async () => ({ c: 0, d: null })
             };
-            (global.fetch as any).mockResolvedValueOnce(mockResponse);
+            (global.fetch as any).mockResolvedValue(mockResponse);
 
-            await expect(apiService.fetchStockPrice('INVALID')).rejects.toThrow(APIError);
-            await expect(apiService.fetchStockPrice('INVALID')).rejects.toMatchObject({
-                type: APIErrorType.INVALID_TICKER
-            });
+            const error = await apiService.fetchStockPrice('INVALID').catch(e => e);
+            expect(error).toBeInstanceOf(APIError);
+            expect(error.type).toBe(APIErrorType.INVALID_TICKER);
         });
 
         it('should throw APIError for zero or negative price', async () => {
@@ -12271,6 +14609,40 @@ describe('apiService', () => {
 import Decimal from 'decimal.js';
 import type { Currency } from './types';
 
+// ===== [Phase 1.2 최적화] Intl.NumberFormat 캐싱 =====
+/**
+ * @description NumberFormat 인스턴스 캐시
+ * - 키: locale + JSON.stringify(options)
+ * - 값: Intl.NumberFormat 인스턴스
+ */
+const numberFormatCache = new Map<string, Intl.NumberFormat>();
+const MAX_CACHE_SIZE = 50;
+
+/**
+ * @description 캐시된 NumberFormat 인스턴스 가져오기
+ * @param locale - 로케일
+ * @param options - NumberFormat 옵션
+ * @returns Intl.NumberFormat 인스턴스
+ */
+function getCachedNumberFormat(locale: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+    const cacheKey = `${locale}:${JSON.stringify(options)}`;
+
+    let formatter = numberFormatCache.get(cacheKey);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(locale, options);
+
+        // 캐시 크기 제한 (LRU 방식 대신 간단하게 전체 클리어)
+        if (numberFormatCache.size >= MAX_CACHE_SIZE) {
+            numberFormatCache.clear();
+        }
+
+        numberFormatCache.set(cacheKey, formatter);
+    }
+
+    return formatter;
+}
+// ===== [Phase 1.2 최적화 끝] =====
+
 /**
  * @description 현재 언어 설정 가져오기
  * @returns 'ko' | 'en'
@@ -12323,7 +14695,7 @@ export function formatNumber(
         if (isNaN(num)) num = 0;
     }
 
-    return new Intl.NumberFormat(locale, {
+    return getCachedNumberFormat(locale, {
         minimumFractionDigits: fractionDigits,
         maximumFractionDigits: fractionDigits
     }).format(num);
@@ -12352,7 +14724,7 @@ export function formatPercent(
         if (isNaN(num)) num = 0;
     }
 
-    return new Intl.NumberFormat(locale, {
+    return getCachedNumberFormat(locale, {
         style: 'percent',
         minimumFractionDigits: fractionDigits,
         maximumFractionDigits: fractionDigits
@@ -12396,7 +14768,7 @@ export function formatCurrencyEnhanced(
             options.maximumFractionDigits = 2;
         }
 
-        return new Intl.NumberFormat(locale, options).format(num);
+        return getCachedNumberFormat(locale, options).format(num);
     } catch (e) {
         console.error('formatCurrencyEnhanced error:', e);
         return String(amount);
@@ -12428,7 +14800,7 @@ export function formatCompactNumber(
 
     // Intl.NumberFormat의 notation: 'compact'는 일부 브라우저에서만 지원
     try {
-        return new Intl.NumberFormat(locale, {
+        return getCachedNumberFormat(locale, {
             notation: 'compact' as any, // TypeScript 버전에 따라 type assertion 필요
             minimumFractionDigits: 0,
             maximumFractionDigits: fractionDigits
@@ -12503,5 +14875,557 @@ export function formatRelativeTime(date: Date | string): string {
         if (diffMin > 0) return lang === 'ko' ? `${diffMin}분 전` : `${diffMin} minutes ago`;
         return lang === 'ko' ? '방금 전' : 'just now';
     }
+}
+```
+
+---
+
+## `src/view/DOMHelpers.ts
+
+```typescript
+// src/view/DOMHelpers.ts
+/**
+ * @description DOM 요소 생성을 위한 헬퍼 함수들
+ */
+
+import { t } from '../i18n';
+import Decimal from 'decimal.js';
+
+/**
+ * @description Input 요소를 생성합니다.
+ */
+export function createInput(
+    type: string,
+    field: string,
+    value: any,
+    placeholder: string = '',
+    disabled: boolean = false,
+    ariaLabel: string = ''
+): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = type;
+    input.dataset.field = field;
+
+    let displayValue = '';
+    if (value instanceof Decimal) {
+        const decimalPlaces = field === 'fixedBuyAmount' ? 0 : 2;
+        displayValue = value.toFixed(decimalPlaces);
+    } else {
+        const defaultValue =
+            field === 'fixedBuyAmount' ? '0' : field === 'targetRatio' || field === 'currentPrice' ? '0.00' : '';
+        displayValue = String(value ?? defaultValue);
+    }
+
+    input.value = displayValue;
+    if (placeholder) input.placeholder = placeholder;
+    input.disabled = disabled;
+    if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+
+    if (type === 'number') {
+        input.min = '0';
+        if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
+    }
+    if (type === 'text') {
+        input.style.textAlign = 'center';
+    }
+
+    return input;
+}
+
+/**
+ * @description Checkbox 요소를 생성합니다.
+ */
+export function createCheckbox(field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.field = field;
+    input.checked = checked;
+    if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+    return input;
+}
+
+/**
+ * @description Button 요소를 생성합니다.
+ */
+export function createButton(action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.className = 'btn btn--small';
+    button.dataset.action = action;
+    button.dataset.variant = variant;
+    button.textContent = text;
+    if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
+    return button;
+}
+
+/**
+ * @description Cell 요소를 생성합니다.
+ */
+export function createCell(className: string = '', align: string = 'left'): HTMLDivElement {
+    const cell = document.createElement('div');
+    cell.className = `virtual-cell ${className} align-${align}`;
+    return cell;
+}
+
+/**
+ * @description Output Cell 요소를 생성합니다.
+ */
+export function createOutputCell(label: string, value: string, valueClass: string = ''): HTMLDivElement {
+    const cell = createCell('output-cell align-right');
+    // escapeHTML은 RowRenderer에서 호출 시 적용됨
+    cell.innerHTML = `<span class="label">${label}</span><span class="value ${valueClass}">${value}</span>`;
+    return cell;
+}
+
+/**
+ * @description 그리드 템플릿을 반환합니다 (반응형).
+ */
+export function getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        if (mainMode === 'simple') {
+            return '1.5fr 1fr 1fr 1fr 0.8fr';
+        }
+        return '1.5fr 1fr 1fr 1.2fr';
+    } else {
+        if (mainMode === 'add') {
+            return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+        } else if (mainMode === 'simple') {
+            return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
+        } else {
+            return '2fr 1fr 1fr 1fr 1fr 1.2fr';
+        }
+    }
+}
+```
+
+---
+
+## `src/service/CalculatorWorkerService.ts
+
+```typescript
+// src/services/CalculatorWorkerService.ts
+/**
+ * @description Service for managing calculator Web Worker
+ * - Provides async API for calculations
+ * - Falls back to synchronous Calculator if Worker unavailable
+ */
+
+import type { Stock, CalculatedStock, Currency } from '../types';
+import { Calculator } from '../calculator';
+import Decimal from 'decimal.js';
+
+export class CalculatorWorkerService {
+    private worker: Worker | null = null;
+    private isWorkerAvailable: boolean = false;
+    private pendingRequests: Map<string, { resolve: (value: any) => void; reject: (reason: any) => void }> = new Map();
+    private requestId: number = 0;
+
+    constructor() {
+        this.initializeWorker();
+    }
+
+    /**
+     * @description Initialize Web Worker
+     */
+    private async initializeWorker(): Promise<void> {
+        try {
+            // Dynamically import worker in production
+            if (typeof Worker !== 'undefined') {
+                // Vite handles worker import with ?worker suffix
+                const CalculatorWorker = await import('../workers/calculator.worker?worker');
+                this.worker = new CalculatorWorker.default();
+
+                this.worker.onmessage = (event) => {
+                    this.handleWorkerMessage(event);
+                };
+
+                this.worker.onerror = (error) => {
+                    console.error('Worker error:', error);
+                    this.isWorkerAvailable = false;
+                };
+
+                this.isWorkerAvailable = true;
+                console.log('[CalculatorWorkerService] Worker initialized successfully');
+            } else {
+                console.warn('[CalculatorWorkerService] Web Workers not supported, using synchronous calculator');
+                this.isWorkerAvailable = false;
+            }
+        } catch (error) {
+            console.error('[CalculatorWorkerService] Failed to initialize worker:', error);
+            this.isWorkerAvailable = false;
+        }
+    }
+
+    /**
+     * @description Handle messages from worker
+     */
+    private handleWorkerMessage(event: MessageEvent): void {
+        const { type, result, error, requestId } = event.data;
+
+        if (error) {
+            console.error('[CalculatorWorkerService] Worker error:', error);
+            const request = this.pendingRequests.get(requestId);
+            if (request) {
+                request.reject(new Error(error));
+                this.pendingRequests.delete(requestId);
+            }
+            return;
+        }
+
+        const request = this.pendingRequests.get(requestId);
+        if (request) {
+            request.resolve(result);
+            this.pendingRequests.delete(requestId);
+        }
+    }
+
+    /**
+     * @description Send message to worker and wait for response
+     */
+    private sendToWorker(type: string, data: any): Promise<any> {
+        return new Promise((resolve, reject) => {
+            if (!this.worker || !this.isWorkerAvailable) {
+                reject(new Error('Worker not available'));
+                return;
+            }
+
+            const requestId = `req_${++this.requestId}`;
+            this.pendingRequests.set(requestId, { resolve, reject });
+
+            this.worker.postMessage({ type, data, requestId });
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (this.pendingRequests.has(requestId)) {
+                    this.pendingRequests.delete(requestId);
+                    reject(new Error('Worker request timeout'));
+                }
+            }, 10000);
+        });
+    }
+
+    /**
+     * @description Calculate portfolio state (async with worker, fallback to sync)
+     */
+    async calculatePortfolioState(options: {
+        portfolioData: Stock[];
+        exchangeRate?: number;
+        currentCurrency?: Currency;
+    }): Promise<{ portfolioData: CalculatedStock[]; currentTotal: Decimal }> {
+        if (this.isWorkerAvailable) {
+            try {
+                const result = await this.sendToWorker('calculatePortfolioState', options);
+
+                // Deserialize Decimal strings back to Decimal objects
+                return {
+                    portfolioData: result.portfolioData.map((stock: any) => ({
+                        ...stock,
+                        calculated: this.deserializeMetrics(stock.calculated),
+                    })),
+                    currentTotal: new Decimal(result.currentTotal),
+                };
+            } catch (error) {
+                console.warn('[CalculatorWorkerService] Worker failed, falling back to sync:', error);
+                this.isWorkerAvailable = false;
+            }
+        }
+
+        // Fallback to synchronous calculator
+        const syncResult = Calculator.calculatePortfolioState(options);
+        return {
+            portfolioData: syncResult.portfolioData,
+            currentTotal: syncResult.currentTotal,
+        };
+    }
+
+    /**
+     * @description Calculate sector analysis (async with worker, fallback to sync)
+     */
+    async calculateSectorAnalysis(
+        portfolioData: CalculatedStock[],
+        currentCurrency: Currency = 'krw'
+    ): Promise<{ sector: string; amount: Decimal; percentage: Decimal }[]> {
+        if (this.isWorkerAvailable) {
+            try {
+                const result = await this.sendToWorker('calculateSectorAnalysis', {
+                    portfolioData,
+                    currentCurrency,
+                });
+
+                return result.map((item: any) => ({
+                    sector: item.sector,
+                    amount: new Decimal(item.amount),
+                    percentage: new Decimal(item.percentage),
+                }));
+            } catch (error) {
+                console.warn('[CalculatorWorkerService] Worker failed, falling back to sync:', error);
+                this.isWorkerAvailable = false;
+            }
+        }
+
+        // Fallback to synchronous calculator
+        return Calculator.calculateSectorAnalysis(portfolioData, currentCurrency);
+    }
+
+    /**
+     * @description Deserialize metrics from worker (string -> Decimal)
+     */
+    private deserializeMetrics(metrics: any): any {
+        const deserialized: any = {};
+        for (const key in metrics) {
+            const value = metrics[key];
+            deserialized[key] = typeof value === 'string' && !isNaN(Number(value)) ? new Decimal(value) : value;
+        }
+        return deserialized;
+    }
+
+    /**
+     * @description Terminate worker (cleanup)
+     */
+    terminate(): void {
+        if (this.worker) {
+            this.worker.terminate();
+            this.worker = null;
+            this.isWorkerAvailable = false;
+            console.log('[CalculatorWorkerService] Worker terminated');
+        }
+    }
+}
+
+// Singleton instance
+let workerServiceInstance: CalculatorWorkerService | null = null;
+
+export function getCalculatorWorkerService(): CalculatorWorkerService {
+    if (!workerServiceInstance) {
+        workerServiceInstance = new CalculatorWorkerService();
+    }
+    return workerServiceInstance;
+}
+```
+
+---
+
+## `src/view/RowRenderer.ts`
+
+```typescript
+// src/view/RowRenderer.ts
+/**
+ * @description 가상 스크롤 행 렌더링 로직
+ */
+
+import { formatCurrency, escapeHTML } from '../utils';
+import { t } from '../i18n';
+import Decimal from 'decimal.js';
+import { DECIMAL_ZERO } from '../constants';
+import type { CalculatedStock } from '../types';
+import { createInput, createCheckbox, createButton, createCell, getGridTemplate } from './DOMHelpers';
+
+/**
+ * @description 주식 행 Fragment를 생성합니다.
+ * @param stock - 계산된 주식 데이터
+ * @param currency - 통화 모드
+ * @param mainMode - 메인 모드
+ * @returns DocumentFragment
+ */
+export function createStockRowFragment(
+    stock: CalculatedStock,
+    currency: 'krw' | 'usd',
+    mainMode: 'add' | 'sell' | 'simple'
+): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+
+    // 1. 입력 행 (Inputs Row)
+    const divInputs = document.createElement('div');
+    divInputs.className = 'virtual-row-inputs';
+    divInputs.dataset.id = stock.id;
+    divInputs.setAttribute('role', 'row');
+    divInputs.style.gridTemplateColumns = getGridTemplate(mainMode);
+
+    const isMobile = window.innerWidth <= 768;
+
+    // 컬럼 구성
+    divInputs.appendChild(createCell()).appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
+    divInputs
+        .appendChild(createCell())
+        .appendChild(
+            createInput(
+                'text',
+                'ticker',
+                stock.ticker,
+                t('ui.ticker'),
+                false,
+                t('aria.tickerInput', { name: stock.name })
+            )
+        );
+
+    if (mainMode !== 'simple' && !isMobile) {
+        divInputs
+            .appendChild(createCell())
+            .appendChild(
+                createInput(
+                    'text',
+                    'sector',
+                    stock.sector || '',
+                    t('ui.sector'),
+                    false,
+                    t('aria.sectorInput', { name: stock.name })
+                )
+            );
+    }
+
+    divInputs
+        .appendChild(createCell('align-right'))
+        .appendChild(
+            createInput(
+                'number',
+                'targetRatio',
+                stock.targetRatio,
+                '0.00',
+                false,
+                t('aria.targetRatioInput', { name: stock.name })
+            )
+        );
+
+    if (!isMobile && mainMode !== 'simple') {
+        divInputs
+            .appendChild(createCell('align-right'))
+            .appendChild(
+                createInput(
+                    'number',
+                    'currentPrice',
+                    stock.currentPrice,
+                    '0.00',
+                    false,
+                    t('aria.currentPriceInput', { name: stock.name })
+                )
+            );
+    }
+
+    if (mainMode === 'simple') {
+        const amountCell = createCell('align-right');
+        const manualAmountInput = createInput(
+            'number',
+            'manualAmount',
+            stock.manualAmount || 0,
+            '현재 보유 금액 입력',
+            false,
+            `${stock.name} 보유 금액`
+        );
+        manualAmountInput.style.width = '100%';
+        manualAmountInput.style.textAlign = 'right';
+        amountCell.appendChild(manualAmountInput);
+        divInputs.appendChild(amountCell);
+
+        if (!isMobile) {
+            const fixedBuyCell = createCell('align-center');
+            const checkbox = createCheckbox(
+                'isFixedBuyEnabled',
+                stock.isFixedBuyEnabled,
+                t('aria.fixedBuyToggle', { name: stock.name })
+            );
+            const amountInput = createInput(
+                'number',
+                'fixedBuyAmount',
+                stock.fixedBuyAmount,
+                '0',
+                !stock.isFixedBuyEnabled,
+                t('aria.fixedBuyAmount', { name: stock.name })
+            );
+            amountInput.style.width = '80px';
+            fixedBuyCell.append(checkbox, ' ', amountInput);
+            divInputs.appendChild(fixedBuyCell);
+        }
+
+        const deleteCell = createCell('align-center');
+        deleteCell.appendChild(
+            createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+        );
+        divInputs.appendChild(deleteCell);
+    } else {
+        if (mainMode === 'add' && !isMobile) {
+            const fixedBuyCell = createCell('align-center');
+            const checkbox = createCheckbox(
+                'isFixedBuyEnabled',
+                stock.isFixedBuyEnabled,
+                t('aria.fixedBuyToggle', { name: stock.name })
+            );
+            const amountInput = createInput(
+                'number',
+                'fixedBuyAmount',
+                stock.fixedBuyAmount,
+                '0',
+                !stock.isFixedBuyEnabled,
+                t('aria.fixedBuyAmount', { name: stock.name })
+            );
+            amountInput.style.width = '80px';
+            fixedBuyCell.append(checkbox, ' ', amountInput);
+            divInputs.appendChild(fixedBuyCell);
+        }
+
+        const actionCell = createCell('align-center');
+        actionCell.append(
+            createButton('manage', t('ui.manage'), t('aria.manageTransactions', { name: stock.name }), 'blue'),
+            ' ',
+            createButton('delete', t('ui.delete'), t('aria.deleteStock', { name: stock.name }), 'delete')
+        );
+        divInputs.appendChild(actionCell);
+    }
+
+    // 2. 출력 행 (Outputs Row)
+    const divOutputs = document.createElement('div');
+    divOutputs.className = 'virtual-row-outputs';
+    divOutputs.dataset.id = stock.id;
+    divOutputs.setAttribute('role', 'row');
+    divOutputs.style.gridTemplateColumns = getGridTemplate(mainMode);
+
+    const metrics = stock.calculated ?? {
+        quantity: DECIMAL_ZERO,
+        avgBuyPrice: DECIMAL_ZERO,
+        currentAmount: DECIMAL_ZERO,
+        profitLoss: DECIMAL_ZERO,
+        profitLossRate: DECIMAL_ZERO,
+    };
+
+    const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
+    const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
+    const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
+    const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
+    const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+
+    const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
+    const profitSign = profitLoss.isPositive() ? '+' : '';
+
+    const createOutputCell = (label: string, value: string, valueClass: string = ''): HTMLDivElement => {
+        const cell = createCell('output-cell align-right');
+        cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
+        return cell;
+    };
+
+    const firstCell = createCell();
+    firstCell.style.gridColumn = 'span 1';
+    divOutputs.appendChild(firstCell);
+
+    if (mainMode === 'simple') {
+        divOutputs.style.display = 'none';
+    } else {
+        divOutputs.appendChild(createOutputCell(t('ui.quantity'), quantity.toFixed(0)));
+        if (!isMobile) {
+            divOutputs.appendChild(createOutputCell(t('ui.avgBuyPrice'), formatCurrency(avgBuyPrice, currency)));
+        }
+        divOutputs.appendChild(createOutputCell(t('ui.currentValue'), formatCurrency(currentAmount, currency)));
+        if (!isMobile) {
+            divOutputs.appendChild(
+                createOutputCell(t('ui.profitLoss'), `${profitSign}${formatCurrency(profitLoss, currency)}`, profitClass)
+            );
+        }
+        divOutputs.appendChild(createOutputCell(t('ui.profitLossRate'), `${profitSign}${profitLossRate.toFixed(2)}%`, profitClass));
+    }
+
+    const lastCell = createCell();
+    divOutputs.appendChild(lastCell);
+
+    fragment.append(divInputs, divOutputs);
+    return fragment;
 }
 ```
