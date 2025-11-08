@@ -7,7 +7,7 @@
 export type EventCallback = (data?: unknown) => void;
 
 export class EventEmitter {
-    private _events: Record<string, EventCallback[]> = {};
+    #events: Record<string, EventCallback[]> = {};
 
     /**
      * @description 추상 이벤트를 구독합니다.
@@ -15,10 +15,10 @@ export class EventEmitter {
      * @param callback - 실행할 콜백 함수
      */
     on(event: string, callback: EventCallback): void {
-        if (!this._events[event]) {
-            this._events[event] = [];
+        if (!this.#events[event]) {
+            this.#events[event] = [];
         }
-        this._events[event].push(callback);
+        this.#events[event].push(callback);
     }
 
     /**
@@ -27,8 +27,8 @@ export class EventEmitter {
      * @param data - 전달할 데이터
      */
     emit(event: string, data?: unknown): void {
-        if (this._events[event]) {
-            this._events[event].forEach(callback => callback(data));
+        if (this.#events[event]) {
+            this.#events[event].forEach((callback) => callback(data));
         }
     }
 
@@ -36,7 +36,7 @@ export class EventEmitter {
      * @description 모든 이벤트 리스너를 초기화합니다.
      */
     clear(): void {
-        this._events = {};
+        this.#events = {};
     }
 
     /**
@@ -44,6 +44,6 @@ export class EventEmitter {
      * @param event - 이벤트 이름
      */
     off(event: string): void {
-        delete this._events[event];
+        delete this.#events[event];
     }
 }

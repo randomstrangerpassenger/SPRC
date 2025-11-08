@@ -66,9 +66,7 @@ export function generateAddModeResultsHTML(
                 ? stock.currentRatio.toFixed(1)
                 : 'N/A';
             const targetRatioVal =
-                typeof stock.targetRatio === 'number'
-                    ? stock.targetRatio.toFixed(1)
-                    : 'N/A';
+                typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : 'N/A';
             const profitLossRateVal = profitLossRate?.isFinite()
                 ? profitLossRate.toFixed(2)
                 : 'N/A';
@@ -98,9 +96,7 @@ export function generateAddModeResultsHTML(
         buyableStocks.length > 0
             ? buyableStocks
                   .map((s, i) => {
-                      const buyRatioVal = s.buyRatio?.isFinite()
-                          ? s.buyRatio.toFixed(1)
-                          : 'N/A';
+                      const buyRatioVal = s.buyRatio?.isFinite() ? s.buyRatio.toFixed(1) : 'N/A';
                       return `
                 <div class="guide-item">
                     <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
@@ -116,12 +112,15 @@ export function generateAddModeResultsHTML(
     const estimatedFee = totalBuyAmount.times(feeRateDec);
     const netInvestment = totalBuyAmount.minus(estimatedFee);
 
-    const costSummaryHTML = (feeRate && feeRate > 0) ? `
+    const costSummaryHTML =
+        feeRate && feeRate > 0
+            ? `
         <div class="summary-grid" style="margin-top: 15px; background: #fff9e6; border: 1px solid #ffd700;">
             <div class="summary-item"><h3>💸 예상 수수료 (${feeRate}%)</h3><div class="amount" style="color: #ff6b6b;">${formatCurrency(estimatedFee, currency)}</div></div>
             <div class="summary-item"><h3>💰 순 투자금액</h3><div class="amount" style="color: #51cf66;">${formatCurrency(netInvestment, currency)}</div></div>
         </div>
-    ` : '';
+    `
+            : '';
 
     return `
         <div class="summary-grid">
@@ -347,10 +346,7 @@ export function generateSellModeResultsHTML(
  * @param currency - 현재 통화 ('krw' or 'usd')
  * @returns 생성된 HTML 문자열
  */
-export function generateSectorAnalysisHTML(
-    sectorData: SectorData[],
-    currency: Currency
-): string {
+export function generateSectorAnalysisHTML(sectorData: SectorData[], currency: Currency): string {
     if (!sectorData || sectorData.length === 0) {
         return '';
     }
@@ -358,9 +354,7 @@ export function generateSectorAnalysisHTML(
     const rows = sectorData
         .map((data) => {
             // Ensure percentage is valid before formatting
-            const percentageVal = data.percentage?.isFinite()
-                ? data.percentage.toFixed(2)
-                : 'N/A';
+            const percentageVal = data.percentage?.isFinite() ? data.percentage.toFixed(2) : 'N/A';
             return `
             <tr>
                 <td>${escapeHTML(data.sector)}</td>

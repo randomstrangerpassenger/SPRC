@@ -14,7 +14,10 @@ import Decimal from 'decimal.js';
 export class CalculatorWorkerService {
     private worker: Worker | null = null;
     private isWorkerAvailable: boolean = false;
-    private pendingRequests: Map<string, { resolve: (value: any) => void; reject: (reason: any) => void }> = new Map();
+    private pendingRequests: Map<
+        string,
+        { resolve: (value: any) => void; reject: (reason: any) => void }
+    > = new Map();
     private requestId: number = 0;
     private fallbackCount: number = 0; // Track fallback occurrences
 
@@ -45,7 +48,9 @@ export class CalculatorWorkerService {
                 this.isWorkerAvailable = true;
                 console.log('[CalculatorWorkerService] Worker initialized successfully');
             } else {
-                console.warn('[CalculatorWorkerService] Web Workers not supported, using synchronous calculator');
+                console.warn(
+                    '[CalculatorWorkerService] Web Workers not supported, using synchronous calculator'
+                );
                 this.isWorkerAvailable = false;
             }
         } catch (error) {
@@ -193,7 +198,8 @@ export class CalculatorWorkerService {
         const deserialized: any = {};
         for (const key in metrics) {
             const value = metrics[key];
-            deserialized[key] = typeof value === 'string' && !isNaN(Number(value)) ? new Decimal(value) : value;
+            deserialized[key] =
+                typeof value === 'string' && !isNaN(Number(value)) ? new Decimal(value) : value;
         }
         return deserialized;
     }

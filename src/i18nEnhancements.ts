@@ -21,7 +21,10 @@ const MAX_CACHE_SIZE = 50;
  * @param options - NumberFormat 옵션
  * @returns Intl.NumberFormat 인스턴스
  */
-function getCachedNumberFormat(locale: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+function getCachedNumberFormat(
+    locale: string,
+    options: Intl.NumberFormatOptions
+): Intl.NumberFormat {
     const cacheKey = `${locale}:${JSON.stringify(options)}`;
 
     let formatter = numberFormatCache.get(cacheKey);
@@ -94,7 +97,7 @@ export function formatNumber(
 
     return getCachedNumberFormat(locale, {
         minimumFractionDigits: fractionDigits,
-        maximumFractionDigits: fractionDigits
+        maximumFractionDigits: fractionDigits,
     }).format(num);
 }
 
@@ -124,7 +127,7 @@ export function formatPercent(
     return getCachedNumberFormat(locale, {
         style: 'percent',
         minimumFractionDigits: fractionDigits,
-        maximumFractionDigits: fractionDigits
+        maximumFractionDigits: fractionDigits,
     }).format(num / 100); // Intl.NumberFormat의 percent는 0-1 범위를 사용
 }
 
@@ -200,7 +203,7 @@ export function formatCompactNumber(
         return getCachedNumberFormat(locale, {
             notation: 'compact' as any, // TypeScript 버전에 따라 type assertion 필요
             minimumFractionDigits: 0,
-            maximumFractionDigits: fractionDigits
+            maximumFractionDigits: fractionDigits,
         }).format(num);
     } catch (e) {
         // Fallback: 수동 축약
@@ -231,7 +234,7 @@ export function formatDate(
     const dateObj = typeof date === 'string' ? new Date(date) : date;
 
     return new Intl.DateTimeFormat(locale, {
-        dateStyle: style
+        dateStyle: style,
     }).format(dateObj);
 }
 

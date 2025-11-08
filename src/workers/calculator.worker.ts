@@ -33,7 +33,10 @@ interface CalculateSectorAnalysisMessage {
     };
 }
 
-type WorkerMessage = CalculateStockMetricsMessage | CalculatePortfolioStateMessage | CalculateSectorAnalysisMessage;
+type WorkerMessage =
+    | CalculateStockMetricsMessage
+    | CalculatePortfolioStateMessage
+    | CalculateSectorAnalysisMessage;
 
 /**
  * @description Calculate metrics for a single stock
@@ -104,7 +107,9 @@ function calculateStockMetrics(stock: any): any {
         if (originalCostOfHolding.isZero()) {
             result.profitLossRate = DECIMAL_ZERO;
         } else {
-            result.profitLossRate = result.profitLoss.div(originalCostOfHolding).times(DECIMAL_HUNDRED);
+            result.profitLossRate = result.profitLoss
+                .div(originalCostOfHolding)
+                .times(DECIMAL_HUNDRED);
         }
 
         // Convert Decimal to serializable format
@@ -175,9 +180,10 @@ function calculateSectorAnalysis(portfolioData: any[], currentCurrency: 'krw' | 
 
     for (const s of portfolioData) {
         const sector = s.sector || 'Unclassified';
-        const amount = currentCurrency === 'krw'
-            ? new Decimal(s.calculated?.currentAmountKRW || 0)
-            : new Decimal(s.calculated?.currentAmountUSD || 0);
+        const amount =
+            currentCurrency === 'krw'
+                ? new Decimal(s.calculated?.currentAmountKRW || 0)
+                : new Decimal(s.calculated?.currentAmountUSD || 0);
         currentTotal = currentTotal.plus(amount);
 
         const currentSectorAmount = sectorMap.get(sector) || DECIMAL_ZERO;
@@ -231,7 +237,10 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
                 break;
 
             case 'calculateSectorAnalysis':
-                const sectorAnalysis = calculateSectorAnalysis(data.portfolioData, data.currentCurrency);
+                const sectorAnalysis = calculateSectorAnalysis(
+                    data.portfolioData,
+                    data.currentCurrency
+                );
                 self.postMessage({ type: 'calculateSectorAnalysis', result: sectorAnalysis });
                 break;
 
@@ -239,7 +248,10 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
                 console.warn('Worker: Unknown message type', type);
         }
     } catch (error) {
-        self.postMessage({ type: 'error', error: error instanceof Error ? error.message : String(error) });
+        self.postMessage({
+            type: 'error',
+            error: error instanceof Error ? error.message : String(error),
+        });
     }
 };
 

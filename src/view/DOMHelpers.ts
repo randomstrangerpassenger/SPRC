@@ -28,7 +28,11 @@ export function createInput(
         displayValue = value.toFixed(decimalPlaces);
     } else {
         const defaultValue =
-            field === 'fixedBuyAmount' ? '0' : field === 'targetRatio' || field === 'currentPrice' ? '0.00' : '';
+            field === 'fixedBuyAmount'
+                ? '0'
+                : field === 'targetRatio' || field === 'currentPrice'
+                  ? '0.00'
+                  : '';
         displayValue = String(value ?? defaultValue);
     }
 
@@ -39,7 +43,8 @@ export function createInput(
 
     if (type === 'number') {
         input.min = '0';
-        if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
+        if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio')
+            input.step = 'any';
     }
     if (type === 'text') {
         input.style.textAlign = 'center';
@@ -51,7 +56,11 @@ export function createInput(
 /**
  * @description Checkbox 요소를 생성합니다.
  */
-export function createCheckbox(field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement {
+export function createCheckbox(
+    field: string,
+    checked: boolean,
+    ariaLabel: string = ''
+): HTMLInputElement {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.dataset.field = field;
@@ -63,7 +72,12 @@ export function createCheckbox(field: string, checked: boolean, ariaLabel: strin
 /**
  * @description Button 요소를 생성합니다.
  */
-export function createButton(action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement {
+export function createButton(
+    action: string,
+    text: string,
+    ariaLabel: string = '',
+    variant: string = 'grey'
+): HTMLButtonElement {
     const button = document.createElement('button');
     button.className = 'btn btn--small';
     button.dataset.action = action;
@@ -85,7 +99,11 @@ export function createCell(className: string = '', align: string = 'left'): HTML
 /**
  * @description Output Cell 요소를 생성합니다.
  */
-export function createOutputCell(label: string, value: string, valueClass: string = ''): HTMLDivElement {
+export function createOutputCell(
+    label: string,
+    value: string,
+    valueClass: string = ''
+): HTMLDivElement {
     const cell = createCell('output-cell align-right');
     // XSS 방어: escapeHTML 적용
     cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;

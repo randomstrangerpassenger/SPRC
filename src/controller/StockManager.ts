@@ -55,16 +55,24 @@ export class StockManager {
      * @description 포트폴리오 테이블 변경 핸들러
      * @param e - 이벤트
      */
-    handlePortfolioBodyChange(e: Event): { needsFullRender: boolean; needsUIUpdate: boolean; needsSave: boolean } {
+    handlePortfolioBodyChange(e: Event): {
+        needsFullRender: boolean;
+        needsUIUpdate: boolean;
+        needsSave: boolean;
+    } {
         const target = e.target as HTMLInputElement | HTMLSelectElement;
         const row = target.closest('div[data-id]');
         if (!row) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
         const stockId = (row as HTMLElement).dataset.id;
         const field = (target as HTMLInputElement).dataset.field;
-        if (!stockId || !field) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+        if (!stockId || !field)
+            return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
-        let value: any = target.type === 'checkbox' && target instanceof HTMLInputElement ? target.checked : target.value;
+        let value: any =
+            target.type === 'checkbox' && target instanceof HTMLInputElement
+                ? target.checked
+                : target.value;
         let isValid = true;
 
         switch (field) {
@@ -108,7 +116,8 @@ export class StockManager {
             }
 
             const activePortfolio = this.state.getActivePortfolio();
-            if (!activePortfolio) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            if (!activePortfolio)
+                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
             // ===== [Phase 1.1 최적화] 메타데이터 필드는 재계산 없이 DOM만 업데이트 =====
             if (field === 'name' || field === 'ticker') {
@@ -127,14 +136,17 @@ export class StockManager {
                 const calculatedState = Calculator.calculatePortfolioState({
                     portfolioData: activePortfolio.portfolioData,
                     exchangeRate: activePortfolio.settings.exchangeRate,
-                    currentCurrency: activePortfolio.settings.currentCurrency
+                    currentCurrency: activePortfolio.settings.currentCurrency,
                 });
                 const newSectorData = Calculator.calculateSectorAnalysis(
                     calculatedState.portfolioData,
                     activePortfolio.settings.currentCurrency
                 );
                 this.view.displaySectorAnalysis(
-                    generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+                    generateSectorAnalysisHTML(
+                        newSectorData,
+                        activePortfolio.settings.currentCurrency
+                    )
                 );
 
                 this.debouncedSave();
@@ -151,10 +163,12 @@ export class StockManager {
 
                     if (activePortfolio.settings.currentCurrency === 'krw') {
                         calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
-                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount.div(exchangeRateDec);
+                        calculatedMetrics.currentAmountUSD =
+                            calculatedMetrics.currentAmount.div(exchangeRateDec);
                     } else {
                         calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
-                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount.times(exchangeRateDec);
+                        calculatedMetrics.currentAmountKRW =
+                            calculatedMetrics.currentAmount.times(exchangeRateDec);
                     }
 
                     this.view.updateSingleStockRow(stockId, calculatedMetrics);
@@ -164,14 +178,17 @@ export class StockManager {
                     const calculatedState = Calculator.calculatePortfolioState({
                         portfolioData: activePortfolio.portfolioData,
                         exchangeRate: activePortfolio.settings.exchangeRate,
-                        currentCurrency: activePortfolio.settings.currentCurrency
+                        currentCurrency: activePortfolio.settings.currentCurrency,
                     });
                     const newSectorData = Calculator.calculateSectorAnalysis(
                         calculatedState.portfolioData,
                         activePortfolio.settings.currentCurrency
                     );
                     this.view.displaySectorAnalysis(
-                        generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+                        generateSectorAnalysisHTML(
+                            newSectorData,
+                            activePortfolio.settings.currentCurrency
+                        )
                     );
                 }
 
@@ -185,7 +202,7 @@ export class StockManager {
             const calculatedState = Calculator.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
                 exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency
+                currentCurrency: activePortfolio.settings.currentCurrency,
             });
             activePortfolio.portfolioData = calculatedState.portfolioData;
 

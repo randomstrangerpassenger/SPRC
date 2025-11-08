@@ -92,9 +92,7 @@ export function generateId(): string {
  * @param value - 변환할 값 (number, Decimal, string, null, undefined)
  * @returns Decimal 객체 (null/undefined인 경우 DECIMAL_ZERO 반환)
  */
-export function toDecimal(
-    value: number | Decimal | string | null | undefined
-): Decimal {
+export function toDecimal(value: number | Decimal | string | null | undefined): Decimal {
     if (value instanceof Decimal) return value;
     if (value == null) return DECIMAL_ZERO;
     return new Decimal(value);

@@ -20,9 +20,9 @@ try {
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
 
-    console.log("Application setup complete.");
+    console.log('Application setup complete.');
 } catch (error) {
-    console.error("애플리케이션 초기화 중 치명적인 오류 발생:", error);
+    console.error('애플리케이션 초기화 중 치명적인 오류 발생:', error);
     // 사용자에게 오류 메시지를 표시하는 UI 로직 추가 가능
     const bodyElement = document.body;
     if (bodyElement) {

@@ -21,19 +21,22 @@ const VISIBLE_ROWS_BUFFER = 5;
  */
 export class VirtualScrollManager {
     private dom: DOMElements;
-    private _virtualData: CalculatedStock[] = [];
-    private _scrollWrapper: HTMLElement | null = null;
-    private _scrollSpacer: HTMLElement | null = null;
-    private _scrollContent: HTMLElement | null = null;
-    private _viewportHeight: number = 0;
-    private _renderedStartIndex: number = -1;
-    private _renderedEndIndex: number = -1;
-    private _scrollHandler: (() => void) | null = null;
-    private _currentMainMode: 'add' | 'sell' | 'simple' = 'add';
-    private _currentCurrency: 'krw' | 'usd' = 'krw';
+    #virtualData: CalculatedStock[] = [];
+    #scrollWrapper: HTMLElement | null = null;
+    #scrollSpacer: HTMLElement | null = null;
+    #scrollContent: HTMLElement | null = null;
+    #viewportHeight: number = 0;
+    #renderedStartIndex: number = -1;
+    #renderedEndIndex: number = -1;
+    #scrollHandler: (() => void) | null = null;
+    #currentMainMode: 'add' | 'sell' | 'simple' = 'add';
+    #currentCurrency: 'krw' | 'usd' = 'krw';
 
     // ===== [Phase 2.1 최적화] DOM 참조 캐싱 =====
-    private _rowCache: Map<string, { inputRow: HTMLElement | null; outputRow: HTMLElement | null }> = new Map();
+    #rowCache: Map<
+        string,
+        { inputRow: HTMLElement | null; outputRow: HTMLElement | null }
+    > = new Map();
     // ===== [Phase 2.1 최적화 끝] =====
 
     constructor(dom: DOMElements) {
@@ -45,10 +48,10 @@ export class VirtualScrollManager {
      * @description 스크롤 요소들을 초기화합니다.
      */
     private initializeScrollElements(): void {
-        this._scrollWrapper = this.dom.virtualScrollWrapper;
-        this._scrollSpacer = this.dom.virtualScrollSpacer;
-        this._scrollContent = this.dom.virtualScrollContent;
-        this._viewportHeight = this._scrollWrapper ? this._scrollWrapper.clientHeight : 600;
+        this.#scrollWrapper = this.dom.virtualScrollWrapper;
+        this.#scrollSpacer = this.dom.virtualScrollSpacer;
+        this.#scrollContent = this.dom.virtualScrollContent;
+        this.#viewportHeight = this.#scrollWrapper ? this.#scrollWrapper.clientHeight : 600;
     }
 
     /**
@@ -57,8 +60,8 @@ export class VirtualScrollManager {
      * @param mainMode - 메인 모드
      */
     updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
-        this._currentMainMode = mainMode;
-        this._currentCurrency = currency;
+        this.#currentMainMode = mainMode;
+        this.#currentCurrency = currency;
         const header = this.dom.virtualTableHeader;
         if (!header) return;
 
@@ -119,29 +122,36 @@ export class VirtualScrollManager {
      * @param currency - 통화 모드
      * @param mainMode - 메인 모드
      */
-    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
-        if (!this._scrollWrapper || !this._scrollSpacer || !this._scrollContent) return;
+    renderTable(
+        calculatedPortfolioData: CalculatedStock[],
+        currency: 'krw' | 'usd',
+        mainMode: 'add' | 'sell' | 'simple'
+    ): void {
+        if (!this.#scrollWrapper || !this.#scrollSpacer || !this.#scrollContent) return;
 
         this.updateTableHeader(currency, mainMode);
 
-        this._virtualData = calculatedPortfolioData;
+        this.#virtualData = calculatedPortfolioData;
         if (this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
+            this.dom.virtualScrollWrapper.setAttribute(
+                'aria-rowcount',
+                String(this.#virtualData.length)
+            );
         }
 
-        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
-        this._scrollSpacer.style.height = `${totalHeight}px`;
+        const totalHeight = this.#virtualData.length * ROW_PAIR_HEIGHT;
+        this.#scrollSpacer.style.height = `${totalHeight}px`;
 
-        this._viewportHeight = this._scrollWrapper.clientHeight;
+        this.#viewportHeight = this.#scrollWrapper.clientHeight;
 
-        if (this._scrollHandler) {
-            this._scrollWrapper.removeEventListener('scroll', this._scrollHandler);
+        if (this.#scrollHandler) {
+            this.#scrollWrapper.removeEventListener('scroll', this.#scrollHandler);
         }
 
-        this._scrollHandler = this._onScroll.bind(this);
-        this._scrollWrapper.addEventListener('scroll', this._scrollHandler);
+        this.#scrollHandler = this.#onScroll.bind(this);
+        this.#scrollWrapper.addEventListener('scroll', this.#scrollHandler);
 
-        this._onScroll(true);
+        this.#onScroll(true);
     }
 
     /**
@@ -149,14 +159,17 @@ export class VirtualScrollManager {
      * @param calculatedPortfolioData - 계산된 포트폴리오 데이터
      */
     updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
-        this._virtualData = calculatedPortfolioData;
-        const totalHeight = this._virtualData.length * ROW_PAIR_HEIGHT;
-        if (this._scrollSpacer) this._scrollSpacer.style.height = `${totalHeight}px`;
+        this.#virtualData = calculatedPortfolioData;
+        const totalHeight = this.#virtualData.length * ROW_PAIR_HEIGHT;
+        if (this.#scrollSpacer) this.#scrollSpacer.style.height = `${totalHeight}px`;
         if (this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute('aria-rowcount', String(this._virtualData.length));
+            this.dom.virtualScrollWrapper.setAttribute(
+                'aria-rowcount',
+                String(this.#virtualData.length)
+            );
         }
 
-        this._onScroll(true);
+        this.#onScroll(true);
     }
 
     /**
@@ -166,9 +179,9 @@ export class VirtualScrollManager {
      * @param value - 값
      */
     updateStockInVirtualData(stockId: string, field: string, value: any): void {
-        const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+        const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
         if (stockIndex !== -1) {
-            (this._virtualData[stockIndex] as any)[field] = value;
+            (this.#virtualData[stockIndex] as any)[field] = value;
         }
     }
 
@@ -178,42 +191,64 @@ export class VirtualScrollManager {
      * @param calculatedData - 재계산된 데이터
      */
     updateSingleStockRow(stockId: string, calculatedData: any): void {
-        const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+        const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
         if (stockIndex === -1) return;
 
-        this._virtualData[stockIndex] = { ...this._virtualData[stockIndex], calculated: calculatedData };
+        this.#virtualData[stockIndex] = {
+            ...this.#virtualData[stockIndex],
+            calculated: calculatedData,
+        };
 
-        if (stockIndex < this._renderedStartIndex || stockIndex >= this._renderedEndIndex) {
+        if (stockIndex < this.#renderedStartIndex || stockIndex >= this.#renderedEndIndex) {
             return;
         }
 
         // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
-        let outputRow = this._rowCache.get(stockId)?.outputRow;
+        let outputRow = this.#rowCache.get(stockId)?.outputRow;
         if (!outputRow) {
             // 캐시 미스 시 querySelector 사용하고 캐시에 저장
-            outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stockId}"]`) as HTMLElement | null;
+            outputRow = this.#scrollContent?.querySelector(
+                `.virtual-row-outputs[data-id="${stockId}"]`
+            ) as HTMLElement | null;
             if (outputRow) {
-                const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`) as HTMLElement | null;
-                this._rowCache.set(stockId, { inputRow, outputRow });
+                const inputRow = this.#scrollContent?.querySelector(
+                    `.virtual-row-inputs[data-id="${stockId}"]`
+                ) as HTMLElement | null;
+                this.#rowCache.set(stockId, { inputRow, outputRow });
             }
         }
         // ===== [Phase 2.1 최적화 끝] =====
-        if (!outputRow || this._currentMainMode === 'simple') return;
+        if (!outputRow || this.#currentMainMode === 'simple') return;
 
-        const currency = this._currentCurrency;
+        const currency = this.#currentCurrency;
         const metrics = calculatedData ?? {
             quantity: new Decimal(0),
             avgBuyPrice: new Decimal(0),
             currentAmount: new Decimal(0),
             profitLoss: new Decimal(0),
-            profitLossRate: new Decimal(0)
+            profitLossRate: new Decimal(0),
         };
 
-        const quantity = metrics.quantity instanceof Decimal ? metrics.quantity : new Decimal(metrics.quantity ?? 0);
-        const avgBuyPrice = metrics.avgBuyPrice instanceof Decimal ? metrics.avgBuyPrice : new Decimal(metrics.avgBuyPrice ?? 0);
-        const currentAmount = metrics.currentAmount instanceof Decimal ? metrics.currentAmount : new Decimal(metrics.currentAmount ?? 0);
-        const profitLoss = metrics.profitLoss instanceof Decimal ? metrics.profitLoss : new Decimal(metrics.profitLoss ?? 0);
-        const profitLossRate = metrics.profitLossRate instanceof Decimal ? metrics.profitLossRate : new Decimal(metrics.profitLossRate ?? 0);
+        const quantity =
+            metrics.quantity instanceof Decimal
+                ? metrics.quantity
+                : new Decimal(metrics.quantity ?? 0);
+        const avgBuyPrice =
+            metrics.avgBuyPrice instanceof Decimal
+                ? metrics.avgBuyPrice
+                : new Decimal(metrics.avgBuyPrice ?? 0);
+        const currentAmount =
+            metrics.currentAmount instanceof Decimal
+                ? metrics.currentAmount
+                : new Decimal(metrics.currentAmount ?? 0);
+        const profitLoss =
+            metrics.profitLoss instanceof Decimal
+                ? metrics.profitLoss
+                : new Decimal(metrics.profitLoss ?? 0);
+        const profitLossRate =
+            metrics.profitLossRate instanceof Decimal
+                ? metrics.profitLossRate
+                : new Decimal(metrics.profitLossRate ?? 0);
 
         const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss.isPositive() ? '+' : '';
@@ -226,27 +261,32 @@ export class VirtualScrollManager {
         if (cells[cellIndex]) cellIndex++;
 
         if (cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
+            cells[cellIndex].innerHTML =
+                `<span class="label">${escapeHTML(t('ui.quantity'))}</span><span class="value">${escapeHTML(quantity.toFixed(0))}</span>`;
             cellIndex++;
         }
 
         if (!isMobile && cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
+            cells[cellIndex].innerHTML =
+                `<span class="label">${escapeHTML(t('ui.avgBuyPrice'))}</span><span class="value">${escapeHTML(formatCurrency(avgBuyPrice, currency))}</span>`;
             cellIndex++;
         }
 
         if (cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
+            cells[cellIndex].innerHTML =
+                `<span class="label">${escapeHTML(t('ui.currentValue'))}</span><span class="value">${escapeHTML(formatCurrency(currentAmount, currency))}</span>`;
             cellIndex++;
         }
 
         if (!isMobile && cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
+            cells[cellIndex].innerHTML =
+                `<span class="label">${escapeHTML(t('ui.profitLoss'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + formatCurrency(profitLoss, currency))}</span>`;
             cellIndex++;
         }
 
         if (cells[cellIndex]) {
-            cells[cellIndex].innerHTML = `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
+            cells[cellIndex].innerHTML =
+                `<span class="label">${escapeHTML(t('ui.profitLossRate'))}</span><span class="value ${profitClass}">${escapeHTML(profitSign + profitLossRate.toFixed(2) + '%')}</span>`;
         }
     }
 
@@ -254,33 +294,42 @@ export class VirtualScrollManager {
      * @description 스크롤 이벤트 핸들러 (실제 가상 스크롤 로직).
      * @param forceRedraw - 강제 재렌더링 여부
      */
-    private _onScroll(forceRedraw: boolean = false): void {
-        if (!this._scrollWrapper || !this._scrollContent) return;
+    #onScroll(forceRedraw: boolean = false): void {
+        if (!this.#scrollWrapper || !this.#scrollContent) return;
 
-        const currency = this._currentCurrency;
-        const mainMode = this._currentMainMode;
+        const currency = this.#currentCurrency;
+        const mainMode = this.#currentMainMode;
 
-        const scrollTop = this._scrollWrapper.scrollTop;
+        const scrollTop = this.#scrollWrapper.scrollTop;
 
-        const startIndex = Math.max(0, Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER);
+        const startIndex = Math.max(
+            0,
+            Math.floor(scrollTop / ROW_PAIR_HEIGHT) - VISIBLE_ROWS_BUFFER
+        );
         const endIndex = Math.min(
-            this._virtualData.length,
-            Math.ceil((scrollTop + this._viewportHeight) / ROW_PAIR_HEIGHT) + VISIBLE_ROWS_BUFFER
+            this.#virtualData.length,
+            Math.ceil((scrollTop + this.#viewportHeight) / ROW_PAIR_HEIGHT) + VISIBLE_ROWS_BUFFER
         );
 
-        if (!forceRedraw && startIndex === this._renderedStartIndex && endIndex === this._renderedEndIndex) {
+        if (
+            !forceRedraw &&
+            startIndex === this.#renderedStartIndex &&
+            endIndex === this.#renderedEndIndex
+        ) {
             return;
         }
 
         // 재렌더링 전 입력값 저장 (IME 안전)
-        const currentInputRows = this._scrollContent.querySelectorAll('.virtual-row-inputs[data-id]');
+        const currentInputRows = this.#scrollContent.querySelectorAll(
+            '.virtual-row-inputs[data-id]'
+        );
         const activeElement = document.activeElement;
 
         currentInputRows.forEach((row) => {
             const stockId = (row as HTMLElement).dataset.id;
             if (!stockId) return;
 
-            const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
+            const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
             if (stockIndex === -1) return;
 
             const inputs = row.querySelectorAll('input[data-field]');
@@ -303,33 +352,37 @@ export class VirtualScrollManager {
                     value = input.value;
                 }
 
-                (this._virtualData[stockIndex] as any)[field] = value;
+                (this.#virtualData[stockIndex] as any)[field] = value;
             });
         });
 
-        this._renderedStartIndex = startIndex;
-        this._renderedEndIndex = endIndex;
+        this.#renderedStartIndex = startIndex;
+        this.#renderedEndIndex = endIndex;
 
         // ===== [Phase 2.1 최적화] 캐시 클리어 및 재구성 =====
-        this._rowCache.clear();
+        this.#rowCache.clear();
         // ===== [Phase 2.1 최적화 끝] =====
 
         const fragment = document.createDocumentFragment();
         for (let i = startIndex; i < endIndex; i++) {
-            const stock = this._virtualData[i];
+            const stock = this.#virtualData[i];
             fragment.appendChild(createStockRowFragment(stock, currency, mainMode));
         }
 
-        this._scrollContent.replaceChildren(fragment);
-        this._scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+        this.#scrollContent.replaceChildren(fragment);
+        this.#scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
 
         // ===== [Phase 2.1 최적화] 렌더링 후 캐시 채우기 =====
         for (let i = startIndex; i < endIndex; i++) {
-            const stock = this._virtualData[i];
-            const inputRow = this._scrollContent.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`) as HTMLElement | null;
-            const outputRow = this._scrollContent.querySelector(`.virtual-row-outputs[data-id="${stock.id}"]`) as HTMLElement | null;
+            const stock = this.#virtualData[i];
+            const inputRow = this.#scrollContent.querySelector(
+                `.virtual-row-inputs[data-id="${stock.id}"]`
+            );
+            const outputRow = this.#scrollContent.querySelector(
+                `.virtual-row-outputs[data-id="${stock.id}"]`
+            );
             if (inputRow || outputRow) {
-                this._rowCache.set(stock.id, { inputRow, outputRow });
+                this.#rowCache.set(stock.id, { inputRow, outputRow });
             }
         }
         // ===== [Phase 2.1 최적화 끝] =====
@@ -342,12 +395,16 @@ export class VirtualScrollManager {
     updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
         portfolioData.forEach((stock) => {
             // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
-            let inputRow = this._rowCache.get(stock.id)?.inputRow;
+            let inputRow = this.#rowCache.get(stock.id)?.inputRow;
             if (!inputRow) {
-                inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stock.id}"]`) as HTMLElement | null;
+                inputRow = this.#scrollContent?.querySelector(
+                    `.virtual-row-inputs[data-id="${stock.id}"]`
+                ) as HTMLElement | null;
                 if (inputRow) {
-                    const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${stock.id}"]`) as HTMLElement | null;
-                    this._rowCache.set(stock.id, { inputRow, outputRow });
+                    const outputRow = this.#scrollContent?.querySelector(
+                        `.virtual-row-outputs[data-id="${stock.id}"]`
+                    ) as HTMLElement | null;
+                    this.#rowCache.set(stock.id, { inputRow, outputRow });
                 }
             }
             // ===== [Phase 2.1 최적화 끝] =====
@@ -355,7 +412,10 @@ export class VirtualScrollManager {
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
             if (targetRatioInput instanceof HTMLInputElement) {
-                const ratio = stock.targetRatio instanceof Decimal ? stock.targetRatio : new Decimal(stock.targetRatio ?? 0);
+                const ratio =
+                    stock.targetRatio instanceof Decimal
+                        ? stock.targetRatio
+                        : new Decimal(stock.targetRatio ?? 0);
                 targetRatioInput.value = ratio.toFixed(2);
             }
         });
@@ -368,12 +428,16 @@ export class VirtualScrollManager {
      */
     updateCurrentPriceInput(id: string, price: string): void {
         // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
-        let inputRow = this._rowCache.get(id)?.inputRow;
+        let inputRow = this.#rowCache.get(id)?.inputRow;
         if (!inputRow) {
-            inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${id}"]`) as HTMLElement | null;
+            inputRow = this.#scrollContent?.querySelector(
+                `.virtual-row-inputs[data-id="${id}"]`
+            ) as HTMLElement | null;
             if (inputRow) {
-                const outputRow = this._scrollContent?.querySelector(`.virtual-row-outputs[data-id="${id}"]`) as HTMLElement | null;
-                this._rowCache.set(id, { inputRow, outputRow });
+                const outputRow = this.#scrollContent?.querySelector(
+                    `.virtual-row-outputs[data-id="${id}"]`
+                ) as HTMLElement | null;
+                this.#rowCache.set(id, { inputRow, outputRow });
             }
         }
         // ===== [Phase 2.1 최적화 끝] =====
@@ -390,14 +454,16 @@ export class VirtualScrollManager {
      * @param stockId - 주식 ID
      */
     focusOnNewStock(stockId: string): void {
-        const stockIndex = this._virtualData.findIndex((s) => s.id === stockId);
-        if (stockIndex === -1 || !this._scrollWrapper) return;
+        const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
+        if (stockIndex === -1 || !this.#scrollWrapper) return;
 
         const scrollTop = stockIndex * ROW_PAIR_HEIGHT;
-        this._scrollWrapper.scrollTo({ top: scrollTop, behavior: 'smooth' });
+        this.#scrollWrapper.scrollTo({ top: scrollTop, behavior: 'smooth' });
 
         setTimeout(() => {
-            const inputRow = this._scrollContent?.querySelector(`.virtual-row-inputs[data-id="${stockId}"]`);
+            const inputRow = this.#scrollContent?.querySelector(
+                `.virtual-row-inputs[data-id="${stockId}"]`
+            );
             if (!inputRow) return;
 
             const nameInput = inputRow.querySelector('input[data-field="name"]');

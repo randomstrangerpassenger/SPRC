@@ -110,7 +110,7 @@ describe('EventEmitter', () => {
             const callbacks = {
                 calculate: vi.fn(),
                 save: vi.fn(),
-                delete: vi.fn()
+                delete: vi.fn(),
             };
 
             emitter.on('calculateClicked', callbacks.calculate);

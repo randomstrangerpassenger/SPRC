@@ -12,7 +12,7 @@ export enum APIErrorType {
     RATE_LIMIT = 'RATE_LIMIT',
     INVALID_TICKER = 'INVALID_TICKER',
     SERVER_ERROR = 'SERVER_ERROR',
-    UNKNOWN = 'UNKNOWN'
+    UNKNOWN = 'UNKNOWN',
 }
 
 /**
@@ -25,11 +25,15 @@ export class APIError extends Error {
     statusCode?: number;
     retryAfter?: number;
 
-    constructor(message: string, type: APIErrorType, options?: {
-        ticker?: string;
-        statusCode?: number;
-        retryAfter?: number;
-    }) {
+    constructor(
+        message: string,
+        type: APIErrorType,
+        options?: {
+            ticker?: string;
+            statusCode?: number;
+            retryAfter?: number;
+        }
+    ) {
         super(message);
         this.name = 'APIError';
         this.type = type;
@@ -40,16 +44,35 @@ export class APIError extends Error {
 }
 
 /**
- * @description Retry 로직을 포함한 fetch 래퍼
+ * @description 지터(jitter)를 적용한 지수 백오프 지연 시간 계산
+ * @param attempt - 현재 시도 횟수 (0부터 시작)
+ * @returns 지연 시간 (밀리초)
+ */
+function calculateBackoffDelay(attempt: number): number {
+    // 지수 백오프: baseDelay * 2^attempt
+    const exponentialDelay = CONFIG.API_RETRY_BASE_DELAY * Math.pow(2, attempt);
+
+    // 최대 지연 시간 제한
+    const cappedDelay = Math.min(exponentialDelay, CONFIG.API_RETRY_MAX_DELAY);
+
+    // 지터 적용: ±jitterFactor 범위로 무작위화 (thundering herd 방지)
+    const jitterRange = cappedDelay * CONFIG.API_RETRY_JITTER_FACTOR;
+    const jitter = (Math.random() - 0.5) * 2 * jitterRange;
+
+    return Math.max(0, cappedDelay + jitter);
+}
+
+/**
+ * @description Retry 로직을 포함한 fetch 래퍼 (향상된 지수 백오프 with jitter)
  * @param url - API URL
  * @param options - Fetch 옵션
- * @param maxRetries - 최대 재시도 횟수
+ * @param maxRetries - 최대 재시도 횟수 (기본값: CONFIG.API_MAX_RETRIES)
  * @returns Promise<Response>
  */
 async function fetchWithRetry(
     url: string,
     options: RequestInit,
-    maxRetries: number = 3
+    maxRetries: number = CONFIG.API_MAX_RETRIES
 ): Promise<Response> {
     let lastError: Error | null = null;
 
@@ -69,20 +92,38 @@ async function fetchWithRetry(
 
             // 5xx 서버 오류는 재시도
             if (response.status >= 500 && attempt < maxRetries) {
-                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-                console.warn(`[API] Server error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                const delay = calculateBackoffDelay(attempt);
+                console.warn(
+                    `[API] Server error ${response.status}, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+                );
+                await new Promise((resolve) => setTimeout(resolve, delay));
                 continue;
+            }
+
+            // 503 (Service Unavailable) 또는 502 (Bad Gateway)는 최종 실패로 처리
+            if (
+                (response.status === 503 || response.status === 502) &&
+                attempt === maxRetries
+            ) {
+                throw new APIError(
+                    `Server unavailable after ${maxRetries} retries`,
+                    APIErrorType.SERVER_ERROR,
+                    { statusCode: response.status }
+                );
             }
 
             return response;
         } catch (error) {
             lastError = error as Error;
 
-            // Timeout 오류
+            // Timeout 오류 (재시도 가능)
             if (error instanceof Error && error.name === 'TimeoutError') {
                 if (attempt < maxRetries) {
-                    console.warn(`[API] Timeout, retrying... (attempt ${attempt + 1}/${maxRetries})`);
+                    const delay = calculateBackoffDelay(attempt);
+                    console.warn(
+                        `[API] Timeout, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, delay));
                     continue;
                 }
                 throw new APIError(
@@ -94,9 +135,11 @@ async function fetchWithRetry(
             // 네트워크 오류 (재시도 가능)
             if (error instanceof TypeError && error.message.includes('fetch')) {
                 if (attempt < maxRetries) {
-                    const delay = Math.pow(2, attempt) * 1000;
-                    console.warn(`[API] Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    const delay = calculateBackoffDelay(attempt);
+                    console.warn(
+                        `[API] Network error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, delay));
                     continue;
                 }
                 throw new APIError(
@@ -105,8 +148,13 @@ async function fetchWithRetry(
                 );
             }
 
-            // Rate limit 오류는 재시도하지 않음
+            // Rate limit 오류는 재시도하지 않음 (즉시 throw)
             if (error instanceof APIError && error.type === APIErrorType.RATE_LIMIT) {
+                throw error;
+            }
+
+            // 기타 APIError는 재시도하지 않음
+            if (error instanceof APIError) {
                 throw error;
             }
         }
@@ -131,8 +179,8 @@ async function fetchStockPrice(ticker: string): Promise<number> {
     try {
         const response = await fetchWithRetry(
             url,
-            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) },
-            2 // 최대 2회 재시도
+            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) }
+            // Uses CONFIG.API_MAX_RETRIES by default
         );
 
         if (!response.ok) {
@@ -185,7 +233,35 @@ async function fetchStockPrice(ticker: string): Promise<number> {
 }
 
 /**
- * @description 여러 종목의 가격을 배치로 가져옵니다.
+ * @description 개별 종목 가격 가져오기 (배치 API 폴백용)
+ * @param item - { id, ticker } 객체
+ * @returns Promise<FetchStockResult>
+ */
+async function fetchSingleStockPrice(item: {
+    id: string;
+    ticker: string;
+}): Promise<FetchStockResult> {
+    try {
+        const price = await fetchStockPrice(item.ticker);
+        return {
+            id: item.id,
+            ticker: item.ticker,
+            status: 'fulfilled' as const,
+            value: price,
+        };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return {
+            id: item.id,
+            ticker: item.ticker,
+            status: 'rejected' as const,
+            reason: message,
+        };
+    }
+}
+
+/**
+ * @description 여러 종목의 가격을 배치로 가져옵니다. (실패 시 개별 fetch로 폴백)
  * @param tickersToFetch - 티커 배열
  * @returns Promise<FetchStockResult[]>
  */
@@ -196,14 +272,14 @@ async function fetchAllStockPrices(
         return [];
     }
 
-    const symbols = tickersToFetch.map(item => item.ticker).join(',');
+    const symbols = tickersToFetch.map((item) => item.ticker).join(',');
     const url = `/api/batchGetPrices?symbols=${encodeURIComponent(symbols)}`;
 
     try {
         const response = await fetchWithRetry(
             url,
-            { signal: AbortSignal.timeout(CONFIG.BATCH_API_TIMEOUT) },
-            2 // 최대 2회 재시도
+            { signal: AbortSignal.timeout(CONFIG.BATCH_API_TIMEOUT) }
+            // Uses CONFIG.API_MAX_RETRIES by default
         );
 
         if (!response.ok) {
@@ -235,13 +311,31 @@ async function fetchAllStockPrices(
             }
         });
     } catch (error) {
-        if (error instanceof APIError) {
-            throw error;
-        }
-        throw new APIError(
-            error instanceof Error ? error.message : 'Batch API request failed',
-            APIErrorType.UNKNOWN
+        // 배치 API 실패 시 개별 fetch로 폴백
+        console.warn(
+            '[apiService] Batch API failed, falling back to individual fetches:',
+            error instanceof Error ? error.message : error
         );
+
+        // Promise.allSettled를 사용하여 모든 개별 요청 실행
+        const individualResults = await Promise.allSettled(
+            tickersToFetch.map((item) => fetchSingleStockPrice(item))
+        );
+
+        // allSettled 결과를 FetchStockResult[] 형식으로 변환
+        return individualResults.map((result, index) => {
+            if (result.status === 'fulfilled') {
+                return result.value;
+            } else {
+                // Promise rejection (매우 드문 경우)
+                return {
+                    id: tickersToFetch[index].id,
+                    ticker: tickersToFetch[index].ticker,
+                    status: 'rejected' as const,
+                    reason: result.reason instanceof Error ? result.reason.message : 'Unknown error',
+                };
+            }
+        });
     }
 }
 
@@ -282,8 +376,8 @@ async function fetchExchangeRate(): Promise<number | null> {
 
         const response = await fetchWithRetry(
             apiUrl,
-            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) },
-            2
+            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT) }
+            // Uses CONFIG.API_MAX_RETRIES by default
         );
 
         if (!response.ok) {
@@ -297,7 +391,11 @@ async function fetchExchangeRate(): Promise<number | null> {
         const krwRate = apiKey ? data.conversion_rates?.KRW : data.rates?.KRW;
 
         if (typeof krwRate === 'number' && krwRate > 0) {
-            console.log('[apiService] Exchange rate fetched:', krwRate, apiKey ? '(with API key)' : '(free tier)');
+            console.log(
+                '[apiService] Exchange rate fetched:',
+                krwRate,
+                apiKey ? '(with API key)' : '(free tier)'
+            );
             return krwRate;
         }
 

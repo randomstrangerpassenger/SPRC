@@ -6,7 +6,13 @@ import type { CalculatedStock, Portfolio } from './types';
  * @description 테스트용으로 완벽하게 계산된 CalculatedStock 객체를 생성합니다.
  */
 export function createMockCalculatedStock({
-    id, name, ticker, targetRatio, currentPrice, quantity, avgBuyPrice
+    id,
+    name,
+    ticker,
+    targetRatio,
+    currentPrice,
+    quantity,
+    avgBuyPrice,
 }: {
     id: string;
     name: string;
@@ -19,7 +25,9 @@ export function createMockCalculatedStock({
     const currentAmount = new Decimal(currentPrice).times(quantity);
     const totalBuyAmount = new Decimal(avgBuyPrice).times(quantity);
     const profitLoss = currentAmount.minus(totalBuyAmount);
-    const profitLossRate = totalBuyAmount.isZero() ? new Decimal(0) : profitLoss.div(totalBuyAmount).times(100);
+    const profitLossRate = totalBuyAmount.isZero()
+        ? new Decimal(0)
+        : profitLoss.div(totalBuyAmount).times(100);
 
     return {
         id: id,
@@ -50,7 +58,7 @@ export const MOCK_STOCK_1 = createMockCalculatedStock({
     targetRatio: 50,
     currentPrice: 150,
     quantity: 10,
-    avgBuyPrice: 100
+    avgBuyPrice: 100,
 }); // 현재가: 1500
 
 export const MOCK_STOCK_2 = createMockCalculatedStock({
@@ -60,7 +68,7 @@ export const MOCK_STOCK_2 = createMockCalculatedStock({
     targetRatio: 50,
     currentPrice: 200,
     quantity: 20,
-    avgBuyPrice: 250
+    avgBuyPrice: 250,
 }); // 현재가: 4000
 
 export const MOCK_PORTFOLIO_1: Portfolio = {
@@ -71,5 +79,5 @@ export const MOCK_PORTFOLIO_1: Portfolio = {
         currentCurrency: 'krw',
         exchangeRate: 1300,
     },
-    portfolioData: [MOCK_STOCK_1, MOCK_STOCK_2] // 2개의 주식 포함
+    portfolioData: [MOCK_STOCK_1, MOCK_STOCK_2], // 2개의 주식 포함
 };

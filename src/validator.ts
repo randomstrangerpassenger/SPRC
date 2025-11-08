@@ -287,7 +287,12 @@ export const Validator = {
             if (!Array.isArray(portfolio.portfolioData)) return false;
             // Optionally, add checks for individual stock structure within portfolioData if needed
             for (const stock of portfolio.portfolioData) {
-                if (!stock || typeof stock !== 'object' || !stock.id || typeof stock.id !== 'string')
+                if (
+                    !stock ||
+                    typeof stock !== 'object' ||
+                    !stock.id ||
+                    typeof stock.id !== 'string'
+                )
                     return false;
                 // Add more checks for required stock properties (name, ticker, etc.)
                 if (typeof stock.name !== 'string' || typeof stock.ticker !== 'string')

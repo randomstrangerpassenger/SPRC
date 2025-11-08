@@ -78,7 +78,10 @@ export class PortfolioManager {
             if (await this.state.deletePortfolio(deletedId)) {
                 const newActivePortfolio = this.state.getActivePortfolio();
                 if (newActivePortfolio) {
-                    this.view.renderPortfolioSelector(this.state.getAllPortfolios(), newActivePortfolio.id);
+                    this.view.renderPortfolioSelector(
+                        this.state.getAllPortfolios(),
+                        newActivePortfolio.id
+                    );
                     this.view.showToast(t('toast.portfolioDeleted'), 'success');
                     return; // 신호: fullRender 필요
                 }
@@ -110,7 +113,8 @@ export class PortfolioManager {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
                 if (portfolioExchangeRateInput instanceof HTMLInputElement) {
-                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                    portfolioExchangeRateInput.value =
+                        activePortfolio.settings.exchangeRate.toString();
                 }
             }
             return; // 신호: fullRender 필요

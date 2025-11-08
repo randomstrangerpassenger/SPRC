@@ -10,10 +10,10 @@ vi.mock('../i18n', () => ({
             'ui.buy': '매수',
             'ui.sell': '매도',
             'ui.delete': '삭제',
-            'modal.transactionTitle': '거래 내역'
+            'modal.transactionTitle': '거래 내역',
         };
         return translations[key] || key;
-    })
+    }),
 }));
 
 describe('ModalManager', () => {
@@ -39,7 +39,7 @@ describe('ModalManager', () => {
             newTransactionForm: document.createElement('form'),
             txDate: txDateInput, // Use the date input with proper type
             txQuantity: document.createElement('input'),
-            txPrice: document.createElement('input')
+            txPrice: document.createElement('input'),
         };
 
         // Setup IDs for elements
@@ -105,7 +105,11 @@ describe('ModalManager', () => {
 
     describe('showPrompt()', () => {
         it('should display prompt modal with input field', () => {
-            const promise = modalManager.showPrompt('Enter Name', 'Please provide a name', 'Default');
+            const promise = modalManager.showPrompt(
+                'Enter Name',
+                'Please provide a name',
+                'Default'
+            );
 
             expect(mockDom.customModalTitle.textContent).toBe('Enter Name');
             expect(mockDom.customModalMessage.textContent).toBe('Please provide a name');
@@ -148,7 +152,7 @@ describe('ModalManager', () => {
                 sector: 'Technology',
                 targetRatio: 25,
                 currentPrice: 150,
-                transactions: []
+                transactions: [],
             };
 
             modalManager.openTransactionModal(mockStock, 'usd', []);
@@ -167,7 +171,7 @@ describe('ModalManager', () => {
                 sector: 'Technology',
                 targetRatio: 25,
                 currentPrice: 150,
-                transactions: []
+                transactions: [],
             };
 
             const mockTransactions = [
@@ -176,8 +180,8 @@ describe('ModalManager', () => {
                     type: 'buy' as const,
                     date: '2024-01-01',
                     quantity: 10,
-                    price: 140
-                }
+                    price: 140,
+                },
             ];
 
             modalManager.openTransactionModal(mockStock, 'usd', mockTransactions);
@@ -196,7 +200,7 @@ describe('ModalManager', () => {
                 sector: 'Technology',
                 targetRatio: 25,
                 currentPrice: 150,
-                transactions: []
+                transactions: [],
             };
 
             modalManager.openTransactionModal(mockStock, 'usd', []);
@@ -214,7 +218,7 @@ describe('ModalManager', () => {
                 sector: 'Technology',
                 targetRatio: 25,
                 currentPrice: 150,
-                transactions: []
+                transactions: [],
             };
 
             modalManager.openTransactionModal(mockStock, 'usd', []);
@@ -238,7 +242,7 @@ describe('ModalManager', () => {
             const transactions = [
                 { id: 'tx-1', type: 'buy' as const, date: '2024-01-01', quantity: 10, price: 100 },
                 { id: 'tx-2', type: 'sell' as const, date: '2024-01-03', quantity: 5, price: 110 },
-                { id: 'tx-3', type: 'buy' as const, date: '2024-01-02', quantity: 8, price: 105 }
+                { id: 'tx-3', type: 'buy' as const, date: '2024-01-02', quantity: 8, price: 105 },
             ];
 
             modalManager.renderTransactionList(transactions, 'usd');
@@ -255,7 +259,7 @@ describe('ModalManager', () => {
         it('should display buy/sell types with correct styling', () => {
             const transactions = [
                 { id: 'tx-1', type: 'buy' as const, date: '2024-01-01', quantity: 10, price: 100 },
-                { id: 'tx-2', type: 'sell' as const, date: '2024-01-02', quantity: 5, price: 110 }
+                { id: 'tx-2', type: 'sell' as const, date: '2024-01-02', quantity: 5, price: 110 },
             ];
 
             modalManager.renderTransactionList(transactions, 'krw');

@@ -128,9 +128,7 @@ export interface IView {
 }
 
 // Result type for error handling (Railway-oriented programming)
-export type Result<T, E = Error> =
-  | { success: true; data: T }
-  | { success: false; error: E };
+export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
 
 // DOM Elements type
 export interface DOMElements {

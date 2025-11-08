@@ -198,7 +198,11 @@ export class PortfolioView {
      * @param isValid - 유효 여부
      * @param errorMessage - 에러 메시지
      */
-    toggleInputValidation(inputElement: HTMLInputElement, isValid: boolean, errorMessage: string = ''): void {
+    toggleInputValidation(
+        inputElement: HTMLInputElement,
+        isValid: boolean,
+        errorMessage: string = ''
+    ): void {
         if (!inputElement) return;
         inputElement.classList.toggle('input-invalid', !isValid);
         inputElement.setAttribute('aria-invalid', String(!isValid));
@@ -210,7 +214,11 @@ export class PortfolioView {
         return this.modalManager.showConfirm(title, message);
     }
 
-    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
+    async showPrompt(
+        title: string,
+        message: string,
+        defaultValue: string = ''
+    ): Promise<string | null> {
         return this.modalManager.showPrompt(title, message, defaultValue);
     }
 
@@ -228,7 +236,11 @@ export class PortfolioView {
 
     // ===== VirtualScroll 위임 =====
 
-    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
+    renderTable(
+        calculatedPortfolioData: CalculatedStock[],
+        currency: 'krw' | 'usd',
+        mainMode: 'add' | 'sell' | 'simple'
+    ): void {
         this.virtualScrollManager.renderTable(calculatedPortfolioData, currency, mainMode);
     }
 
@@ -275,7 +287,11 @@ export class PortfolioView {
         this.resultsRenderer.displayChart(ChartClass, labels, data, title);
     }
 
-    async displayPerformanceHistory(ChartClass: typeof Chart, snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): Promise<void> {
+    async displayPerformanceHistory(
+        ChartClass: typeof Chart,
+        snapshots: PortfolioSnapshot[],
+        currency: 'krw' | 'usd'
+    ): Promise<void> {
         await this.resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
     }
 

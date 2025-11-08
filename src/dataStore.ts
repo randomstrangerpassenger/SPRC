@@ -38,9 +38,7 @@ export class DataStore {
      */
     static async loadPortfolios(): Promise<Record<string, Portfolio> | null> {
         try {
-            const portfolioData = await get<Record<string, Portfolio>>(
-                CONFIG.IDB_PORTFOLIOS_KEY
-            );
+            const portfolioData = await get<Record<string, Portfolio>>(CONFIG.IDB_PORTFOLIOS_KEY);
             return portfolioData || null;
         } catch (error) {
             ErrorService.handle(error as Error, 'DataStore.loadPortfolios');
@@ -78,26 +76,34 @@ export class DataStore {
             try {
                 metaData = JSON.parse(lsMeta);
             } catch (parseError) {
-                throw new Error(`Failed to parse meta data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
+                throw new Error(
+                    `Failed to parse meta data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`
+                );
             }
 
             try {
                 portfolioData = JSON.parse(lsPortfolios);
             } catch (parseError) {
-                throw new Error(`Failed to parse portfolio data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
+                throw new Error(
+                    `Failed to parse portfolio data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`
+                );
             }
 
             // IndexedDB에 저장
             try {
                 await set(CONFIG.IDB_META_KEY, metaData);
             } catch (saveError) {
-                throw new Error(`Failed to save meta to IndexedDB: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
+                throw new Error(
+                    `Failed to save meta to IndexedDB: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`
+                );
             }
 
             try {
                 await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
             } catch (saveError) {
-                throw new Error(`Failed to save portfolios to IndexedDB: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
+                throw new Error(
+                    `Failed to save portfolios to IndexedDB: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`
+                );
             }
 
             // 마이그레이션 성공 후 LocalStorage 데이터 삭제
@@ -108,7 +114,10 @@ export class DataStore {
             return true;
         } catch (error) {
             // 세분화된 에러 메시지와 함께 로깅
-            console.error('[DataStore] Migration failed:', error instanceof Error ? error.message : error);
+            console.error(
+                '[DataStore] Migration failed:',
+                error instanceof Error ? error.message : error
+            );
             ErrorService.handle(error as Error, 'DataStore.migrateFromLocalStorage');
             return false;
         }
@@ -147,7 +156,7 @@ export class DataStore {
      */
     static async addSnapshot(snapshot: PortfolioSnapshot): Promise<void> {
         try {
-            const allSnapshots = await this.loadSnapshots() || {};
+            const allSnapshots = (await this.loadSnapshots()) || {};
             const portfolioSnapshots = allSnapshots[snapshot.portfolioId] || [];
 
             // 새 스냅샷 추가

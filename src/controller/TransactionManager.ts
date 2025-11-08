@@ -35,7 +35,7 @@ export class TransactionManager {
     async handleAddNewTransaction(e: Event): Promise<{ needsFullRender: boolean }> {
         e.preventDefault();
         const form = e.target as HTMLFormElement;
-        const modal = form.closest('#transactionModal') as HTMLElement | null;
+        const modal = form.closest('#transactionModal');
         const stockId = modal?.dataset.stockId;
         if (!stockId) return { needsFullRender: false };
 
@@ -50,10 +50,9 @@ export class TransactionManager {
 
         const typeValue = typeInput instanceof HTMLInputElement ? typeInput.value : 'buy';
         const type: 'buy' | 'sell' | 'dividend' =
-            typeValue === 'sell' ? 'sell' :
-            typeValue === 'dividend' ? 'dividend' :
-            'buy';
-        const inputMode = inputModeInput instanceof HTMLInputElement ? inputModeInput.value : 'quantity';
+            typeValue === 'sell' ? 'sell' : typeValue === 'dividend' ? 'dividend' : 'buy';
+        const inputMode =
+            inputModeInput instanceof HTMLInputElement ? inputModeInput.value : 'quantity';
         const date = dateInput.value;
         const priceStr = priceInput.value;
 
@@ -96,7 +95,10 @@ export class TransactionManager {
         const validationResult = Validator.validateTransaction(txData);
 
         if (!validationResult.isValid) {
-            this.view.showToast(validationResult.message || t('toast.invalidTransactionInfo'), 'error');
+            this.view.showToast(
+                validationResult.message || t('toast.invalidTransactionInfo'),
+                'error'
+            );
             return { needsFullRender: false };
         }
 
@@ -104,7 +106,7 @@ export class TransactionManager {
             type,
             date,
             quantity: finalQuantity,
-            price: Number(priceStr)
+            price: Number(priceStr),
         });
 
         if (success) {
@@ -121,7 +123,9 @@ export class TransactionManager {
                 inputModeQuantity.checked = true;
                 const quantityInputGroup = document.getElementById('quantityInputGroup');
                 const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
-                const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
+                const calculatedQuantityDisplay = document.getElementById(
+                    'calculatedQuantityDisplay'
+                );
 
                 if (quantityInputGroup) quantityInputGroup.style.display = '';
                 if (totalAmountInputGroup) totalAmountInputGroup.style.display = 'none';
@@ -144,7 +148,10 @@ export class TransactionManager {
      * @param stockId - 주식 ID
      * @param txId - 거래 내역 ID
      */
-    async handleTransactionListClick(stockId: string, txId: string): Promise<{ needsUIUpdate: boolean }> {
+    async handleTransactionListClick(
+        stockId: string,
+        txId: string
+    ): Promise<{ needsUIUpdate: boolean }> {
         if (stockId && txId) {
             const confirmDelete = await this.view.showConfirm(
                 t('modal.confirmDeleteTransactionTitle'),
