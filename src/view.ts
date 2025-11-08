@@ -167,6 +167,32 @@ export class PortfolioView {
     }
 
     /**
+     * @description 계산 로딩 표시
+     */
+    showCalculationLoading(): void {
+        const existingLoader = document.querySelector('.calculation-loader');
+        if (existingLoader) return;
+
+        const loader = document.createElement('div');
+        loader.className = 'calculation-loader';
+        loader.setAttribute('role', 'status');
+        loader.setAttribute('aria-live', 'polite');
+        loader.innerHTML = `
+            <div class="spinner"></div>
+            <span class="sr-only">계산 중...</span>
+        `;
+        document.body.appendChild(loader);
+    }
+
+    /**
+     * @description 계산 로딩 숨김
+     */
+    hideCalculationLoading(): void {
+        const loader = document.querySelector('.calculation-loader');
+        if (loader) loader.remove();
+    }
+
+    /**
      * @description 입력 필드 유효성 검사 시각적 표시
      * @param inputElement - 입력 요소
      * @param isValid - 유효 여부

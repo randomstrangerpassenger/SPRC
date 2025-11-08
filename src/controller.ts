@@ -294,6 +294,9 @@ export class PortfolioController {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
+        // 로딩 UI 표시
+        this.view.showCalculationLoading();
+
         try {
             // ===== [Phase 2.2 Web Worker 통합] =====
             const calculatedState = await this.calculatorWorker.calculatePortfolioState({
@@ -331,8 +334,12 @@ export class PortfolioController {
             activePortfolio.portfolioData = calculatedState.portfolioData;
             this.debouncedSave();
         } catch (error) {
-            console.error('[Controller] fullRender error:', error);
+            ErrorService.handle(error as Error, 'Controller.fullRender');
+            this.view.showToast('계산 중 오류가 발생했습니다.', 'error');
             // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+        } finally {
+            // 로딩 UI 숨김
+            this.view.hideCalculationLoading();
         }
     }
 

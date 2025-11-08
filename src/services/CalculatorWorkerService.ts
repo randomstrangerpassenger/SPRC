@@ -7,6 +7,8 @@
 
 import type { Stock, CalculatedStock, Currency } from '../types';
 import { Calculator } from '../calculator';
+import { CONFIG } from '../constants';
+import { ErrorService } from '../errorService';
 import Decimal from 'decimal.js';
 
 export class CalculatorWorkerService {
@@ -14,6 +16,7 @@ export class CalculatorWorkerService {
     private isWorkerAvailable: boolean = false;
     private pendingRequests: Map<string, { resolve: (value: any) => void; reject: (reason: any) => void }> = new Map();
     private requestId: number = 0;
+    private fallbackCount: number = 0; // Track fallback occurrences
 
     constructor() {
         this.initializeWorker();
@@ -89,13 +92,13 @@ export class CalculatorWorkerService {
 
             this.worker.postMessage({ type, data, requestId });
 
-            // Timeout after 10 seconds
+            // Dynamic timeout (configurable via environment variable)
             setTimeout(() => {
                 if (this.pendingRequests.has(requestId)) {
                     this.pendingRequests.delete(requestId);
                     reject(new Error('Worker request timeout'));
                 }
-            }, 10000);
+            }, CONFIG.WORKER_TIMEOUT);
         });
     }
 
@@ -120,8 +123,7 @@ export class CalculatorWorkerService {
                     currentTotal: new Decimal(result.currentTotal),
                 };
             } catch (error) {
-                console.warn('[CalculatorWorkerService] Worker failed, falling back to sync:', error);
-                this.isWorkerAvailable = false;
+                this.handleWorkerFailure(error as Error, 'calculatePortfolioState');
             }
         }
 
@@ -153,13 +155,35 @@ export class CalculatorWorkerService {
                     percentage: new Decimal(item.percentage),
                 }));
             } catch (error) {
-                console.warn('[CalculatorWorkerService] Worker failed, falling back to sync:', error);
-                this.isWorkerAvailable = false;
+                this.handleWorkerFailure(error as Error, 'calculateSectorAnalysis');
             }
         }
 
         // Fallback to synchronous calculator
         return Calculator.calculateSectorAnalysis(portfolioData, currentCurrency);
+    }
+
+    /**
+     * @description Handle worker failure and fallback
+     */
+    private handleWorkerFailure(error: Error, context: string): void {
+        this.fallbackCount++;
+        ErrorService.handle(error, `CalculatorWorkerService.${context}`);
+
+        console.warn(
+            `[CalculatorWorkerService] Worker failed (${this.fallbackCount} times), falling back to sync:`,
+            error.message
+        );
+
+        this.isWorkerAvailable = false;
+
+        // Attempt to reinitialize worker after 3 failures
+        if (this.fallbackCount >= 3 && this.fallbackCount % 3 === 0) {
+            console.log('[CalculatorWorkerService] Attempting to reinitialize worker...');
+            setTimeout(() => {
+                this.initializeWorker();
+            }, 1000);
+        }
     }
 
     /**
