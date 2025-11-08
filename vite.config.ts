@@ -16,12 +16,22 @@ export default defineConfig(({ mode }) => {
         defaultExtractor: (content) => content.match(/[\w-/:]+(?<!:)/g) || [],
         safelist: {
           standard: ['dark-mode', 'sr-only', 'skip-link', 'modal-open'],
-          deep: [/^btn/, /^toast/, /^modal/, /^virtual-/, /^error-/, /^text-/],
-          greedy: [/data-/, /aria-/]
+          // ===== [Phase 1-5 최적화] CSS Safelist 구체화 =====
+          deep: [/^btn-/, /^toast-/, /^modal-/, /^virtual-/, /^error-/, /^text-/],
+          greedy: [/aria-/]  // data- 속성 제거, aria-만 유지
+          // ===== [Phase 1-5 최적화 끝] =====
         }
       })
     ] : [],
     // ===== [Phase 3.3 최적화 끝] =====
+
+    // ===== [Phase 1-1 최적화] 백엔드 의존성 분리 =====
+    build: {
+      rollupOptions: {
+        external: ['express', 'nodemailer', 'cors']
+      }
+    },
+    // ===== [Phase 1-1 최적화 끝] =====
 
     esbuild: {
       target: 'esnext', // # 문법 지원은 유지

@@ -159,11 +159,10 @@ export class DataStore {
             const allSnapshots = (await this.loadSnapshots()) || {};
             const portfolioSnapshots = allSnapshots[snapshot.portfolioId] || [];
 
-            // 새 스냅샷 추가
-            portfolioSnapshots.push(snapshot);
-
-            // 날짜순 정렬 (최신순)
-            portfolioSnapshots.sort((a, b) => b.timestamp - a.timestamp);
+            // ===== [Phase 1-4 최적화] 스냅샷 정렬 로직 개선 =====
+            // 새 스냅샷은 항상 최신이므로 unshift로 맨 앞에 추가 (O(1) vs O(n log n))
+            portfolioSnapshots.unshift(snapshot);
+            // ===== [Phase 1-4 최적화 끝] =====
 
             // 최대 365개 스냅샷 유지 (1년치)
             if (portfolioSnapshots.length > 365) {

@@ -4,7 +4,10 @@ import { PortfolioView } from '../view';
 import { Calculator } from '../calculator';
 import { ErrorService } from '../errorService';
 import { t } from '../i18n';
-import { ExcelExportService, PDFReportService, EmailService, type EmailConfig } from '../services';
+// ===== [Phase 2-1 최적화] 대형 서비스를 동적 임포트로 변경 =====
+import type { EmailConfig } from '../services';
+// ExcelExportService, PDFReportService, EmailService는 동적 임포트 사용
+// ===== [Phase 2-1 최적화 끝] =====
 
 /**
  * @class DataManager
@@ -127,6 +130,7 @@ export class DataManager {
 
     /**
      * @description Excel 파일 내보내기 (exceljs 사용)
+     * ===== [Phase 2-1 최적화] 동적 임포트로 변경 =====
      */
     async handleExportExcel(): Promise<void> {
         try {
@@ -136,6 +140,8 @@ export class DataManager {
                 return;
             }
 
+            // 동적 임포트: exceljs는 사용자가 Export 버튼을 클릭할 때만 로드됨
+            const { ExcelExportService } = await import('../services/ExcelExportService');
             await ExcelExportService.exportPortfolioToExcel(activePortfolio);
             this.view.showToast('Excel 파일 내보내기 완료', 'success');
         } catch (error) {
@@ -146,6 +152,7 @@ export class DataManager {
 
     /**
      * @description PDF 리포트 생성 (jspdf, html2canvas 사용)
+     * ===== [Phase 2-1 최적화] 동적 임포트로 변경 =====
      */
     async handleGeneratePDFReport(): Promise<void> {
         try {
@@ -155,6 +162,8 @@ export class DataManager {
                 return;
             }
 
+            // 동적 임포트: jspdf, html2canvas는 사용자가 PDF 생성을 요청할 때만 로드됨
+            const { PDFReportService } = await import('../services/PDFReportService');
             await PDFReportService.generatePortfolioReport(activePortfolio);
             this.view.showToast('PDF 리포트 생성 완료', 'success');
         } catch (error) {
@@ -165,6 +174,7 @@ export class DataManager {
 
     /**
      * @description 이메일로 리포트 전송 (nodemailer 사용)
+     * ===== [Phase 2-1 최적화] 동적 임포트로 변경 =====
      */
     async handleSendEmailReport(
         toEmail: string,
@@ -177,6 +187,9 @@ export class DataManager {
                 this.view.showToast('전송할 포트폴리오 데이터가 없습니다.', 'info');
                 return;
             }
+
+            // 동적 임포트: EmailService는 사용자가 이메일 전송을 요청할 때만 로드됨
+            const { EmailService } = await import('../services/EmailService');
 
             // 이메일 서버 상태 확인
             const isServerRunning = await EmailService.checkServerHealth();

@@ -2,7 +2,9 @@
 import { CONFIG } from './constants';
 import { getRatioSum, escapeHTML } from './utils';
 import { t } from './i18n';
-import Decimal from 'decimal.js';
+// ===== [Phase 2-2 최적화] UI에서 불필요한 Decimal import 제거 =====
+// import Decimal from 'decimal.js'; // UI 렌더링에서는 사용하지 않음
+// ===== [Phase 2-2 최적화 끝] =====
 import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot, DOMElements } from './types';
 import type { Chart } from 'chart.js';
 
