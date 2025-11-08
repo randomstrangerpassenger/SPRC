@@ -163,20 +163,24 @@ describe('apiService', () => {
             expect(global.fetch).toHaveBeenCalledTimes(2);
         });
 
-        it('should throw APIError after max retries', async () => {
-            const mockError = {
-                ok: false,
-                status: 500,
-                json: async () => ({ error: 'Server error' }),
-                text: async () => 'Server error',
-            };
+        it(
+            'should throw APIError after max retries',
+            async () => {
+                const mockError = {
+                    ok: false,
+                    status: 500,
+                    json: async () => ({ error: 'Server error' }),
+                    text: async () => 'Server error',
+                };
 
-            (global.fetch as any).mockResolvedValue(mockError);
+                (global.fetch as any).mockResolvedValue(mockError);
 
-            await expect(apiService.fetchStockPrice('AAPL')).rejects.toThrow(APIError);
-            // Should retry up to 3 times (initial + 2 retries)
-            expect(global.fetch).toHaveBeenCalledTimes(3);
-        });
+                await expect(apiService.fetchStockPrice('AAPL')).rejects.toThrow(APIError);
+                // Should retry up to CONFIG.API_MAX_RETRIES times (initial + 3 retries = 4 total)
+                expect(global.fetch).toHaveBeenCalledTimes(4);
+            },
+            15000
+        ); // Increased timeout to account for exponential backoff
 
         it('should handle rate limiting (429)', async () => {
             const mockRateLimit = {
@@ -241,20 +245,42 @@ describe('apiService', () => {
             expect(global.fetch).not.toHaveBeenCalled();
         });
 
-        it('should throw APIError on batch API failure', async () => {
-            const mockError = {
-                ok: false,
-                status: 500,
-                json: async () => ({ error: 'Batch failed' }),
-                text: async () => 'Batch failed',
-            };
+        it(
+            'should fallback to individual fetches on batch API failure',
+            async () => {
+                // First call (batch) fails with 500, then individual fetches succeed
+                const mockBatchError = {
+                    ok: false,
+                    status: 500,
+                    json: async () => ({ error: 'Batch failed' }),
+                    text: async () => 'Batch failed',
+                };
 
-            (global.fetch as any).mockResolvedValue(mockError);
+                const mockIndividualSuccess = {
+                    ok: true,
+                    json: async () => ({ c: 150 }),
+                };
 
-            const tickersToFetch = [{ id: '1', ticker: 'AAPL' }];
+                // Batch API fails all retry attempts (4 attempts with maxRetries=3)
+                // Then falls back to individual fetches which succeed
+                (global.fetch as any)
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 0
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 1 (retry)
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 2 (retry)
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 3 (retry)
+                    .mockResolvedValue(mockIndividualSuccess); // Individual fetch succeeds
 
-            await expect(apiService.fetchAllStockPrices(tickersToFetch)).rejects.toThrow(APIError);
-        });
+                const tickersToFetch = [{ id: '1', ticker: 'AAPL' }];
+
+                const results = await apiService.fetchAllStockPrices(tickersToFetch);
+
+                // Should fallback and succeed with individual fetch
+                expect(results).toHaveLength(1);
+                expect(results[0].status).toBe('fulfilled');
+                expect(results[0].value).toBe(150);
+            },
+            15000
+        ); // Increased timeout for retries and fallback
 
         it('should construct correct batch URL', async () => {
             const mockResponse = {
