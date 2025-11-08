@@ -1,4 +1,4 @@
-// src/calculator.test.ts (전략 패턴 적용)
+// src/calculator.test.ts
 
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';

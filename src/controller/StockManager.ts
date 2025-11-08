@@ -119,7 +119,7 @@ export class StockManager {
             if (!activePortfolio)
                 return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
-            // ===== [Phase 1.1 최적화] 메타데이터 필드는 재계산 없이 DOM만 업데이트 =====
+            // 메타데이터 필드는 재계산 없이 DOM만 업데이트
             if (field === 'name' || field === 'ticker') {
                 // 이름과 티커 변경은 계산에 영향을 주지 않으므로 가상 스크롤 데이터만 업데이트
                 this.view.updateStockInVirtualData(stockId, field, value);
@@ -128,7 +128,7 @@ export class StockManager {
             }
 
             if (field === 'sector') {
-                // ===== [Phase 2-3 최적화] 섹터 변경 시 캐시 무효화 최소화 =====
+                // 섹터 변경 시 캐시 무효화 최소화
                 // 섹터는 메타데이터이므로 계산 캐시를 유지하고 섹터 분석만 재계산
                 this.view.updateStockInVirtualData(stockId, field, value);
 
@@ -151,15 +151,13 @@ export class StockManager {
 
                 this.debouncedSave();
                 return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
-                // ===== [Phase 2-3 최적화 끝] =====
             }
-            // ===== [Phase 1.1 최적화 끝] =====
 
-            // currentPrice 변경 시 부분 업데이트 (최적화)
+            // currentPrice 변경 시 부분 업데이트
             if (field === 'currentPrice') {
                 const stock = activePortfolio.portfolioData.find((s) => s.id === stockId);
                 if (stock) {
-                    // ===== [Phase 2-3 최적화] 개별 주식만 재계산 =====
+                    // 개별 주식만 재계산
                     // 해당 주식의 메트릭만 재계산하고 행 업데이트
                     const calculatedMetrics = Calculator.calculateStockMetrics(stock);
                     const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
@@ -192,7 +190,6 @@ export class StockManager {
                             activePortfolio.settings.currentCurrency
                         )
                     );
-                    // ===== [Phase 2-3 최적화 끝] =====
                 }
 
                 this.debouncedSave();

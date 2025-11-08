@@ -5,7 +5,7 @@ import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
 
-// ===== [Phase 2-2 최적화] UI 렌더링용 헬퍼 함수 =====
+// UI 렌더링용 헬퍼 함수
 /**
  * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
  */
@@ -14,7 +14,6 @@ function toNumber(value: Decimal | number | null | undefined): number {
     if (value instanceof Decimal) return value.toNumber();
     return Number(value);
 }
-// ===== [Phase 2-2 최적화 끝] =====
 
 /**
  * @class ModalManager
@@ -225,17 +224,16 @@ export class ModalManager {
             return idB.localeCompare(idA);
         });
 
-        // ===== [Phase 3 최적화] DocumentFragment로 DOM 조작 최소화 =====
+        // DocumentFragment로 DOM 조작 최소화
         const fragment = document.createDocumentFragment();
         sorted.forEach((tx) => {
             const tr = document.createElement('tr');
             tr.dataset.txId = tx.id;
 
-            // ===== [Phase 2-2 최적화] Decimal을 네이티브 number로 변환 =====
+            // Decimal을 네이티브 number로 변환
             const quantity = toNumber(tx.quantity);
             const price = toNumber(tx.price);
             const total = quantity * price;
-            // ===== [Phase 2-2 최적화 끝] =====
 
             // Date cell
             const dateTd = document.createElement('td');
@@ -294,7 +292,6 @@ export class ModalManager {
         });
 
         listBody.appendChild(fragment);
-        // ===== [Phase 3 최적화 끝] =====
     }
 
     /**

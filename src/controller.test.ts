@@ -1,4 +1,4 @@
-// src/controller.test.ts (Refactored for Pub/Sub, Async State, testUtils, and Mock Fixes)
+// src/controller.test.ts
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Decimal from 'decimal.js';

@@ -1,10 +1,9 @@
-// vite.config.ts (Vitest 4.x용 단순화 버전)
+// vite.config.ts
 
 import { defineConfig, loadEnv } from 'vite';
 import purgecss from 'vite-plugin-purgecss';
-// ===== [Phase 3-2 최적화] PWA 플러그인 추가 =====
+// PWA 플러그인 추가
 import { VitePWA } from 'vite-plugin-pwa';
-// ===== [Phase 3-2 최적화 끝] =====
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -12,9 +11,9 @@ export default defineConfig(({ mode }) => {
   return {
     base: './',
 
-    // ===== [Phase 3.3 최적화] CSS Purging 플러그인 추가 =====
+    // CSS Purging 플러그인 추가
     plugins: [
-      // ===== [Phase 3-2 최적화] PWA 플러그인 설정 =====
+      // PWA 플러그인 설정
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
@@ -69,30 +68,26 @@ export default defineConfig(({ mode }) => {
           enabled: false // 개발 모드에서는 비활성화
         }
       }),
-      // ===== [Phase 3-2 최적화 끝] =====
       ...(mode === 'production' ? [
         purgecss({
           content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
           defaultExtractor: (content) => content.match(/[\w-/:]+(?<!:)/g) || [],
           safelist: {
             standard: ['dark-mode', 'sr-only', 'skip-link', 'modal-open'],
-            // ===== [Phase 1-5 최적화] CSS Safelist 구체화 =====
+            // CSS Safelist 구체화 
             deep: [/^btn-/, /^toast-/, /^modal-/, /^virtual-/, /^error-/, /^text-/],
             greedy: [/aria-/]  // data- 속성 제거, aria-만 유지
-            // ===== [Phase 1-5 최적화 끝] =====
           }
         })
       ] : [])
     ],
-    // ===== [Phase 3.3 최적화 끝] =====
 
-    // ===== [Phase 1-1 최적화] 백엔드 의존성 분리 =====
+    // 백엔드 의존성 분리
     build: {
       rollupOptions: {
         external: ['express', 'nodemailer', 'cors']
       }
     },
-    // ===== [Phase 1-1 최적화 끝] =====
 
     esbuild: {
       target: 'esnext', // # 문법 지원은 유지

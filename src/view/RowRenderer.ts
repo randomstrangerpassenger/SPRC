@@ -16,7 +16,7 @@ import {
     getGridTemplate,
 } from './DOMHelpers';
 
-// ===== [Phase 2-2 최적화] UI 렌더링용 헬퍼 함수 =====
+// UI 렌더링용 헬퍼 함수
 /**
  * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
  */
@@ -25,7 +25,6 @@ function toNumber(value: Decimal | number | null | undefined): number {
     if (value instanceof Decimal) return value.toNumber();
     return Number(value);
 }
-// ===== [Phase 2-2 최적화 끝] =====
 
 /**
  * @description 주식 행 Fragment를 생성합니다.
@@ -210,7 +209,7 @@ export function createStockRowFragment(
         profitLossRate: 0,
     };
 
-    // ===== [Phase 2-2 최적화] Decimal을 네이티브 number로 변환 =====
+    // Decimal을 네이티브 number로 변환
     const quantity = toNumber(metrics.quantity);
     const avgBuyPrice = toNumber(metrics.avgBuyPrice);
     const currentAmount = toNumber(metrics.currentAmount);
@@ -219,7 +218,6 @@ export function createStockRowFragment(
 
     const profitClass = profitLoss < 0 ? 'text-sell' : 'text-buy';
     const profitSign = profitLoss > 0 ? '+' : '';
-    // ===== [Phase 2-2 최적화 끝] =====
 
     const createOutputCell = (
         label: string,

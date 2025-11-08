@@ -113,7 +113,7 @@ export function createOutputCell(
 
 /**
  * @description 그리드 템플릿을 반환합니다 (반응형).
- * ===== [Phase 3 최적화] 메모이제이션 적용 =====
+ * 메모이제이션 적용
  */
 const _getGridTemplateImpl = (mainMode: 'add' | 'sell' | 'simple'): string => {
     const isMobile = window.innerWidth <= 768;
@@ -140,4 +140,3 @@ export const getGridTemplate = memoizeWithKey(
     (mainMode) => `${mainMode}:${window.innerWidth <= 768}`,
     6 // 캐시 크기: add/sell/simple × mobile/desktop = 6가지 조합
 );
-// ===== [Phase 3 최적화 끝] =====

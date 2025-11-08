@@ -22,7 +22,7 @@ export function escapeHTML(str: string | number | null | undefined): string {
 
 /**
  * @description 포트폴리오 데이터에서 목표 비율의 합계를 Decimal 객체로 계산합니다.
- * ===== [Phase 3 최적화] 메모이제이션 적용 =====
+ * 메모이제이션 적용
  * @param portfolioData - 포트폴리오 주식 객체 배열
  * @returns 목표 비율 합계
  */
@@ -47,7 +47,6 @@ export const getRatioSum = memoizeWithKey(
             : 'null',
     20 // 캐시 크기: 최근 20개의 포트폴리오 상태 저장
 );
-// ===== [Phase 3 최적화 끝] =====
 
 /**
  * @description 숫자를 통화 형식의 문자열로 변환합니다. (Enhanced with i18n)
@@ -93,11 +92,10 @@ export function debounce<T extends (...args: any[]) => any>(
  * @returns 고유 ID 문자열
  */
 export function generateId(): string {
-    // ===== [Phase 3.4 최적화] nanoid 대체 =====
+    // nanoid 대체
     // nanoid를 간단한 유틸 함수로 교체하여 번들 크기 감소
     // Date.now()와 Math.random()을 조합하여 충분히 고유한 ID 생성
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
-    // ===== [Phase 3.4 최적화 끝] =====
 }
 
 /**

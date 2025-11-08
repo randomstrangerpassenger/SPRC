@@ -5,7 +5,7 @@ import Decimal from 'decimal.js';
 import { CONFIG } from './constants';
 import type { Stock, CalculatedStock } from './types';
 
-// --- ⬇️ Mock i18n BEFORE importing validator.js ⬇️ ---
+// Mock i18n BEFORE importing validator.js
 vi.mock('./i18n', () => ({
     t: vi.fn((key: string, replacements?: Record<string, string>) => {
         // Provide Korean messages needed for the tests
@@ -24,7 +24,6 @@ vi.mock('./i18n', () => ({
         return key; // Fallback
     }),
 }));
-// --- ⬆️ Mock i18n ⬆️ ---
 
 describe('Validator.validateNumericInput', () => {
     it('유효한 숫자 문자열을 올바르게 처리해야 합니다.', () => {

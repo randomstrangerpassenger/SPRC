@@ -1,5 +1,5 @@
-// js/state.ts (Refactored with DataStore separation)
-import { generateId } from './utils'; // ===== [Phase 3.4 최적화] generateId 제거 =====
+// js/state.ts
+import { generateId } from './utils'; // generateId 제거
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
@@ -129,9 +129,8 @@ export class PortfolioState {
                 ) {
                     validatedPortfolios[newId] = {
                         id: newId,
-                        // ▼▼▼ [수정] DOMPurify.sanitize 적용 ▼▼▼
+                        // DOMPurify.sanitize 적용
                         name: DOMPurify.sanitize(portfolio.name),
-                        // ▲▲▲ [수정] ▲▲▲
                         settings: {
                             mainMode: ['add', 'sell', 'simple'].includes(
                                 portfolio.settings?.mainMode
@@ -157,13 +156,12 @@ export class PortfolioState {
 
                                   return {
                                       id: stock.id || `s-${generateId()}`,
-                                      // ▼▼▼ [수정] DOMPurify.sanitize 적용 ▼▼▼
+                                      // DOMPurify.sanitize 적용
                                       name: DOMPurify.sanitize(
                                           stock.name || t('defaults.newStock')
                                       ),
                                       ticker: DOMPurify.sanitize(stock.ticker || ''),
                                       sector: DOMPurify.sanitize(stock.sector || ''),
-                                      // ▲▲▲ [수정] ▲▲▲
                                       targetRatio: targetRatio.isNaN()
                                           ? new Decimal(0)
                                           : targetRatio,
@@ -562,7 +560,7 @@ export class PortfolioState {
             throw new Error('Imported data structure is invalid.');
         }
 
-        // ▼▼▼ [수정] _validateAndUpgradeData가 소독을 처리 ▼▼▼
+        // _validateAndUpgradeData가 소독을 처리
         const { meta, portfolios } = this._validateAndUpgradeData(
             importedData.meta,
             importedData.portfolios

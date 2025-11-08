@@ -1,4 +1,4 @@
-// src/controller.ts (리팩토링: 모듈화)
+// src/controller.ts
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
@@ -10,9 +10,7 @@ import { generateSectorAnalysisHTML } from './templates';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
 
-// ===== [Phase 2.2 Web Worker 통합] =====
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
-// ===== [Phase 2.2 Web Worker 통합 끝] =====
 
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
@@ -20,13 +18,12 @@ import { StockManager } from './controller/StockManager';
 import { TransactionManager } from './controller/TransactionManager';
 import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
-// ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+// 다크 모드 관리 분리
 import { DarkModeManager } from './DarkModeManager';
-// ===== [Phase 3-1 최적화 끝] =====
 
 /**
  * @class PortfolioController
- * @description 포트폴리오 컨트롤러 (리팩토링: 모듈화)
+ * @description 포트폴리오 컨트롤러
  */
 export class PortfolioController {
     state: PortfolioState;
@@ -39,13 +36,10 @@ export class PortfolioController {
     private transactionManager: TransactionManager;
     private calculationManager: CalculationManager;
     private dataManager: DataManager;
-    // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+    // 다크 모드 관리 분리
     private darkModeManager: DarkModeManager;
-    // ===== [Phase 3-1 최적화 끝] =====
 
-    // ===== [Phase 2.2 Web Worker 통합] =====
     private calculatorWorker = getCalculatorWorkerService();
-    // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
@@ -66,9 +60,8 @@ export class PortfolioController {
             this.getInvestmentAmountInKRW.bind(this)
         );
         this.dataManager = new DataManager(this.state, this.view);
-        // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+        // 다크 모드 관리 분리
         this.darkModeManager = new DarkModeManager();
-        // ===== [Phase 3-1 최적화 끝] =====
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
@@ -99,18 +92,15 @@ export class PortfolioController {
             console.log('[Controller] Event listeners cleaned up');
         }
 
-        // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+        // 다크 모드 관리 분리
         this.darkModeManager.cleanup();
-        // ===== [Phase 3-1 최적화 끝] =====
     }
 
     /**
      * @description 초기 UI 설정
      */
     setupInitialUI(): void {
-        // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
         this.darkModeManager.initialize();
-        // ===== [Phase 3-1 최적화 끝] =====
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {
@@ -147,13 +137,13 @@ export class PortfolioController {
 
             this.fullRender();
 
-            // Phase 4.2: 환율 자동 로드
+            // 환율 자동 로드
             this.loadExchangeRate();
         }
     }
 
     /**
-     * @description 환율 자동 로드 (Phase 4.2)
+     * @description 환율 자동 로드
      */
     async loadExchangeRate(): Promise<void> {
         try {
@@ -305,13 +295,11 @@ export class PortfolioController {
         this.view.showCalculationLoading();
 
         try {
-            // ===== [Phase 2.2 Web Worker 통합] =====
             const calculatedState = await this.calculatorWorker.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
                 exchangeRate: activePortfolio.settings.exchangeRate,
                 currentCurrency: activePortfolio.settings.currentCurrency,
             });
-            // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
             this.view.renderTable(
                 calculatedState.portfolioData,
@@ -322,12 +310,10 @@ export class PortfolioController {
             const ratioSum = getRatioSum(activePortfolio.portfolioData);
             this.view.updateRatioSum(ratioSum.toNumber());
 
-            // ===== [Phase 2.2 Web Worker 통합] =====
             const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
                 calculatedState.portfolioData,
                 activePortfolio.settings.currentCurrency
             );
-            // ===== [Phase 2.2 Web Worker 통합 끝] =====
             this.view.displaySectorAnalysis(
                 generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
             );
@@ -368,25 +354,21 @@ export class PortfolioController {
         if (!activePortfolio) return;
 
         try {
-            // ===== [Phase 2.2 Web Worker 통합] =====
             const calculatedState = await this.calculatorWorker.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
                 exchangeRate: activePortfolio.settings.exchangeRate,
                 currentCurrency: activePortfolio.settings.currentCurrency,
             });
-            // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
             this.view.updateVirtualTableData(calculatedState.portfolioData);
 
             const ratioSum = getRatioSum(activePortfolio.portfolioData);
             this.view.updateRatioSum(ratioSum.toNumber());
 
-            // ===== [Phase 2.2 Web Worker 통합] =====
             const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
                 calculatedState.portfolioData,
                 activePortfolio.settings.currentCurrency
             );
-            // ===== [Phase 2.2 Web Worker 통합 끝] =====
             this.view.displaySectorAnalysis(
                 generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
             );
@@ -441,7 +423,7 @@ export class PortfolioController {
     }
 
     /**
-     * @description 자산 배분 템플릿 적용 (Phase 3.2)
+     * @description 자산 배분 템플릿 적용
      */
     handleApplyTemplate(templateName: string): void {
         const activePortfolio = this.state.getActivePortfolio();
@@ -611,7 +593,7 @@ export class PortfolioController {
     }
 
     /**
-     * @description 리스크 경고 확인 (Phase 4.3)
+     * @description 리스크 경고 확인
      */
     checkRiskWarnings(
         portfolioData: import('./types').CalculatedStock[],
@@ -814,14 +796,13 @@ export class PortfolioController {
 
     /**
      * @description 다크 모드 토글
-     * ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+     * 다크 모드 관리 분리
      */
     handleToggleDarkMode(): void {
         this.darkModeManager.toggle();
         this.view.destroyChart();
         this.fullRender(); // async but we don't await
     }
-    // ===== [Phase 3-1 최적화 끝] =====
 
     /**
      * @description 페이지 종료 시 저장

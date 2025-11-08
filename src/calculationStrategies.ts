@@ -1,4 +1,4 @@
-// src/calculationStrategies.ts (DRY 원칙 적용)
+// src/calculationStrategies.ts
 import Decimal from 'decimal.js';
 import type { CalculatedStock } from './types.ts';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';

@@ -1,4 +1,4 @@
-// playwright.config.ts (수정본)
+// playwright.config.ts
 
 import { defineConfig, devices } from '@playwright/test';
 
@@ -8,10 +8,10 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30 * 1000,
   
-  // [수정] CI 환경(Netlify 빌드)에서는 실패 시 1번만 재시도합니다.
+  // CI 환경(Netlify 빌드)에서는 실패 시 1번만 재시도합니다.
   retries: process.env.CI ? 1 : 0,
 
-  // [수정] webServer 설정은 그대로 유지합니다.
+  // webServer 설정은 그대로 유지합니다.
   webServer: {
     command: 'npm run dev',
     url: baseURL,
@@ -23,7 +23,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  // [수정] CI 환경에서는 Chromium만 사용하고, 로컬에서는 3개 모두 사용합니다.
+  // CI 환경에서는 Chromium만 사용하고, 로컬에서는 3개 모두 사용합니다.
   projects: process.env.CI
     ? [
         {

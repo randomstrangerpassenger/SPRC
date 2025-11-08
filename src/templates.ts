@@ -106,7 +106,7 @@ export function generateAddModeResultsHTML(
                   .join('')
             : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
-    // Phase 3.1: 비용 계산
+    // 비용 계산
     const totalBuyAmount = summary?.additionalInvestment ?? new Decimal(0);
     const feeRateDec = new Decimal(feeRate ?? 0).div(100);
     const estimatedFee = totalBuyAmount.times(feeRateDec);

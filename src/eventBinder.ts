@@ -1,4 +1,4 @@
-// src/eventBinder.ts (Updated with Pub/Sub emit)
+// src/eventBinder.ts
 import { debounce } from './utils';
 import Decimal from 'decimal.js';
 import type { PortfolioView } from './view';
@@ -38,7 +38,7 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     dom.normalizeRatiosBtn?.addEventListener('click', () => view.emit('normalizeRatiosClicked'));
     dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
-    // 템플릿 적용 버튼 (Phase 3.2)
+    // 템플릿 적용 버튼
     dom.applyTemplateBtn?.addEventListener('click', () => {
         const select = dom.allocationTemplateSelect as HTMLSelectElement | null;
         if (select && select.value) {

@@ -4,7 +4,7 @@ import { CONFIG } from './constants';
 /**
  * @class DarkModeManager
  * @description 다크 모드 관리를 담당하는 클래스
- * ===== [Phase 3-1 최적화] 대형 파일 분리 =====
+ * 대형 파일 분리
  */
 export class DarkModeManager {
     #darkModeMediaQuery?: MediaQueryList;
@@ -58,4 +58,3 @@ export class DarkModeManager {
         }
     }
 }
-// ===== [Phase 3-1 최적화 끝] =====

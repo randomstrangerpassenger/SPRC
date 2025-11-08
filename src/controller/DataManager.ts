@@ -4,10 +4,9 @@ import { PortfolioView } from '../view';
 import { Calculator } from '../calculator';
 import { ErrorService } from '../errorService';
 import { t } from '../i18n';
-// ===== [Phase 2-1 최적화] 대형 서비스를 동적 임포트로 변경 =====
+// 대형 서비스를 동적 임포트로 변경
 import type { EmailConfig } from '../services';
 // ExcelExportService, PDFReportService, EmailService는 동적 임포트 사용
-// ===== [Phase 2-1 최적화 끝] =====
 
 /**
  * @class DataManager
@@ -130,7 +129,7 @@ export class DataManager {
 
     /**
      * @description Excel 파일 내보내기 (exceljs 사용)
-     * ===== [Phase 2-1 최적화] 동적 임포트로 변경 =====
+     * 동적 임포트로 변경
      */
     async handleExportExcel(): Promise<void> {
         try {
@@ -152,7 +151,7 @@ export class DataManager {
 
     /**
      * @description PDF 리포트 생성 (jspdf, html2canvas 사용)
-     * ===== [Phase 2-1 최적화] 동적 임포트로 변경 =====
+     * 동적 임포트로 변경
      */
     async handleGeneratePDFReport(): Promise<void> {
         try {
@@ -174,7 +173,7 @@ export class DataManager {
 
     /**
      * @description 이메일로 리포트 전송 (nodemailer 사용)
-     * ===== [Phase 2-1 최적화] 동적 임포트로 변경 =====
+     * 동적 임포트로 변경
      */
     async handleSendEmailReport(
         toEmail: string,

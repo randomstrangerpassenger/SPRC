@@ -1,4 +1,4 @@
-// src/apiService.ts (강화된 오류 처리)
+// src/apiService.ts
 import type { FetchStockResult } from './types.ts';
 import { CONFIG } from './constants.ts';
 

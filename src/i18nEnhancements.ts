@@ -6,7 +6,7 @@
 import Decimal from 'decimal.js';
 import type { Currency } from './types';
 
-// ===== [Phase 1.2 최적화] Intl.NumberFormat 캐싱 =====
+// Intl.NumberFormat 캐싱
 /**
  * @description NumberFormat 인스턴스 캐시
  * - 키: locale + JSON.stringify(options)
@@ -41,7 +41,6 @@ function getCachedNumberFormat(
 
     return formatter;
 }
-// ===== [Phase 1.2 최적화 끝] =====
 
 /**
  * @description 현재 언어 설정 가져오기

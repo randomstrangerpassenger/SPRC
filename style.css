@@ -90,7 +90,7 @@ body.dark-mode .stock-outputs {
 body.dark-mode .output-cell .label { color: #9ab; }
 .output-cell .value { font-weight: bold; font-size: 1.1rem; }
 
-/* ▼▼▼▼▼ [추가] 가상 스크롤 및 새 테이블 그리드 스타일 ▼▼▼▼▼ */
+/* 가상 스크롤 및 새 테이블 그리드 스타일 */
 .virtual-table-header, .virtual-row-inputs, .virtual-row-outputs {
     display: grid;
     /* 그리드 템플릿은 view.js에서 모드에 따라 동적으로 설정됩니다. */
@@ -209,7 +209,7 @@ body.dark-mode input:disabled { background-color: #2a2a2a; }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
 .btn-controls { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ⬇️ [수정] data-variant 속성 선택자 사용 */
+/* data-variant 속성 선택자 사용 */
 .btn[data-variant="green"] { background: var(--green-grad); }
 .btn[data-variant="orange"] { background: var(--orange-grad); }
 .btn[data-variant="blue"] { background: var(--blue-grad); }
@@ -219,8 +219,6 @@ body.dark-mode input:disabled { background-color: #2a2a2a; }
     padding: 6px 12px; 
     font-size: 0.9rem; 
 }
-/* ⬆️ [수정] */
-
 .btn--small { padding: 8px 16px; font-size: 0.9rem; }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -314,7 +312,7 @@ body.dark-mode .guide-box--sell { background-color: #4a1f1f; }
     font-size: 1.8rem; box-shadow: 0 5px 20px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; padding: 0;
 }
 
-/* --- [추가] 스크린 리더 전용 클래스 --- */
+/* 스크린 리더 전용 클래스 */
 .sr-only {
     position: absolute;
     width: 1px;
@@ -327,7 +325,7 @@ body.dark-mode .guide-box--sell { background-color: #4a1f1f; }
     border: 0;
 }
 
-/* --- [추가] 키보드 네비게이션 시 포커스 스타일 --- */
+/* 키보드 네비게이션 시 포커스 스타일 */
 body.keyboard-nav *:focus {
     outline: 3px solid var(--accent-color); /* 포커스 시 강조 아웃라인 */
     outline-offset: 2px; /* 아웃라인과 요소 사이 간격 */
@@ -382,7 +380,7 @@ body.dark-mode .skeleton {
     .guide-box { padding: 15px; }
     .dark-mode-toggle { bottom: 15px; right: 15px; width: 50px; height: 50px; }
     
-    /* ▼▼▼▼▼ [추가] 가상 테이블 모바일 스타일 ▼▼▼▼▼ */
+    /* 가상 테이블 모바일 스타일 */
     .virtual-table-header, .virtual-row-inputs, .virtual-row-outputs {
         font-size: 0.85rem;
         padding: 0 4px;
@@ -398,7 +396,6 @@ body.dark-mode .skeleton {
         padding: 4px 8px;
         font-size: 0.8rem;
     }
-    /* ▲▲▲▲▲ [추가] ▲▲▲▲▲ */
 }
 @media (max-width: 480px) {
     .header h1 { font-size: var(--font-size-lg); }

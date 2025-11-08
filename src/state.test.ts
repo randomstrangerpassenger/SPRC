@@ -1,4 +1,4 @@
-// js/state.test.ts (async / idb-keyval / testUtils / Assertion Fix)
+// js/state.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PortfolioState } from './state';
 import { CONFIG } from './constants';
@@ -6,15 +6,14 @@ import Decimal from 'decimal.js';
 import { MOCK_PORTFOLIO_1 } from './testUtils';
 import type { Portfolio, Stock } from './types';
 
-// --- ▼▼▼ [신규] idb-keyval 모의(Mock) ▼▼▼ ---
+// idb-keyval 모의(Mock)
 vi.mock('idb-keyval', () => ({
     get: vi.fn(),
     set: vi.fn(),
     del: vi.fn(),
 }));
-// --- ▲▲▲ [신규] ▲▲▲ ---
 
-// --- i18n 모의(Mock) ---
+// i18n 모의(Mock)
 vi.mock('./i18n', () => ({
     t: vi.fn((key: string) => {
         if (key === 'defaults.defaultPortfolioName') return '기본 포트폴리오';
@@ -23,13 +22,11 @@ vi.mock('./i18n', () => ({
         return key;
     }),
 }));
-// --- ▲▲▲ ---
 
-// --- ▼▼▼ [신규] 모의 객체 임포트 ▼▼▼ ---
+// 모의 객체 임포트
 import { get, set, del } from 'idb-keyval';
-// --- ▲▲▲ [신규] ▲▲▲ ---
 
-// [신규] DOMPurify 모의
+// DOMPurify 모의
 vi.mock('dompurify', () => ({
     default: {
         sanitize: vi.fn((input: string) => input),

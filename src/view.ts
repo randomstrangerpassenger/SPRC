@@ -1,10 +1,9 @@
-// src/view.ts (리팩토링: 모듈화)
+// src/view.ts
 import { CONFIG } from './constants';
 import { getRatioSum, escapeHTML } from './utils';
 import { t } from './i18n';
-// ===== [Phase 2-2 최적화] UI에서 불필요한 Decimal import 제거 =====
+// UI에서 불필요한 Decimal import 제거
 // import Decimal from 'decimal.js'; // UI 렌더링에서는 사용하지 않음
-// ===== [Phase 2-2 최적화 끝] =====
 import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot, DOMElements } from './types';
 import type { Chart } from 'chart.js';
 
@@ -16,7 +15,7 @@ import { ResultsRenderer } from './view/ResultsRenderer';
 
 /**
  * @class PortfolioView
- * @description 포트폴리오 UI를 담당하는 View 클래스 (리팩토링: 모듈화)
+ * @description 포트폴리오 UI를 담당하는 View 클래스
  */
 export class PortfolioView {
     dom: DOMElements = {} as DOMElements;
@@ -324,7 +323,7 @@ export class PortfolioView {
         const selector = this.dom.portfolioSelector;
         if (!(selector instanceof HTMLSelectElement)) return;
 
-        // ===== [Phase 3 최적화] DocumentFragment로 DOM 조작 최소화 =====
+        // DocumentFragment로 DOM 조작 최소화
         const fragment = document.createDocumentFragment();
         Object.entries(portfolios).forEach(([id, portfolio]) => {
             const option = document.createElement('option');
@@ -336,7 +335,6 @@ export class PortfolioView {
 
         selector.innerHTML = '';
         selector.appendChild(fragment);
-        // ===== [Phase 3 최적화 끝] =====
     }
 
     /**

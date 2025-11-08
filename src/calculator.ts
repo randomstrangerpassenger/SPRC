@@ -1,4 +1,4 @@
-// src/calculator.ts (Strategy Pattern Applied with LRU Cache)
+// src/calculator.ts
 import Decimal from 'decimal.js';
 import { generateId } from './utils.ts';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';

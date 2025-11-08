@@ -1,5 +1,5 @@
 // src/view/VirtualScrollManager.ts
-// ===== [Phase 4.1 리팩토링] 모듈 분리 =====
+// 모듈 분리
 import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
@@ -7,9 +7,8 @@ import { DECIMAL_ZERO } from '../constants';
 import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
-// ===== [Phase 4.1 리팩토링 끝] =====
 
-// ===== [Phase 2-2 최적화] UI 렌더링용 헬퍼 함수 =====
+// UI 렌더링용 헬퍼 함수
 /**
  * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
  */
@@ -18,7 +17,6 @@ function toNumber(value: Decimal | number | null | undefined): number {
     if (value instanceof Decimal) return value.toNumber();
     return Number(value);
 }
-// ===== [Phase 2-2 최적화 끝] =====
 
 // 가상 스크롤 상수
 const ROW_INPUT_HEIGHT = 60;
@@ -43,12 +41,11 @@ export class VirtualScrollManager {
     #currentMainMode: 'add' | 'sell' | 'simple' = 'add';
     #currentCurrency: 'krw' | 'usd' = 'krw';
 
-    // ===== [Phase 2.1 최적화] DOM 참조 캐싱 =====
+    // DOM 참조 캐싱
     #rowCache: Map<
         string,
         { inputRow: HTMLElement | null; outputRow: HTMLElement | null }
     > = new Map();
-    // ===== [Phase 2.1 최적화 끝] =====
 
     constructor(dom: DOMElements) {
         this.dom = dom;
@@ -125,7 +122,7 @@ export class VirtualScrollManager {
         header.innerHTML = headersHTML;
     }
 
-    // ===== [Phase 4.1 리팩토링] createStockRowFragment는 RowRenderer.ts로 이동 =====
+    // createStockRowFragment는 RowRenderer.ts로 이동
 
     /**
      * @description 가상 테이블을 렌더링합니다 (초기화).
@@ -214,7 +211,7 @@ export class VirtualScrollManager {
             return;
         }
 
-        // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+        // 캐시된 DOM 참조 사용
         let outputRow = this.#rowCache.get(stockId)?.outputRow;
         if (!outputRow) {
             // 캐시 미스 시 querySelector 사용하고 캐시에 저장
@@ -228,11 +225,10 @@ export class VirtualScrollManager {
                 this.#rowCache.set(stockId, { inputRow, outputRow });
             }
         }
-        // ===== [Phase 2.1 최적화 끝] =====
         if (!outputRow || this.#currentMainMode === 'simple') return;
 
         const currency = this.#currentCurrency;
-        // ===== [Phase 2-2 최적화] UI 렌더링에서 Decimal 대신 number 사용 =====
+        // UI 렌더링에서 Decimal 대신 number 사용
         const metrics = calculatedData ?? {
             quantity: 0,
             avgBuyPrice: 0,
@@ -250,7 +246,6 @@ export class VirtualScrollManager {
 
         const profitClass = profitLoss < 0 ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss > 0 ? '+' : '';
-        // ===== [Phase 2-2 최적화 끝] =====
 
         const isMobile = window.innerWidth <= 768;
 
@@ -358,9 +353,8 @@ export class VirtualScrollManager {
         this.#renderedStartIndex = startIndex;
         this.#renderedEndIndex = endIndex;
 
-        // ===== [Phase 2.1 최적화] 캐시 클리어 및 재구성 =====
+        // 캐시 클리어 및 재구성
         this.#rowCache.clear();
-        // ===== [Phase 2.1 최적화 끝] =====
 
         const fragment = document.createDocumentFragment();
         for (let i = startIndex; i < endIndex; i++) {
@@ -371,7 +365,7 @@ export class VirtualScrollManager {
         this.#scrollContent.replaceChildren(fragment);
         this.#scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
 
-        // ===== [Phase 2.1 최적화] 렌더링 후 캐시 채우기 =====
+        // 렌더링 후 캐시 채우기
         for (let i = startIndex; i < endIndex; i++) {
             const stock = this.#virtualData[i];
             const inputRow = this.#scrollContent.querySelector(
@@ -384,7 +378,6 @@ export class VirtualScrollManager {
                 this.#rowCache.set(stock.id, { inputRow, outputRow });
             }
         }
-        // ===== [Phase 2.1 최적화 끝] =====
     }
 
     /**
@@ -393,7 +386,7 @@ export class VirtualScrollManager {
      */
     updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
         portfolioData.forEach((stock) => {
-            // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+            // 캐시된 DOM 참조 사용
             let inputRow = this.#rowCache.get(stock.id)?.inputRow;
             if (!inputRow) {
                 inputRow = this.#scrollContent?.querySelector(
@@ -406,15 +399,13 @@ export class VirtualScrollManager {
                     this.#rowCache.set(stock.id, { inputRow, outputRow });
                 }
             }
-            // ===== [Phase 2.1 최적화 끝] =====
             if (!inputRow) return;
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
             if (targetRatioInput instanceof HTMLInputElement) {
-                // ===== [Phase 2-2 최적화] Decimal 대신 number 사용 =====
+                // Decimal 대신 number 사용
                 const ratio = toNumber(stock.targetRatio);
                 targetRatioInput.value = ratio.toFixed(2);
-                // ===== [Phase 2-2 최적화 끝] =====
             }
         });
     }
@@ -425,7 +416,7 @@ export class VirtualScrollManager {
      * @param price - 가격
      */
     updateCurrentPriceInput(id: string, price: string): void {
-        // ===== [Phase 2.1 최적화] 캐시된 DOM 참조 사용 =====
+        // 캐시된 DOM 참조 사용
         let inputRow = this.#rowCache.get(id)?.inputRow;
         if (!inputRow) {
             inputRow = this.#scrollContent?.querySelector(
@@ -438,7 +429,6 @@ export class VirtualScrollManager {
                 this.#rowCache.set(id, { inputRow, outputRow });
             }
         }
-        // ===== [Phase 2.1 최적화 끝] =====
         if (!inputRow) return;
 
         const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
