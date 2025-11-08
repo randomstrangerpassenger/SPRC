@@ -1,6 +1,7 @@
 // src/view/ResultsRenderer.ts
 import { t } from '../i18n';
 import type { Chart } from 'chart.js';
+import type { PortfolioSnapshot } from '../types';
 
 /**
  * @class ResultsRenderer
@@ -9,6 +10,7 @@ import type { Chart } from 'chart.js';
 export class ResultsRenderer {
     private dom: any;
     private chartInstance: Chart | null = null;
+    private performanceChartInstance: Chart | null = null;
     private currentObserver: IntersectionObserver | null = null;
 
     constructor(dom: any) {
@@ -173,6 +175,120 @@ export class ResultsRenderer {
     }
 
     /**
+     * @description 포트폴리오 성과 히스토리 차트를 표시합니다.
+     * @param ChartClass - Chart.js 클래스
+     * @param snapshots - 포트폴리오 스냅샷 배열
+     * @param currency - 통화 모드
+     */
+    async displayPerformanceHistory(
+        ChartClass: typeof Chart,
+        snapshots: PortfolioSnapshot[],
+        currency: 'krw' | 'usd'
+    ): Promise<void> {
+        const section = this.dom.performanceHistorySection;
+        const container = this.dom.performanceChartContainer;
+        const canvas = this.dom.performanceChart;
+
+        if (!section || !container || !(canvas instanceof HTMLCanvasElement)) return;
+
+        // Show section
+        section.classList.remove('hidden');
+        container.classList.remove('hidden');
+
+        // Sort snapshots by date (oldest first for chart)
+        const sorted = [...snapshots].sort((a, b) => a.timestamp - b.timestamp);
+
+        // Prepare chart data
+        const labels = sorted.map(s => s.date);
+        const totalValueData = sorted.map(s => currency === 'krw' ? s.totalValueKRW : s.totalValue);
+        const totalInvestedData = sorted.map(s => s.totalInvestedCapital);
+        const unrealizedPLData = sorted.map(s => s.totalUnrealizedPL);
+        const realizedPLData = sorted.map(s => s.totalRealizedPL);
+
+        const chartData = {
+            labels,
+            datasets: [
+                {
+                    label: '총 자산 가치',
+                    data: totalValueData,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: '투자 원금',
+                    data: totalInvestedData,
+                    borderColor: '#9966FF',
+                    backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                    tension: 0.4,
+                    fill: false,
+                    borderDash: [5, 5]
+                }
+            ]
+        };
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top' as const,
+                    labels: {
+                        font: { size: 12 }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: '포트폴리오 가치 변화 추이',
+                    font: { size: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context: any) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            const formatted = value.toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                            return `${label}: ${currency === 'krw' ? '₩' : '$'}${formatted}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value: any) {
+                            return (currency === 'krw' ? '₩' : '$') + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+
+        if (this.performanceChartInstance) {
+            this.performanceChartInstance.data = chartData;
+            this.performanceChartInstance.options = chartOptions;
+            this.performanceChartInstance.update();
+        } else {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                this.performanceChartInstance = new ChartClass(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+
+        // Scroll to chart
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /**
      * @description Intersection Observer를 정리합니다.
      */
     cleanupObserver(): void {
@@ -189,6 +305,10 @@ export class ResultsRenderer {
         if (this.chartInstance) {
             this.chartInstance.destroy();
             this.chartInstance = null;
+        }
+        if (this.performanceChartInstance) {
+            this.performanceChartInstance.destroy();
+            this.performanceChartInstance = null;
         }
     }
 

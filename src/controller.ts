@@ -2,6 +2,7 @@
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
+import { DataStore } from './dataStore';
 import { debounce, getRatioSum } from './utils';
 import { CONFIG, DECIMAL_ZERO } from './constants';
 import { ErrorService } from './errorService';
@@ -111,15 +112,56 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+            const { exchangeRateInput, portfolioExchangeRateInput, rebalancingToleranceInput, tradingFeeRateInput, taxRateInput } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
             if (portfolioExchangeRateInput instanceof HTMLInputElement) {
                 portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
+            if (rebalancingToleranceInput instanceof HTMLInputElement) {
+                rebalancingToleranceInput.value = (activePortfolio.settings.rebalancingTolerance ?? 5).toString();
+            }
+            if (tradingFeeRateInput instanceof HTMLInputElement) {
+                tradingFeeRateInput.value = (activePortfolio.settings.tradingFeeRate ?? 0.3).toString();
+            }
+            if (taxRateInput instanceof HTMLInputElement) {
+                taxRateInput.value = (activePortfolio.settings.taxRate ?? 15).toString();
+            }
 
             this.fullRender();
+
+            // Phase 4.2: 환율 자동 로드
+            this.loadExchangeRate();
+        }
+    }
+
+    /**
+     * @description 환율 자동 로드 (Phase 4.2)
+     */
+    async loadExchangeRate(): Promise<void> {
+        try {
+            const rate = await (await import('./apiService')).apiService.fetchExchangeRate();
+            if (rate) {
+                const activePortfolio = this.state.getActivePortfolio();
+                if (activePortfolio) {
+                    activePortfolio.settings.exchangeRate = rate;
+                    await this.state.saveActivePortfolio();
+
+                    // UI 업데이트
+                    const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                    if (exchangeRateInput instanceof HTMLInputElement) {
+                        exchangeRateInput.value = rate.toFixed(2);
+                    }
+                    if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                        portfolioExchangeRateInput.value = rate.toFixed(2);
+                    }
+
+                    console.log('[Controller] Exchange rate auto-loaded:', rate);
+                }
+            }
+        } catch (error) {
+            console.warn('[Controller] Failed to auto-load exchange rate:', error);
         }
     }
 
@@ -150,6 +192,7 @@ export class PortfolioController {
             }
         });
         this.view.on('normalizeRatiosClicked', () => this.calculationManager.handleNormalizeRatios());
+        this.view.on('applyTemplateClicked', (data) => this.handleApplyTemplate(data.template));
         this.view.on('fetchAllPricesClicked', async () => {
             const result = await this.calculationManager.handleFetchAllPrices();
             if (result.needsUIUpdate) this.updateUIState();
@@ -162,6 +205,7 @@ export class PortfolioController {
         });
         this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
         this.view.on('importDataClicked', () => this.dataManager.handleImportData());
+        this.view.on('exportTransactionsCSVClicked', () => this.dataManager.handleExportTransactionsCSV());
         this.view.on('fileSelected', async (e) => {
             const result = await this.dataManager.handleFileSelected(e);
             if (result.needsUISetup) this.setupInitialUI();
@@ -187,6 +231,8 @@ export class PortfolioController {
 
         // 계산 및 통화
         this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
+        this.view.on('showPerformanceHistoryClicked', () => this.handleShowPerformanceHistory());
+        this.view.on('showSnapshotListClicked', () => this.handleShowSnapshotList());
         this.view.on('mainModeChanged', async (data) => {
             const result = await this.calculationManager.handleMainModeChange(data.mode);
             if (result.needsFullRender) this.fullRender();
@@ -198,6 +244,9 @@ export class PortfolioController {
         this.view.on('currencyConversion', (data) => this.calculationManager.handleCurrencyConversion(data.source));
         this.view.on('portfolioExchangeRateChanged', (data) =>
             this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
+        );
+        this.view.on('rebalancingToleranceChanged', (data) =>
+            this.handleRebalancingToleranceChange(data.tolerance)
         );
 
         // 모달 상호작용
@@ -251,6 +300,12 @@ export class PortfolioController {
             // ===== [Phase 2.2 Web Worker 통합 끝] =====
             this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
 
+            // 리밸런싱 경고 확인 및 표시
+            this.checkRebalancingNeeds(calculatedState.portfolioData, calculatedState.currentTotal, activePortfolio.settings.rebalancingTolerance);
+
+            // 리스크 분석 (Phase 4.3)
+            this.checkRiskWarnings(calculatedState.portfolioData, calculatedState.currentTotal, sectorData);
+
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
             activePortfolio.portfolioData = calculatedState.portfolioData;
@@ -299,6 +354,357 @@ export class PortfolioController {
     }
 
     // === 기타 핸들러 ===
+
+    /**
+     * @description 리밸런싱 필요 여부 확인
+     */
+    checkRebalancingNeeds(
+        portfolioData: any[],
+        currentTotal: any,
+        rebalancingTolerance?: number
+    ): void {
+        const tolerance = rebalancingTolerance ?? 5;
+        if (tolerance <= 0) return; // 허용 오차가 0이면 체크 안 함
+
+        const currentTotalDec = new Decimal(currentTotal);
+        if (currentTotalDec.isZero()) return;
+
+        const stocksNeedingRebalancing: string[] = [];
+
+        for (const stock of portfolioData) {
+            const currentAmount = stock.calculated?.currentAmount;
+            if (!currentAmount) continue;
+
+            const currentAmountDec = new Decimal(currentAmount);
+            const currentRatio = currentAmountDec.div(currentTotalDec).times(100);
+            const targetRatio = new Decimal(stock.targetRatio ?? 0);
+            const diff = currentRatio.minus(targetRatio).abs();
+
+            if (diff.greaterThan(tolerance)) {
+                stocksNeedingRebalancing.push(
+                    `${stock.name}: 현재 ${currentRatio.toFixed(1)}% (목표 ${targetRatio.toFixed(1)}%)`
+                );
+            }
+        }
+
+        // 경고 메시지 표시
+        if (stocksNeedingRebalancing.length > 0) {
+            const message = `🔔 리밸런싱이 필요한 종목: ${stocksNeedingRebalancing.join(', ')}`;
+            this.view.showToast(message, 'info');
+        }
+    }
+
+    /**
+     * @description 자산 배분 템플릿 적용 (Phase 3.2)
+     */
+    handleApplyTemplate(templateName: string): void {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+            this.view.showToast('적용할 종목이 없습니다.', 'warning');
+            return;
+        }
+
+        const stocks = activePortfolio.portfolioData;
+
+        // 섹터별 종목 분류
+        const sectorGroups: Record<string, typeof stocks> = {};
+        for (const stock of stocks) {
+            const sector = (stock.sector || 'Other').toLowerCase();
+            if (!sectorGroups[sector]) sectorGroups[sector] = [];
+            sectorGroups[sector].push(stock);
+        }
+
+        // 템플릿별 로직
+        switch (templateName) {
+            case '60-40': {
+                // 60/40: 주식 60%, 채권 40%
+                const equitySectors = ['stock', 'stocks', 'equity', 'equities', 'tech', 'technology', 'finance', 'healthcare', 'consumer'];
+                const bondSectors = ['bond', 'bonds', 'fixed income', 'treasury'];
+
+                const equityStocks = stocks.filter(s => equitySectors.some(es => (s.sector || '').toLowerCase().includes(es)));
+                const bondStocks = stocks.filter(s => bondSectors.some(bs => (s.sector || '').toLowerCase().includes(bs)));
+                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s));
+
+                if (equityStocks.length > 0) {
+                    const perEquity = 60 / equityStocks.length;
+                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                }
+
+                if (bondStocks.length > 0) {
+                    const perBond = 40 / bondStocks.length;
+                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                }
+
+                if (otherStocks.length > 0 && equityStocks.length === 0 && bondStocks.length === 0) {
+                    // 섹터가 명확하지 않으면 동일 비중
+                    const perStock = 100 / stocks.length;
+                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                }
+                break;
+            }
+
+            case 'all-weather': {
+                // All-Weather: 주식 30%, 장기채 40%, 중기채 15%, 금 7.5%, 원자재 7.5%
+                const equityStocks = stocks.filter(s => ['stock', 'equity', 'tech'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const bondStocks = stocks.filter(s => ['bond', 'treasury', 'fixed'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const commodityStocks = stocks.filter(s => ['gold', 'commodity', 'metal', '금'].some(k => (s.sector || s.name || '').toLowerCase().includes(k)));
+                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s) && !commodityStocks.includes(s));
+
+                if (equityStocks.length > 0) {
+                    const perEquity = 30 / equityStocks.length;
+                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                }
+
+                if (bondStocks.length > 0) {
+                    const perBond = 55 / bondStocks.length; // 40 + 15 통합
+                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                }
+
+                if (commodityStocks.length > 0) {
+                    const perCommodity = 15 / commodityStocks.length; // 7.5 + 7.5 통합
+                    commodityStocks.forEach(s => s.targetRatio = new Decimal(perCommodity));
+                }
+
+                if (otherStocks.length > 0 && equityStocks.length + bondStocks.length + commodityStocks.length === 0) {
+                    const perStock = 100 / stocks.length;
+                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                }
+                break;
+            }
+
+            case '50-30-20': {
+                // 50/30/20: 주식 50%, 채권 30%, 기타 20%
+                const equityStocks = stocks.filter(s => ['stock', 'equity', 'tech'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const bondStocks = stocks.filter(s => ['bond', 'treasury'].some(k => (s.sector || '').toLowerCase().includes(k)));
+                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s));
+
+                if (equityStocks.length > 0) {
+                    const perEquity = 50 / equityStocks.length;
+                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                }
+
+                if (bondStocks.length > 0) {
+                    const perBond = 30 / bondStocks.length;
+                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                }
+
+                if (otherStocks.length > 0) {
+                    const perOther = 20 / otherStocks.length;
+                    otherStocks.forEach(s => s.targetRatio = new Decimal(perOther));
+                } else if (equityStocks.length === 0 && bondStocks.length === 0) {
+                    const perStock = 100 / stocks.length;
+                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                }
+                break;
+            }
+
+            case 'equal': {
+                // 동일 비중
+                const perStock = 100 / stocks.length;
+                stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                break;
+            }
+
+            default:
+                this.view.showToast('알 수 없는 템플릿입니다.', 'error');
+                return;
+        }
+
+        // 저장 및 UI 업데이트
+        this.state.saveActivePortfolio();
+        this.fullRender();
+        this.view.showToast(`✨ ${templateName} 템플릿이 적용되었습니다!`, 'success');
+    }
+
+    /**
+     * @description 리스크 경고 확인 (Phase 4.3)
+     */
+    checkRiskWarnings(
+        portfolioData: any[],
+        currentTotal: any,
+        sectorData: any[]
+    ): void {
+        const warnings: string[] = [];
+        const currentTotalDec = new Decimal(currentTotal);
+
+        if (currentTotalDec.isZero()) return;
+
+        // 1. 단일 종목 비중 경고 (30% 초과)
+        const SINGLE_STOCK_THRESHOLD = 30;
+        for (const stock of portfolioData) {
+            const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
+            const ratio = currentAmount.div(currentTotalDec).times(100);
+
+            if (ratio.greaterThan(SINGLE_STOCK_THRESHOLD)) {
+                warnings.push(`⚠️ ${stock.name}: ${ratio.toFixed(1)}% (단일 종목 비중 높음)`);
+            }
+        }
+
+        // 2. 섹터 집중도 경고 (40% 초과)
+        const SECTOR_CONCENTRATION_THRESHOLD = 40;
+        for (const sector of sectorData) {
+            const percentage = new Decimal(sector.percentage || 0);
+
+            if (percentage.greaterThan(SECTOR_CONCENTRATION_THRESHOLD)) {
+                warnings.push(`⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`);
+            }
+        }
+
+        // 경고 메시지 표시
+        if (warnings.length > 0) {
+            const message = `🔍 리스크 경고: ${warnings.join(', ')}`;
+            this.view.showToast(message, 'warning');
+        }
+    }
+
+    /**
+     * @description 성과 히스토리 표시
+     */
+    async handleShowPerformanceHistory(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.view.showToast('성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                return;
+            }
+
+            // Toggle visibility
+            const section = this.view.dom.performanceHistorySection;
+            const chartContainer = this.view.dom.performanceChartContainer;
+            const listContainer = this.view.dom.snapshotListContainer;
+
+            if (section) section.classList.remove('hidden');
+            if (chartContainer) chartContainer.classList.remove('hidden');
+            if (listContainer) listContainer.classList.add('hidden');
+
+            const ChartClass = (await import('chart.js/auto')).default;
+            await this.view.displayPerformanceHistory(
+                ChartClass,
+                snapshots,
+                activePortfolio.settings.currentCurrency
+            );
+
+            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+        } catch (error) {
+            console.error('[Controller] Failed to display performance history:', error);
+            this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description 스냅샷 목록 표시
+     */
+    async handleShowSnapshotList(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.view.showToast('저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                return;
+            }
+
+            // Toggle visibility
+            const section = this.view.dom.performanceHistorySection;
+            const chartContainer = this.view.dom.performanceChartContainer;
+            const listContainer = this.view.dom.snapshotListContainer;
+
+            if (section) section.classList.remove('hidden');
+            if (chartContainer) chartContainer.classList.add('hidden');
+            if (listContainer) listContainer.classList.remove('hidden');
+
+            // Render snapshot list
+            this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
+
+            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+        } catch (error) {
+            console.error('[Controller] Failed to display snapshot list:', error);
+            this.view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description 스냅샷 목록 렌더링
+     */
+    private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
+        const listEl = this.view.dom.snapshotList;
+        if (!listEl) return;
+
+        const currencySymbol = currency === 'krw' ? '₩' : '$';
+        const formatNumber = (num: number) => {
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        };
+
+        const formatPercent = (num: number) => {
+            return num.toFixed(2);
+        };
+
+        const rows = snapshots.map(snapshot => {
+            const totalValue = currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
+            const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
+            const returnRate = snapshot.totalInvestedCapital > 0
+                ? (totalReturn / snapshot.totalInvestedCapital) * 100
+                : 0;
+
+            const isProfit = totalReturn >= 0;
+            const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
+
+            return `
+                <tr>
+                    <td>${snapshot.date}</td>
+                    <td style="text-align: right; font-weight: bold;">${currencySymbol}${formatNumber(totalValue)}</td>
+                    <td style="text-align: right;">${currencySymbol}${formatNumber(snapshot.totalInvestedCapital)}</td>
+                    <td style="text-align: right;" class="${profitClass}">
+                        ${currencySymbol}${formatNumber(totalReturn)}
+                        <br>
+                        <small>(${isProfit ? '+' : ''}${formatPercent(returnRate)}%)</small>
+                    </td>
+                    <td style="text-align: center;">${snapshot.stockCount}</td>
+                </tr>
+            `;
+        }).join('');
+
+        listEl.innerHTML = `
+            <div class="table-responsive">
+                <table>
+                    <caption>포트폴리오 스냅샷 목록</caption>
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th style="text-align: right;">총 자산</th>
+                            <th style="text-align: right;">투자 원금</th>
+                            <th style="text-align: right;">총 수익</th>
+                            <th style="text-align: center;">종목 수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    /**
+     * @description 리밸런싱 허용 오차 변경
+     */
+    async handleRebalancingToleranceChange(tolerance: number): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        activePortfolio.settings.rebalancingTolerance = tolerance;
+        await this.state.saveActivePortfolio();
+        this.updateUIState(); // UI 업데이트로 경고 표시 갱신
+    }
 
     /**
      * @description 다크 모드 토글

@@ -38,12 +38,16 @@ export interface SectorData {
  * @param results - 계산 결과 배열
  * @param summary - 요약 정보 객체
  * @param currency - 현재 통화 ('krw' or 'usd')
+ * @param feeRate - 거래 수수료율 (%, optional)
+ * @param taxRate - 세율 (%, optional)
  * @returns 생성된 HTML 문자열
  */
 export function generateAddModeResultsHTML(
     results: AddModeResultStock[],
     summary: AddModeSummary,
-    currency: Currency
+    currency: Currency,
+    feeRate?: number,
+    taxRate?: number
 ): string {
     if (!results) return ''; // Null check for results
 
@@ -113,12 +117,26 @@ export function generateAddModeResultsHTML(
                   .join('')
             : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
 
+    // Phase 3.1: 비용 계산
+    const totalBuyAmount = summary?.additionalInvestment ?? new Decimal(0);
+    const feeRateDec = new Decimal(feeRate ?? 0).div(100);
+    const estimatedFee = totalBuyAmount.times(feeRateDec);
+    const netInvestment = totalBuyAmount.minus(estimatedFee);
+
+    const costSummaryHTML = (feeRate && feeRate > 0) ? `
+        <div class="summary-grid" style="margin-top: 15px; background: #fff9e6; border: 1px solid #ffd700;">
+            <div class="summary-item"><h3>💸 예상 수수료 (${feeRate}%)</h3><div class="amount" style="color: #ff6b6b;">${formatCurrency(estimatedFee, currency)}</div></div>
+            <div class="summary-item"><h3>💰 순 투자금액</h3><div class="amount" style="color: #51cf66;">${formatCurrency(netInvestment, currency)}</div></div>
+        </div>
+    ` : '';
+
     return `
         <div class="summary-grid">
             <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
             <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
             <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
         </div>
+        ${costSummaryHTML}
         <div class="card">
             <h2>${t('template.addModeGuideTitle')}</h2>
             <div class="table-responsive">

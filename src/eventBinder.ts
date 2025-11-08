@@ -32,6 +32,14 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     dom.normalizeRatiosBtn?.addEventListener('click', () => view.emit('normalizeRatiosClicked'));
     dom.fetchAllPricesBtn?.addEventListener('click', () => view.emit('fetchAllPricesClicked'));
 
+    // 템플릿 적용 버튼 (Phase 3.2)
+    dom.applyTemplateBtn?.addEventListener('click', () => {
+        const select = dom.allocationTemplateSelect as HTMLSelectElement | null;
+        if (select && select.value) {
+            view.emit('applyTemplateClicked', { template: select.value });
+        }
+    });
+
     // 데이터 관리 드롭다운
     const dataManagementBtn = dom.dataManagementBtn as HTMLButtonElement | null;
     const dataDropdownContent = dom.dataDropdownContent as HTMLElement | null;
@@ -92,6 +100,13 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     importDataBtn?.addEventListener('click', (e) => {
         e.preventDefault();
         view.emit('importDataClicked');
+        toggleDropdown(false);
+        dataManagementBtn?.focus();
+    });
+
+    dom.exportTransactionsCSVBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        view.emit('exportTransactionsCSVClicked');
         toggleDropdown(false);
         dataManagementBtn?.focus();
     });
@@ -196,6 +211,10 @@ export function bindEventListeners(view: PortfolioView): AbortController {
         }
     });
 
+    // 성과 히스토리 버튼
+    dom.showPerformanceHistoryBtn?.addEventListener('click', () => view.emit('showPerformanceHistoryClicked'));
+    dom.showSnapshotListBtn?.addEventListener('click', () => view.emit('showSnapshotListClicked'));
+
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach(r => r.addEventListener('change', (e) => {
         const mode = (e.target as HTMLInputElement).value as 'add' | 'sell' | 'simple';
@@ -244,6 +263,17 @@ export function bindEventListeners(view: PortfolioView): AbortController {
             view.emit('portfolioExchangeRateChanged', { rate });
             // 추가 투자금 재계산 (USD 모드인 경우)
             debouncedConversion('krw');
+        }
+    });
+
+    // 리밸런싱 허용 오차 설정
+    dom.rebalancingToleranceInput?.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const tolerance = parseFloat(target.value);
+        const isValid = !isNaN(tolerance) && tolerance >= 0;
+        view.toggleInputValidation(target, isValid);
+        if (isValid) {
+            view.emit('rebalancingToleranceChanged', { tolerance });
         }
     });
 

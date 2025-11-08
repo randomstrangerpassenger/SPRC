@@ -47,9 +47,36 @@
                     <button id="addNewStockBtn" class="btn" data-variant="green">➕ 새 종목 추가</button>
                     <button id="fetchAllPricesBtn" class="btn" data-variant="blue" style="width: 100%;">📈 현재가 모두 불러오기</button>
 
+                    <div id="allocationTemplateGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="allocationTemplate">📋 자산 배분 템플릿:</label>
+                        <select id="allocationTemplate" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <option value="">-- 템플릿 선택 --</option>
+                            <option value="60-40">60/40 포트폴리오 (주식 60%, 채권 40%)</option>
+                            <option value="all-weather">All-Weather (Ray Dalio)</option>
+                            <option value="50-30-20">50/30/20 (주식 50%, 채권 30%, 기타 20%)</option>
+                            <option value="equal">동일 비중</option>
+                        </select>
+                        <button id="applyTemplateBtn" class="btn" data-variant="blue" style="margin-top: 5px;">✨ 템플릿 적용</button>
+                    </div>
+
                     <div id="portfolioExchangeRateGroup" class="input-group" style="margin-top: 10px;">
                         <label for="portfolioExchangeRate">💱 환율 (1 USD = ? KRW):</label>
                         <input type="number" id="portfolioExchangeRate" placeholder="예: 1300" min="0.01" step="0.01" value="1300">
+                    </div>
+
+                    <div id="rebalancingToleranceGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="rebalancingTolerance">🔔 리밸런싱 알림 허용 오차 (%):</label>
+                        <input type="number" id="rebalancingTolerance" placeholder="예: 5" min="0" step="0.1" value="5">
+                    </div>
+
+                    <div id="tradingCostsGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="tradingFeeRate">💸 거래 수수료율 (%):</label>
+                        <input type="number" id="tradingFeeRate" placeholder="예: 0.3" min="0" step="0.01" value="0.3">
+                    </div>
+
+                    <div id="taxRateGroup" class="input-group" style="margin-top: 10px;">
+                        <label for="taxRate">💰 세율 (%):</label>
+                        <input type="number" id="taxRate" placeholder="예: 15" min="0" step="0.1" value="15">
                     </div>
 
                     <button id="resetDataBtn" class="btn" data-variant="orange">🔄 초기화</button>
@@ -62,11 +89,12 @@
                                 aria-controls="dataDropdownContent">
                             💾 데이터 관리
                         </button>
-                        <div id="dataDropdownContent" class="dropdown-content" 
-                             role="menu" 
+                        <div id="dataDropdownContent" class="dropdown-content"
+                             role="menu"
                              aria-labelledby="dataManagementBtn">
                             <a href="#" id="exportDataBtn" role="menuitem">📤 내보내기 (JSON)</a>
                             <a href="#" id="importDataBtn" role="menuitem">📥 가져오기 (JSON)</a>
+                            <a href="#" id="exportTransactionsCSVBtn" role="menuitem">📊 거래 내역 CSV 내보내기</a>
                         </div>
                     </div>
 
@@ -118,6 +146,20 @@
                     <canvas id="portfolioChart"></canvas>
                 </div>
             </section>
+            <section id="performanceHistorySection" class="card hidden" role="region" aria-label="포트폴리오 성과 히스토리">
+                <h2>📈 포트폴리오 성과 히스토리</h2>
+                <div class="btn-controls" style="margin-bottom: 15px;">
+                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">📊 차트 보기</button>
+                    <button id="showSnapshotListBtn" class="btn" data-variant="green">📋 스냅샷 목록</button>
+                </div>
+                <div id="performanceChartContainer" class="hidden">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div id="snapshotListContainer" class="hidden" style="margin-top: 20px;">
+                    <h3>💾 저장된 스냅샷</h3>
+                    <div id="snapshotList" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -144,6 +186,7 @@
                 <div class="mode-selector" style="margin-bottom: 15px;">
                     <label><input type="radio" name="txType" value="buy" checked> 매수</label>
                     <label><input type="radio" name="txType" value="sell"> 매도</label>
+                    <label><input type="radio" name="txType" value="dividend"> 배당</label>
                 </div>
                 <div class="mode-selector" style="margin-bottom: 15px;">
                     <label><input type="radio" name="inputMode" value="quantity" id="inputModeQuantity" checked> 수량 입력</label>

@@ -3,7 +3,7 @@ import { CONFIG } from './constants';
 import { getRatioSum } from './utils';
 import { t } from './i18n';
 import Decimal from 'decimal.js';
-import type { Stock, CalculatedStock, Transaction } from './types';
+import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot } from './types';
 import type { Chart } from 'chart.js';
 
 // 분리된 모듈들
@@ -116,6 +116,9 @@ export class PortfolioView {
             additionalAmountUSDInput: D.getElementById('additionalAmountUSD'),
             exchangeRateInput: D.getElementById('exchangeRate'),
             portfolioExchangeRateInput: D.getElementById('portfolioExchangeRate'),
+            rebalancingToleranceInput: D.getElementById('rebalancingTolerance'),
+            tradingFeeRateInput: D.getElementById('tradingFeeRate'),
+            taxRateInput: D.getElementById('taxRate'),
             mainModeSelector: D.querySelectorAll('input[name="mainMode"]'),
             currencyModeSelector: D.querySelectorAll('input[name="currencyMode"]'),
             exchangeRateGroup: D.getElementById('exchangeRateGroup'),
@@ -125,12 +128,15 @@ export class PortfolioView {
             darkModeToggle: D.getElementById('darkModeToggle'),
             addNewStockBtn: D.getElementById('addNewStockBtn'),
             fetchAllPricesBtn: D.getElementById('fetchAllPricesBtn'),
+            allocationTemplateSelect: D.getElementById('allocationTemplate'),
+            applyTemplateBtn: D.getElementById('applyTemplateBtn'),
             resetDataBtn: D.getElementById('resetDataBtn'),
             normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
             dataManagementBtn: D.getElementById('dataManagementBtn'),
             dataDropdownContent: D.getElementById('dataDropdownContent'),
             exportDataBtn: D.getElementById('exportDataBtn'),
             importDataBtn: D.getElementById('importDataBtn'),
+            exportTransactionsCSVBtn: D.getElementById('exportTransactionsCSVBtn'),
             importFileInput: D.getElementById('importFileInput'),
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
@@ -156,6 +162,13 @@ export class PortfolioView {
             customModalInput: D.getElementById('customModalInput'),
             customModalConfirm: D.getElementById('customModalConfirm'),
             customModalCancel: D.getElementById('customModalCancel'),
+            performanceHistorySection: D.getElementById('performanceHistorySection'),
+            showPerformanceHistoryBtn: D.getElementById('showPerformanceHistoryBtn'),
+            showSnapshotListBtn: D.getElementById('showSnapshotListBtn'),
+            performanceChartContainer: D.getElementById('performanceChartContainer'),
+            performanceChart: D.getElementById('performanceChart'),
+            snapshotListContainer: D.getElementById('snapshotListContainer'),
+            snapshotList: D.getElementById('snapshotList'),
         };
 
         this.eventEmitter.clear();
@@ -286,6 +299,10 @@ export class PortfolioView {
 
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
         this.resultsRenderer.displayChart(ChartClass, labels, data, title);
+    }
+
+    async displayPerformanceHistory(ChartClass: typeof Chart, snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): Promise<void> {
+        await this.resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
     }
 
     hideResults(): void {
