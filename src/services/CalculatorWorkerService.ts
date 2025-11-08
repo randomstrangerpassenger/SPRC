@@ -20,9 +20,11 @@ export class CalculatorWorkerService {
     > = new Map();
     private requestId: number = 0;
     private fallbackCount: number = 0; // Track fallback occurrences
+    private initializationPromise: Promise<void> | null = null; // Track initialization state
 
     constructor() {
-        this.initializeWorker();
+        // Don't await here - store the promise instead
+        this.initializationPromise = this.initializeWorker();
     }
 
     /**
@@ -56,6 +58,16 @@ export class CalculatorWorkerService {
         } catch (error) {
             console.error('[CalculatorWorkerService] Failed to initialize worker:', error);
             this.isWorkerAvailable = false;
+        }
+    }
+
+    /**
+     * @description Ensure worker is initialized before use
+     */
+    private async ensureInitialized(): Promise<void> {
+        if (this.initializationPromise) {
+            await this.initializationPromise;
+            this.initializationPromise = null; // Clear after first initialization
         }
     }
 
@@ -115,6 +127,9 @@ export class CalculatorWorkerService {
         exchangeRate?: number;
         currentCurrency?: Currency;
     }): Promise<{ portfolioData: CalculatedStock[]; currentTotal: Decimal }> {
+        // Wait for worker initialization to complete
+        await this.ensureInitialized();
+
         if (this.isWorkerAvailable) {
             try {
                 const result = await this.sendToWorker('calculatePortfolioState', options);
@@ -147,6 +162,9 @@ export class CalculatorWorkerService {
         portfolioData: CalculatedStock[],
         currentCurrency: Currency = 'krw'
     ): Promise<{ sector: string; amount: Decimal; percentage: Decimal }[]> {
+        // Wait for worker initialization to complete
+        await this.ensureInitialized();
+
         if (this.isWorkerAvailable) {
             try {
                 const result = await this.sendToWorker('calculateSectorAnalysis', {
@@ -186,7 +204,7 @@ export class CalculatorWorkerService {
         if (this.fallbackCount >= 3 && this.fallbackCount % 3 === 0) {
             console.log('[CalculatorWorkerService] Attempting to reinitialize worker...');
             setTimeout(() => {
-                this.initializeWorker();
+                this.initializationPromise = this.initializeWorker();
             }, 1000);
         }
     }

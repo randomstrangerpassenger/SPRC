@@ -185,11 +185,17 @@ export class VirtualScrollManager {
      * @param stockId - 주식 ID
      * @param field - 필드명
      * @param value - 값
+     * (Phase 2-5: 타입 안전성 개선)
      */
-    updateStockInVirtualData(stockId: string, field: string, value: any): void {
+    updateStockInVirtualData(
+        stockId: string,
+        field: keyof CalculatedStock,
+        value: string | number | boolean | Decimal
+    ): void {
         const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
         if (stockIndex !== -1) {
-            (this.#virtualData[stockIndex] as any)[field] = value;
+            // Type-safe update
+            (this.#virtualData[stockIndex][field] as typeof value) = value;
         }
     }
 
@@ -197,8 +203,12 @@ export class VirtualScrollManager {
      * @description 특정 주식 행의 출력 부분만 업데이트합니다.
      * @param stockId - 주식 ID
      * @param calculatedData - 재계산된 데이터
+     * (Phase 2-5: 타입 안전성 개선)
      */
-    updateSingleStockRow(stockId: string, calculatedData: any): void {
+    updateSingleStockRow(
+        stockId: string,
+        calculatedData: CalculatedStock['calculated']
+    ): void {
         const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
         if (stockIndex === -1) return;
 
@@ -330,14 +340,17 @@ export class VirtualScrollManager {
             inputs.forEach((input) => {
                 if (!(input instanceof HTMLInputElement)) return;
 
-                if (input === activeElement || (input as any).isComposing) {
+                // Phase 2-5: IME composition 체크 (타입 안전성 개선)
+                const isComposing = 'isComposing' in input && (input as HTMLInputElement & { isComposing?: boolean }).isComposing;
+                if (input === activeElement || isComposing) {
                     return;
                 }
 
                 const field = input.dataset.field;
                 if (!field) return;
 
-                let value: any;
+                // Phase 2-5: 타입 안전성 개선
+                let value: string | number | boolean;
                 if (input.type === 'checkbox') {
                     value = input.checked;
                 } else if (input.type === 'number') {
@@ -346,7 +359,8 @@ export class VirtualScrollManager {
                     value = input.value;
                 }
 
-                (this.#virtualData[stockIndex] as any)[field] = value;
+                // Type assertion for dynamic field access
+                (this.#virtualData[stockIndex] as Record<string, typeof value>)[field] = value;
             });
         });
 

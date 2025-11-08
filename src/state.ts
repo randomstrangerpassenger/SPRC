@@ -1,13 +1,15 @@
-// js/state.ts
-import { generateId } from './utils'; // generateId 제거
+// src/state.ts
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
 import { ErrorService } from './errorService.ts';
 import { Validator } from './validator.ts';
-import DOMPurify from 'dompurify';
 import { DataStore } from './dataStore.ts';
+import { generateId } from './utils.ts';
 import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
+// Phase 2-2: state.ts 모듈 분리 - 새로운 모듈 import
+import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
+import { validateAndUpgradeData } from './state/validation.ts';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
@@ -50,11 +52,8 @@ export class PortfolioState {
                 }
             }
 
-            // 3. 데이터 유효성 검사 (DOMPurify 소독 포함)
-            const { meta, portfolios } = this._validateAndUpgradeData(
-                loadedMetaData,
-                loadedPortfolios
-            );
+            // 3. 데이터 유효성 검사 (소독 포함) - Phase 2-2: validation 모듈 사용
+            const { meta, portfolios } = validateAndUpgradeData(loadedMetaData, loadedPortfolios);
 
             this.#portfolios = portfolios;
             this.#activePortfolioId = meta.activePortfolioId;
@@ -99,144 +98,7 @@ export class PortfolioState {
         return await DataStore.loadPortfolios();
     }
 
-    _validateAndUpgradeData(
-        loadedMetaData: MetaState | null,
-        loadedPortfolios: Record<string, Portfolio> | null
-    ): { meta: MetaState; portfolios: Record<string, Portfolio> } {
-        const currentVersion = CONFIG.DATA_VERSION;
-        const loadedVersion = loadedMetaData?.version;
-
-        if (loadedVersion !== currentVersion) {
-            console.warn(
-                `Data version mismatch. Loaded: ${loadedVersion}, Current: ${currentVersion}. Attempting migration/reset.`
-            );
-        }
-
-        const validatedPortfolios = {};
-        let validatedActiveId = loadedMetaData?.activePortfolioId;
-        let foundActive = false;
-
-        if (loadedPortfolios && typeof loadedPortfolios === 'object') {
-            Object.keys(loadedPortfolios).forEach((portId) => {
-                const portfolio = loadedPortfolios[portId];
-                const newId = portId;
-
-                if (
-                    portfolio &&
-                    typeof portfolio === 'object' &&
-                    portfolio.id === portId &&
-                    portfolio.name
-                ) {
-                    validatedPortfolios[newId] = {
-                        id: newId,
-                        // DOMPurify.sanitize 적용
-                        name: DOMPurify.sanitize(portfolio.name),
-                        settings: {
-                            mainMode: ['add', 'sell', 'simple'].includes(
-                                portfolio.settings?.mainMode
-                            )
-                                ? portfolio.settings.mainMode
-                                : 'simple',
-                            currentCurrency: ['krw', 'usd'].includes(
-                                portfolio.settings?.currentCurrency
-                            )
-                                ? portfolio.settings.currentCurrency
-                                : 'krw',
-                            exchangeRate:
-                                typeof portfolio.settings?.exchangeRate === 'number' &&
-                                portfolio.settings.exchangeRate > 0
-                                    ? portfolio.settings.exchangeRate
-                                    : CONFIG.DEFAULT_EXCHANGE_RATE,
-                        },
-                        portfolioData: Array.isArray(portfolio.portfolioData)
-                            ? portfolio.portfolioData.map((stock) => {
-                                  const targetRatio = new Decimal(stock.targetRatio ?? 0);
-                                  const currentPrice = new Decimal(stock.currentPrice ?? 0);
-                                  const fixedBuyAmount = new Decimal(stock.fixedBuyAmount ?? 0);
-
-                                  return {
-                                      id: stock.id || `s-${generateId()}`,
-                                      // DOMPurify.sanitize 적용
-                                      name: DOMPurify.sanitize(
-                                          stock.name || t('defaults.newStock')
-                                      ),
-                                      ticker: DOMPurify.sanitize(stock.ticker || ''),
-                                      sector: DOMPurify.sanitize(stock.sector || ''),
-                                      targetRatio: targetRatio.isNaN()
-                                          ? new Decimal(0)
-                                          : targetRatio,
-                                      currentPrice: currentPrice.isNaN()
-                                          ? new Decimal(0)
-                                          : currentPrice,
-                                      isFixedBuyEnabled:
-                                          typeof stock.isFixedBuyEnabled === 'boolean'
-                                              ? stock.isFixedBuyEnabled
-                                              : false,
-                                      fixedBuyAmount: fixedBuyAmount.isNaN()
-                                          ? new Decimal(0)
-                                          : fixedBuyAmount,
-                                      transactions: Array.isArray(stock.transactions)
-                                          ? stock.transactions
-                                                .map((tx) => {
-                                                    const quantity = new Decimal(tx.quantity ?? 0);
-                                                    const price = new Decimal(tx.price ?? 0);
-                                                    return {
-                                                        id: tx.id || `tx-${generateId()}`,
-                                                        type: tx.type === 'sell' ? 'sell' : 'buy',
-                                                        date:
-                                                            typeof tx.date === 'string'
-                                                                ? tx.date
-                                                                : new Date()
-                                                                      .toISOString()
-                                                                      .slice(0, 10),
-                                                        quantity: quantity.isNaN()
-                                                            ? new Decimal(0)
-                                                            : quantity,
-                                                        price: price.isNaN()
-                                                            ? new Decimal(0)
-                                                            : price,
-                                                    };
-                                                })
-                                                .filter(
-                                                    (tx) =>
-                                                        tx.quantity.greaterThan(0) &&
-                                                        tx.price.greaterThan(0)
-                                                )
-                                                .sort((a, b) => a.date.localeCompare(b.date))
-                                          : [],
-                                  };
-                              })
-                            : [],
-                    };
-                    if (newId === validatedActiveId) {
-                        foundActive = true;
-                    }
-                } else {
-                    console.warn(`Invalid portfolio structure skipped for ID: ${portId}`);
-                }
-            });
-        }
-
-        if (!foundActive || !validatedPortfolios[validatedActiveId]) {
-            const firstValidId = Object.keys(validatedPortfolios)[0];
-            if (firstValidId) {
-                console.warn(
-                    `Active portfolio ID '${validatedActiveId}' not found. Setting active ID to '${firstValidId}'.`
-                );
-                validatedActiveId = firstValidId;
-            } else {
-                console.warn(`No valid portfolios loaded. Active ID set to null.`);
-                validatedActiveId = null;
-            }
-        }
-
-        const validatedMeta = {
-            activePortfolioId: validatedActiveId,
-            version: currentVersion,
-        };
-
-        return { meta: validatedMeta, portfolios: validatedPortfolios };
-    }
+    // Phase 2-2: _validateAndUpgradeData 제거 (state/validation.ts로 이동)
 
     getActivePortfolio(): Portfolio | null {
         return this.#activePortfolioId ? this.#portfolios[this.#activePortfolioId] : null;
@@ -260,7 +122,8 @@ export class PortfolioState {
 
     async createNewPortfolio(name: string): Promise<Portfolio> {
         const newId = `p-${generateId()}`;
-        const newPortfolio = this._createDefaultPortfolio(newId, name);
+        // Phase 2-2: helpers 모듈 사용
+        const newPortfolio = createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
         this.#activePortfolioId = newId;
         await this.savePortfolios(); // 비동기 저장
@@ -327,7 +190,8 @@ export class PortfolioState {
     async addNewStock(): Promise<Stock | null> {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
-            const newStock = this._createDefaultStock();
+            // Phase 2-2: helpers 모듈 사용
+            const newStock = createDefaultStock();
             activePortfolio.portfolioData.push(newStock);
             await this.saveActivePortfolio(); // 비동기 저장
             return newStock;
@@ -365,7 +229,7 @@ export class PortfolioState {
 
     updateStockProperty(
         stockId: string,
-        field: string,
+        field: keyof Stock,
         value: string | number | boolean | Decimal
     ): void {
         const activePortfolio = this.getActivePortfolio();
@@ -373,26 +237,34 @@ export class PortfolioState {
             const stockIndex = activePortfolio.portfolioData.findIndex((s) => s.id === stockId);
             if (stockIndex > -1) {
                 const stock = activePortfolio.portfolioData[stockIndex];
-                if (['targetRatio', 'currentPrice', 'fixedBuyAmount'].includes(field)) {
+
+                // Type-safe property updates with type guards
+                if (field === 'targetRatio' || field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'manualAmount') {
                     try {
                         const decimalValue = new Decimal(value ?? 0);
                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
-                        (stock as any)[field] = decimalValue;
+                        stock[field] = decimalValue;
                     } catch (e) {
                         ErrorService.handle(
                             new Error(`Invalid numeric value for ${field}: ${value}`),
                             'updateStockProperty'
                         );
-                        (stock as any)[field] = new Decimal(0);
+                        stock[field] = new Decimal(0);
                     }
                 } else if (field === 'isFixedBuyEnabled') {
-                    (stock as any)[field] = Boolean(value);
-                } else if (typeof (stock as any)[field] !== 'undefined') {
-                    (stock as any)[field] = value;
+                    stock[field] = Boolean(value);
+                } else if (field === 'name' || field === 'ticker' || field === 'sector') {
+                    stock[field] = String(value);
+                } else if (field === 'id') {
+                    // ID should not be changed, log warning
+                    console.warn(`Attempted to change immutable field 'id' on stock ${stockId}`);
+                } else if (field === 'transactions') {
+                    // Transactions should not be directly set, use addTransaction/deleteTransaction
+                    console.warn(`Attempted to directly set 'transactions' on stock ${stockId}. Use addTransaction/deleteTransaction instead.`);
                 } else {
-                    console.warn(
-                        `Attempted to update non-existent property '${field}' on stock ${stockId}`
-                    );
+                    // TypeScript will catch any fields not handled above
+                    const _exhaustiveCheck: never = field;
+                    console.warn(`Unhandled field '${_exhaustiveCheck}' on stock ${stockId}`);
                 }
             }
         }
@@ -520,7 +392,8 @@ export class PortfolioState {
     }
 
     async resetData(save: boolean = true): Promise<void> {
-        const defaultPortfolio = this._createDefaultPortfolio(`p-${generateId()}`);
+        // Phase 2-2: helpers 모듈 사용 (generateId는 helpers에서 사용)
+        const defaultPortfolio = createDefaultPortfolio(`p-${Date.now()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
         if (save) {
@@ -530,8 +403,8 @@ export class PortfolioState {
         console.log('Data reset to default.');
     }
 
-    exportData(): { meta: MetaState; portfolios: Record<string, any> } {
-        const exportablePortfolios = {};
+    exportData(): { meta: MetaState; portfolios: Record<string, Portfolio> } {
+        const exportablePortfolios: Record<string, Portfolio> = {};
         Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
             exportablePortfolios[id] = {
                 ...portfolio,
@@ -540,10 +413,11 @@ export class PortfolioState {
                     targetRatio: stock.targetRatio.toNumber(),
                     currentPrice: stock.currentPrice.toNumber(),
                     fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
+                    manualAmount: stock.manualAmount !== undefined ? (typeof stock.manualAmount === 'number' ? stock.manualAmount : stock.manualAmount.toNumber()) : undefined,
                     transactions: stock.transactions.map((tx) => ({
                         ...tx,
-                        quantity: tx.quantity.toNumber(),
-                        price: tx.price.toNumber(),
+                        quantity: typeof tx.quantity === 'number' ? tx.quantity : tx.quantity.toNumber(),
+                        price: typeof tx.price === 'number' ? tx.price : tx.price.toNumber(),
                     })),
                 })),
             };
@@ -555,13 +429,13 @@ export class PortfolioState {
         };
     }
 
-    async importData(importedData: any): Promise<void> {
+    async importData(importedData: unknown): Promise<void> {
         if (!Validator.isDataStructureValid(importedData)) {
             throw new Error('Imported data structure is invalid.');
         }
 
-        // _validateAndUpgradeData가 소독을 처리
-        const { meta, portfolios } = this._validateAndUpgradeData(
+        // Phase 2-2: validation 모듈이 소독을 처리
+        const { meta, portfolios } = validateAndUpgradeData(
             importedData.meta,
             importedData.portfolios
         );
@@ -653,37 +527,5 @@ export class PortfolioState {
 
     // --- Private Helper Methods ---
 
-    _createDefaultPortfolio(
-        id: string,
-        name: string = t('defaults.defaultPortfolioName')
-    ): Portfolio {
-        return {
-            id: id,
-            name: name,
-            settings: {
-                mainMode: 'simple',
-                currentCurrency: 'krw',
-                exchangeRate: CONFIG.DEFAULT_EXCHANGE_RATE,
-                rebalancingTolerance: 5, // 기본 5% 허용 오차
-                tradingFeeRate: 0.3, // 기본 0.3% 수수료
-                taxRate: 15, // 기본 15% 세율
-            },
-            portfolioData: [this._createDefaultStock()],
-        };
-    }
-
-    _createDefaultStock(): Stock {
-        return {
-            id: `s-${generateId()}`,
-            name: t('defaults.newStock'),
-            ticker: '',
-            sector: '',
-            targetRatio: new Decimal(0), // Use Decimal
-            currentPrice: new Decimal(0), // Use Decimal
-            isFixedBuyEnabled: false,
-            fixedBuyAmount: new Decimal(0), // Use Decimal
-            transactions: [],
-            manualAmount: 0, // 간단 모드용 수동 입력 금액
-        };
-    }
+    // Phase 2-2: _createDefaultPortfolio, _createDefaultStock 제거 (state/helpers.ts로 이동)
 }

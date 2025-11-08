@@ -3,6 +3,7 @@ import { PortfolioState } from './state.ts';
 import { PortfolioView } from './view.ts';
 import { PortfolioController } from './controller.ts';
 import { ErrorService } from './errorService.ts';
+import { setupGlobalErrorHandlers } from './errorHandlers.ts';
 import { initPerformancePanel } from './performance/PerformancePanel.ts';
 import { perfMonitor } from './performance/PerformanceMonitor.ts';
 
@@ -18,6 +19,9 @@ if (isDevelopment) {
 } else {
     perfMonitor.setEnabled(false);
 }
+
+// Phase 3-1: 전역 에러 핸들러 등록
+setupGlobalErrorHandlers();
 
 try {
     const state = new PortfolioState();

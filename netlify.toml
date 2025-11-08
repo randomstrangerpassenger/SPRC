@@ -20,3 +20,39 @@
   # Playwright가 Vite 개발 서버를 시작할 때 필요한 환경 변수
   # (이 키의 '값'은 3단계에서 Netlify 대시보드에 설정합니다)
   FINNHUB_API_KEY = "FINNHUB_API_KEY"
+
+# Content Security Policy (CSP) 헤더 추가 (XSS 방어)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # CSP: XSS 공격 방어를 위한 강력한 정책
+    # - default-src 'self': 기본적으로 동일 출처의 리소스만 허용
+    # - script-src 'self' 'unsafe-inline' 'unsafe-eval':
+    #   * 'self': 동일 출처의 스크립트 허용
+    #   * 'unsafe-inline': 인라인 스크립트 허용 (Vite HMR에 필요)
+    #   * 'unsafe-eval': eval() 허용 (일부 라이브러리에 필요, 추후 제거 검토)
+    # - style-src 'self' 'unsafe-inline': 동일 출처 + 인라인 스타일 허용 (Chart.js 등에 필요)
+    # - img-src 'self' data: blob: https:
+    #   * data:: Base64 인코딩 이미지 허용
+    #   * blob:: Blob URL 허용 (Canvas 등에 필요)
+    #   * https:: HTTPS 이미지 허용
+    # - font-src 'self' data:: 동일 출처 + Data URL 폰트 허용
+    # - connect-src 'self' https://finnhub.io https://v6.exchangerate-api.com https://api.exchangerate-api.com
+    #   * API 호출을 허용할 외부 도메인 명시
+    # - worker-src 'self' blob:: Web Worker 허용
+    # - frame-ancestors 'none': iframe 임베딩 방지 (Clickjacking 방어)
+    # - base-uri 'self': base 태그 제한
+    # - form-action 'self': 폼 제출 제한
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://finnhub.io https://v6.exchangerate-api.com https://api.exchangerate-api.com; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+    # X-Frame-Options: iframe 임베딩 방지 (Clickjacking 방어)
+    X-Frame-Options = "DENY"
+
+    # X-Content-Type-Options: MIME 타입 스니핑 방지
+    X-Content-Type-Options = "nosniff"
+
+    # Referrer-Policy: Referrer 정보 제한 (프라이버시 보호)
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # Permissions-Policy: 불필요한 브라우저 기능 비활성화
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

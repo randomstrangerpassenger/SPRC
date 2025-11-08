@@ -282,3 +282,115 @@ export function checkTouchTargetSize(element: HTMLElement): {
         isSufficient: rect.width >= minSize && rect.height >= minSize,
     };
 }
+/**
+ * @description 키보드 단축키 관리
+ * (Phase 3-3: 접근성 개선)
+ */
+export class KeyboardShortcutManager {
+    private shortcuts: Map<string, (e: KeyboardEvent) => void> = new Map();
+
+    /**
+     * @description 단축키 등록
+     * @param key - 키 조합 (예: 'Ctrl+S', 'Alt+N')
+     * @param callback - 실행할 콜백
+     */
+    register(key: string, callback: (e: KeyboardEvent) => void): void {
+        this.shortcuts.set(key.toLowerCase(), callback);
+    }
+
+    /**
+     * @description 단축키 제거
+     * @param key - 키 조합
+     */
+    unregister(key: string): void {
+        this.shortcuts.delete(key.toLowerCase());
+    }
+
+    /**
+     * @description 키보드 이벤트 처리
+     * @param e - KeyboardEvent
+     */
+    handleKeyDown(e: KeyboardEvent): void {
+        const key = this.getKeyString(e);
+        const callback = this.shortcuts.get(key.toLowerCase());
+
+        if (callback) {
+            e.preventDefault();
+            callback(e);
+        }
+    }
+
+    /**
+     * @description KeyboardEvent에서 키 문자열 생성
+     * @param e - KeyboardEvent
+     * @returns 키 조합 문자열 (예: 'ctrl+s')
+     */
+    private getKeyString(e: KeyboardEvent): string {
+        const parts: string[] = [];
+
+        if (e.ctrlKey) parts.push('ctrl');
+        if (e.altKey) parts.push('alt');
+        if (e.shiftKey) parts.push('shift');
+        if (e.metaKey) parts.push('meta');
+
+        parts.push(e.key.toLowerCase());
+
+        return parts.join('+');
+    }
+
+    /**
+     * @description 모든 단축키 제거
+     */
+    clear(): void {
+        this.shortcuts.clear();
+    }
+
+    /**
+     * @description 등록된 단축키 목록 반환
+     * @returns 단축키 배열
+     */
+    getRegisteredShortcuts(): string[] {
+        return Array.from(this.shortcuts.keys());
+    }
+}
+
+/**
+ * @description 읽기 전용 모드 토글 (폼 필드 비활성화)
+ * (Phase 3-3: 접근성 개선)
+ * @param container - 컨테이너 요소
+ * @param readOnly - 읽기 전용 여부
+ */
+export function setReadOnlyMode(container: HTMLElement, readOnly: boolean): void {
+    const inputs = container.querySelectorAll('input, select, textarea, button');
+
+    inputs.forEach((element) => {
+        if (
+            element instanceof HTMLInputElement ||
+            element instanceof HTMLSelectElement ||
+            element instanceof HTMLTextAreaElement ||
+            element instanceof HTMLButtonElement
+        ) {
+            element.disabled = readOnly;
+            element.setAttribute('aria-disabled', String(readOnly));
+        }
+    });
+}
+
+/**
+ * @description 랜드마크 영역 설정 헬퍼
+ * (Phase 3-3: 접근성 개선)
+ * @param element - 요소
+ * @param role - ARIA 랜드마크 역할
+ * @param label - aria-label (선택)
+ */
+export function setLandmark(
+    element: HTMLElement,
+    role: 'main' | 'navigation' | 'complementary' | 'banner' | 'contentinfo' | 'region',
+    label?: string
+): void {
+    element.setAttribute('role', role);
+
+    if (label) {
+        element.setAttribute('aria-label', label);
+    }
+}

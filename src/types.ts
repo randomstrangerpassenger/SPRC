@@ -181,4 +181,14 @@ export interface DOMElements {
     customModalInput: HTMLElement | null;
     customModalConfirm: HTMLElement | null;
     customModalCancel: HTMLElement | null;
+    performanceHistorySection: HTMLElement | null;
+    showPerformanceHistoryBtn: HTMLElement | null;
+    showSnapshotListBtn: HTMLElement | null;
+    performanceChartContainer: HTMLElement | null;
+    performanceChart: HTMLElement | null;
+    snapshotListContainer: HTMLElement | null;
+    snapshotList: HTMLElement | null;
+    rebalancingToleranceInput: HTMLElement | null;
+    tradingFeeRateInput: HTMLElement | null;
+    taxRateInput: HTMLElement | null;
 }
