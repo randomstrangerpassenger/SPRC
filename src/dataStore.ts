@@ -68,28 +68,47 @@ export class DataStore {
             const lsMeta = localStorage.getItem(CONFIG.LEGACY_LS_META_KEY);
             const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
 
-            if (lsMeta && lsPortfolios) {
-                const metaData = JSON.parse(lsMeta);
-                const portfolioData = JSON.parse(lsPortfolios);
-
-                // IndexedDB에 저장
-                await set(CONFIG.IDB_META_KEY, metaData);
-                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
-
-                // 마이그레이션 성공 후 LocalStorage 데이터 삭제
-                localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
-                localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
-
-                console.log(
-                    '[DataStore] Successfully migrated from LocalStorage to IndexedDB'
-                );
-                return true;
+            if (!lsMeta || !lsPortfolios) {
+                console.log('[DataStore] No legacy data found in LocalStorage');
+                return false;
             }
 
-            console.log('[DataStore] No legacy data found in LocalStorage');
-            return false;
+            let metaData, portfolioData;
+
+            try {
+                metaData = JSON.parse(lsMeta);
+            } catch (parseError) {
+                throw new Error(`Failed to parse meta data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
+            }
+
+            try {
+                portfolioData = JSON.parse(lsPortfolios);
+            } catch (parseError) {
+                throw new Error(`Failed to parse portfolio data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`);
+            }
+
+            // IndexedDB에 저장
+            try {
+                await set(CONFIG.IDB_META_KEY, metaData);
+            } catch (saveError) {
+                throw new Error(`Failed to save meta to IndexedDB: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
+            }
+
+            try {
+                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolioData);
+            } catch (saveError) {
+                throw new Error(`Failed to save portfolios to IndexedDB: ${saveError instanceof Error ? saveError.message : 'Unknown error'}`);
+            }
+
+            // 마이그레이션 성공 후 LocalStorage 데이터 삭제
+            localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
+            localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
+
+            console.log('[DataStore] Successfully migrated from LocalStorage to IndexedDB');
+            return true;
         } catch (error) {
-            console.error('[DataStore] Migration failed:', error);
+            // 세분화된 에러 메시지와 함께 로깅
+            console.error('[DataStore] Migration failed:', error instanceof Error ? error.message : error);
             ErrorService.handle(error as Error, 'DataStore.migrateFromLocalStorage');
             return false;
         }

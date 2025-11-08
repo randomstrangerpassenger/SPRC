@@ -132,23 +132,8 @@ export class Calculator {
             return result;
         } catch (error) {
             ErrorService.handle(error as Error, 'calculateStockMetrics');
-            // 에러 발생 시 기본값 반환
-            return {
-                totalBuyQuantity: DECIMAL_ZERO,
-                totalSellQuantity: DECIMAL_ZERO,
-                quantity: DECIMAL_ZERO,
-                totalBuyAmount: DECIMAL_ZERO,
-                totalSellAmount: DECIMAL_ZERO,
-                avgBuyPrice: DECIMAL_ZERO,
-                currentAmount: DECIMAL_ZERO,
-                currentAmountUSD: DECIMAL_ZERO,
-                currentAmountKRW: DECIMAL_ZERO,
-                profitLoss: DECIMAL_ZERO,
-                profitLossRate: DECIMAL_ZERO,
-                totalDividends: DECIMAL_ZERO,
-                realizedPL: DECIMAL_ZERO,
-                totalRealizedPL: DECIMAL_ZERO,
-            };
+            // 에러를 상위로 전파 (잘못된 계산 결과를 숨기지 않음)
+            throw new Error(`Failed to calculate metrics for stock: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 
@@ -211,7 +196,7 @@ export class Calculator {
     /**
      * @description '전략' 객체를 받아 리밸런싱 계산을 실행합니다.
      */
-    static calculateRebalancing(strategy: IRebalanceStrategy): { results: any[] } {
+    static calculateRebalancing(strategy: import('./calculationStrategies').IRebalanceStrategy): { results: import('./calculationStrategies').RebalancingResult[] } {
         return strategy.calculate();
     }
 
@@ -332,23 +317,8 @@ export class Calculator {
             return snapshot;
         } catch (error) {
             ErrorService.handle(error as Error, 'Calculator.createSnapshot');
-            // Return empty snapshot on error
-            const now = new Date();
-            return {
-                id: nanoid(),
-                portfolioId,
-                timestamp: now.getTime(),
-                date: now.toISOString().split('T')[0],
-                totalValue: 0,
-                totalValueKRW: 0,
-                totalInvestedCapital: 0,
-                totalUnrealizedPL: 0,
-                totalRealizedPL: 0,
-                totalDividends: 0,
-                totalOverallPL: 0,
-                exchangeRate,
-                stockCount: 0,
-            };
+            // 에러를 상위로 전파 (빈 스냅샷을 저장하지 않음)
+            throw new Error(`Failed to create snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 }

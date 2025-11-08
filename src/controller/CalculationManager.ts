@@ -80,8 +80,10 @@ export class CalculationManager {
             await DataStore.addSnapshot(snapshot);
             console.log('[CalculationManager] Snapshot saved:', snapshot.date);
         } catch (error) {
-            console.error('[CalculationManager] Failed to save snapshot:', error);
-            // Continue with calculation even if snapshot fails
+            // 스냅샷 저장 실패는 치명적이지 않으므로 계속 진행
+            ErrorService.handle(error as Error, 'CalculationManager.saveSnapshot');
+            // 사용자에게 알림 (선택적)
+            // this.view.showToast('스냅샷 저장 실패. 계산은 정상적으로 완료되었습니다.', 'warning');
         }
 
         let strategy;
@@ -310,7 +312,7 @@ export class CalculationManager {
 
             this.debouncedSave();
         } catch (e) {
-            console.error('Error during currency conversion:', e);
+            ErrorService.handle(e as Error, 'CalculationManager.convertCurrency');
             this.view.showToast(t('toast.amountInputError'), 'error');
             if (source === 'krw') additionalAmountUSDInput.value = '';
             else additionalAmountInput.value = '';

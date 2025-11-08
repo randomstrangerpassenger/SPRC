@@ -25,7 +25,7 @@ function calculateRatioMultiplier(totalRatio: Decimal): Decimal {
 function allocateFixedBuyAmounts(
     portfolioData: CalculatedStock[],
     additionalInvestment: Decimal,
-    results: any[]
+    results: RebalancingResult[]
 ): Decimal {
     const zero = DECIMAL_ZERO;
     let remainingInvestment = additionalInvestment;
@@ -56,7 +56,7 @@ function allocateFixedBuyAmounts(
  * @description 목표 금액 대비 부족분(deficit) 계산 및 비율에 따라 남은 투자금 배분
  */
 function distributeRemainingInvestment(
-    results: any[],
+    results: RebalancingResult[],
     totalInvestment: Decimal,
     remainingInvestment: Decimal,
     ratioMultiplier: Decimal
@@ -99,11 +99,14 @@ function distributeRemainingInvestment(
 
 // ==================== 전략 인터페이스 ====================
 
+// Rebalancing result type (strategy-specific properties can extend this)
+export type RebalancingResult = CalculatedStock & Record<string, unknown>;
+
 /**
  * @description 모든 리밸런싱 전략이 따라야 하는 인터페이스
  */
 export interface IRebalanceStrategy {
-    calculate(): { results: any[] };
+    calculate(): { results: RebalancingResult[] };
 }
 
 /**
@@ -118,7 +121,7 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
         this.#additionalInvestment = additionalInvestment;
     }
 
-    calculate(): { results: any[] } {
+    calculate(): { results: RebalancingResult[] } {
         const startTime = performance.now();
         const zero = DECIMAL_ZERO;
 
@@ -194,7 +197,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
         this.#additionalInvestment = additionalInvestment;
     }
 
-    calculate(): { results: any[] } {
+    calculate(): { results: RebalancingResult[] } {
         const startTime = performance.now();
         const zero = DECIMAL_ZERO;
 
@@ -291,7 +294,7 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
         this.#portfolioData = portfolioData;
     }
 
-    calculate(): { results: any[] } {
+    calculate(): { results: RebalancingResult[] } {
         const startTime = performance.now();
         const zero = DECIMAL_ZERO;
 
