@@ -5,6 +5,17 @@ import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
 
+// ===== [Phase 2-2 최적화] UI 렌더링용 헬퍼 함수 =====
+/**
+ * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
+ */
+function toNumber(value: Decimal | number | null | undefined): number {
+    if (value == null) return 0;
+    if (value instanceof Decimal) return value.toNumber();
+    return Number(value);
+}
+// ===== [Phase 2-2 최적화 끝] =====
+
 /**
  * @class ModalManager
  * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
@@ -220,10 +231,11 @@ export class ModalManager {
             const tr = document.createElement('tr');
             tr.dataset.txId = tx.id;
 
-            const quantityDec =
-                tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
-            const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
-            const total = quantityDec.times(priceDec);
+            // ===== [Phase 2-2 최적화] Decimal을 네이티브 number로 변환 =====
+            const quantity = toNumber(tx.quantity);
+            const price = toNumber(tx.price);
+            const total = quantity * price;
+            // ===== [Phase 2-2 최적화 끝] =====
 
             // Date cell
             const dateTd = document.createElement('td');
@@ -250,13 +262,13 @@ export class ModalManager {
 
             // Quantity cell
             const qtyTd = document.createElement('td');
-            qtyTd.textContent = quantityDec.toNumber().toLocaleString();
+            qtyTd.textContent = quantity.toLocaleString();
             qtyTd.style.textAlign = 'right';
             tr.appendChild(qtyTd);
 
             // Price cell
             const priceTd = document.createElement('td');
-            priceTd.textContent = formatCurrency(priceDec, currency);
+            priceTd.textContent = formatCurrency(price, currency);
             priceTd.style.textAlign = 'right';
             tr.appendChild(priceTd);
 
