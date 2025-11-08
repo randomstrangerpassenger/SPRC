@@ -3,11 +3,27 @@ import { PortfolioState } from './state.ts';
 import { PortfolioView } from './view.ts';
 import { PortfolioController } from './controller.ts';
 import { ErrorService } from './errorService.ts';
+// ===== [Phase 4 Performance Monitoring] =====
+import { initPerformancePanel } from './performance/PerformancePanel.ts';
+import { perfMonitor } from './performance/PerformanceMonitor.ts';
+// ===== [Phase 4 Performance Monitoring 끝] =====
 
 // ===== [Phase 3.1 최적화] Chart.js 지연 로딩 =====
 // Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
 // (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
 // ===== [Phase 3.1 최적화 끝] =====
+
+// ===== [Phase 4 Performance Monitoring] =====
+// 개발 모드에서 성능 모니터링 활성화
+const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+if (isDevelopment) {
+    perfMonitor.setEnabled(true);
+    initPerformancePanel();
+    console.log('[Performance] Monitoring enabled. Press Ctrl+Shift+P to view metrics.');
+} else {
+    perfMonitor.setEnabled(false);
+}
+// ===== [Phase 4 Performance Monitoring 끝] =====
 
 try {
     const state = new PortfolioState();
