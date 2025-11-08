@@ -1,9 +1,9 @@
 // src/view.ts (리팩토링: 모듈화)
 import { CONFIG } from './constants';
-import { getRatioSum } from './utils';
+import { getRatioSum, escapeHTML } from './utils';
 import { t } from './i18n';
 import Decimal from 'decimal.js';
-import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot } from './types';
+import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot, DOMElements } from './types';
 import type { Chart } from 'chart.js';
 
 // 분리된 모듈들
@@ -11,59 +11,6 @@ import { EventEmitter, type EventCallback } from './view/EventEmitter';
 import { ModalManager } from './view/ModalManager';
 import { VirtualScrollManager } from './view/VirtualScrollManager';
 import { ResultsRenderer } from './view/ResultsRenderer';
-
-// DOM 요소 타입 정의
-interface DOMElements {
-    ariaAnnouncer: HTMLElement | null;
-    resultsSection: HTMLElement | null;
-    sectorAnalysisSection: HTMLElement | null;
-    chartSection: HTMLElement | null;
-    portfolioChart: HTMLElement | null;
-    additionalAmountInput: HTMLElement | null;
-    additionalAmountUSDInput: HTMLElement | null;
-    exchangeRateInput: HTMLElement | null;
-    portfolioExchangeRateInput: HTMLElement | null;
-    mainModeSelector: NodeListOf<HTMLElement> | null;
-    currencyModeSelector: NodeListOf<HTMLElement> | null;
-    exchangeRateGroup: HTMLElement | null;
-    usdInputGroup: HTMLElement | null;
-    addInvestmentCard: HTMLElement | null;
-    calculateBtn: HTMLElement | null;
-    darkModeToggle: HTMLElement | null;
-    addNewStockBtn: HTMLElement | null;
-    fetchAllPricesBtn: HTMLElement | null;
-    resetDataBtn: HTMLElement | null;
-    normalizeRatiosBtn: HTMLElement | null;
-    dataManagementBtn: HTMLElement | null;
-    dataDropdownContent: HTMLElement | null;
-    exportDataBtn: HTMLElement | null;
-    importDataBtn: HTMLElement | null;
-    importFileInput: HTMLElement | null;
-    transactionModal: HTMLElement | null;
-    modalStockName: HTMLElement | null;
-    closeModalBtn: HTMLElement | null;
-    transactionListBody: HTMLElement | null;
-    newTransactionForm: HTMLElement | null;
-    txDate: HTMLElement | null;
-    txQuantity: HTMLElement | null;
-    txPrice: HTMLElement | null;
-    portfolioSelector: HTMLElement | null;
-    newPortfolioBtn: HTMLElement | null;
-    renamePortfolioBtn: HTMLElement | null;
-    deletePortfolioBtn: HTMLElement | null;
-    virtualTableHeader: HTMLElement | null;
-    virtualScrollWrapper: HTMLElement | null;
-    virtualScrollSpacer: HTMLElement | null;
-    virtualScrollContent: HTMLElement | null;
-    ratioValidator: HTMLElement | null;
-    ratioSum: HTMLElement | null;
-    customModal: HTMLElement | null;
-    customModalTitle: HTMLElement | null;
-    customModalMessage: HTMLElement | null;
-    customModalInput: HTMLElement | null;
-    customModalConfirm: HTMLElement | null;
-    customModalCancel: HTMLElement | null;
-}
 
 /**
  * @class PortfolioView
@@ -97,7 +44,7 @@ export class PortfolioView {
         this.eventEmitter.on(event, callback);
     }
 
-    emit(event: string, data?: any): void {
+    emit(event: string, data?: unknown): void {
         this.eventEmitter.emit(event, data);
     }
 
@@ -213,9 +160,36 @@ export class PortfolioView {
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
         toast.className = `toast toast--${type}`;
-        toast.innerHTML = message.replace(/\n/g, '<br>');
+        // XSS 방어: escapeHTML 적용
+        toast.innerHTML = escapeHTML(message).replace(/\n/g, '<br>');
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+    }
+
+    /**
+     * @description 계산 로딩 표시
+     */
+    showCalculationLoading(): void {
+        const existingLoader = document.querySelector('.calculation-loader');
+        if (existingLoader) return;
+
+        const loader = document.createElement('div');
+        loader.className = 'calculation-loader';
+        loader.setAttribute('role', 'status');
+        loader.setAttribute('aria-live', 'polite');
+        loader.innerHTML = `
+            <div class="spinner"></div>
+            <span class="sr-only">계산 중...</span>
+        `;
+        document.body.appendChild(loader);
+    }
+
+    /**
+     * @description 계산 로딩 숨김
+     */
+    hideCalculationLoading(): void {
+        const loader = document.querySelector('.calculation-loader');
+        if (loader) loader.remove();
     }
 
     /**
@@ -224,7 +198,11 @@ export class PortfolioView {
      * @param isValid - 유효 여부
      * @param errorMessage - 에러 메시지
      */
-    toggleInputValidation(inputElement: HTMLInputElement, isValid: boolean, errorMessage: string = ''): void {
+    toggleInputValidation(
+        inputElement: HTMLInputElement,
+        isValid: boolean,
+        errorMessage: string = ''
+    ): void {
         if (!inputElement) return;
         inputElement.classList.toggle('input-invalid', !isValid);
         inputElement.setAttribute('aria-invalid', String(!isValid));
@@ -236,7 +214,11 @@ export class PortfolioView {
         return this.modalManager.showConfirm(title, message);
     }
 
-    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
+    async showPrompt(
+        title: string,
+        message: string,
+        defaultValue: string = ''
+    ): Promise<string | null> {
         return this.modalManager.showPrompt(title, message, defaultValue);
     }
 
@@ -254,7 +236,11 @@ export class PortfolioView {
 
     // ===== VirtualScroll 위임 =====
 
-    renderTable(calculatedPortfolioData: CalculatedStock[], currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
+    renderTable(
+        calculatedPortfolioData: CalculatedStock[],
+        currency: 'krw' | 'usd',
+        mainMode: 'add' | 'sell' | 'simple'
+    ): void {
         this.virtualScrollManager.renderTable(calculatedPortfolioData, currency, mainMode);
     }
 
@@ -301,7 +287,11 @@ export class PortfolioView {
         this.resultsRenderer.displayChart(ChartClass, labels, data, title);
     }
 
-    async displayPerformanceHistory(ChartClass: typeof Chart, snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): Promise<void> {
+    async displayPerformanceHistory(
+        ChartClass: typeof Chart,
+        snapshots: PortfolioSnapshot[],
+        currency: 'krw' | 'usd'
+    ): Promise<void> {
         await this.resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
     }
 
@@ -332,14 +322,19 @@ export class PortfolioView {
         const selector = this.dom.portfolioSelector;
         if (!(selector instanceof HTMLSelectElement)) return;
 
-        selector.innerHTML = '';
+        // ===== [Phase 3 최적화] DocumentFragment로 DOM 조작 최소화 =====
+        const fragment = document.createDocumentFragment();
         Object.entries(portfolios).forEach(([id, portfolio]) => {
             const option = document.createElement('option');
             option.value = id;
             option.textContent = portfolio.name;
             option.selected = id === activeId;
-            selector.appendChild(option);
+            fragment.appendChild(option);
         });
+
+        selector.innerHTML = '';
+        selector.appendChild(fragment);
+        // ===== [Phase 3 최적화 끝] =====
     }
 
     /**

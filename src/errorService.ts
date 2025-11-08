@@ -1,4 +1,5 @@
 import { t } from './i18n.ts';
+import type { IView } from './types';
 
 /**
  * @description 유효성 검사 오류를 나타내는 커스텀 에러 클래스
@@ -11,12 +12,12 @@ export class ValidationError extends Error {
 }
 
 export const ErrorService = {
-    _viewInstance: null as any | null,
+    _viewInstance: null as IView | null,
 
     /**
      * @description View 인스턴스를 설정합니다.
      */
-    setViewInstance(view: any): void {
+    setViewInstance(view: IView): void {
         this._viewInstance = view;
     },
 

@@ -26,7 +26,8 @@ export function addKeyboardActivation(
  * @returns cleanup 함수
  */
 export function createFocusTrap(container: HTMLElement): () => void {
-    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusableSelector =
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
     const focusableElements = container.querySelectorAll(focusableSelector);
 
     if (focusableElements.length === 0) {
@@ -169,7 +170,10 @@ export function updateProgressBar(
  * @param text - 링크 텍스트
  * @returns HTMLAnchorElement
  */
-export function createSkipLink(targetId: string, text: string = 'Skip to main content'): HTMLAnchorElement {
+export function createSkipLink(
+    targetId: string,
+    text: string = 'Skip to main content'
+): HTMLAnchorElement {
     const skipLink = document.createElement('a');
     skipLink.href = `#${targetId}`;
     skipLink.textContent = text;
@@ -226,7 +230,7 @@ export function checkColorContrast(
             ? {
                   r: parseInt(result[1], 16),
                   g: parseInt(result[2], 16),
-                  b: parseInt(result[3], 16)
+                  b: parseInt(result[3], 16),
               }
             : null;
     };
@@ -255,7 +259,7 @@ export function checkColorContrast(
     return {
         ratio: Math.round(ratio * 100) / 100,
         passAA: ratio >= 4.5, // WCAG AA 기준
-        passAAA: ratio >= 7 // WCAG AAA 기준
+        passAAA: ratio >= 7, // WCAG AAA 기준
     };
 }
 
@@ -275,6 +279,6 @@ export function checkTouchTargetSize(element: HTMLElement): {
     return {
         width: rect.width,
         height: rect.height,
-        isSufficient: rect.width >= minSize && rect.height >= minSize
+        isSufficient: rect.width >= minSize && rect.height >= minSize,
     };
 }

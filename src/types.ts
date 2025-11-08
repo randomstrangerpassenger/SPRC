@@ -8,8 +8,8 @@ export interface Transaction {
     id: string; // 거래 고유 ID
     type: TransactionType; // 거래 유형
     date: string; // 거래 날짜 (YYYY-MM-DD)
-    quantity: number; // 수량
-    price: number; // 단가
+    quantity: Decimal | number; // 수량 (Decimal 또는 number)
+    price: Decimal | number; // 단가 (Decimal 또는 number)
 }
 
 export interface Stock {
@@ -17,12 +17,12 @@ export interface Stock {
     name: string; // 종목명
     ticker: string; // 티커
     sector: string; // 섹터
-    targetRatio: number; // 목표 비율 (%)
-    currentPrice: number; // 현재가
+    targetRatio: Decimal | number; // 목표 비율 (%) (Decimal 또는 number)
+    currentPrice: Decimal | number; // 현재가 (Decimal 또는 number)
     transactions: Transaction[]; // 거래 내역 배열
     isFixedBuyEnabled: boolean; // 고정 매수 활성화 여부
-    fixedBuyAmount: number; // 고정 매수 금액
-    manualAmount?: number; // 간단 모드용 수동 입력 금액 (선택 사항)
+    fixedBuyAmount: Decimal | number; // 고정 매수 금액 (Decimal 또는 number)
+    manualAmount?: Decimal | number; // 간단 모드용 수동 입력 금액 (선택 사항)
 }
 
 export interface CalculatedStockMetrics {
@@ -113,4 +113,72 @@ export interface PortfolioSnapshot {
     totalOverallPL: number; // 총 전체 손익 (USD) = unrealized + realized + dividends
     exchangeRate: number; // 환율 (스냅샷 당시)
     stockCount: number; // 보유 종목 수
+}
+
+// Sector analysis data type
+export interface SectorData {
+    sector: string;
+    amount: Decimal;
+    percentage: Decimal;
+}
+
+// View interface for error service (to avoid circular dependencies)
+export interface IView {
+    showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
+}
+
+// Result type for error handling (Railway-oriented programming)
+export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+
+// DOM Elements type
+export interface DOMElements {
+    ariaAnnouncer: HTMLElement | null;
+    resultsSection: HTMLElement | null;
+    sectorAnalysisSection: HTMLElement | null;
+    chartSection: HTMLElement | null;
+    portfolioChart: HTMLElement | null;
+    additionalAmountInput: HTMLElement | null;
+    additionalAmountUSDInput: HTMLElement | null;
+    exchangeRateInput: HTMLElement | null;
+    portfolioExchangeRateInput: HTMLElement | null;
+    mainModeSelector: NodeListOf<HTMLElement> | null;
+    currencyModeSelector: NodeListOf<HTMLElement> | null;
+    exchangeRateGroup: HTMLElement | null;
+    usdInputGroup: HTMLElement | null;
+    addInvestmentCard: HTMLElement | null;
+    calculateBtn: HTMLElement | null;
+    darkModeToggle: HTMLElement | null;
+    addNewStockBtn: HTMLElement | null;
+    fetchAllPricesBtn: HTMLElement | null;
+    resetDataBtn: HTMLElement | null;
+    normalizeRatiosBtn: HTMLElement | null;
+    dataManagementBtn: HTMLElement | null;
+    dataDropdownContent: HTMLElement | null;
+    exportDataBtn: HTMLElement | null;
+    importDataBtn: HTMLElement | null;
+    importFileInput: HTMLElement | null;
+    transactionModal: HTMLElement | null;
+    modalStockName: HTMLElement | null;
+    closeModalBtn: HTMLElement | null;
+    transactionListBody: HTMLElement | null;
+    newTransactionForm: HTMLElement | null;
+    txDate: HTMLElement | null;
+    txQuantity: HTMLElement | null;
+    txPrice: HTMLElement | null;
+    portfolioSelector: HTMLElement | null;
+    newPortfolioBtn: HTMLElement | null;
+    renamePortfolioBtn: HTMLElement | null;
+    deletePortfolioBtn: HTMLElement | null;
+    virtualTableHeader: HTMLElement | null;
+    virtualScrollWrapper: HTMLElement | null;
+    virtualScrollSpacer: HTMLElement | null;
+    virtualScrollContent: HTMLElement | null;
+    ratioValidator: HTMLElement | null;
+    ratioSum: HTMLElement | null;
+    customModal: HTMLElement | null;
+    customModalTitle: HTMLElement | null;
+    customModalMessage: HTMLElement | null;
+    customModalInput: HTMLElement | null;
+    customModalConfirm: HTMLElement | null;
+    customModalCancel: HTMLElement | null;
 }

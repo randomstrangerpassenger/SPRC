@@ -3,19 +3,19 @@ import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
 import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
-import type { Stock, Transaction } from '../types';
+import type { Stock, Transaction, DOMElements } from '../types';
 
 /**
  * @class ModalManager
  * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
  */
 export class ModalManager {
-    private dom: any;
-    private activeModalResolver: ((value: any) => void) | null = null;
+    private dom: DOMElements;
+    private activeModalResolver: ((value: boolean | string | null) => void) | null = null;
     private focusManager: FocusManager;
     private focusTrapCleanup: (() => void) | null = null;
 
-    constructor(dom: any) {
+    constructor(dom: DOMElements) {
         this.dom = dom;
         this.focusManager = new FocusManager();
     }
@@ -46,7 +46,7 @@ export class ModalManager {
      * @returns 사용자의 선택 (true/false)
      */
     async showConfirm(title: string, message: string): Promise<boolean> {
-        return this._showModal({ title, message, type: 'confirm' }) as Promise<boolean>;
+        return this.#showModal({ title, message, type: 'confirm' }) as Promise<boolean>;
     }
 
     /**
@@ -56,8 +56,14 @@ export class ModalManager {
      * @param defaultValue - 기본값
      * @returns 사용자 입력 문자열 또는 null
      */
-    async showPrompt(title: string, message: string, defaultValue: string = ''): Promise<string | null> {
-        return this._showModal({ title, message, defaultValue, type: 'prompt' }) as Promise<string | null>;
+    async showPrompt(
+        title: string,
+        message: string,
+        defaultValue: string = ''
+    ): Promise<string | null> {
+        return this.#showModal({ title, message, defaultValue, type: 'prompt' }) as Promise<
+            string | null
+        >;
     }
 
     /**
@@ -65,7 +71,7 @@ export class ModalManager {
      * @param options - 모달 옵션
      * @returns Promise<boolean | string | null>
      */
-    private _showModal(options: {
+    #showModal(options: {
         title: string;
         message: string;
         defaultValue?: string;
@@ -115,7 +121,8 @@ export class ModalManager {
 
         const inputEl = this.dom.customModalInput;
         const modalEl = this.dom.customModal;
-        const isPrompt = inputEl instanceof HTMLInputElement && !inputEl.classList.contains('hidden');
+        const isPrompt =
+            inputEl instanceof HTMLInputElement && !inputEl.classList.contains('hidden');
         const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
 
         this.activeModalResolver(value);
@@ -207,17 +214,24 @@ export class ModalManager {
             return idB.localeCompare(idA);
         });
 
+        // ===== [Phase 3 최적화] DocumentFragment로 DOM 조작 최소화 =====
+        const fragment = document.createDocumentFragment();
         sorted.forEach((tx) => {
-            const tr = (listBody as HTMLTableSectionElement).insertRow();
+            const tr = document.createElement('tr');
             tr.dataset.txId = tx.id;
 
-            const quantityDec = tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
+            const quantityDec =
+                tx.quantity instanceof Decimal ? tx.quantity : new Decimal(tx.quantity || 0);
             const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
             const total = quantityDec.times(priceDec);
 
-            tr.insertCell().textContent = tx.date;
+            // Date cell
+            const dateTd = document.createElement('td');
+            dateTd.textContent = tx.date;
+            tr.appendChild(dateTd);
 
-            const typeTd = tr.insertCell();
+            // Type cell
+            const typeTd = document.createElement('td');
             const typeSpan = document.createElement('span');
             if (tx.type === 'buy') {
                 typeSpan.className = 'text-buy';
@@ -232,20 +246,28 @@ export class ModalManager {
                 typeSpan.textContent = tx.type;
             }
             typeTd.appendChild(typeSpan);
+            tr.appendChild(typeTd);
 
-            const qtyTd = tr.insertCell();
+            // Quantity cell
+            const qtyTd = document.createElement('td');
             qtyTd.textContent = quantityDec.toNumber().toLocaleString();
             qtyTd.style.textAlign = 'right';
+            tr.appendChild(qtyTd);
 
-            const priceTd = tr.insertCell();
+            // Price cell
+            const priceTd = document.createElement('td');
             priceTd.textContent = formatCurrency(priceDec, currency);
             priceTd.style.textAlign = 'right';
+            tr.appendChild(priceTd);
 
-            const totalTd = tr.insertCell();
+            // Total cell
+            const totalTd = document.createElement('td');
             totalTd.textContent = formatCurrency(total, currency);
             totalTd.style.textAlign = 'right';
+            tr.appendChild(totalTd);
 
-            const actionTd = tr.insertCell();
+            // Action cell
+            const actionTd = document.createElement('td');
             actionTd.style.textAlign = 'center';
             const btnDelete = document.createElement('button');
             btnDelete.className = 'btn btn--small';
@@ -254,7 +276,13 @@ export class ModalManager {
             btnDelete.textContent = t('ui.delete');
             btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
             actionTd.appendChild(btnDelete);
+            tr.appendChild(actionTd);
+
+            fragment.appendChild(tr);
         });
+
+        listBody.appendChild(fragment);
+        // ===== [Phase 3 최적화 끝] =====
     }
 
     /**

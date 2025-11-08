@@ -26,7 +26,7 @@ describe('apiService', () => {
         it('should include optional fields', () => {
             const error = new APIError('Ticker error', APIErrorType.INVALID_TICKER, {
                 ticker: 'INVALID',
-                statusCode: 404
+                statusCode: 404,
             });
 
             expect(error.ticker).toBe('INVALID');
@@ -35,7 +35,7 @@ describe('apiService', () => {
 
         it('should handle rate limit with retryAfter', () => {
             const error = new APIError('Rate limit', APIErrorType.RATE_LIMIT, {
-                retryAfter: 60
+                retryAfter: 60,
             });
 
             expect(error.retryAfter).toBe(60);
@@ -60,7 +60,7 @@ describe('apiService', () => {
 
         it('should format rate limit error with retry time', () => {
             const error = new APIError('Rate limit', APIErrorType.RATE_LIMIT, {
-                retryAfter: 120
+                retryAfter: 120,
             });
             const message = formatAPIError(error);
 
@@ -70,7 +70,7 @@ describe('apiService', () => {
 
         it('should format invalid ticker error', () => {
             const error = new APIError('Invalid', APIErrorType.INVALID_TICKER, {
-                ticker: 'BADTICKER'
+                ticker: 'BADTICKER',
             });
             const message = formatAPIError(error);
 
@@ -97,7 +97,7 @@ describe('apiService', () => {
         it('should fetch stock price successfully', async () => {
             const mockResponse = {
                 ok: true,
-                json: async () => ({ c: 150.25 })
+                json: async () => ({ c: 150.25 }),
             };
             (global.fetch as any).mockResolvedValueOnce(mockResponse);
 
@@ -107,7 +107,7 @@ describe('apiService', () => {
             expect(global.fetch).toHaveBeenCalledWith(
                 expect.stringContaining('AAPL'),
                 expect.objectContaining({
-                    signal: expect.any(AbortSignal)
+                    signal: expect.any(AbortSignal),
                 })
             );
         });
@@ -115,18 +115,18 @@ describe('apiService', () => {
         it('should throw APIError for empty ticker', async () => {
             await expect(apiService.fetchStockPrice('')).rejects.toThrow(APIError);
             await expect(apiService.fetchStockPrice('')).rejects.toMatchObject({
-                type: APIErrorType.INVALID_TICKER
+                type: APIErrorType.INVALID_TICKER,
             });
         });
 
         it('should throw APIError for invalid ticker (no data)', async () => {
             const mockResponse = {
                 ok: true,
-                json: async () => ({ c: 0, d: null })
+                json: async () => ({ c: 0, d: null }),
             };
             (global.fetch as any).mockResolvedValue(mockResponse);
 
-            const error = await apiService.fetchStockPrice('INVALID').catch(e => e);
+            const error = await apiService.fetchStockPrice('INVALID').catch((e) => e);
             expect(error).toBeInstanceOf(APIError);
             expect(error.type).toBe(APIErrorType.INVALID_TICKER);
         });
@@ -134,7 +134,7 @@ describe('apiService', () => {
         it('should throw APIError for zero or negative price', async () => {
             const mockResponse = {
                 ok: true,
-                json: async () => ({ c: 0 })
+                json: async () => ({ c: 0 }),
             };
             (global.fetch as any).mockResolvedValueOnce(mockResponse);
 
@@ -146,11 +146,11 @@ describe('apiService', () => {
                 ok: false,
                 status: 503,
                 json: async () => ({ error: 'Service unavailable' }),
-                text: async () => 'Service unavailable'
+                text: async () => 'Service unavailable',
             };
             const mockSuccess = {
                 ok: true,
-                json: async () => ({ c: 100 })
+                json: async () => ({ c: 100 }),
             };
 
             (global.fetch as any)
@@ -163,20 +163,24 @@ describe('apiService', () => {
             expect(global.fetch).toHaveBeenCalledTimes(2);
         });
 
-        it('should throw APIError after max retries', async () => {
-            const mockError = {
-                ok: false,
-                status: 500,
-                json: async () => ({ error: 'Server error' }),
-                text: async () => 'Server error'
-            };
+        it(
+            'should throw APIError after max retries',
+            async () => {
+                const mockError = {
+                    ok: false,
+                    status: 500,
+                    json: async () => ({ error: 'Server error' }),
+                    text: async () => 'Server error',
+                };
 
-            (global.fetch as any).mockResolvedValue(mockError);
+                (global.fetch as any).mockResolvedValue(mockError);
 
-            await expect(apiService.fetchStockPrice('AAPL')).rejects.toThrow(APIError);
-            // Should retry up to 3 times (initial + 2 retries)
-            expect(global.fetch).toHaveBeenCalledTimes(3);
-        });
+                await expect(apiService.fetchStockPrice('AAPL')).rejects.toThrow(APIError);
+                // Should retry up to CONFIG.API_MAX_RETRIES times (initial + 3 retries = 4 total)
+                expect(global.fetch).toHaveBeenCalledTimes(4);
+            },
+            15000
+        ); // Increased timeout to account for exponential backoff
 
         it('should handle rate limiting (429)', async () => {
             const mockRateLimit = {
@@ -184,14 +188,14 @@ describe('apiService', () => {
                 status: 429,
                 headers: new Headers({ 'Retry-After': '60' }),
                 json: async () => ({}),
-                text: async () => 'Too many requests'
+                text: async () => 'Too many requests',
             };
 
             (global.fetch as any).mockResolvedValueOnce(mockRateLimit);
 
             await expect(apiService.fetchStockPrice('AAPL')).rejects.toMatchObject({
                 type: APIErrorType.RATE_LIMIT,
-                retryAfter: 60
+                retryAfter: 60,
             });
         });
     });
@@ -203,15 +207,15 @@ describe('apiService', () => {
                 json: async () => [
                     { status: 'fulfilled', ticker: 'AAPL', value: 150 },
                     { status: 'fulfilled', ticker: 'GOOGL', value: 2800 },
-                    { status: 'rejected', ticker: 'INVALID', reason: 'Not found' }
-                ]
+                    { status: 'rejected', ticker: 'INVALID', reason: 'Not found' },
+                ],
             };
             (global.fetch as any).mockResolvedValueOnce(mockResponse);
 
             const tickersToFetch = [
                 { id: '1', ticker: 'AAPL' },
                 { id: '2', ticker: 'GOOGL' },
-                { id: '3', ticker: 'INVALID' }
+                { id: '3', ticker: 'INVALID' },
             ];
 
             const results = await apiService.fetchAllStockPrices(tickersToFetch);
@@ -220,17 +224,17 @@ describe('apiService', () => {
             expect(results[0]).toMatchObject({
                 id: '1',
                 status: 'fulfilled',
-                value: 150
+                value: 150,
             });
             expect(results[1]).toMatchObject({
                 id: '2',
                 status: 'fulfilled',
-                value: 2800
+                value: 2800,
             });
             expect(results[2]).toMatchObject({
                 id: '3',
                 status: 'rejected',
-                reason: 'Not found'
+                reason: 'Not found',
             });
         });
 
@@ -241,34 +245,56 @@ describe('apiService', () => {
             expect(global.fetch).not.toHaveBeenCalled();
         });
 
-        it('should throw APIError on batch API failure', async () => {
-            const mockError = {
-                ok: false,
-                status: 500,
-                json: async () => ({ error: 'Batch failed' }),
-                text: async () => 'Batch failed'
-            };
+        it(
+            'should fallback to individual fetches on batch API failure',
+            async () => {
+                // First call (batch) fails with 500, then individual fetches succeed
+                const mockBatchError = {
+                    ok: false,
+                    status: 500,
+                    json: async () => ({ error: 'Batch failed' }),
+                    text: async () => 'Batch failed',
+                };
 
-            (global.fetch as any).mockResolvedValue(mockError);
+                const mockIndividualSuccess = {
+                    ok: true,
+                    json: async () => ({ c: 150 }),
+                };
 
-            const tickersToFetch = [{ id: '1', ticker: 'AAPL' }];
+                // Batch API fails all retry attempts (4 attempts with maxRetries=3)
+                // Then falls back to individual fetches which succeed
+                (global.fetch as any)
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 0
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 1 (retry)
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 2 (retry)
+                    .mockResolvedValueOnce(mockBatchError) // Batch attempt 3 (retry)
+                    .mockResolvedValue(mockIndividualSuccess); // Individual fetch succeeds
 
-            await expect(apiService.fetchAllStockPrices(tickersToFetch)).rejects.toThrow(APIError);
-        });
+                const tickersToFetch = [{ id: '1', ticker: 'AAPL' }];
+
+                const results = await apiService.fetchAllStockPrices(tickersToFetch);
+
+                // Should fallback and succeed with individual fetch
+                expect(results).toHaveLength(1);
+                expect(results[0].status).toBe('fulfilled');
+                expect(results[0].value).toBe(150);
+            },
+            15000
+        ); // Increased timeout for retries and fallback
 
         it('should construct correct batch URL', async () => {
             const mockResponse = {
                 ok: true,
                 json: async () => [
                     { status: 'fulfilled', ticker: 'AAPL', value: 150 },
-                    { status: 'fulfilled', ticker: 'GOOGL', value: 2800 }
-                ]
+                    { status: 'fulfilled', ticker: 'GOOGL', value: 2800 },
+                ],
             };
             (global.fetch as any).mockResolvedValueOnce(mockResponse);
 
             const tickersToFetch = [
                 { id: '1', ticker: 'AAPL' },
-                { id: '2', ticker: 'GOOGL' }
+                { id: '2', ticker: 'GOOGL' },
             ];
 
             await apiService.fetchAllStockPrices(tickersToFetch);

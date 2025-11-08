@@ -7,8 +7,16 @@ import { CONFIG } from '../constants';
 import { ErrorService, ValidationError } from '../errorService';
 import { getRatioSum } from '../utils';
 import { t } from '../i18n';
-import { generateAddModeResultsHTML, generateSellModeResultsHTML, generateSimpleModeResultsHTML } from '../templates';
-import { AddRebalanceStrategy, SellRebalanceStrategy, SimpleRatioStrategy } from '../calculationStrategies';
+import {
+    generateAddModeResultsHTML,
+    generateSellModeResultsHTML,
+    generateSimpleModeResultsHTML,
+} from '../templates';
+import {
+    AddRebalanceStrategy,
+    SellRebalanceStrategy,
+    SimpleRatioStrategy,
+} from '../calculationStrategies';
 import { apiService, APIError, formatAPIError } from '../apiService';
 import { DataStore } from '../dataStore';
 import Decimal from 'decimal.js';
@@ -38,7 +46,7 @@ export class CalculationManager {
         const inputs = {
             mainMode: activePortfolio.settings.mainMode,
             portfolioData: activePortfolio.portfolioData,
-            additionalInvestment: additionalInvestment
+            additionalInvestment: additionalInvestment,
         };
 
         const validationErrors = Validator.validateForCalculation(inputs);
@@ -65,7 +73,7 @@ export class CalculationManager {
         const calculatedState = Calculator.calculatePortfolioState({
             portfolioData: inputs.portfolioData,
             exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency
+            currentCurrency: activePortfolio.settings.currentCurrency,
         });
         activePortfolio.portfolioData = calculatedState.portfolioData;
 
@@ -80,13 +88,18 @@ export class CalculationManager {
             await DataStore.addSnapshot(snapshot);
             console.log('[CalculationManager] Snapshot saved:', snapshot.date);
         } catch (error) {
-            console.error('[CalculationManager] Failed to save snapshot:', error);
-            // Continue with calculation even if snapshot fails
+            // 스냅샷 저장 실패는 치명적이지 않으므로 계속 진행
+            ErrorService.handle(error as Error, 'CalculationManager.saveSnapshot');
+            // 사용자에게 알림 (선택적)
+            // this.view.showToast('스냅샷 저장 실패. 계산은 정상적으로 완료되었습니다.', 'warning');
         }
 
         let strategy;
         if (activePortfolio.settings.mainMode === 'add') {
-            strategy = new AddRebalanceStrategy(calculatedState.portfolioData, additionalInvestment);
+            strategy = new AddRebalanceStrategy(
+                calculatedState.portfolioData,
+                additionalInvestment
+            );
         } else if (activePortfolio.settings.mainMode === 'simple') {
             strategy = new SimpleRatioStrategy(calculatedState.portfolioData, additionalInvestment);
         } else {
@@ -101,39 +114,50 @@ export class CalculationManager {
                       {
                           currentTotal: calculatedState.currentTotal,
                           additionalInvestment: additionalInvestment,
-                          finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
+                          finalTotal: calculatedState.currentTotal.plus(additionalInvestment),
                       },
                       activePortfolio.settings.currentCurrency,
                       activePortfolio.settings.tradingFeeRate,
                       activePortfolio.settings.taxRate
                   )
                 : activePortfolio.settings.mainMode === 'simple'
-                ? generateSimpleModeResultsHTML(
-                      rebalancingResults.results,
-                      {
-                          currentTotal: calculatedState.currentTotal,
-                          additionalInvestment: additionalInvestment,
-                          finalTotal: calculatedState.currentTotal.plus(additionalInvestment)
-                      },
-                      activePortfolio.settings.currentCurrency
-                  )
-                : generateSellModeResultsHTML(rebalancingResults.results, activePortfolio.settings.currentCurrency);
+                  ? generateSimpleModeResultsHTML(
+                        rebalancingResults.results,
+                        {
+                            currentTotal: calculatedState.currentTotal,
+                            additionalInvestment: additionalInvestment,
+                            finalTotal: calculatedState.currentTotal.plus(additionalInvestment),
+                        },
+                        activePortfolio.settings.currentCurrency
+                    )
+                  : generateSellModeResultsHTML(
+                        rebalancingResults.results,
+                        activePortfolio.settings.currentCurrency
+                    );
 
         this.view.displayResults(resultsHTML);
 
         const chartLabels = rebalancingResults.results.map((r) => r.stock.name);
         const chartData = rebalancingResults.results.map((r) => {
-            const ratio = r.stock.targetRatio instanceof Decimal ? r.stock.targetRatio : new Decimal(r.stock.targetRatio ?? 0);
+            const ratio =
+                r.stock.targetRatio instanceof Decimal
+                    ? r.stock.targetRatio
+                    : new Decimal(r.stock.targetRatio ?? 0);
             return ratio.toNumber();
         });
         const chartTitle =
             activePortfolio.settings.mainMode === 'simple'
                 ? '포트폴리오 목표 비율 (간단 계산 모드)'
                 : activePortfolio.settings.mainMode === 'add'
-                ? '포트폴리오 목표 비율 (추가 매수 모드)'
-                : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
+                  ? '포트폴리오 목표 비율 (추가 매수 모드)'
+                  : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
 
-        this.view.displayChart((await import('chart.js/auto')).default, chartLabels, chartData, chartTitle);
+        this.view.displayChart(
+            (await import('chart.js/auto')).default,
+            chartLabels,
+            chartData,
+            chartTitle
+        );
 
         this.debouncedSave();
         this.view.showToast(t('toast.calculateSuccess'), 'success');
@@ -167,7 +191,8 @@ export class CalculationManager {
 
             const results = await apiService.fetchAllStockPrices(tickersToFetch);
 
-            const exchangeRate = activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
+            const exchangeRate =
+                activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
             const currentCurrency = activePortfolio.settings.currentCurrency || 'krw';
 
             results.forEach((result) => {
@@ -186,7 +211,10 @@ export class CalculationManager {
                 } else {
                     failureCount++;
                     failedTickers.push((result as any).ticker);
-                    console.error(`[API] Failed to fetch price for ${(result as any).ticker}:`, (result as any).reason);
+                    console.error(
+                        `[API] Failed to fetch price for ${(result as any).ticker}:`,
+                        (result as any).reason
+                    );
                 }
             });
 
@@ -195,7 +223,10 @@ export class CalculationManager {
             if (successCount === tickersToFetch.length) {
                 this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), 'success');
             } else if (successCount > 0) {
-                this.view.showToast(t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }), 'warning');
+                this.view.showToast(
+                    t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }),
+                    'warning'
+                );
             } else {
                 this.view.showToast(t('api.fetchFailedAll', { failed: failureCount }), 'error');
             }
@@ -213,7 +244,10 @@ export class CalculationManager {
                 console.error(`[API] ${error.type}:`, error.message);
             } else {
                 ErrorService.handle(error as Error, 'handleFetchAllPrices');
-                this.view.showToast(t('api.fetchErrorGlobal', { message: (error as Error).message }), 'error');
+                this.view.showToast(
+                    t('api.fetchErrorGlobal', { message: (error as Error).message }),
+                    'error'
+                );
             }
             return { needsUIUpdate: false };
         } finally {
@@ -226,13 +260,18 @@ export class CalculationManager {
      * @param newMode - 새 메인 모드
      */
     async handleMainModeChange(newMode: MainMode): Promise<{ needsFullRender: boolean }> {
-        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple') return { needsFullRender: false };
+        if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple')
+            return { needsFullRender: false };
 
         await this.state.updatePortfolioSettings('mainMode', newMode);
 
         requestAnimationFrame(() => {
             const modeName =
-                newMode === 'add' ? t('ui.addMode') : newMode === 'simple' ? '간단 계산 모드' : t('ui.sellMode');
+                newMode === 'add'
+                    ? t('ui.addMode')
+                    : newMode === 'simple'
+                      ? '간단 계산 모드'
+                      : t('ui.sellMode');
             this.view.showToast(t('toast.modeChanged', { mode: modeName }), 'info');
         });
 
@@ -251,7 +290,10 @@ export class CalculationManager {
 
         await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
         Calculator.clearPortfolioStateCache();
-        this.view.showToast(t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }), 'info');
+        this.view.showToast(
+            t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }),
+            'info'
+        );
 
         return { needsFullRender: true };
     }
@@ -264,7 +306,8 @@ export class CalculationManager {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
+        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } =
+            this.view.dom;
 
         if (
             !(additionalAmountInput instanceof HTMLInputElement) ||
@@ -295,7 +338,9 @@ export class CalculationManager {
             if (source === 'krw') {
                 krwAmountDec = new Decimal(additionalAmountInput.value || 0);
                 if (krwAmountDec.isNegative()) throw new Error('Negative KRW input');
-                usdAmountDec = currentExchangeRateDec.isZero() ? new Decimal(0) : krwAmountDec.div(currentExchangeRateDec);
+                usdAmountDec = currentExchangeRateDec.isZero()
+                    ? new Decimal(0)
+                    : krwAmountDec.div(currentExchangeRateDec);
             } else {
                 usdAmountDec = new Decimal(additionalAmountUSDInput.value || 0);
                 if (usdAmountDec.isNegative()) throw new Error('Negative USD input');
@@ -310,7 +355,7 @@ export class CalculationManager {
 
             this.debouncedSave();
         } catch (e) {
-            console.error('Error during currency conversion:', e);
+            ErrorService.handle(e as Error, 'CalculationManager.convertCurrency');
             this.view.showToast(t('toast.amountInputError'), 'error');
             if (source === 'krw') additionalAmountUSDInput.value = '';
             else additionalAmountInput.value = '';

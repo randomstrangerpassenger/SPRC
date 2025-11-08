@@ -4,7 +4,9 @@
  */
 
 import { t } from '../i18n';
+import { escapeHTML } from '../utils';
 import Decimal from 'decimal.js';
+import { memoizeWithKey } from '../cache/memoization';
 
 /**
  * @description Input 요소를 생성합니다.
@@ -27,7 +29,11 @@ export function createInput(
         displayValue = value.toFixed(decimalPlaces);
     } else {
         const defaultValue =
-            field === 'fixedBuyAmount' ? '0' : field === 'targetRatio' || field === 'currentPrice' ? '0.00' : '';
+            field === 'fixedBuyAmount'
+                ? '0'
+                : field === 'targetRatio' || field === 'currentPrice'
+                  ? '0.00'
+                  : '';
         displayValue = String(value ?? defaultValue);
     }
 
@@ -38,7 +44,8 @@ export function createInput(
 
     if (type === 'number') {
         input.min = '0';
-        if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio') input.step = 'any';
+        if (field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'targetRatio')
+            input.step = 'any';
     }
     if (type === 'text') {
         input.style.textAlign = 'center';
@@ -50,7 +57,11 @@ export function createInput(
 /**
  * @description Checkbox 요소를 생성합니다.
  */
-export function createCheckbox(field: string, checked: boolean, ariaLabel: string = ''): HTMLInputElement {
+export function createCheckbox(
+    field: string,
+    checked: boolean,
+    ariaLabel: string = ''
+): HTMLInputElement {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.dataset.field = field;
@@ -62,7 +73,12 @@ export function createCheckbox(field: string, checked: boolean, ariaLabel: strin
 /**
  * @description Button 요소를 생성합니다.
  */
-export function createButton(action: string, text: string, ariaLabel: string = '', variant: string = 'grey'): HTMLButtonElement {
+export function createButton(
+    action: string,
+    text: string,
+    ariaLabel: string = '',
+    variant: string = 'grey'
+): HTMLButtonElement {
     const button = document.createElement('button');
     button.className = 'btn btn--small';
     button.dataset.action = action;
@@ -84,17 +100,22 @@ export function createCell(className: string = '', align: string = 'left'): HTML
 /**
  * @description Output Cell 요소를 생성합니다.
  */
-export function createOutputCell(label: string, value: string, valueClass: string = ''): HTMLDivElement {
+export function createOutputCell(
+    label: string,
+    value: string,
+    valueClass: string = ''
+): HTMLDivElement {
     const cell = createCell('output-cell align-right');
-    // escapeHTML은 RowRenderer에서 호출 시 적용됨
-    cell.innerHTML = `<span class="label">${label}</span><span class="value ${valueClass}">${value}</span>`;
+    // XSS 방어: escapeHTML 적용
+    cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
     return cell;
 }
 
 /**
  * @description 그리드 템플릿을 반환합니다 (반응형).
+ * ===== [Phase 3 최적화] 메모이제이션 적용 =====
  */
-export function getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
+const _getGridTemplateImpl = (mainMode: 'add' | 'sell' | 'simple'): string => {
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
@@ -111,4 +132,12 @@ export function getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
             return '2fr 1fr 1fr 1fr 1fr 1.2fr';
         }
     }
-}
+};
+
+// 메모이제이션 적용: 동일한 mainMode와 화면 크기에 대해 캐시된 결과 반환
+export const getGridTemplate = memoizeWithKey(
+    _getGridTemplateImpl,
+    (mainMode) => `${mainMode}:${window.innerWidth <= 768}`,
+    6 // 캐시 크기: add/sell/simple × mobile/desktop = 6가지 조합
+);
+// ===== [Phase 3 최적화 끝] =====

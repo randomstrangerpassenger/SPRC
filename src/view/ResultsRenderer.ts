@@ -1,19 +1,19 @@
 // src/view/ResultsRenderer.ts
 import { t } from '../i18n';
 import type { Chart } from 'chart.js';
-import type { PortfolioSnapshot } from '../types';
+import type { PortfolioSnapshot, DOMElements } from '../types';
 
 /**
  * @class ResultsRenderer
  * @description 계산 결과, 섹터 분석, 차트 렌더링 관리
  */
 export class ResultsRenderer {
-    private dom: any;
+    private dom: DOMElements;
     private chartInstance: Chart | null = null;
     private performanceChartInstance: Chart | null = null;
     private currentObserver: IntersectionObserver | null = null;
 
-    constructor(dom: any) {
+    constructor(dom: DOMElements) {
         this.dom = dom;
     }
 
@@ -67,7 +67,7 @@ export class ResultsRenderer {
                 { threshold: 0.1 }
             );
 
-            rows.forEach((row) => this.currentObserver?.observe(row as Element));
+            rows.forEach((row) => this.currentObserver?.observe(row));
         });
     }
 
@@ -105,8 +105,8 @@ export class ResultsRenderer {
             maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'top' as const },
-                title: { display: true, text: title, font: { size: 16 } }
-            }
+                title: { display: true, text: title, font: { size: 16 } },
+            },
         };
 
         const chartData = {
@@ -127,12 +127,14 @@ export class ResultsRenderer {
                         '#FDFD96',
                         '#836FFF',
                         '#FFB347',
-                        '#FFD1DC'
+                        '#FFD1DC',
                     ],
-                    borderColor: document.body.classList.contains('dark-mode') ? '#2d2d2d' : '#ffffff',
-                    borderWidth: 2
-                }
-            ]
+                    borderColor: document.body.classList.contains('dark-mode')
+                        ? '#2d2d2d'
+                        : '#ffffff',
+                    borderWidth: 2,
+                },
+            ],
         };
 
         if (this.chartInstance) {
@@ -145,7 +147,7 @@ export class ResultsRenderer {
                 this.chartInstance = new ChartClass(ctx, {
                     type: 'doughnut',
                     data: chartData,
-                    options: chartOptions
+                    options: chartOptions,
                 });
             }
         }
@@ -199,11 +201,13 @@ export class ResultsRenderer {
         const sorted = [...snapshots].sort((a, b) => a.timestamp - b.timestamp);
 
         // Prepare chart data
-        const labels = sorted.map(s => s.date);
-        const totalValueData = sorted.map(s => currency === 'krw' ? s.totalValueKRW : s.totalValue);
-        const totalInvestedData = sorted.map(s => s.totalInvestedCapital);
-        const unrealizedPLData = sorted.map(s => s.totalUnrealizedPL);
-        const realizedPLData = sorted.map(s => s.totalRealizedPL);
+        const labels = sorted.map((s) => s.date);
+        const totalValueData = sorted.map((s) =>
+            currency === 'krw' ? s.totalValueKRW : s.totalValue
+        );
+        const totalInvestedData = sorted.map((s) => s.totalInvestedCapital);
+        const unrealizedPLData = sorted.map((s) => s.totalUnrealizedPL);
+        const realizedPLData = sorted.map((s) => s.totalRealizedPL);
 
         const chartData = {
             labels,
@@ -214,7 +218,7 @@ export class ResultsRenderer {
                     borderColor: '#36A2EB',
                     backgroundColor: 'rgba(54, 162, 235, 0.1)',
                     tension: 0.4,
-                    fill: true
+                    fill: true,
                 },
                 {
                     label: '투자 원금',
@@ -223,9 +227,9 @@ export class ResultsRenderer {
                     backgroundColor: 'rgba(153, 102, 255, 0.1)',
                     tension: 0.4,
                     fill: false,
-                    borderDash: [5, 5]
-                }
-            ]
+                    borderDash: [5, 5],
+                },
+            ],
         };
 
         const chartOptions = {
@@ -235,38 +239,38 @@ export class ResultsRenderer {
                 legend: {
                     position: 'top' as const,
                     labels: {
-                        font: { size: 12 }
-                    }
+                        font: { size: 12 },
+                    },
                 },
                 title: {
                     display: true,
                     text: '포트폴리오 가치 변화 추이',
-                    font: { size: 16 }
+                    font: { size: 16 },
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context: any) {
+                        label: function (context: any) {
                             const label = context.dataset.label || '';
                             const value = context.parsed.y;
                             const formatted = value.toLocaleString(undefined, {
                                 minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
+                                maximumFractionDigits: 0,
                             });
                             return `${label}: ${currency === 'krw' ? '₩' : '$'}${formatted}`;
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
             scales: {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function(value: any) {
+                        callback: function (value: any) {
                             return (currency === 'krw' ? '₩' : '$') + value.toLocaleString();
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         };
 
         if (this.performanceChartInstance) {
@@ -279,7 +283,7 @@ export class ResultsRenderer {
                 this.performanceChartInstance = new ChartClass(ctx, {
                     type: 'line',
                     data: chartData,
-                    options: chartOptions
+                    options: chartOptions,
                 });
             }
         }

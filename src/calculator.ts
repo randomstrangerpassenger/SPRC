@@ -1,9 +1,16 @@
-// src/calculator.ts (Strategy Pattern Applied)
+// src/calculator.ts (Strategy Pattern Applied with LRU Cache)
 import Decimal from 'decimal.js';
 import { nanoid } from 'nanoid';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
-import type { Stock, CalculatedStock, CalculatedStockMetrics, Currency, PortfolioSnapshot } from './types.ts';
+import { LRUCache } from './cache/LRUCache.ts';
+import type {
+    Stock,
+    CalculatedStock,
+    CalculatedStockMetrics,
+    Currency,
+    PortfolioSnapshot,
+} from './types.ts';
 import type { IRebalanceStrategy } from './calculationStrategies.ts';
 
 /**
@@ -11,7 +18,7 @@ import type { IRebalanceStrategy } from './calculationStrategies.ts';
  */
 function _generateStockKey(stock: Stock): string {
     // 모든 거래 ID를 조합하여 중간 거래 수정/삭제도 감지
-    const txIds = stock.transactions.map(tx => tx.id).join(',');
+    const txIds = stock.transactions.map((tx) => tx.id).join(',');
 
     // 섹터 정보도 계산에 영향을 주지 않으므로 제외
     return `${stock.id}:${stock.currentPrice}:${txIds}`;
@@ -38,13 +45,9 @@ export interface PortfolioCalculationResult {
     cacheKey: string;
 }
 
-interface CalculatorCache {
-    key: string;
-    result: PortfolioCalculationResult;
-}
-
 export class Calculator {
-    static #cache: CalculatorCache | null = null;
+    // LRU 캐시로 여러 계산 결과 저장 (기본 용량: 20)
+    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(20);
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
@@ -79,14 +82,10 @@ export class Calculator {
 
                 if (tx.type === 'buy') {
                     result.totalBuyQuantity = result.totalBuyQuantity.plus(txQuantity);
-                    result.totalBuyAmount = result.totalBuyAmount.plus(
-                        txQuantity.times(txPrice)
-                    );
+                    result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
                 } else if (tx.type === 'sell') {
                     result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
-                    result.totalSellAmount = result.totalSellAmount.plus(
-                        txQuantity.times(txPrice)
-                    );
+                    result.totalSellAmount = result.totalSellAmount.plus(txQuantity.times(txPrice));
                 } else if (tx.type === 'dividend') {
                     // 배당금: quantity 필드에 배당금액 저장, price는 1로 가정
                     result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
@@ -132,23 +131,10 @@ export class Calculator {
             return result;
         } catch (error) {
             ErrorService.handle(error as Error, 'calculateStockMetrics');
-            // 에러 발생 시 기본값 반환
-            return {
-                totalBuyQuantity: DECIMAL_ZERO,
-                totalSellQuantity: DECIMAL_ZERO,
-                quantity: DECIMAL_ZERO,
-                totalBuyAmount: DECIMAL_ZERO,
-                totalSellAmount: DECIMAL_ZERO,
-                avgBuyPrice: DECIMAL_ZERO,
-                currentAmount: DECIMAL_ZERO,
-                currentAmountUSD: DECIMAL_ZERO,
-                currentAmountKRW: DECIMAL_ZERO,
-                profitLoss: DECIMAL_ZERO,
-                profitLossRate: DECIMAL_ZERO,
-                totalDividends: DECIMAL_ZERO,
-                realizedPL: DECIMAL_ZERO,
-                totalRealizedPL: DECIMAL_ZERO,
-            };
+            // 에러를 상위로 전파 (잘못된 계산 결과를 숨기지 않음)
+            throw new Error(
+                `Failed to calculate metrics for stock: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
         }
     }
 
@@ -168,8 +154,10 @@ export class Calculator {
 
         const cacheKey = _generatePortfolioKey(portfolioData, exchangeRate, currentCurrency);
 
-        if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
-            return Calculator.#cache.result;
+        // LRU 캐시에서 결과 조회
+        const cachedResult = Calculator.#portfolioCache.get(cacheKey);
+        if (cachedResult) {
+            return cachedResult;
         }
 
         const exchangeRateDec = new Decimal(exchangeRate);
@@ -202,8 +190,8 @@ export class Calculator {
             cacheKey: cacheKey,
         };
 
-        // 캐시 업데이트
-        Calculator.#cache = { key: cacheKey, result: result };
+        // LRU 캐시에 결과 저장
+        Calculator.#portfolioCache.set(cacheKey, result);
 
         return result;
     }
@@ -211,7 +199,9 @@ export class Calculator {
     /**
      * @description '전략' 객체를 받아 리밸런싱 계산을 실행합니다.
      */
-    static calculateRebalancing(strategy: IRebalanceStrategy): { results: any[] } {
+    static calculateRebalancing(strategy: import('./calculationStrategies').IRebalanceStrategy): {
+        results: import('./calculationStrategies').RebalancingResult[];
+    } {
         return strategy.calculate();
     }
 
@@ -229,9 +219,10 @@ export class Calculator {
 
         for (const s of portfolioData) {
             const sector = s.sector || 'Unclassified';
-            const amount = currentCurrency === 'krw'
-                ? (s.calculated?.currentAmountKRW || DECIMAL_ZERO)
-                : (s.calculated?.currentAmountUSD || DECIMAL_ZERO);
+            const amount =
+                currentCurrency === 'krw'
+                    ? s.calculated?.currentAmountKRW || DECIMAL_ZERO
+                    : s.calculated?.currentAmountUSD || DECIMAL_ZERO;
             currentTotal = currentTotal.plus(amount);
 
             const currentSectorAmount = sectorMap.get(sector) || DECIMAL_ZERO;
@@ -263,7 +254,7 @@ export class Calculator {
      * @description 포트폴리오 계산 캐시를 초기화합니다.
      */
     static clearPortfolioStateCache(): void {
-        Calculator.#cache = null;
+        Calculator.#portfolioCache.clear();
     }
 
     /**
@@ -326,29 +317,18 @@ export class Calculator {
                 totalDividends: totalDividends.toNumber(),
                 totalOverallPL: totalOverallPL.toNumber(),
                 exchangeRate,
-                stockCount: portfolioData.filter(s => s.calculated && s.calculated.quantity.greaterThan(0)).length,
+                stockCount: portfolioData.filter(
+                    (s) => s.calculated && s.calculated.quantity.greaterThan(0)
+                ).length,
             };
 
             return snapshot;
         } catch (error) {
             ErrorService.handle(error as Error, 'Calculator.createSnapshot');
-            // Return empty snapshot on error
-            const now = new Date();
-            return {
-                id: nanoid(),
-                portfolioId,
-                timestamp: now.getTime(),
-                date: now.toISOString().split('T')[0],
-                totalValue: 0,
-                totalValueKRW: 0,
-                totalInvestedCapital: 0,
-                totalUnrealizedPL: 0,
-                totalRealizedPL: 0,
-                totalDividends: 0,
-                totalOverallPL: 0,
-                exchangeRate,
-                stockCount: 0,
-            };
+            // 에러를 상위로 전파 (빈 스냅샷을 저장하지 않음)
+            throw new Error(
+                `Failed to create snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
         }
     }
 }

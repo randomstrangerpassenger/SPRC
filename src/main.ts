@@ -3,11 +3,27 @@ import { PortfolioState } from './state.ts';
 import { PortfolioView } from './view.ts';
 import { PortfolioController } from './controller.ts';
 import { ErrorService } from './errorService.ts';
+// ===== [Phase 4 Performance Monitoring] =====
+import { initPerformancePanel } from './performance/PerformancePanel.ts';
+import { perfMonitor } from './performance/PerformanceMonitor.ts';
+// ===== [Phase 4 Performance Monitoring 끝] =====
 
 // ===== [Phase 3.1 최적화] Chart.js 지연 로딩 =====
 // Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
 // (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
 // ===== [Phase 3.1 최적화 끝] =====
+
+// ===== [Phase 4 Performance Monitoring] =====
+// 개발 모드에서 성능 모니터링 활성화
+const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+if (isDevelopment) {
+    perfMonitor.setEnabled(true);
+    initPerformancePanel();
+    console.log('[Performance] Monitoring enabled. Press Ctrl+Shift+P to view metrics.');
+} else {
+    perfMonitor.setEnabled(false);
+}
+// ===== [Phase 4 Performance Monitoring 끝] =====
 
 try {
     const state = new PortfolioState();
@@ -20,9 +36,9 @@ try {
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
 
-    console.log("Application setup complete.");
+    console.log('Application setup complete.');
 } catch (error) {
-    console.error("애플리케이션 초기화 중 치명적인 오류 발생:", error);
+    console.error('애플리케이션 초기화 중 치명적인 오류 발생:', error);
     // 사용자에게 오류 메시지를 표시하는 UI 로직 추가 가능
     const bodyElement = document.body;
     if (bodyElement) {

@@ -43,6 +43,8 @@ export class PortfolioController {
 
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
+    #darkModeMediaQuery?: MediaQueryList;
+    #darkModeHandler?: (e: MediaQueryListEvent) => void;
 
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
@@ -61,7 +63,11 @@ export class PortfolioController {
         );
         this.dataManager = new DataManager(this.state, this.view);
 
-        this.initialize();
+        // 초기화 에러 처리
+        void this.initialize().catch((error) => {
+            ErrorService.handle(error as Error, 'Controller initialization failed');
+            this.view.showToast('앱 초기화 실패. 페이지를 새로고침해주세요.', 'error');
+        });
     }
 
     /**
@@ -85,6 +91,14 @@ export class PortfolioController {
             this.#eventAbortController = null;
             console.log('[Controller] Event listeners cleaned up');
         }
+
+        // 다크모드 리스너 정리
+        if (this.#darkModeMediaQuery && this.#darkModeHandler) {
+            this.#darkModeMediaQuery.removeEventListener('change', this.#darkModeHandler);
+            this.#darkModeMediaQuery = undefined;
+            this.#darkModeHandler = undefined;
+            console.log('[Controller] Dark mode listener cleaned up');
+        }
     }
 
     /**
@@ -94,17 +108,23 @@ export class PortfolioController {
         const storedDarkMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
         if (storedDarkMode === 'true') {
             document.body.classList.add('dark-mode');
-        } else if (storedDarkMode === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        } else if (
+            storedDarkMode === null &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+        ) {
             document.body.classList.add('dark-mode');
             localStorage.setItem(CONFIG.DARK_MODE_KEY, 'true');
         }
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        // 다크모드 리스너 저장 (cleanup을 위해)
+        this.#darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.#darkModeHandler = (e: MediaQueryListEvent) => {
             const storedMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
             if (storedMode === null) {
                 document.body.classList.toggle('dark-mode', e.matches);
             }
-        });
+        };
+        this.#darkModeMediaQuery.addEventListener('change', this.#darkModeHandler);
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {
@@ -112,7 +132,13 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const { exchangeRateInput, portfolioExchangeRateInput, rebalancingToleranceInput, tradingFeeRateInput, taxRateInput } = this.view.dom;
+            const {
+                exchangeRateInput,
+                portfolioExchangeRateInput,
+                rebalancingToleranceInput,
+                tradingFeeRateInput,
+                taxRateInput,
+            } = this.view.dom;
             if (exchangeRateInput instanceof HTMLInputElement) {
                 exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
@@ -120,10 +146,14 @@ export class PortfolioController {
                 portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
             }
             if (rebalancingToleranceInput instanceof HTMLInputElement) {
-                rebalancingToleranceInput.value = (activePortfolio.settings.rebalancingTolerance ?? 5).toString();
+                rebalancingToleranceInput.value = (
+                    activePortfolio.settings.rebalancingTolerance ?? 5
+                ).toString();
             }
             if (tradingFeeRateInput instanceof HTMLInputElement) {
-                tradingFeeRateInput.value = (activePortfolio.settings.tradingFeeRate ?? 0.3).toString();
+                tradingFeeRateInput.value = (
+                    activePortfolio.settings.tradingFeeRate ?? 0.3
+                ).toString();
             }
             if (taxRateInput instanceof HTMLInputElement) {
                 taxRateInput.value = (activePortfolio.settings.taxRate ?? 15).toString();
@@ -191,7 +221,9 @@ export class PortfolioController {
                 if (result.stockId) this.view.focusOnNewStock(result.stockId);
             }
         });
-        this.view.on('normalizeRatiosClicked', () => this.calculationManager.handleNormalizeRatios());
+        this.view.on('normalizeRatiosClicked', () =>
+            this.calculationManager.handleNormalizeRatios()
+        );
         this.view.on('applyTemplateClicked', (data) => this.handleApplyTemplate(data.template));
         this.view.on('fetchAllPricesClicked', async () => {
             const result = await this.calculationManager.handleFetchAllPrices();
@@ -205,7 +237,9 @@ export class PortfolioController {
         });
         this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
         this.view.on('importDataClicked', () => this.dataManager.handleImportData());
-        this.view.on('exportTransactionsCSVClicked', () => this.dataManager.handleExportTransactionsCSV());
+        this.view.on('exportTransactionsCSVClicked', () =>
+            this.dataManager.handleExportTransactionsCSV()
+        );
         this.view.on('fileSelected', async (e) => {
             const result = await this.dataManager.handleFileSelected(e);
             if (result.needsUISetup) this.setupInitialUI();
@@ -223,7 +257,9 @@ export class PortfolioController {
                 });
             }
         });
-        this.view.on('manageStockClicked', (data) => this.transactionManager.openTransactionModalByStockId(data.stockId));
+        this.view.on('manageStockClicked', (data) =>
+            this.transactionManager.openTransactionModalByStockId(data.stockId)
+        );
         this.view.on('deleteStockShortcut', async (data) => {
             const result = await this.stockManager.handleDeleteStock(data.stockId);
             if (result.needsFullRender) this.fullRender();
@@ -241,7 +277,9 @@ export class PortfolioController {
             const result = await this.calculationManager.handleCurrencyModeChange(data.currency);
             if (result.needsFullRender) this.fullRender();
         });
-        this.view.on('currencyConversion', (data) => this.calculationManager.handleCurrencyConversion(data.source));
+        this.view.on('currencyConversion', (data) =>
+            this.calculationManager.handleCurrencyConversion(data.source)
+        );
         this.view.on('portfolioExchangeRateChanged', (data) =>
             this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
         );
@@ -256,7 +294,10 @@ export class PortfolioController {
             if (result.needsFullRender) this.fullRender();
         });
         this.view.on('transactionDeleteClicked', async (data) => {
-            const result = await this.transactionManager.handleTransactionListClick(data.stockId, data.txId);
+            const result = await this.transactionManager.handleTransactionListClick(
+                data.stockId,
+                data.txId
+            );
             if (result.needsUIUpdate) this.updateUIState();
         });
 
@@ -274,12 +315,15 @@ export class PortfolioController {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
+        // 로딩 UI 표시
+        this.view.showCalculationLoading();
+
         try {
             // ===== [Phase 2.2 Web Worker 통합] =====
             const calculatedState = await this.calculatorWorker.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
                 exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency
+                currentCurrency: activePortfolio.settings.currentCurrency,
             });
             // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
@@ -298,21 +342,35 @@ export class PortfolioController {
                 activePortfolio.settings.currentCurrency
             );
             // ===== [Phase 2.2 Web Worker 통합 끝] =====
-            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
+            this.view.displaySectorAnalysis(
+                generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
+            );
 
             // 리밸런싱 경고 확인 및 표시
-            this.checkRebalancingNeeds(calculatedState.portfolioData, calculatedState.currentTotal, activePortfolio.settings.rebalancingTolerance);
+            this.checkRebalancingNeeds(
+                calculatedState.portfolioData,
+                calculatedState.currentTotal,
+                activePortfolio.settings.rebalancingTolerance
+            );
 
             // 리스크 분석 (Phase 4.3)
-            this.checkRiskWarnings(calculatedState.portfolioData, calculatedState.currentTotal, sectorData);
+            this.checkRiskWarnings(
+                calculatedState.portfolioData,
+                calculatedState.currentTotal,
+                sectorData
+            );
 
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
             activePortfolio.portfolioData = calculatedState.portfolioData;
             this.debouncedSave();
         } catch (error) {
-            console.error('[Controller] fullRender error:', error);
+            ErrorService.handle(error as Error, 'Controller.fullRender');
+            this.view.showToast('계산 중 오류가 발생했습니다.', 'error');
             // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+        } finally {
+            // 로딩 UI 숨김
+            this.view.hideCalculationLoading();
         }
     }
 
@@ -328,7 +386,7 @@ export class PortfolioController {
             const calculatedState = await this.calculatorWorker.calculatePortfolioState({
                 portfolioData: activePortfolio.portfolioData,
                 exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency
+                currentCurrency: activePortfolio.settings.currentCurrency,
             });
             // ===== [Phase 2.2 Web Worker 통합 끝] =====
 
@@ -343,7 +401,9 @@ export class PortfolioController {
                 activePortfolio.settings.currentCurrency
             );
             // ===== [Phase 2.2 Web Worker 통합 끝] =====
-            this.view.displaySectorAnalysis(generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency));
+            this.view.displaySectorAnalysis(
+                generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
+            );
 
             activePortfolio.portfolioData = calculatedState.portfolioData;
             this.debouncedSave();
@@ -359,8 +419,8 @@ export class PortfolioController {
      * @description 리밸런싱 필요 여부 확인
      */
     checkRebalancingNeeds(
-        portfolioData: any[],
-        currentTotal: any,
+        portfolioData: import('./types').CalculatedStock[],
+        currentTotal: Decimal,
         rebalancingTolerance?: number
     ): void {
         const tolerance = rebalancingTolerance ?? 5;
@@ -418,82 +478,130 @@ export class PortfolioController {
         switch (templateName) {
             case '60-40': {
                 // 60/40: 주식 60%, 채권 40%
-                const equitySectors = ['stock', 'stocks', 'equity', 'equities', 'tech', 'technology', 'finance', 'healthcare', 'consumer'];
+                const equitySectors = [
+                    'stock',
+                    'stocks',
+                    'equity',
+                    'equities',
+                    'tech',
+                    'technology',
+                    'finance',
+                    'healthcare',
+                    'consumer',
+                ];
                 const bondSectors = ['bond', 'bonds', 'fixed income', 'treasury'];
 
-                const equityStocks = stocks.filter(s => equitySectors.some(es => (s.sector || '').toLowerCase().includes(es)));
-                const bondStocks = stocks.filter(s => bondSectors.some(bs => (s.sector || '').toLowerCase().includes(bs)));
-                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s));
+                const equityStocks = stocks.filter((s) =>
+                    equitySectors.some((es) => (s.sector || '').toLowerCase().includes(es))
+                );
+                const bondStocks = stocks.filter((s) =>
+                    bondSectors.some((bs) => (s.sector || '').toLowerCase().includes(bs))
+                );
+                const otherStocks = stocks.filter(
+                    (s) => !equityStocks.includes(s) && !bondStocks.includes(s)
+                );
 
                 if (equityStocks.length > 0) {
                     const perEquity = 60 / equityStocks.length;
-                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                    equityStocks.forEach((s) => (s.targetRatio = new Decimal(perEquity)));
                 }
 
                 if (bondStocks.length > 0) {
                     const perBond = 40 / bondStocks.length;
-                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                    bondStocks.forEach((s) => (s.targetRatio = new Decimal(perBond)));
                 }
 
-                if (otherStocks.length > 0 && equityStocks.length === 0 && bondStocks.length === 0) {
+                if (
+                    otherStocks.length > 0 &&
+                    equityStocks.length === 0 &&
+                    bondStocks.length === 0
+                ) {
                     // 섹터가 명확하지 않으면 동일 비중
                     const perStock = 100 / stocks.length;
-                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                    stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
                 }
                 break;
             }
 
             case 'all-weather': {
                 // All-Weather: 주식 30%, 장기채 40%, 중기채 15%, 금 7.5%, 원자재 7.5%
-                const equityStocks = stocks.filter(s => ['stock', 'equity', 'tech'].some(k => (s.sector || '').toLowerCase().includes(k)));
-                const bondStocks = stocks.filter(s => ['bond', 'treasury', 'fixed'].some(k => (s.sector || '').toLowerCase().includes(k)));
-                const commodityStocks = stocks.filter(s => ['gold', 'commodity', 'metal', '금'].some(k => (s.sector || s.name || '').toLowerCase().includes(k)));
-                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s) && !commodityStocks.includes(s));
+                const equityStocks = stocks.filter((s) =>
+                    ['stock', 'equity', 'tech'].some((k) =>
+                        (s.sector || '').toLowerCase().includes(k)
+                    )
+                );
+                const bondStocks = stocks.filter((s) =>
+                    ['bond', 'treasury', 'fixed'].some((k) =>
+                        (s.sector || '').toLowerCase().includes(k)
+                    )
+                );
+                const commodityStocks = stocks.filter((s) =>
+                    ['gold', 'commodity', 'metal', '금'].some((k) =>
+                        (s.sector || s.name || '').toLowerCase().includes(k)
+                    )
+                );
+                const otherStocks = stocks.filter(
+                    (s) =>
+                        !equityStocks.includes(s) &&
+                        !bondStocks.includes(s) &&
+                        !commodityStocks.includes(s)
+                );
 
                 if (equityStocks.length > 0) {
                     const perEquity = 30 / equityStocks.length;
-                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                    equityStocks.forEach((s) => (s.targetRatio = new Decimal(perEquity)));
                 }
 
                 if (bondStocks.length > 0) {
                     const perBond = 55 / bondStocks.length; // 40 + 15 통합
-                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                    bondStocks.forEach((s) => (s.targetRatio = new Decimal(perBond)));
                 }
 
                 if (commodityStocks.length > 0) {
                     const perCommodity = 15 / commodityStocks.length; // 7.5 + 7.5 통합
-                    commodityStocks.forEach(s => s.targetRatio = new Decimal(perCommodity));
+                    commodityStocks.forEach((s) => (s.targetRatio = new Decimal(perCommodity)));
                 }
 
-                if (otherStocks.length > 0 && equityStocks.length + bondStocks.length + commodityStocks.length === 0) {
+                if (
+                    otherStocks.length > 0 &&
+                    equityStocks.length + bondStocks.length + commodityStocks.length === 0
+                ) {
                     const perStock = 100 / stocks.length;
-                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                    stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
                 }
                 break;
             }
 
             case '50-30-20': {
                 // 50/30/20: 주식 50%, 채권 30%, 기타 20%
-                const equityStocks = stocks.filter(s => ['stock', 'equity', 'tech'].some(k => (s.sector || '').toLowerCase().includes(k)));
-                const bondStocks = stocks.filter(s => ['bond', 'treasury'].some(k => (s.sector || '').toLowerCase().includes(k)));
-                const otherStocks = stocks.filter(s => !equityStocks.includes(s) && !bondStocks.includes(s));
+                const equityStocks = stocks.filter((s) =>
+                    ['stock', 'equity', 'tech'].some((k) =>
+                        (s.sector || '').toLowerCase().includes(k)
+                    )
+                );
+                const bondStocks = stocks.filter((s) =>
+                    ['bond', 'treasury'].some((k) => (s.sector || '').toLowerCase().includes(k))
+                );
+                const otherStocks = stocks.filter(
+                    (s) => !equityStocks.includes(s) && !bondStocks.includes(s)
+                );
 
                 if (equityStocks.length > 0) {
                     const perEquity = 50 / equityStocks.length;
-                    equityStocks.forEach(s => s.targetRatio = new Decimal(perEquity));
+                    equityStocks.forEach((s) => (s.targetRatio = new Decimal(perEquity)));
                 }
 
                 if (bondStocks.length > 0) {
                     const perBond = 30 / bondStocks.length;
-                    bondStocks.forEach(s => s.targetRatio = new Decimal(perBond));
+                    bondStocks.forEach((s) => (s.targetRatio = new Decimal(perBond)));
                 }
 
                 if (otherStocks.length > 0) {
                     const perOther = 20 / otherStocks.length;
-                    otherStocks.forEach(s => s.targetRatio = new Decimal(perOther));
+                    otherStocks.forEach((s) => (s.targetRatio = new Decimal(perOther)));
                 } else if (equityStocks.length === 0 && bondStocks.length === 0) {
                     const perStock = 100 / stocks.length;
-                    stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                    stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
                 }
                 break;
             }
@@ -501,7 +609,7 @@ export class PortfolioController {
             case 'equal': {
                 // 동일 비중
                 const perStock = 100 / stocks.length;
-                stocks.forEach(s => s.targetRatio = new Decimal(perStock));
+                stocks.forEach((s) => (s.targetRatio = new Decimal(perStock)));
                 break;
             }
 
@@ -520,9 +628,9 @@ export class PortfolioController {
      * @description 리스크 경고 확인 (Phase 4.3)
      */
     checkRiskWarnings(
-        portfolioData: any[],
-        currentTotal: any,
-        sectorData: any[]
+        portfolioData: import('./types').CalculatedStock[],
+        currentTotal: Decimal,
+        sectorData: import('./types').SectorData[]
     ): void {
         const warnings: string[] = [];
         const currentTotalDec = new Decimal(currentTotal);
@@ -546,7 +654,9 @@ export class PortfolioController {
             const percentage = new Decimal(sector.percentage || 0);
 
             if (percentage.greaterThan(SECTOR_CONCENTRATION_THRESHOLD)) {
-                warnings.push(`⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`);
+                warnings.push(
+                    `⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`
+                );
             }
         }
 
@@ -568,7 +678,10 @@ export class PortfolioController {
             const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
 
             if (snapshots.length === 0) {
-                this.view.showToast('성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                this.view.showToast(
+                    '성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.',
+                    'info'
+                );
                 return;
             }
 
@@ -606,7 +719,10 @@ export class PortfolioController {
             const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
 
             if (snapshots.length === 0) {
-                this.view.showToast('저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.', 'info');
+                this.view.showToast(
+                    '저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.',
+                    'info'
+                );
                 return;
             }
 
@@ -640,7 +756,7 @@ export class PortfolioController {
         const formatNumber = (num: number) => {
             return num.toLocaleString(undefined, {
                 minimumFractionDigits: 0,
-                maximumFractionDigits: 0
+                maximumFractionDigits: 0,
             });
         };
 
@@ -648,17 +764,20 @@ export class PortfolioController {
             return num.toFixed(2);
         };
 
-        const rows = snapshots.map(snapshot => {
-            const totalValue = currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
-            const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
-            const returnRate = snapshot.totalInvestedCapital > 0
-                ? (totalReturn / snapshot.totalInvestedCapital) * 100
-                : 0;
+        const rows = snapshots
+            .map((snapshot) => {
+                const totalValue =
+                    currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
+                const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
+                const returnRate =
+                    snapshot.totalInvestedCapital > 0
+                        ? (totalReturn / snapshot.totalInvestedCapital) * 100
+                        : 0;
 
-            const isProfit = totalReturn >= 0;
-            const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
+                const isProfit = totalReturn >= 0;
+                const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
 
-            return `
+                return `
                 <tr>
                     <td>${snapshot.date}</td>
                     <td style="text-align: right; font-weight: bold;">${currencySymbol}${formatNumber(totalValue)}</td>
@@ -671,7 +790,8 @@ export class PortfolioController {
                     <td style="text-align: center;">${snapshot.stockCount}</td>
                 </tr>
             `;
-        }).join('');
+            })
+            .join('');
 
         listEl.innerHTML = `
             <div class="table-responsive">
@@ -733,7 +853,8 @@ export class PortfolioController {
         if (!activePortfolio) return DECIMAL_ZERO;
 
         const { currentCurrency } = activePortfolio.settings;
-        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.view.dom;
+        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } =
+            this.view.dom;
 
         if (
             !(additionalAmountInput instanceof HTMLInputElement) ||

@@ -21,6 +21,15 @@ export const CONFIG = {
     API_TIMEOUT: 8000, // 단일 API 호출 타임아웃
     BATCH_API_TIMEOUT: 10000, // 배치 API 호출 타임아웃
 
+    // API Retry 설정
+    API_MAX_RETRIES: 3, // 최대 재시도 횟수
+    API_RETRY_BASE_DELAY: 1000, // 기본 지연 시간 (밀리초)
+    API_RETRY_MAX_DELAY: 10000, // 최대 지연 시간 (밀리초)
+    API_RETRY_JITTER_FACTOR: 0.3, // 지터 계수 (0-1, 지연 시간의 ±30% 범위로 무작위화)
+
+    // Worker 타임아웃 설정 (밀리초, 환경변수로 조정 가능)
+    WORKER_TIMEOUT: Number(import.meta.env.VITE_WORKER_TIMEOUT) || 10000, // Web Worker 계산 타임아웃
+
     // 환율 API 키 (.env.local에서 로드)
     EXCHANGE_RATE_API_KEY: import.meta.env.VITE_EXCHANGE_RATE_API_KEY || '',
 

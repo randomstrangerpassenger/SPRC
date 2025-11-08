@@ -19,14 +19,20 @@ export class DataManager {
      * @description 데이터 초기화
      */
     async handleResetData(): Promise<{ needsFullRender: boolean; needsUISetup: boolean }> {
-        const confirmReset = await this.view.showConfirm(t('modal.confirmResetTitle'), t('modal.confirmResetMsg'));
+        const confirmReset = await this.view.showConfirm(
+            t('modal.confirmResetTitle'),
+            t('modal.confirmResetMsg')
+        );
         if (confirmReset) {
             await this.state.resetData();
             Calculator.clearPortfolioStateCache();
 
             const activePortfolio = this.state.getActivePortfolio();
             if (activePortfolio) {
-                this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
+                this.view.renderPortfolioSelector(
+                    this.state.getAllPortfolios(),
+                    activePortfolio.id
+                );
                 this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
@@ -35,7 +41,8 @@ export class DataManager {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
                 if (portfolioExchangeRateInput instanceof HTMLInputElement) {
-                    portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
+                    portfolioExchangeRateInput.value =
+                        activePortfolio.settings.exchangeRate.toString();
                 }
             }
 
@@ -84,12 +91,15 @@ export class DataManager {
             }
 
             // CSV 헤더
-            let csvContent = 'Stock Name,Ticker,Transaction Type,Date,Quantity,Price (USD),Total Amount (USD)\n';
+            let csvContent =
+                'Stock Name,Ticker,Transaction Type,Date,Quantity,Price (USD),Total Amount (USD)\n';
 
             // 모든 종목의 거래 내역 수집
             for (const stock of activePortfolio.portfolioData) {
                 for (const tx of stock.transactions) {
-                    const totalAmount = (parseFloat(tx.quantity.toString()) * parseFloat(tx.price.toString())).toFixed(2);
+                    const totalAmount = (
+                        parseFloat(tx.quantity.toString()) * parseFloat(tx.price.toString())
+                    ).toFixed(2);
                     csvContent += `"${stock.name}","${stock.ticker}","${tx.type}","${tx.date}",${tx.quantity},${tx.price},${totalAmount}\n`;
                 }
             }
@@ -162,7 +172,10 @@ export class DataManager {
                 };
 
                 reader.onerror = () => {
-                    ErrorService.handle(new Error('File reading error'), 'handleFileSelected - Reader Error');
+                    ErrorService.handle(
+                        new Error('File reading error'),
+                        'handleFileSelected - Reader Error'
+                    );
                     this.view.showToast(t('toast.importError'), 'error');
                     fileInput.value = '';
                     resolve({ needsUISetup: false });
