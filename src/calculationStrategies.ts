@@ -122,7 +122,10 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
     }
 
     calculate(): { results: RebalancingResult[] } {
-        const startTime = performance.now();
+        let startTime: number | undefined;
+        if (import.meta.env.DEV) {
+            startTime = performance.now();
+        }
         const zero = DECIMAL_ZERO;
 
         // 현재 총 자산 + 추가 투자금 = 총 투자금
@@ -174,7 +177,7 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
                 : s.finalBuyAmount.div(totalBuyAmount).times(100),
         }));
 
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
             console.log(
                 `[Perf] AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
@@ -198,7 +201,10 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
     }
 
     calculate(): { results: RebalancingResult[] } {
-        const startTime = performance.now();
+        let startTime: number | undefined;
+        if (import.meta.env.DEV) {
+            startTime = performance.now();
+        }
         const zero = DECIMAL_ZERO;
 
         // 간단 모드에서는 manualAmount를 사용 (거래 내역 대신 직접 입력한 금액)
@@ -214,7 +220,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
 
         // 포트폴리오가 비어있으면 계산 불가
         if (totalInvestment.isZero()) {
-            if (import.meta.env.DEV) {
+            if (import.meta.env.DEV && startTime !== undefined) {
                 const endTime = performance.now();
                 console.log(
                     `[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
@@ -273,7 +279,7 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
                 : s.finalBuyAmount.div(totalBuyAmount).times(DECIMAL_HUNDRED),
         }));
 
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
             console.log(
                 `[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`

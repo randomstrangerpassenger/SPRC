@@ -1,8 +1,10 @@
 // src/services/ExcelExportService.ts
 import { Workbook } from 'exceljs';
 import type { Style } from 'exceljs';
-import { Portfolio, Stock, Transaction } from '../types';
+import type { Portfolio, Stock, Transaction } from '../types';
 import Decimal from 'decimal.js';
+import { PortfolioMetricsService } from './PortfolioMetricsService';
+import { toNumber } from '../utils/converterUtil';
 
 /**
  * @class ExcelExportService
@@ -103,11 +105,11 @@ export class ExcelExportService {
                 stock.name,
                 stock.ticker,
                 stock.sector,
-                this.toNumber(stock.targetRatio),
-                this.toNumber(stock.currentPrice),
+                toNumber(stock.targetRatio),
+                toNumber(stock.currentPrice),
                 stock.transactions.length,
                 stock.isFixedBuyEnabled ? 'Yes' : 'No',
-                stock.isFixedBuyEnabled ? this.toNumber(stock.fixedBuyAmount) : 0
+                stock.isFixedBuyEnabled ? toNumber(stock.fixedBuyAmount) : 0
             ]);
 
             // 데이터 행 스타일
@@ -190,8 +192,8 @@ export class ExcelExportService {
 
         // 거래 내역 데이터
         allTransactions.forEach(({ stock, transaction }) => {
-            const quantity = this.toNumber(transaction.quantity);
-            const price = this.toNumber(transaction.price);
+            const quantity = toNumber(transaction.quantity);
+            const price = toNumber(transaction.price);
             const totalAmount = quantity * price;
 
             const row = sheet.addRow([
@@ -296,47 +298,23 @@ export class ExcelExportService {
 
         // 종목별 상세 데이터
         portfolio.portfolioData.forEach((stock) => {
-            // 매수/매도 수량 계산
-            let totalBuyQty = 0;
-            let totalSellQty = 0;
-            let totalBuyAmount = 0;
-            let totalSellAmount = 0;
-
-            stock.transactions.forEach((tx) => {
-                const qty = this.toNumber(tx.quantity);
-                const price = this.toNumber(tx.price);
-
-                if (tx.type === 'buy') {
-                    totalBuyQty += qty;
-                    totalBuyAmount += qty * price;
-                } else if (tx.type === 'sell') {
-                    totalSellQty += qty;
-                    totalSellAmount += qty * price;
-                }
-            });
-
-            const netHoldings = totalBuyQty - totalSellQty;
-            const avgBuyPrice = totalBuyQty > 0 ? totalBuyAmount / totalBuyQty : 0;
-            const currentPrice = this.toNumber(stock.currentPrice);
-            const currentValue = netHoldings * currentPrice;
-            const totalInvested = netHoldings * avgBuyPrice;
-            const unrealizedPL = currentValue - totalInvested;
-            const unrealizedPLPercent = totalInvested > 0 ? (unrealizedPL / totalInvested) * 100 : 0;
+            // PortfolioMetricsService를 사용하여 메트릭 계산
+            const metrics = PortfolioMetricsService.calculateStockMetrics(stock);
 
             const row = sheet.addRow([
                 stock.name,
                 stock.ticker,
                 stock.sector,
-                this.toNumber(stock.targetRatio),
-                currentPrice,
-                totalBuyQty,
-                totalSellQty,
-                netHoldings,
-                avgBuyPrice,
-                totalInvested,
-                currentValue,
-                unrealizedPL,
-                unrealizedPLPercent
+                toNumber(stock.targetRatio),
+                metrics.currentPrice,
+                metrics.totalBuyQty,
+                metrics.totalSellQty,
+                metrics.netHoldings,
+                metrics.avgBuyPrice,
+                metrics.totalInvested,
+                metrics.currentValue,
+                metrics.unrealizedPL,
+                metrics.unrealizedPLPercent
             ]);
 
             // 데이터 행 스타일
@@ -371,15 +349,5 @@ export class ExcelExportService {
             else if (idx === 2) column.width = 20;
             else column.width = 15;
         });
-    }
-
-    /**
-     * Decimal 또는 number를 number로 변환
-     */
-    private static toNumber(value: Decimal | number): number {
-        if (value instanceof Decimal) {
-            return value.toNumber();
-        }
-        return Number(value);
     }
 }

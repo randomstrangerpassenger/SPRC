@@ -7,6 +7,7 @@ import { CONFIG } from '../constants';
 import { ErrorService, ValidationError } from '../errorService';
 import { getRatioSum } from '../utils';
 import { t } from '../i18n';
+import { ChartLoaderService } from '../services/ChartLoaderService';
 import {
     generateAddModeResultsHTML,
     generateSellModeResultsHTML,
@@ -153,7 +154,7 @@ export class CalculationManager {
                   : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
 
         this.view.displayChart(
-            (await import('chart.js/auto')).default,
+            await ChartLoaderService.getChart(),
             chartLabels,
             chartData,
             chartTitle

@@ -1,5 +1,5 @@
 // src/services/EmailService.ts
-import { Portfolio } from '../types';
+import type { Portfolio } from '../types';
 import { ExcelExportService } from './ExcelExportService';
 import { PDFReportService } from './PDFReportService';
 import jsPDF from 'jspdf';
