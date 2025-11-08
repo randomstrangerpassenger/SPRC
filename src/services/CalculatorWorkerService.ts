@@ -16,7 +16,7 @@ export class CalculatorWorkerService {
     private isWorkerAvailable: boolean = false;
     private pendingRequests: Map<
         string,
-        { resolve: (value: any) => void; reject: (reason: any) => void }
+        { resolve: (value: any) => void; reject: (reason: any) => void; timeoutId: number }
     > = new Map();
     private requestId: number = 0;
     private fallbackCount: number = 0; // Track fallback occurrences
@@ -81,6 +81,7 @@ export class CalculatorWorkerService {
             console.error('[CalculatorWorkerService] Worker error:', error);
             const request = this.pendingRequests.get(requestId);
             if (request) {
+                clearTimeout(request.timeoutId); // Clear timeout to prevent memory leak
                 request.reject(new Error(error));
                 this.pendingRequests.delete(requestId);
             }
@@ -89,6 +90,7 @@ export class CalculatorWorkerService {
 
         const request = this.pendingRequests.get(requestId);
         if (request) {
+            clearTimeout(request.timeoutId); // Clear timeout to prevent memory leak
             request.resolve(result);
             this.pendingRequests.delete(requestId);
         }
@@ -105,17 +107,18 @@ export class CalculatorWorkerService {
             }
 
             const requestId = `req_${++this.requestId}`;
-            this.pendingRequests.set(requestId, { resolve, reject });
 
-            this.worker.postMessage({ type, data, requestId });
-
-            // Dynamic timeout (configurable via environment variable)
-            setTimeout(() => {
+            // Create timeout handler and store timeout ID
+            const timeoutId = window.setTimeout(() => {
                 if (this.pendingRequests.has(requestId)) {
                     this.pendingRequests.delete(requestId);
                     reject(new Error('Worker request timeout'));
                 }
             }, CONFIG.WORKER_TIMEOUT);
+
+            this.pendingRequests.set(requestId, { resolve, reject, timeoutId });
+
+            this.worker.postMessage({ type, data, requestId });
         });
     }
 

@@ -1,8 +1,9 @@
 // src/services/PDFReportService.ts
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Portfolio, Stock } from '../types';
+import type { Portfolio, Stock } from '../types';
 import Decimal from 'decimal.js';
+import { PortfolioMetricsService } from './PortfolioMetricsService';
 
 /**
  * @class PDFReportService
@@ -118,7 +119,7 @@ export class PDFReportService {
             // 테이블 데이터
             pdf.setFont('helvetica', 'normal');
             portfolio.portfolioData.forEach((stock, index) => {
-                const stockData = this.calculateStockMetrics(stock);
+                const stockData = PortfolioMetricsService.calculateStockMetrics(stock);
 
                 // 새 페이지가 필요한지 확인
                 if (yPosition > 270) {
@@ -196,7 +197,7 @@ export class PDFReportService {
         let currentValue = 0;
 
         portfolio.portfolioData.forEach((stock) => {
-            const metrics = this.calculateStockMetrics(stock);
+            const metrics = PortfolioMetricsService.calculateStockMetrics(stock);
             totalInvested += metrics.totalInvested;
             currentValue += metrics.currentValue;
         });
@@ -209,57 +210,6 @@ export class PDFReportService {
             currentValue,
             totalPL,
             totalPLPercent
-        };
-    }
-
-    /**
-     * 종목별 메트릭 계산
-     */
-    private static calculateStockMetrics(stock: Stock): {
-        totalBuyQty: number;
-        totalSellQty: number;
-        netHoldings: number;
-        avgBuyPrice: number;
-        currentPrice: number;
-        totalInvested: number;
-        currentValue: number;
-        unrealizedPL: number;
-        unrealizedPLPercent: number;
-    } {
-        let totalBuyQty = 0;
-        let totalSellQty = 0;
-        let totalBuyAmount = 0;
-
-        stock.transactions.forEach((tx) => {
-            const qty = this.toNumber(tx.quantity);
-            const price = this.toNumber(tx.price);
-
-            if (tx.type === 'buy') {
-                totalBuyQty += qty;
-                totalBuyAmount += qty * price;
-            } else if (tx.type === 'sell') {
-                totalSellQty += qty;
-            }
-        });
-
-        const netHoldings = totalBuyQty - totalSellQty;
-        const avgBuyPrice = totalBuyQty > 0 ? totalBuyAmount / totalBuyQty : 0;
-        const currentPrice = this.toNumber(stock.currentPrice);
-        const currentValue = netHoldings * currentPrice;
-        const totalInvested = netHoldings * avgBuyPrice;
-        const unrealizedPL = currentValue - totalInvested;
-        const unrealizedPLPercent = totalInvested > 0 ? (unrealizedPL / totalInvested) * 100 : 0;
-
-        return {
-            totalBuyQty,
-            totalSellQty,
-            netHoldings,
-            avgBuyPrice,
-            currentPrice,
-            totalInvested,
-            currentValue,
-            unrealizedPL,
-            unrealizedPLPercent
         };
     }
 
@@ -341,15 +291,5 @@ export class PDFReportService {
             console.error('HTML to PDF conversion error:', error);
             throw new Error('HTML to PDF 변환 실패');
         }
-    }
-
-    /**
-     * Decimal 또는 number를 number로 변환
-     */
-    private static toNumber(value: Decimal | number): number {
-        if (value instanceof Decimal) {
-            return value.toNumber();
-        }
-        return Number(value);
     }
 }

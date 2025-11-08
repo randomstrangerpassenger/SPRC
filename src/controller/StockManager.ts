@@ -69,11 +69,55 @@ export class StockManager {
         if (!stockId || !field)
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
-        let value: any =
+        const rawValue =
             target.type === 'checkbox' && target instanceof HTMLInputElement
                 ? target.checked
                 : target.value;
+
+        const { isValid, value } = this.validateFieldValue(field, rawValue);
+        this.view.toggleInputValidation(target as HTMLInputElement, isValid);
+
+        if (!isValid) {
+            return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+        }
+
+        this.state.updateStockProperty(stockId, field, value);
+
+        // manualAmount 변경 처리
+        if (field === 'manualAmount') {
+            return this.handleManualAmountChange(stockId, value);
+        }
+
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) {
+            return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+        }
+
+        // 메타데이터 필드 변경 처리
+        if (field === 'name' || field === 'ticker') {
+            return this.handleMetadataFieldChange(stockId, field, value);
+        }
+
+        // 섹터 변경 처리
+        if (field === 'sector') {
+            return this.handleSectorChange(stockId, value, activePortfolio);
+        }
+
+        // 현재가 변경 처리
+        if (field === 'currentPrice') {
+            return this.handleCurrentPriceChange(stockId, activePortfolio);
+        }
+
+        // 기타 필드 변경 처리
+        return this.handleOtherFieldChange(stockId, field, value, row, activePortfolio);
+    }
+
+    /**
+     * @description 필드 값 유효성 검사
+     */
+    private validateFieldValue(field: string, value: any): { isValid: boolean; value: any } {
         let isValid = true;
+        let validatedValue = value;
 
         switch (field) {
             case 'targetRatio':
@@ -82,159 +126,161 @@ export class StockManager {
             case 'manualAmount':
                 const validationResult = Validator.validateNumericInput(value);
                 isValid = validationResult.isValid;
-                if (isValid) value = validationResult.value ?? 0;
+                if (isValid) validatedValue = validationResult.value ?? 0;
                 break;
             case 'isFixedBuyEnabled':
-                value = Boolean(value);
+                validatedValue = Boolean(value);
                 break;
             case 'ticker':
                 const tickerResult = Validator.validateTicker(value);
                 isValid = tickerResult.isValid;
-                if (isValid) value = tickerResult.value ?? '';
+                if (isValid) validatedValue = tickerResult.value ?? '';
                 break;
             case 'name':
             case 'sector':
                 const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
                 isValid = textResult.isValid;
-                if (isValid) value = DOMPurify.sanitize(textResult.value ?? '');
+                if (isValid) validatedValue = DOMPurify.sanitize(textResult.value ?? '');
                 break;
             default:
-                value = DOMPurify.sanitize(String(value).trim());
+                validatedValue = DOMPurify.sanitize(String(value).trim());
                 break;
         }
 
-        this.view.toggleInputValidation(target as HTMLInputElement, isValid);
+        return { isValid, value: validatedValue };
+    }
 
-        if (isValid) {
-            this.state.updateStockProperty(stockId, field, value);
+    /**
+     * @description manualAmount 변경 처리
+     */
+    private handleManualAmountChange(stockId: string, value: any) {
+        this.view.updateStockInVirtualData(stockId, 'manualAmount', value);
+        this.debouncedSave();
+        return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    }
 
-            // manualAmount는 간단 모드 전용 필드
-            if (field === 'manualAmount') {
-                this.view.updateStockInVirtualData(stockId, field, value);
-                this.debouncedSave();
-                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    /**
+     * @description 메타데이터 필드 변경 처리 (name, ticker)
+     */
+    private handleMetadataFieldChange(stockId: string, field: string, value: any) {
+        this.view.updateStockInVirtualData(stockId, field, value);
+        this.debouncedSave();
+        return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    }
+
+    /**
+     * @description 섹터 변경 처리
+     */
+    private handleSectorChange(stockId: string, value: any, activePortfolio: any) {
+        this.view.updateStockInVirtualData(stockId, 'sector', value);
+        // 섹터는 메타데이터이므로 기존 계산된 메트릭을 재사용하고 섹터 분석만 재집계
+        this.updateSectorAnalysis(activePortfolio, true);
+        this.debouncedSave();
+        return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    }
+
+    /**
+     * @description 현재가 변경 처리
+     */
+    private handleCurrentPriceChange(stockId: string, activePortfolio: any) {
+        const stock = activePortfolio.portfolioData.find((s: any) => s.id === stockId);
+        if (stock) {
+            // 개별 주식만 재계산
+            const calculatedMetrics = Calculator.calculateStockMetrics(stock);
+            const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
+
+            if (activePortfolio.settings.currentCurrency === 'krw') {
+                calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
+                calculatedMetrics.currentAmountUSD =
+                    calculatedMetrics.currentAmount.div(exchangeRateDec);
+            } else {
+                calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
+                calculatedMetrics.currentAmountKRW =
+                    calculatedMetrics.currentAmount.times(exchangeRateDec);
             }
 
-            const activePortfolio = this.state.getActivePortfolio();
-            if (!activePortfolio)
-                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+            // 포트폴리오 데이터의 calculated 필드 업데이트
+            stock.calculated = calculatedMetrics;
 
-            // 메타데이터 필드는 재계산 없이 DOM만 업데이트
-            if (field === 'name' || field === 'ticker') {
-                // 이름과 티커 변경은 계산에 영향을 주지 않으므로 가상 스크롤 데이터만 업데이트
-                this.view.updateStockInVirtualData(stockId, field, value);
-                this.debouncedSave();
-                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
-            }
+            // 뷰 업데이트
+            this.view.updateSingleStockRow(stockId, calculatedMetrics);
 
-            if (field === 'sector') {
-                // 섹터 변경 시 캐시 무효화 최소화
-                // 섹터는 메타데이터이므로 계산 캐시를 유지하고 섹터 분석만 재계산
-                this.view.updateStockInVirtualData(stockId, field, value);
+            // 기존 계산된 메트릭을 사용하여 섹터 분석만 재집계
+            this.updateSectorAnalysis(activePortfolio, true);
+        }
 
-                // 캐시를 비우지 않고 기존 계산 상태 재사용
-                const calculatedState = Calculator.calculatePortfolioState({
-                    portfolioData: activePortfolio.portfolioData,
-                    exchangeRate: activePortfolio.settings.exchangeRate,
-                    currentCurrency: activePortfolio.settings.currentCurrency,
-                });
-                const newSectorData = Calculator.calculateSectorAnalysis(
-                    calculatedState.portfolioData,
-                    activePortfolio.settings.currentCurrency
-                );
-                this.view.displaySectorAnalysis(
-                    generateSectorAnalysisHTML(
-                        newSectorData,
-                        activePortfolio.settings.currentCurrency
-                    )
-                );
+        this.debouncedSave();
+        return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    }
 
-                this.debouncedSave();
-                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
-            }
+    /**
+     * @description 기타 필드 변경 처리 (전체 재계산 필요)
+     */
+    private handleOtherFieldChange(
+        stockId: string,
+        field: string,
+        value: any,
+        row: Element,
+        activePortfolio: any
+    ) {
+        Calculator.clearPortfolioStateCache();
 
-            // currentPrice 변경 시 부분 업데이트
-            if (field === 'currentPrice') {
-                const stock = activePortfolio.portfolioData.find((s) => s.id === stockId);
-                if (stock) {
-                    // 개별 주식만 재계산
-                    // 해당 주식의 메트릭만 재계산하고 행 업데이트
-                    const calculatedMetrics = Calculator.calculateStockMetrics(stock);
-                    const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
+        const calculatedState = Calculator.calculatePortfolioState({
+            portfolioData: activePortfolio.portfolioData,
+            exchangeRate: activePortfolio.settings.exchangeRate,
+            currentCurrency: activePortfolio.settings.currentCurrency,
+        });
+        activePortfolio.portfolioData = calculatedState.portfolioData;
 
-                    if (activePortfolio.settings.currentCurrency === 'krw') {
-                        calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
-                        calculatedMetrics.currentAmountUSD =
-                            calculatedMetrics.currentAmount.div(exchangeRateDec);
-                    } else {
-                        calculatedMetrics.currentAmountUSD = calculatedMetrics.currentAmount;
-                        calculatedMetrics.currentAmountKRW =
-                            calculatedMetrics.currentAmount.times(exchangeRateDec);
-                    }
+        this.view.updateVirtualTableData(calculatedState.portfolioData);
 
-                    this.view.updateSingleStockRow(stockId, calculatedMetrics);
+        const newRatioSum = getRatioSum(activePortfolio.portfolioData);
+        this.view.updateRatioSum(newRatioSum.toNumber());
 
-                    // 섹터 분석은 캐시를 재사용하여 재계산
-                    const calculatedState = Calculator.calculatePortfolioState({
-                        portfolioData: activePortfolio.portfolioData,
-                        exchangeRate: activePortfolio.settings.exchangeRate,
-                        currentCurrency: activePortfolio.settings.currentCurrency,
-                    });
-                    const newSectorData = Calculator.calculateSectorAnalysis(
-                        calculatedState.portfolioData,
-                        activePortfolio.settings.currentCurrency
-                    );
-                    this.view.displaySectorAnalysis(
-                        generateSectorAnalysisHTML(
-                            newSectorData,
-                            activePortfolio.settings.currentCurrency
-                        )
-                    );
-                }
+        this.updateSectorAnalysis(activePortfolio, true);
 
-                this.debouncedSave();
-                return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
-            }
+        this.debouncedSave();
 
-            // 기타 필드 변경 시 전체 재계산
-            Calculator.clearPortfolioStateCache();
-
-            const calculatedState = Calculator.calculatePortfolioState({
-                portfolioData: activePortfolio.portfolioData,
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency,
-            });
-            activePortfolio.portfolioData = calculatedState.portfolioData;
-
-            this.view.updateVirtualTableData(calculatedState.portfolioData);
-
-            const newRatioSum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(newRatioSum.toNumber());
-
-            const newSectorData = Calculator.calculateSectorAnalysis(
-                calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency
-            );
-            this.view.displaySectorAnalysis(
-                generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
-            );
-
-            this.debouncedSave();
-
-            if (field === 'isFixedBuyEnabled') {
-                const amountInput = row.querySelector('input[data-field="fixedBuyAmount"]');
-                if (amountInput instanceof HTMLInputElement) {
-                    amountInput.disabled = !value;
-                    if (!value) {
-                        amountInput.value = '0';
-                        this.state.updateStockProperty(stockId, 'fixedBuyAmount', 0);
-                        this.debouncedSave();
-                    }
+        // isFixedBuyEnabled 특수 처리
+        if (field === 'isFixedBuyEnabled') {
+            const amountInput = row.querySelector('input[data-field="fixedBuyAmount"]');
+            if (amountInput instanceof HTMLInputElement) {
+                amountInput.disabled = !value;
+                if (!value) {
+                    amountInput.value = '0';
+                    this.state.updateStockProperty(stockId, 'fixedBuyAmount', 0);
+                    this.debouncedSave();
                 }
             }
         }
 
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
+    }
+
+    /**
+     * @description 섹터 분석 업데이트
+     * @param activePortfolio - 활성 포트폴리오
+     * @param useExistingState - 기존 계산 상태 재사용 여부
+     */
+    private updateSectorAnalysis(activePortfolio: any, useExistingState: boolean) {
+        let portfolioData = activePortfolio.portfolioData;
+
+        if (!useExistingState) {
+            const calculatedState = Calculator.calculatePortfolioState({
+                portfolioData: activePortfolio.portfolioData,
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                currentCurrency: activePortfolio.settings.currentCurrency,
+            });
+            portfolioData = calculatedState.portfolioData;
+        }
+
+        const newSectorData = Calculator.calculateSectorAnalysis(
+            portfolioData,
+            activePortfolio.settings.currentCurrency
+        );
+        this.view.displaySectorAnalysis(
+            generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
+        );
     }
 
     /**

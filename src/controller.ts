@@ -12,6 +12,7 @@ import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
+import { ChartLoaderService } from './services/ChartLoaderService';
 
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
@@ -493,7 +494,7 @@ export class PortfolioController {
             // Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer
             this.view.resultsRenderer.showPerformanceHistoryView(true);
 
-            const ChartClass = (await import('chart.js/auto')).default;
+            const ChartClass = await ChartLoaderService.getChart();
             await this.view.displayPerformanceHistory(
                 ChartClass,
                 snapshots,

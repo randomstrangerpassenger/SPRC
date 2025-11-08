@@ -15,6 +15,8 @@ export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
     #activePortfolioId: string | null = null;
     #initializationPromise: Promise<void> | null = null;
+    // Phase 4-1: 증분 저장을 위한 dirty flag (변경된 포트폴리오 ID 추적)
+    #dirtyPortfolioIds: Set<string> = new Set();
 
     constructor() {
         this.#initializationPromise = this._initialize();

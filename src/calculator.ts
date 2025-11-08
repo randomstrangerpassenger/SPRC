@@ -26,15 +26,24 @@ function _generateStockKey(stock: Stock): string {
 
 /**
  * @description 포트폴리오 전체를 위한 캐시 키를 생성합니다.
+ * 최적화: 전체 객체 정렬 대신 ID만 정렬하여 O(n log n) -> O(n + k log k) (k=종목 수)
  */
 function _generatePortfolioKey(
     portfolioData: Stock[],
     exchangeRate: number,
     currentCurrency: Currency
 ): string {
-    // 주식 ID 기준으로 정렬하여 배열 순서와 무관하게 일관된 캐시 키 생성
-    const sortedData = [...portfolioData].sort((a, b) => a.id.localeCompare(b.id));
-    const stockKeys = sortedData.map(_generateStockKey).join('|');
+    // Map을 사용하여 ID -> stock key 매핑 생성 (O(n))
+    const stockKeyMap = new Map<string, string>();
+    for (const stock of portfolioData) {
+        stockKeyMap.set(stock.id, _generateStockKey(stock));
+    }
+
+    // ID만 정렬 (O(k log k), k = 종목 수, 객체 정렬보다 빠름)
+    const sortedIds = Array.from(stockKeyMap.keys()).sort();
+
+    // 정렬된 ID 순서로 키 조합 (O(k))
+    const stockKeys = sortedIds.map((id) => stockKeyMap.get(id)!).join('|');
     const settingsKey = `${exchangeRate}:${currentCurrency}`;
     return `${stockKeys}|${settingsKey}`;
 }
@@ -212,7 +221,10 @@ export class Calculator {
         portfolioData: CalculatedStock[],
         currentCurrency: Currency = 'krw'
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
-        const startTime = performance.now();
+        let startTime: number | undefined;
+        if (import.meta.env.DEV) {
+            startTime = performance.now();
+        }
 
         const sectorMap = new Map<string, Decimal>();
         let currentTotal = DECIMAL_ZERO;
@@ -240,7 +252,7 @@ export class Calculator {
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
             console.log(
                 `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`

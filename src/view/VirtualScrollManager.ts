@@ -7,6 +7,7 @@ import { DECIMAL_ZERO } from '../constants';
 import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
+import { LRUCache } from '../utils/LRUCache';
 
 // UI 렌더링용 헬퍼 함수
 /**
@@ -41,11 +42,11 @@ export class VirtualScrollManager {
     #currentMainMode: 'add' | 'sell' | 'simple' = 'add';
     #currentCurrency: 'krw' | 'usd' = 'krw';
 
-    // DOM 참조 캐싱
-    #rowCache: Map<
+    // DOM 참조 캐싱 (LRU 캐시 사용 - 최대 50개 행 캐시)
+    #rowCache: LRUCache<
         string,
         { inputRow: HTMLElement | null; outputRow: HTMLElement | null }
-    > = new Map();
+    > = new LRUCache(50);
 
     constructor(dom: DOMElements) {
         this.dom = dom;
