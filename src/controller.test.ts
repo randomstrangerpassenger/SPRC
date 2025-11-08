@@ -313,6 +313,9 @@ describe('PortfolioController', () => {
     it('handleTransactionListClick: 거래 삭제 취소 시 state를 호출하지 않아야 한다 (async)', async () => {
         vi.mocked(mockView.showConfirm).mockResolvedValue(false);
 
+        // Clear any previous showToast calls from initialization
+        vi.mocked(mockView.showToast).mockClear();
+
         await controller.handleTransactionListClick('s1', 'tx1');
 
         expect(mockView.showConfirm).toHaveBeenCalledOnce();
