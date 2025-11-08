@@ -214,8 +214,10 @@ export class ModalManager {
             return idB.localeCompare(idA);
         });
 
+        // ===== [Phase 3 최적화] DocumentFragment로 DOM 조작 최소화 =====
+        const fragment = document.createDocumentFragment();
         sorted.forEach((tx) => {
-            const tr = (listBody as HTMLTableSectionElement).insertRow();
+            const tr = document.createElement('tr');
             tr.dataset.txId = tx.id;
 
             const quantityDec =
@@ -223,9 +225,13 @@ export class ModalManager {
             const priceDec = tx.price instanceof Decimal ? tx.price : new Decimal(tx.price || 0);
             const total = quantityDec.times(priceDec);
 
-            tr.insertCell().textContent = tx.date;
+            // Date cell
+            const dateTd = document.createElement('td');
+            dateTd.textContent = tx.date;
+            tr.appendChild(dateTd);
 
-            const typeTd = tr.insertCell();
+            // Type cell
+            const typeTd = document.createElement('td');
             const typeSpan = document.createElement('span');
             if (tx.type === 'buy') {
                 typeSpan.className = 'text-buy';
@@ -240,20 +246,28 @@ export class ModalManager {
                 typeSpan.textContent = tx.type;
             }
             typeTd.appendChild(typeSpan);
+            tr.appendChild(typeTd);
 
-            const qtyTd = tr.insertCell();
+            // Quantity cell
+            const qtyTd = document.createElement('td');
             qtyTd.textContent = quantityDec.toNumber().toLocaleString();
             qtyTd.style.textAlign = 'right';
+            tr.appendChild(qtyTd);
 
-            const priceTd = tr.insertCell();
+            // Price cell
+            const priceTd = document.createElement('td');
             priceTd.textContent = formatCurrency(priceDec, currency);
             priceTd.style.textAlign = 'right';
+            tr.appendChild(priceTd);
 
-            const totalTd = tr.insertCell();
+            // Total cell
+            const totalTd = document.createElement('td');
             totalTd.textContent = formatCurrency(total, currency);
             totalTd.style.textAlign = 'right';
+            tr.appendChild(totalTd);
 
-            const actionTd = tr.insertCell();
+            // Action cell
+            const actionTd = document.createElement('td');
             actionTd.style.textAlign = 'center';
             const btnDelete = document.createElement('button');
             btnDelete.className = 'btn btn--small';
@@ -262,7 +276,13 @@ export class ModalManager {
             btnDelete.textContent = t('ui.delete');
             btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.date }));
             actionTd.appendChild(btnDelete);
+            tr.appendChild(actionTd);
+
+            fragment.appendChild(tr);
         });
+
+        listBody.appendChild(fragment);
+        // ===== [Phase 3 최적화 끝] =====
     }
 
     /**

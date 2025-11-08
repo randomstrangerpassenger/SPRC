@@ -6,6 +6,7 @@
 import { t } from '../i18n';
 import { escapeHTML } from '../utils';
 import Decimal from 'decimal.js';
+import { memoizeWithKey } from '../cache/memoization';
 
 /**
  * @description Input 요소를 생성합니다.
@@ -112,8 +113,9 @@ export function createOutputCell(
 
 /**
  * @description 그리드 템플릿을 반환합니다 (반응형).
+ * ===== [Phase 3 최적화] 메모이제이션 적용 =====
  */
-export function getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
+const _getGridTemplateImpl = (mainMode: 'add' | 'sell' | 'simple'): string => {
     const isMobile = window.innerWidth <= 768;
 
     if (isMobile) {
@@ -130,4 +132,12 @@ export function getGridTemplate(mainMode: 'add' | 'sell' | 'simple'): string {
             return '2fr 1fr 1fr 1fr 1fr 1.2fr';
         }
     }
-}
+};
+
+// 메모이제이션 적용: 동일한 mainMode와 화면 크기에 대해 캐시된 결과 반환
+export const getGridTemplate = memoizeWithKey(
+    _getGridTemplateImpl,
+    (mainMode) => `${mainMode}:${window.innerWidth <= 768}`,
+    6 // 캐시 크기: add/sell/simple × mobile/desktop = 6가지 조합
+);
+// ===== [Phase 3 최적화 끝] =====

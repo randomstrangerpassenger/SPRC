@@ -1,8 +1,9 @@
-// src/calculator.ts (Strategy Pattern Applied)
+// src/calculator.ts (Strategy Pattern Applied with LRU Cache)
 import Decimal from 'decimal.js';
 import { nanoid } from 'nanoid';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
+import { LRUCache } from './cache/LRUCache.ts';
 import type {
     Stock,
     CalculatedStock,
@@ -44,13 +45,9 @@ export interface PortfolioCalculationResult {
     cacheKey: string;
 }
 
-interface CalculatorCache {
-    key: string;
-    result: PortfolioCalculationResult;
-}
-
 export class Calculator {
-    static #cache: CalculatorCache | null = null;
+    // LRU 캐시로 여러 계산 결과 저장 (기본 용량: 20)
+    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(20);
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
@@ -157,8 +154,10 @@ export class Calculator {
 
         const cacheKey = _generatePortfolioKey(portfolioData, exchangeRate, currentCurrency);
 
-        if (Calculator.#cache && Calculator.#cache.key === cacheKey) {
-            return Calculator.#cache.result;
+        // LRU 캐시에서 결과 조회
+        const cachedResult = Calculator.#portfolioCache.get(cacheKey);
+        if (cachedResult) {
+            return cachedResult;
         }
 
         const exchangeRateDec = new Decimal(exchangeRate);
@@ -191,8 +190,8 @@ export class Calculator {
             cacheKey: cacheKey,
         };
 
-        // 캐시 업데이트
-        Calculator.#cache = { key: cacheKey, result: result };
+        // LRU 캐시에 결과 저장
+        Calculator.#portfolioCache.set(cacheKey, result);
 
         return result;
     }
@@ -255,7 +254,7 @@ export class Calculator {
      * @description 포트폴리오 계산 캐시를 초기화합니다.
      */
     static clearPortfolioStateCache(): void {
-        Calculator.#cache = null;
+        Calculator.#portfolioCache.clear();
     }
 
     /**

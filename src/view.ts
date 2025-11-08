@@ -322,14 +322,19 @@ export class PortfolioView {
         const selector = this.dom.portfolioSelector;
         if (!(selector instanceof HTMLSelectElement)) return;
 
-        selector.innerHTML = '';
+        // ===== [Phase 3 최적화] DocumentFragment로 DOM 조작 최소화 =====
+        const fragment = document.createDocumentFragment();
         Object.entries(portfolios).forEach(([id, portfolio]) => {
             const option = document.createElement('option');
             option.value = id;
             option.textContent = portfolio.name;
             option.selected = id === activeId;
-            selector.appendChild(option);
+            fragment.appendChild(option);
         });
+
+        selector.innerHTML = '';
+        selector.appendChild(fragment);
+        // ===== [Phase 3 최적화 끝] =====
     }
 
     /**

@@ -3,6 +3,7 @@ import type { Stock, Currency } from './types.ts';
 // Import enhanced i18n formatters
 import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
 import { DECIMAL_ZERO } from './constants';
+import { memoizeWithKey } from './cache/memoization';
 
 /**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
@@ -21,10 +22,11 @@ export function escapeHTML(str: string | number | null | undefined): string {
 
 /**
  * @description 포트폴리오 데이터에서 목표 비율의 합계를 Decimal 객체로 계산합니다.
+ * ===== [Phase 3 최적화] 메모이제이션 적용 =====
  * @param portfolioData - 포트폴리오 주식 객체 배열
  * @returns 목표 비율 합계
  */
-export function getRatioSum(portfolioData: Stock[]): Decimal {
+const _getRatioSumImpl = (portfolioData: Stock[]): Decimal => {
     let sum = DECIMAL_ZERO;
     if (!Array.isArray(portfolioData)) return sum;
 
@@ -34,7 +36,18 @@ export function getRatioSum(portfolioData: Stock[]): Decimal {
         sum = sum.plus(ratio);
     }
     return sum;
-}
+};
+
+// 메모이제이션 적용: 동일한 포트폴리오 데이터에 대해 캐시된 결과 반환
+export const getRatioSum = memoizeWithKey(
+    _getRatioSumImpl,
+    (portfolioData) =>
+        Array.isArray(portfolioData)
+            ? portfolioData.map((s) => `${s.id}:${s.targetRatio}`).join('|')
+            : 'null',
+    20 // 캐시 크기: 최근 20개의 포트폴리오 상태 저장
+);
+// ===== [Phase 3 최적화 끝] =====
 
 /**
  * @description 숫자를 통화 형식의 문자열로 변환합니다. (Enhanced with i18n)
