@@ -1,9 +1,9 @@
 // src/view.ts (리팩토링: 모듈화)
 import { CONFIG } from './constants';
-import { getRatioSum } from './utils';
+import { getRatioSum, escapeHTML } from './utils';
 import { t } from './i18n';
 import Decimal from 'decimal.js';
-import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot } from './types';
+import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot, DOMElements } from './types';
 import type { Chart } from 'chart.js';
 
 // 분리된 모듈들
@@ -11,59 +11,6 @@ import { EventEmitter, type EventCallback } from './view/EventEmitter';
 import { ModalManager } from './view/ModalManager';
 import { VirtualScrollManager } from './view/VirtualScrollManager';
 import { ResultsRenderer } from './view/ResultsRenderer';
-
-// DOM 요소 타입 정의
-interface DOMElements {
-    ariaAnnouncer: HTMLElement | null;
-    resultsSection: HTMLElement | null;
-    sectorAnalysisSection: HTMLElement | null;
-    chartSection: HTMLElement | null;
-    portfolioChart: HTMLElement | null;
-    additionalAmountInput: HTMLElement | null;
-    additionalAmountUSDInput: HTMLElement | null;
-    exchangeRateInput: HTMLElement | null;
-    portfolioExchangeRateInput: HTMLElement | null;
-    mainModeSelector: NodeListOf<HTMLElement> | null;
-    currencyModeSelector: NodeListOf<HTMLElement> | null;
-    exchangeRateGroup: HTMLElement | null;
-    usdInputGroup: HTMLElement | null;
-    addInvestmentCard: HTMLElement | null;
-    calculateBtn: HTMLElement | null;
-    darkModeToggle: HTMLElement | null;
-    addNewStockBtn: HTMLElement | null;
-    fetchAllPricesBtn: HTMLElement | null;
-    resetDataBtn: HTMLElement | null;
-    normalizeRatiosBtn: HTMLElement | null;
-    dataManagementBtn: HTMLElement | null;
-    dataDropdownContent: HTMLElement | null;
-    exportDataBtn: HTMLElement | null;
-    importDataBtn: HTMLElement | null;
-    importFileInput: HTMLElement | null;
-    transactionModal: HTMLElement | null;
-    modalStockName: HTMLElement | null;
-    closeModalBtn: HTMLElement | null;
-    transactionListBody: HTMLElement | null;
-    newTransactionForm: HTMLElement | null;
-    txDate: HTMLElement | null;
-    txQuantity: HTMLElement | null;
-    txPrice: HTMLElement | null;
-    portfolioSelector: HTMLElement | null;
-    newPortfolioBtn: HTMLElement | null;
-    renamePortfolioBtn: HTMLElement | null;
-    deletePortfolioBtn: HTMLElement | null;
-    virtualTableHeader: HTMLElement | null;
-    virtualScrollWrapper: HTMLElement | null;
-    virtualScrollSpacer: HTMLElement | null;
-    virtualScrollContent: HTMLElement | null;
-    ratioValidator: HTMLElement | null;
-    ratioSum: HTMLElement | null;
-    customModal: HTMLElement | null;
-    customModalTitle: HTMLElement | null;
-    customModalMessage: HTMLElement | null;
-    customModalInput: HTMLElement | null;
-    customModalConfirm: HTMLElement | null;
-    customModalCancel: HTMLElement | null;
-}
 
 /**
  * @class PortfolioView
@@ -97,7 +44,7 @@ export class PortfolioView {
         this.eventEmitter.on(event, callback);
     }
 
-    emit(event: string, data?: any): void {
+    emit(event: string, data?: unknown): void {
         this.eventEmitter.emit(event, data);
     }
 
@@ -213,7 +160,8 @@ export class PortfolioView {
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
         toast.className = `toast toast--${type}`;
-        toast.innerHTML = message.replace(/\n/g, '<br>');
+        // XSS 방어: escapeHTML 적용
+        toast.innerHTML = escapeHTML(message).replace(/\n/g, '<br>');
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }

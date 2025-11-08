@@ -4,7 +4,7 @@
  * @description Pub/Sub 패턴을 구현하는 이벤트 시스템
  */
 
-export type EventCallback = (data?: any) => void;
+export type EventCallback = (data?: unknown) => void;
 
 export class EventEmitter {
     private _events: Record<string, EventCallback[]> = {};
@@ -26,7 +26,7 @@ export class EventEmitter {
      * @param event - 이벤트 이름
      * @param data - 전달할 데이터
      */
-    emit(event: string, data?: any): void {
+    emit(event: string, data?: unknown): void {
         if (this._events[event]) {
             this._events[event].forEach(callback => callback(data));
         }

@@ -4,7 +4,7 @@ import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
 import { DECIMAL_ZERO } from '../constants';
-import type { CalculatedStock } from '../types';
+import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
 // ===== [Phase 4.1 리팩토링 끝] =====
@@ -20,7 +20,7 @@ const VISIBLE_ROWS_BUFFER = 5;
  * @description 가상 스크롤 관리 - 대량 데이터를 효율적으로 렌더링
  */
 export class VirtualScrollManager {
-    private dom: any;
+    private dom: DOMElements;
     private _virtualData: CalculatedStock[] = [];
     private _scrollWrapper: HTMLElement | null = null;
     private _scrollSpacer: HTMLElement | null = null;
@@ -36,7 +36,7 @@ export class VirtualScrollManager {
     private _rowCache: Map<string, { inputRow: HTMLElement | null; outputRow: HTMLElement | null }> = new Map();
     // ===== [Phase 2.1 최적화 끝] =====
 
-    constructor(dom: any) {
+    constructor(dom: DOMElements) {
         this.dom = dom;
         this.initializeScrollElements();
     }

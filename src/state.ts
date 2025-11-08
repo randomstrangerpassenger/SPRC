@@ -235,17 +235,20 @@ export class PortfolioState {
         }
     }
 
-    async updatePortfolioSettings(key: keyof PortfolioSettings, value: any): Promise<void> {
+    async updatePortfolioSettings<K extends keyof PortfolioSettings>(
+        key: K,
+        value: PortfolioSettings[K]
+    ): Promise<void> {
         const activePortfolio = this.getActivePortfolio();
         console.log(`[DEBUG] updatePortfolioSettings called: key=${key}, value=${value}`);
         if (activePortfolio) {
             if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
-                 activePortfolio.settings[key] = CONFIG.DEFAULT_EXCHANGE_RATE;
-            } else if (key === 'mainMode' && !['add', 'sell', 'simple'].includes(/** @type {string} */(value))) {
+                 activePortfolio.settings[key] = CONFIG.DEFAULT_EXCHANGE_RATE as PortfolioSettings[K];
+            } else if (key === 'mainMode' && !['add', 'sell', 'simple'].includes(value as string)) {
                  console.log(`[DEBUG] Invalid mainMode detected: ${value}, resetting to 'add'`);
-                 activePortfolio.settings[key] = 'add';
-            } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(/** @type {string} */(value))) {
-                 activePortfolio.settings[key] = 'krw';
+                 activePortfolio.settings[key] = 'add' as PortfolioSettings[K];
+            } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(value as string)) {
+                 activePortfolio.settings[key] = 'krw' as PortfolioSettings[K];
             }
             else {
                 console.log(`[DEBUG] Setting ${key} = ${value}`);
@@ -294,7 +297,7 @@ export class PortfolioState {
         return activePortfolio?.portfolioData.find(s => s.id === stockId);
     }
 
-    updateStockProperty(stockId: string, field: string, value: any): void {
+    updateStockProperty(stockId: string, field: string, value: string | number | boolean | Decimal): void {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             const stockIndex = activePortfolio.portfolioData.findIndex(s => s.id === stockId);

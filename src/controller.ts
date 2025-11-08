@@ -359,8 +359,8 @@ export class PortfolioController {
      * @description 리밸런싱 필요 여부 확인
      */
     checkRebalancingNeeds(
-        portfolioData: any[],
-        currentTotal: any,
+        portfolioData: import('./types').CalculatedStock[],
+        currentTotal: Decimal,
         rebalancingTolerance?: number
     ): void {
         const tolerance = rebalancingTolerance ?? 5;
@@ -520,9 +520,9 @@ export class PortfolioController {
      * @description 리스크 경고 확인 (Phase 4.3)
      */
     checkRiskWarnings(
-        portfolioData: any[],
-        currentTotal: any,
-        sectorData: any[]
+        portfolioData: import('./types').CalculatedStock[],
+        currentTotal: Decimal,
+        sectorData: import('./types').SectorData[]
     ): void {
         const warnings: string[] = [];
         const currentTotalDec = new Decimal(currentTotal);

@@ -4,6 +4,7 @@
  */
 
 import { t } from '../i18n';
+import { escapeHTML } from '../utils';
 import Decimal from 'decimal.js';
 
 /**
@@ -86,8 +87,8 @@ export function createCell(className: string = '', align: string = 'left'): HTML
  */
 export function createOutputCell(label: string, value: string, valueClass: string = ''): HTMLDivElement {
     const cell = createCell('output-cell align-right');
-    // escapeHTML은 RowRenderer에서 호출 시 적용됨
-    cell.innerHTML = `<span class="label">${label}</span><span class="value ${valueClass}">${value}</span>`;
+    // XSS 방어: escapeHTML 적용
+    cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
     return cell;
 }
 

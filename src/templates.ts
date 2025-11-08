@@ -3,7 +3,7 @@ import { escapeHTML, formatCurrency } from './utils.ts';
 import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
-import type { CalculatedStock, Currency } from './types.ts';
+import type { CalculatedStock, Currency, SectorData } from './types.ts';
 
 // Add mode result stock type
 export interface AddModeResultStock extends CalculatedStock {
@@ -24,13 +24,6 @@ export interface AddModeSummary {
     currentTotal: Decimal;
     additionalInvestment: Decimal;
     finalTotal: Decimal;
-}
-
-// Sector analysis data type
-export interface SectorData {
-    sector: string;
-    amount: Decimal;
-    percentage: Decimal;
 }
 
 /**

@@ -3,19 +3,19 @@ import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
 import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
-import type { Stock, Transaction } from '../types';
+import type { Stock, Transaction, DOMElements } from '../types';
 
 /**
  * @class ModalManager
  * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
  */
 export class ModalManager {
-    private dom: any;
-    private activeModalResolver: ((value: any) => void) | null = null;
+    private dom: DOMElements;
+    private activeModalResolver: ((value: boolean | string | null) => void) | null = null;
     private focusManager: FocusManager;
     private focusTrapCleanup: (() => void) | null = null;
 
-    constructor(dom: any) {
+    constructor(dom: DOMElements) {
         this.dom = dom;
         this.focusManager = new FocusManager();
     }

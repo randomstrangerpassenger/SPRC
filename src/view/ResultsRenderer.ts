@@ -1,19 +1,19 @@
 // src/view/ResultsRenderer.ts
 import { t } from '../i18n';
 import type { Chart } from 'chart.js';
-import type { PortfolioSnapshot } from '../types';
+import type { PortfolioSnapshot, DOMElements } from '../types';
 
 /**
  * @class ResultsRenderer
  * @description 계산 결과, 섹터 분석, 차트 렌더링 관리
  */
 export class ResultsRenderer {
-    private dom: any;
+    private dom: DOMElements;
     private chartInstance: Chart | null = null;
     private performanceChartInstance: Chart | null = null;
     private currentObserver: IntersectionObserver | null = null;
 
-    constructor(dom: any) {
+    constructor(dom: DOMElements) {
         this.dom = dom;
     }
 

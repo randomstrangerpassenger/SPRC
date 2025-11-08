@@ -87,5 +87,29 @@ export function generateId(): string {
     // ===== [Phase 3.4 최적화 끝] =====
 }
 
+/**
+ * @description 다양한 타입의 값을 안전하게 Decimal 객체로 변환합니다.
+ * @param value - 변환할 값 (number, Decimal, string, null, undefined)
+ * @returns Decimal 객체 (null/undefined인 경우 DECIMAL_ZERO 반환)
+ */
+export function toDecimal(
+    value: number | Decimal | string | null | undefined
+): Decimal {
+    if (value instanceof Decimal) return value;
+    if (value == null) return DECIMAL_ZERO;
+    return new Decimal(value);
+}
+
+/**
+ * @description 값이 Decimal 타입인지 확인하고, 아니면 TypeError를 throw합니다.
+ * @param value - 확인할 값
+ * @returns Decimal 객체 (타입 가드)
+ * @throws {TypeError} 값이 Decimal이 아닌 경우
+ */
+export function ensureDecimal(value: unknown): Decimal {
+    if (value instanceof Decimal) return value;
+    throw new TypeError(`Expected Decimal, got ${typeof value}`);
+}
+
 // Re-export enhanced formatters for convenience
 export { formatNumber, formatCurrencyEnhanced } from './i18nEnhancements';
