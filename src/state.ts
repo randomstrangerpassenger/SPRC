@@ -365,7 +365,7 @@ export class PortfolioState {
 
     updateStockProperty(
         stockId: string,
-        field: string,
+        field: keyof Stock,
         value: string | number | boolean | Decimal
     ): void {
         const activePortfolio = this.getActivePortfolio();
@@ -373,26 +373,34 @@ export class PortfolioState {
             const stockIndex = activePortfolio.portfolioData.findIndex((s) => s.id === stockId);
             if (stockIndex > -1) {
                 const stock = activePortfolio.portfolioData[stockIndex];
-                if (['targetRatio', 'currentPrice', 'fixedBuyAmount'].includes(field)) {
+
+                // Type-safe property updates with type guards
+                if (field === 'targetRatio' || field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'manualAmount') {
                     try {
                         const decimalValue = new Decimal(value ?? 0);
                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
-                        (stock as any)[field] = decimalValue;
+                        stock[field] = decimalValue;
                     } catch (e) {
                         ErrorService.handle(
                             new Error(`Invalid numeric value for ${field}: ${value}`),
                             'updateStockProperty'
                         );
-                        (stock as any)[field] = new Decimal(0);
+                        stock[field] = new Decimal(0);
                     }
                 } else if (field === 'isFixedBuyEnabled') {
-                    (stock as any)[field] = Boolean(value);
-                } else if (typeof (stock as any)[field] !== 'undefined') {
-                    (stock as any)[field] = value;
+                    stock[field] = Boolean(value);
+                } else if (field === 'name' || field === 'ticker' || field === 'sector') {
+                    stock[field] = String(value);
+                } else if (field === 'id') {
+                    // ID should not be changed, log warning
+                    console.warn(`Attempted to change immutable field 'id' on stock ${stockId}`);
+                } else if (field === 'transactions') {
+                    // Transactions should not be directly set, use addTransaction/deleteTransaction
+                    console.warn(`Attempted to directly set 'transactions' on stock ${stockId}. Use addTransaction/deleteTransaction instead.`);
                 } else {
-                    console.warn(
-                        `Attempted to update non-existent property '${field}' on stock ${stockId}`
-                    );
+                    // TypeScript will catch any fields not handled above
+                    const _exhaustiveCheck: never = field;
+                    console.warn(`Unhandled field '${_exhaustiveCheck}' on stock ${stockId}`);
                 }
             }
         }
@@ -530,8 +538,8 @@ export class PortfolioState {
         console.log('Data reset to default.');
     }
 
-    exportData(): { meta: MetaState; portfolios: Record<string, any> } {
-        const exportablePortfolios = {};
+    exportData(): { meta: MetaState; portfolios: Record<string, Portfolio> } {
+        const exportablePortfolios: Record<string, Portfolio> = {};
         Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
             exportablePortfolios[id] = {
                 ...portfolio,
@@ -540,10 +548,11 @@ export class PortfolioState {
                     targetRatio: stock.targetRatio.toNumber(),
                     currentPrice: stock.currentPrice.toNumber(),
                     fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
+                    manualAmount: stock.manualAmount !== undefined ? (typeof stock.manualAmount === 'number' ? stock.manualAmount : stock.manualAmount.toNumber()) : undefined,
                     transactions: stock.transactions.map((tx) => ({
                         ...tx,
-                        quantity: tx.quantity.toNumber(),
-                        price: tx.price.toNumber(),
+                        quantity: typeof tx.quantity === 'number' ? tx.quantity : tx.quantity.toNumber(),
+                        price: typeof tx.price === 'number' ? tx.price : tx.price.toNumber(),
                     })),
                 })),
             };
@@ -555,7 +564,7 @@ export class PortfolioState {
         };
     }
 
-    async importData(importedData: any): Promise<void> {
+    async importData(importedData: unknown): Promise<void> {
         if (!Validator.isDataStructureValid(importedData)) {
             throw new Error('Imported data structure is invalid.');
         }

@@ -7,29 +7,48 @@
 
 import Decimal from 'decimal.js';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from '../constants';
+import type { Stock, CalculatedStock, Currency, Transaction } from '../types';
+
+// Serialized types for worker communication (Decimal -> string)
+interface SerializedCalculatedMetrics {
+    totalBuyQuantity: string;
+    totalSellQuantity: string;
+    quantity: string;
+    totalBuyAmount: string;
+    totalSellAmount: string;
+    avgBuyPrice: string;
+    currentAmount: string;
+    currentAmountUSD: string;
+    currentAmountKRW: string;
+    profitLoss: string;
+    profitLossRate: string;
+    totalDividends: string;
+    realizedPL: string;
+    totalRealizedPL: string;
+}
 
 // Worker message types
 interface CalculateStockMetricsMessage {
     type: 'calculateStockMetrics';
     data: {
-        stock: any; // Stock type from types.ts
+        stock: Stock;
     };
 }
 
 interface CalculatePortfolioStateMessage {
     type: 'calculatePortfolioState';
     data: {
-        portfolioData: any[]; // Stock[] type
+        portfolioData: Stock[];
         exchangeRate: number;
-        currentCurrency: 'krw' | 'usd';
+        currentCurrency: Currency;
     };
 }
 
 interface CalculateSectorAnalysisMessage {
     type: 'calculateSectorAnalysis';
     data: {
-        portfolioData: any[]; // CalculatedStock[] type
-        currentCurrency: 'krw' | 'usd';
+        portfolioData: CalculatedStock[];
+        currentCurrency: Currency;
     };
 }
 
@@ -41,9 +60,9 @@ type WorkerMessage =
 /**
  * @description Calculate metrics for a single stock
  */
-function calculateStockMetrics(stock: any): any {
+function calculateStockMetrics(stock: Stock): SerializedCalculatedMetrics {
     try {
-        const result: any = {
+        const result: Record<string, Decimal> = {
             totalBuyQuantity: DECIMAL_ZERO,
             totalSellQuantity: DECIMAL_ZERO,
             quantity: DECIMAL_ZERO,
@@ -138,19 +157,23 @@ function calculateStockMetrics(stock: any): any {
 /**
  * @description Calculate entire portfolio state
  */
-function calculatePortfolioState(options: any): any {
+function calculatePortfolioState(options: {
+    portfolioData: Stock[];
+    exchangeRate?: number;
+    currentCurrency?: Currency;
+}): { portfolioData: CalculatedStock[]; currentTotal: string } {
     const { portfolioData, exchangeRate = 1300, currentCurrency = 'krw' } = options;
 
     const exchangeRateDec = new Decimal(exchangeRate);
     let currentTotal = DECIMAL_ZERO;
 
-    const calculatedPortfolioData = portfolioData.map((stock: any) => {
+    const calculatedPortfolioData = portfolioData.map((stock: Stock) => {
         const calculatedMetrics = calculateStockMetrics(stock);
 
         // Deserialize back to Decimal for calculations
         const currentAmount = new Decimal(calculatedMetrics.currentAmount || 0);
 
-        const metricsWithCurrency: any = {
+        const metricsWithCurrency: SerializedCalculatedMetrics = {
             ...calculatedMetrics,
             currentAmountUSD: currentAmount.toString(),
             currentAmountKRW: currentAmount.times(exchangeRateDec).toString(),
@@ -174,7 +197,10 @@ function calculatePortfolioState(options: any): any {
 /**
  * @description Calculate sector analysis
  */
-function calculateSectorAnalysis(portfolioData: any[], currentCurrency: 'krw' | 'usd'): any[] {
+function calculateSectorAnalysis(
+    portfolioData: CalculatedStock[],
+    currentCurrency: Currency
+): Array<{ sector: string; amount: string; percentage: string }> {
     const sectorMap = new Map<string, Decimal>();
     let currentTotal = DECIMAL_ZERO;
 
@@ -190,7 +216,7 @@ function calculateSectorAnalysis(portfolioData: any[], currentCurrency: 'krw' | 
         sectorMap.set(sector, currentSectorAmount.plus(amount));
     }
 
-    const result: any[] = [];
+    const result: Array<{ sector: string; amount: string; percentage: string }> = [];
     for (const [sector, amount] of sectorMap.entries()) {
         const percentage = currentTotal.isZero()
             ? DECIMAL_ZERO
@@ -211,13 +237,13 @@ function calculateSectorAnalysis(portfolioData: any[], currentCurrency: 'krw' | 
 /**
  * @description Serialize Decimal objects to strings for postMessage
  */
-function serializeCalculatedMetrics(metrics: any): any {
-    const serialized: any = {};
+function serializeCalculatedMetrics(metrics: Record<string, Decimal>): SerializedCalculatedMetrics {
+    const serialized: Record<string, string> = {};
     for (const key in metrics) {
         const value = metrics[key];
-        serialized[key] = value instanceof Decimal ? value.toString() : value;
+        serialized[key] = value instanceof Decimal ? value.toString() : String(value);
     }
-    return serialized;
+    return serialized as SerializedCalculatedMetrics;
 }
 
 // Listen for messages from main thread

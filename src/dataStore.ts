@@ -6,6 +6,25 @@ import type { Portfolio, MetaState, PortfolioSnapshot } from './types.ts';
 
 /**
  * @description IndexedDB 저장/로드 및 마이그레이션을 담당하는 클래스
+ *
+ * ⚠️ SECURITY NOTE:
+ * - All data is stored in plain text in IndexedDB (browser-local storage)
+ * - NO API keys or authentication tokens are stored (loaded from environment variables only)
+ * - User portfolio data (stock holdings, transactions) is stored in plain text
+ * - This is acceptable for a client-side portfolio calculator as:
+ *   1. Data never leaves the user's browser
+ *   2. No server-side storage or synchronization
+ *   3. Users control their own data (export/import via JSON)
+ *
+ * 🔐 Data stored in IndexedDB:
+ * - Portfolio metadata (IDB_META_KEY): Active portfolio ID, version
+ * - Portfolio data (IDB_PORTFOLIOS_KEY): Stock holdings, transactions, settings
+ * - Performance snapshots (IDB_SNAPSHOTS_KEY): Historical portfolio values
+ *
+ * ✅ Data NOT stored:
+ * - API keys (loaded from import.meta.env only)
+ * - User credentials (no authentication)
+ * - Sensitive personal information (only stock tickers and quantities)
  */
 export class DataStore {
     /**
