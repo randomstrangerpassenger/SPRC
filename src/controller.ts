@@ -108,32 +108,13 @@ export class PortfolioController {
             this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            const {
-                exchangeRateInput,
-                portfolioExchangeRateInput,
-                rebalancingToleranceInput,
-                tradingFeeRateInput,
-                taxRateInput,
-            } = this.view.dom;
-            if (exchangeRateInput instanceof HTMLInputElement) {
-                exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-            }
-            if (portfolioExchangeRateInput instanceof HTMLInputElement) {
-                portfolioExchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-            }
-            if (rebalancingToleranceInput instanceof HTMLInputElement) {
-                rebalancingToleranceInput.value = (
-                    activePortfolio.settings.rebalancingTolerance ?? 5
-                ).toString();
-            }
-            if (tradingFeeRateInput instanceof HTMLInputElement) {
-                tradingFeeRateInput.value = (
-                    activePortfolio.settings.tradingFeeRate ?? 0.3
-                ).toString();
-            }
-            if (taxRateInput instanceof HTMLInputElement) {
-                taxRateInput.value = (activePortfolio.settings.taxRate ?? 15).toString();
-            }
+            // Phase 2-1: MVC architecture improvement - delegate DOM manipulation to view
+            this.view.updatePortfolioSettingsInputs({
+                exchangeRate: activePortfolio.settings.exchangeRate,
+                rebalancingTolerance: activePortfolio.settings.rebalancingTolerance ?? 5,
+                tradingFeeRate: activePortfolio.settings.tradingFeeRate ?? 0.3,
+                taxRate: activePortfolio.settings.taxRate ?? 15,
+            });
 
             this.fullRender();
 
@@ -154,14 +135,8 @@ export class PortfolioController {
                     activePortfolio.settings.exchangeRate = rate;
                     await this.state.saveActivePortfolio();
 
-                    // UI 업데이트
-                    const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
-                    if (exchangeRateInput instanceof HTMLInputElement) {
-                        exchangeRateInput.value = rate.toFixed(2);
-                    }
-                    if (portfolioExchangeRateInput instanceof HTMLInputElement) {
-                        portfolioExchangeRateInput.value = rate.toFixed(2);
-                    }
+                    // Phase 2-1: MVC architecture improvement - delegate DOM manipulation to view
+                    this.view.updateExchangeRateInputs(rate);
 
                     console.log('[Controller] Exchange rate auto-loaded:', rate);
                 }
@@ -653,14 +628,8 @@ export class PortfolioController {
                 return;
             }
 
-            // Toggle visibility
-            const section = this.view.dom.performanceHistorySection;
-            const chartContainer = this.view.dom.performanceChartContainer;
-            const listContainer = this.view.dom.snapshotListContainer;
-
-            if (section) section.classList.remove('hidden');
-            if (chartContainer) chartContainer.classList.remove('hidden');
-            if (listContainer) listContainer.classList.add('hidden');
+            // Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer
+            this.view.resultsRenderer.showPerformanceHistoryView(true);
 
             const ChartClass = (await import('chart.js/auto')).default;
             await this.view.displayPerformanceHistory(
@@ -694,16 +663,8 @@ export class PortfolioController {
                 return;
             }
 
-            // Toggle visibility
-            const section = this.view.dom.performanceHistorySection;
-            const chartContainer = this.view.dom.performanceChartContainer;
-            const listContainer = this.view.dom.snapshotListContainer;
-
-            if (section) section.classList.remove('hidden');
-            if (chartContainer) chartContainer.classList.add('hidden');
-            if (listContainer) listContainer.classList.remove('hidden');
-
-            // Render snapshot list
+            // Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer
+            this.view.resultsRenderer.showSnapshotListView(true);
             this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
 
             this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
@@ -715,71 +676,10 @@ export class PortfolioController {
 
     /**
      * @description 스냅샷 목록 렌더링
+     * (Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer)
      */
     private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
-        const listEl = this.view.dom.snapshotList;
-        if (!listEl) return;
-
-        const currencySymbol = currency === 'krw' ? '₩' : '$';
-        const formatNumber = (num: number) => {
-            return num.toLocaleString(undefined, {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-            });
-        };
-
-        const formatPercent = (num: number) => {
-            return num.toFixed(2);
-        };
-
-        const rows = snapshots
-            .map((snapshot) => {
-                const totalValue =
-                    currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
-                const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
-                const returnRate =
-                    snapshot.totalInvestedCapital > 0
-                        ? (totalReturn / snapshot.totalInvestedCapital) * 100
-                        : 0;
-
-                const isProfit = totalReturn >= 0;
-                const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
-
-                return `
-                <tr>
-                    <td>${snapshot.date}</td>
-                    <td style="text-align: right; font-weight: bold;">${currencySymbol}${formatNumber(totalValue)}</td>
-                    <td style="text-align: right;">${currencySymbol}${formatNumber(snapshot.totalInvestedCapital)}</td>
-                    <td style="text-align: right;" class="${profitClass}">
-                        ${currencySymbol}${formatNumber(totalReturn)}
-                        <br>
-                        <small>(${isProfit ? '+' : ''}${formatPercent(returnRate)}%)</small>
-                    </td>
-                    <td style="text-align: center;">${snapshot.stockCount}</td>
-                </tr>
-            `;
-            })
-            .join('');
-
-        listEl.innerHTML = `
-            <div class="table-responsive">
-                <table>
-                    <caption>포트폴리오 스냅샷 목록</caption>
-                    <thead>
-                        <tr>
-                            <th>날짜</th>
-                            <th style="text-align: right;">총 자산</th>
-                            <th style="text-align: right;">투자 원금</th>
-                            <th style="text-align: right;">총 수익</th>
-                            <th style="text-align: center;">종목 수</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows}
-                    </tbody>
-                </table>
-            </div>
-        `;
+        this.view.resultsRenderer.displaySnapshotList(snapshots, currency);
     }
 
     /**

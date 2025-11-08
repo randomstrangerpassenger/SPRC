@@ -323,4 +323,114 @@ export class ResultsRenderer {
         this.cleanupObserver();
         this.destroyChart();
     }
+
+    /**
+     * @description 스냅샷 목록을 렌더링합니다.
+     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
+     * @param snapshots - 스냅샷 배열
+     * @param currency - 통화 ('krw' | 'usd')
+     */
+    displaySnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
+        const listEl = this.dom.snapshotList;
+        if (!listEl) return;
+
+        const currencySymbol = currency === 'krw' ? '₩' : '$';
+        const formatNumber = (num: number) => {
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            });
+        };
+
+        const formatPercent = (num: number) => {
+            return num.toFixed(2);
+        };
+
+        const rows = snapshots
+            .map((snapshot) => {
+                const totalValue =
+                    currency === 'krw' ? snapshot.totalValueKRW : snapshot.totalValue;
+                const totalReturn = snapshot.totalUnrealizedPL + snapshot.totalRealizedPL;
+                const returnRate =
+                    snapshot.totalInvestedCapital > 0
+                        ? (totalReturn / snapshot.totalInvestedCapital) * 100
+                        : 0;
+
+                const isProfit = totalReturn >= 0;
+                const profitClass = isProfit ? 'profit-positive' : 'profit-negative';
+
+                return `
+                <tr>
+                    <td>${snapshot.date}</td>
+                    <td style="text-align: right; font-weight: bold;">${currencySymbol}${formatNumber(totalValue)}</td>
+                    <td style="text-align: right;">${currencySymbol}${formatNumber(snapshot.totalInvestedCapital)}</td>
+                    <td style="text-align: right;" class="${profitClass}">
+                        ${currencySymbol}${formatNumber(totalReturn)}
+                        <br>
+                        <small>(${isProfit ? '+' : ''}${formatPercent(returnRate)}%)</small>
+                    </td>
+                    <td style="text-align: center;">${snapshot.stockCount}</td>
+                </tr>
+            `;
+            })
+            .join('');
+
+        listEl.innerHTML = `
+            <div class="table-responsive">
+                <table>
+                    <caption>포트폴리오 스냅샷 목록</caption>
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th style="text-align: right;">총 자산</th>
+                            <th style="text-align: right;">투자 원금</th>
+                            <th style="text-align: right;">총 수익</th>
+                            <th style="text-align: center;">종목 수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    /**
+     * @description 성과 히스토리 차트를 표시/숨김합니다.
+     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
+     * @param show - 표시 여부
+     */
+    showPerformanceHistoryView(show: boolean): void {
+        const section = this.dom.performanceHistorySection;
+        const chartContainer = this.dom.performanceChartContainer;
+        const listContainer = this.dom.snapshotListContainer;
+
+        if (show) {
+            section?.classList.remove('hidden');
+            chartContainer?.classList.remove('hidden');
+            listContainer?.classList.add('hidden');
+        } else {
+            section?.classList.add('hidden');
+        }
+    }
+
+    /**
+     * @description 스냅샷 목록을 표시/숨김합니다.
+     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
+     * @param show - 표시 여부
+     */
+    showSnapshotListView(show: boolean): void {
+        const section = this.dom.performanceHistorySection;
+        const chartContainer = this.dom.performanceChartContainer;
+        const listContainer = this.dom.snapshotListContainer;
+
+        if (show) {
+            section?.classList.remove('hidden');
+            chartContainer?.classList.add('hidden');
+            listContainer?.classList.remove('hidden');
+        } else {
+            section?.classList.add('hidden');
+        }
+    }
 }

@@ -117,6 +117,9 @@ export class PortfolioView {
             performanceChart: D.getElementById('performanceChart'),
             snapshotListContainer: D.getElementById('snapshotListContainer'),
             snapshotList: D.getElementById('snapshotList'),
+            rebalancingToleranceInput: D.getElementById('rebalancingTolerance'),
+            tradingFeeRateInput: D.getElementById('tradingFeeRate'),
+            taxRateInput: D.getElementById('taxRate'),
         };
 
         this.eventEmitter.clear();
@@ -409,6 +412,67 @@ export class PortfolioView {
             this.announce(t('ui.fetchingPrices'), 'assertive');
         } else {
             btn.removeAttribute('aria-busy');
+        }
+    }
+
+    /**
+     * @description Update exchange rate input fields
+     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
+     */
+    updateExchangeRateInputs(rate: number): void {
+        const { exchangeRateInput, portfolioExchangeRateInput } = this.dom;
+
+        if (exchangeRateInput instanceof HTMLInputElement) {
+            exchangeRateInput.value = rate.toFixed(2);
+        }
+
+        if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+            portfolioExchangeRateInput.value = rate.toFixed(2);
+        }
+    }
+
+    /**
+     * @description Update portfolio settings input fields
+     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
+     */
+    updatePortfolioSettingsInputs(settings: {
+        exchangeRate: number;
+        rebalancingTolerance?: number;
+        tradingFeeRate?: number;
+        taxRate?: number;
+    }): void {
+        const {
+            exchangeRateInput,
+            portfolioExchangeRateInput,
+            rebalancingToleranceInput,
+            tradingFeeRateInput,
+            taxRateInput,
+        } = this.dom;
+
+        // Exchange rate
+        if (exchangeRateInput instanceof HTMLInputElement) {
+            exchangeRateInput.value = settings.exchangeRate.toString();
+        }
+        if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+            portfolioExchangeRateInput.value = settings.exchangeRate.toString();
+        }
+
+        // Rebalancing tolerance
+        if (
+            rebalancingToleranceInput instanceof HTMLInputElement &&
+            settings.rebalancingTolerance !== undefined
+        ) {
+            rebalancingToleranceInput.value = settings.rebalancingTolerance.toString();
+        }
+
+        // Trading fee rate
+        if (tradingFeeRateInput instanceof HTMLInputElement && settings.tradingFeeRate !== undefined) {
+            tradingFeeRateInput.value = settings.tradingFeeRate.toString();
+        }
+
+        // Tax rate
+        if (taxRateInput instanceof HTMLInputElement && settings.taxRate !== undefined) {
+            taxRateInput.value = settings.taxRate.toString();
         }
     }
 }
