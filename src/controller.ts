@@ -20,6 +20,9 @@ import { StockManager } from './controller/StockManager';
 import { TransactionManager } from './controller/TransactionManager';
 import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
+// ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+import { DarkModeManager } from './DarkModeManager';
+// ===== [Phase 3-1 최적화 끝] =====
 
 /**
  * @class PortfolioController
@@ -36,6 +39,9 @@ export class PortfolioController {
     private transactionManager: TransactionManager;
     private calculationManager: CalculationManager;
     private dataManager: DataManager;
+    // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+    private darkModeManager: DarkModeManager;
+    // ===== [Phase 3-1 최적화 끝] =====
 
     // ===== [Phase 2.2 Web Worker 통합] =====
     private calculatorWorker = getCalculatorWorkerService();
@@ -43,8 +49,6 @@ export class PortfolioController {
 
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
-    #darkModeMediaQuery?: MediaQueryList;
-    #darkModeHandler?: (e: MediaQueryListEvent) => void;
 
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
@@ -62,6 +66,9 @@ export class PortfolioController {
             this.getInvestmentAmountInKRW.bind(this)
         );
         this.dataManager = new DataManager(this.state, this.view);
+        // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+        this.darkModeManager = new DarkModeManager();
+        // ===== [Phase 3-1 최적화 끝] =====
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
@@ -92,39 +99,18 @@ export class PortfolioController {
             console.log('[Controller] Event listeners cleaned up');
         }
 
-        // 다크모드 리스너 정리
-        if (this.#darkModeMediaQuery && this.#darkModeHandler) {
-            this.#darkModeMediaQuery.removeEventListener('change', this.#darkModeHandler);
-            this.#darkModeMediaQuery = undefined;
-            this.#darkModeHandler = undefined;
-            console.log('[Controller] Dark mode listener cleaned up');
-        }
+        // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+        this.darkModeManager.cleanup();
+        // ===== [Phase 3-1 최적화 끝] =====
     }
 
     /**
      * @description 초기 UI 설정
      */
     setupInitialUI(): void {
-        const storedDarkMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
-        if (storedDarkMode === 'true') {
-            document.body.classList.add('dark-mode');
-        } else if (
-            storedDarkMode === null &&
-            window.matchMedia('(prefers-color-scheme: dark)').matches
-        ) {
-            document.body.classList.add('dark-mode');
-            localStorage.setItem(CONFIG.DARK_MODE_KEY, 'true');
-        }
-
-        // 다크모드 리스너 저장 (cleanup을 위해)
-        this.#darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        this.#darkModeHandler = (e: MediaQueryListEvent) => {
-            const storedMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
-            if (storedMode === null) {
-                document.body.classList.toggle('dark-mode', e.matches);
-            }
-        };
-        this.#darkModeMediaQuery.addEventListener('change', this.#darkModeHandler);
+        // ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
+        this.darkModeManager.initialize();
+        // ===== [Phase 3-1 최적화 끝] =====
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {
@@ -828,14 +814,14 @@ export class PortfolioController {
 
     /**
      * @description 다크 모드 토글
+     * ===== [Phase 3-1 최적화] 다크 모드 관리 분리 =====
      */
     handleToggleDarkMode(): void {
-        document.body.classList.toggle('dark-mode');
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        localStorage.setItem(CONFIG.DARK_MODE_KEY, isDarkMode ? 'true' : 'false');
+        this.darkModeManager.toggle();
         this.view.destroyChart();
         this.fullRender(); // async but we don't await
     }
+    // ===== [Phase 3-1 최적화 끝] =====
 
     /**
      * @description 페이지 종료 시 저장
