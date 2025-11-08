@@ -43,6 +43,8 @@ export class PortfolioController {
 
     #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
+    #darkModeMediaQuery?: MediaQueryList;
+    #darkModeHandler?: (e: MediaQueryListEvent) => void;
 
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
@@ -61,7 +63,14 @@ export class PortfolioController {
         );
         this.dataManager = new DataManager(this.state, this.view);
 
-        this.initialize();
+        // 초기화 에러 처리
+        void this.initialize().catch((error) => {
+            ErrorService.handle(error as Error, 'Controller initialization failed');
+            this.view.showToast(
+                '앱 초기화 실패. 페이지를 새로고침해주세요.',
+                'error'
+            );
+        });
     }
 
     /**
@@ -85,6 +94,14 @@ export class PortfolioController {
             this.#eventAbortController = null;
             console.log('[Controller] Event listeners cleaned up');
         }
+
+        // 다크모드 리스너 정리
+        if (this.#darkModeMediaQuery && this.#darkModeHandler) {
+            this.#darkModeMediaQuery.removeEventListener('change', this.#darkModeHandler);
+            this.#darkModeMediaQuery = undefined;
+            this.#darkModeHandler = undefined;
+            console.log('[Controller] Dark mode listener cleaned up');
+        }
     }
 
     /**
@@ -99,12 +116,15 @@ export class PortfolioController {
             localStorage.setItem(CONFIG.DARK_MODE_KEY, 'true');
         }
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        // 다크모드 리스너 저장 (cleanup을 위해)
+        this.#darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.#darkModeHandler = (e: MediaQueryListEvent) => {
             const storedMode = localStorage.getItem(CONFIG.DARK_MODE_KEY);
             if (storedMode === null) {
                 document.body.classList.toggle('dark-mode', e.matches);
             }
-        });
+        };
+        this.#darkModeMediaQuery.addEventListener('change', this.#darkModeHandler);
 
         const activePortfolio = this.state.getActivePortfolio();
         if (activePortfolio) {

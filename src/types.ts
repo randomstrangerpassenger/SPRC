@@ -127,6 +127,11 @@ export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
 }
 
+// Result type for error handling (Railway-oriented programming)
+export type Result<T, E = Error> =
+  | { success: true; data: T }
+  | { success: false; error: E };
+
 // DOM Elements type
 export interface DOMElements {
     ariaAnnouncer: HTMLElement | null;
