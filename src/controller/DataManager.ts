@@ -4,6 +4,7 @@ import { PortfolioView } from '../view';
 import { Calculator } from '../calculator';
 import { ErrorService } from '../errorService';
 import { t } from '../i18n';
+import { ExcelExportService, PDFReportService, EmailService, type EmailConfig } from '../services';
 
 /**
  * @class DataManager
@@ -121,6 +122,90 @@ export class DataManager {
         } catch (error) {
             ErrorService.handle(error as Error, 'handleExportTransactionsCSV');
             this.view.showToast('CSV 내보내기 실패', 'error');
+        }
+    }
+
+    /**
+     * @description Excel 파일 내보내기 (exceljs 사용)
+     */
+    async handleExportExcel(): Promise<void> {
+        try {
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+                this.view.showToast('내보낼 포트폴리오 데이터가 없습니다.', 'info');
+                return;
+            }
+
+            await ExcelExportService.exportPortfolioToExcel(activePortfolio);
+            this.view.showToast('Excel 파일 내보내기 완료', 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleExportExcel');
+            this.view.showToast('Excel 내보내기 실패', 'error');
+        }
+    }
+
+    /**
+     * @description PDF 리포트 생성 (jspdf, html2canvas 사용)
+     */
+    async handleGeneratePDFReport(): Promise<void> {
+        try {
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+                this.view.showToast('생성할 포트폴리오 데이터가 없습니다.', 'info');
+                return;
+            }
+
+            await PDFReportService.generatePortfolioReport(activePortfolio);
+            this.view.showToast('PDF 리포트 생성 완료', 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleGeneratePDFReport');
+            this.view.showToast('PDF 생성 실패', 'error');
+        }
+    }
+
+    /**
+     * @description 이메일로 리포트 전송 (nodemailer 사용)
+     */
+    async handleSendEmailReport(
+        toEmail: string,
+        emailConfig?: EmailConfig,
+        options?: { includeExcel?: boolean; includePDF?: boolean }
+    ): Promise<void> {
+        try {
+            const activePortfolio = this.state.getActivePortfolio();
+            if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
+                this.view.showToast('전송할 포트폴리오 데이터가 없습니다.', 'info');
+                return;
+            }
+
+            // 이메일 서버 상태 확인
+            const isServerRunning = await EmailService.checkServerHealth();
+            if (!isServerRunning) {
+                this.view.showToast(
+                    '이메일 서버가 실행 중이지 않습니다. 서버를 시작해주세요. (npm run server)',
+                    'error'
+                );
+                return;
+            }
+
+            // 이메일 설정 검증
+            if (emailConfig) {
+                const isConfigValid = await EmailService.testEmailConfig(emailConfig);
+                if (!isConfigValid) {
+                    this.view.showToast('이메일 설정이 올바르지 않습니다.', 'error');
+                    return;
+                }
+            }
+
+            // 이메일 전송
+            await EmailService.sendPortfolioReport(activePortfolio, toEmail, emailConfig, options);
+            this.view.showToast('이메일 전송 완료', 'success');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'handleSendEmailReport');
+            this.view.showToast(
+                '이메일 전송 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'),
+                'error'
+            );
         }
     }
 
