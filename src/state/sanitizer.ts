@@ -34,7 +34,18 @@ export function sanitizePortfolioName(portfolio: Portfolio): string {
  * @returns 소독된 이름
  */
 export function sanitizeStockName(stock: Stock, index?: number): string {
-    const fallback = index !== undefined ? t('defaults.stock', { n: index + 1 }) : t('defaults.newStock');
+    let fallback: string;
+    if (index !== undefined) {
+        const translated = t('defaults.stock', { n: index + 1 });
+        if (!translated || translated === 'defaults.stock' || translated.includes('{n}')) {
+            fallback = `${t('defaults.newStock')} ${index + 1}`.trim();
+        } else {
+            fallback = translated;
+        }
+    } else {
+        fallback = t('defaults.newStock');
+    }
+
     return sanitizeString(stock.name, fallback);
 }
 
@@ -44,7 +55,8 @@ export function sanitizeStockName(stock: Stock, index?: number): string {
  * @returns 소독된 티커
  */
 export function sanitizeStockTicker(ticker: unknown): string {
-    return sanitizeString(ticker, '');
+    const sanitized = sanitizeString(ticker, '').toUpperCase();
+    return sanitized;
 }
 
 /**

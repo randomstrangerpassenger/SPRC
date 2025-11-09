@@ -89,6 +89,7 @@ const locales = {
         defaults: {
             defaultPortfolioName: 'Default Portfolio',
             newStock: 'New Stock',
+            stock: 'Stock {n}',
             uncategorized: 'Uncategorized',
             unknownStock: 'this stock',
         },
@@ -269,6 +270,7 @@ const locales = {
         defaults: {
             defaultPortfolioName: '기본 포트폴리오',
             newStock: '새 종목',
+            stock: '{n}번 종목',
             uncategorized: '미분류',
             unknownStock: '해당 종목',
         },
