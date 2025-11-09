@@ -117,9 +117,6 @@ export class PortfolioView {
             performanceChart: D.getElementById('performanceChart'),
             snapshotListContainer: D.getElementById('snapshotListContainer'),
             snapshotList: D.getElementById('snapshotList'),
-            rebalancingToleranceInput: D.getElementById('rebalancingTolerance'),
-            tradingFeeRateInput: D.getElementById('tradingFeeRate'),
-            taxRateInput: D.getElementById('taxRate'),
         };
 
         this.eventEmitter.clear();

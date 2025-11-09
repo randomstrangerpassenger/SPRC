@@ -60,9 +60,16 @@ export function createDefaultStock(): Stock {
  * @returns Decimal 객체
  */
 export function validateDecimalValue(value: any, defaultValue: Decimal = new Decimal(0)): Decimal {
+    if (value === null || value === undefined) {
+        return defaultValue;
+    }
+
     try {
-        const decimalValue = new Decimal(value ?? 0);
-        return decimalValue.isNaN() ? defaultValue : decimalValue;
+        const decimalValue = value instanceof Decimal ? value : new Decimal(value);
+        if (decimalValue.isNaN() || !decimalValue.isFinite()) {
+            return defaultValue;
+        }
+        return decimalValue;
     } catch (error) {
         return defaultValue;
     }

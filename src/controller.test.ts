@@ -30,6 +30,8 @@ vi.mock('./view', () => ({
         renderPortfolioSelector: vi.fn(),
         updateCurrencyModeUI: vi.fn(),
         updateMainModeUI: vi.fn(),
+        updateExchangeRateInputs: vi.fn(),
+        updatePortfolioSettingsInputs: vi.fn(),
         renderTable: vi.fn(),
         updateVirtualTableData: vi.fn(),
         updateAllTargetRatioInputs: vi.fn(),
@@ -98,6 +100,7 @@ vi.mock('./calculationStrategies', () => ({
 vi.mock('./apiService', () => ({
     apiService: {
         fetchAllStockPrices: vi.fn(),
+        fetchExchangeRate: vi.fn().mockResolvedValue(1300),
     },
 }));
 vi.mock('./i18n', () => ({
