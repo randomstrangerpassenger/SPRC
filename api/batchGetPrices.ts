@@ -29,7 +29,7 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  // 1. 쿼리 파라미터로 'symbols=AAPL,MSFT,GOOG' 형태를 받습니다.
+  // 쿼리 파라미터로 'symbols=AAPL,MSFT,GOOG' 형태를 받습니다.
   const { symbols } = request.query;
 
   if (typeof symbols !== 'string' || !symbols) {
@@ -51,12 +51,12 @@ export default async function handler(
     });
   }
 
-  // 2. 서버리스 함수 내에서 Promise.allSettled를 사용해 병렬로 Finnhub에 요청합니다.
+  // 서버리스 함수 내에서 Promise.allSettled를 사용해 병렬로 Finnhub에 요청합니다.
   const results = await Promise.allSettled(
     tickers.map(ticker => fetchSinglePrice(ticker, API_KEY))
   );
 
-  // 3. Finnhub의 결과를 클라이언트가 원하는 형식으로 재조립합니다.
+  // Finnhub의 결과를 클라이언트가 원하는 형식으로 재조립합니다.
   const mappedResults = results.map((result, index) => {
     const ticker = tickers[index];
     if (result.status === 'fulfilled' && result.value.status === 'fulfilled') {
@@ -76,11 +76,11 @@ export default async function handler(
     }
   });
 
-  // 4. [중요!] 해결책 2: 캐시 헤더 추가
+  // 캐시 헤더 추가
   // Netlify/Vercel Edge에 5분(300초) 동안 이 응답을 캐시하도록 지시합니다.
   // 동일한 요청(e.g., ?symbols=AAPL,MSFT)이 5분 내에 다시 오면 서버리스 함수를 실행하지 않고 캐시된 값을 즉시 반환합니다.
   response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
 
-  // 5. 최종 결과를 클라이언트에 한 번만 보냅니다.
+  // 최종 결과를 클라이언트에 한 번만 보냅니다.
   response.status(200).json(mappedResults);
 }

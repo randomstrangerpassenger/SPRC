@@ -417,7 +417,6 @@ export class PortfolioView {
 
     /**
      * @description Update exchange rate input fields
-     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
      */
     updateExchangeRateInputs(rate: number): void {
         const { exchangeRateInput, portfolioExchangeRateInput } = this.dom;
@@ -433,7 +432,6 @@ export class PortfolioView {
 
     /**
      * @description Update portfolio settings input fields
-     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
      */
     updatePortfolioSettingsInputs(settings: {
         exchangeRate: number;

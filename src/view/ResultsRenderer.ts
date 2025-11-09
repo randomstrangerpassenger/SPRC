@@ -326,7 +326,6 @@ export class ResultsRenderer {
 
     /**
      * @description 스냅샷 목록을 렌더링합니다.
-     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
      * @param snapshots - 스냅샷 배열
      * @param currency - 통화 ('krw' | 'usd')
      */
@@ -398,7 +397,6 @@ export class ResultsRenderer {
 
     /**
      * @description 성과 히스토리 차트를 표시/숨김합니다.
-     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
      * @param show - 표시 여부
      */
     showPerformanceHistoryView(show: boolean): void {
@@ -417,7 +415,6 @@ export class ResultsRenderer {
 
     /**
      * @description 스냅샷 목록을 표시/숨김합니다.
-     * (Phase 2-1: MVC architecture improvement - moved from PortfolioController)
      * @param show - 표시 여부
      */
     showSnapshotListView(show: boolean): void {

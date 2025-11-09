@@ -13,10 +13,10 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     const abortController = new AbortController();
     const { signal } = abortController;
 
-    // 1. view.dom 객체를 가져옵니다.
+    // view.dom 객체를 가져옵니다.
     const dom = view.dom;
 
-    // ▼▼▼▼▼ [수정] controller.handle...() -> view.emit('eventName') ▼▼▼▼▼
+    // controller.handle...() -> view.emit('eventName')
 
     // 포트폴리오 관리 버튼 (AbortController signal 적용)
     dom.newPortfolioBtn?.addEventListener('click', () => view.emit('newPortfolioClicked'), {
@@ -417,20 +417,20 @@ export function bindEventListeners(view: PortfolioView): AbortController {
         const target = e.target as HTMLElement;
         const deleteButton = target.closest('button[data-action="delete-tx"]');
 
-        // 1. 삭제 버튼이 클릭된 경우 핸들러 호출
+        // 삭제 버튼이 클릭된 경우 핸들러 호출
         if (deleteButton) {
             const row = deleteButton.closest('tr[data-tx-id]');
             const modal = deleteButton.closest('#transactionModal');
             const stockId = modal?.dataset.stockId;
             const txId = row?.dataset.txId;
 
-            // 2. 컨트롤러 함수에 필요한 ID 직접 전달
+            // 컨트롤러 함수에 필요한 ID 직접 전달
             if (stockId && txId) {
                 view.emit('transactionDeleteClicked', { stockId, txId });
             }
         }
 
-        // 3. 모달 오버레이 클릭 시 닫기
+        // 모달 오버레이 클릭 시 닫기
         if (e.target === dom.transactionModal) {
             view.emit('closeTransactionModalClicked');
         }

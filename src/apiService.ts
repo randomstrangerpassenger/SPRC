@@ -362,7 +362,7 @@ export function formatAPIError(error: APIError): string {
 }
 
 /**
- * @description 환율 정보 가져오기 (Phase 4.2)
+ * @description 환율 정보 가져오기
  * @returns Promise<number | null> - USD/KRW 환율 또는 null
  */
 async function fetchExchangeRate(): Promise<number | null> {

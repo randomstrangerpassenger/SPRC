@@ -84,7 +84,7 @@ export class Calculator {
 
             const currentPrice = new Decimal(stock.currentPrice || 0);
 
-            // 1. 매수/매도 수량 및 금액 합산, 배당금 집계
+            // 매수/매도 수량 및 금액 합산, 배당금 집계
             for (const tx of stock.transactions) {
                 const txQuantity = new Decimal(tx.quantity || 0);
                 const txPrice = new Decimal(tx.price || 0);
@@ -101,34 +101,34 @@ export class Calculator {
                 }
             }
 
-            // 2. 순 보유 수량
+            // 순 보유 수량
             result.quantity = Decimal.max(
                 0,
                 result.totalBuyQuantity.minus(result.totalSellQuantity)
             );
 
-            // 3. 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
+            // 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
             if (result.totalBuyQuantity.greaterThan(0)) {
                 result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
             }
 
-            // 4. 실현 손익 계산 (매도금액 - 매도수량 × 평균매입가)
+            // 실현 손익 계산 (매도금액 - 매도수량 × 평균매입가)
             if (result.totalSellQuantity.greaterThan(0) && result.avgBuyPrice.greaterThan(0)) {
                 const costBasisOfSold = result.totalSellQuantity.times(result.avgBuyPrice);
                 result.realizedPL = result.totalSellAmount.minus(costBasisOfSold);
             }
 
-            // 5. 총 실현 손익 (실현손익 + 배당금)
+            // 총 실현 손익 (실현손익 + 배당금)
             result.totalRealizedPL = result.realizedPL.plus(result.totalDividends);
 
-            // 6. 현재 가치 (quantity * currentPrice)
+            // 현재 가치 (quantity * currentPrice)
             result.currentAmount = result.quantity.times(currentPrice);
 
-            // 7. 미실현 손익 계산 (currentAmount - (quantity * avgBuyPrice))
+            // 미실현 손익 계산 (currentAmount - (quantity * avgBuyPrice))
             const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
             result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
 
-            // 8. 미실현 손익률
+            // 미실현 손익률
             if (originalCostOfHolding.isZero()) {
                 result.profitLossRate = DECIMAL_ZERO;
             } else {

@@ -20,7 +20,7 @@ if (isDevelopment) {
     perfMonitor.setEnabled(false);
 }
 
-// Phase 3-1: 전역 에러 핸들러 등록
+// 전역 에러 핸들러 등록
 setupGlobalErrorHandlers();
 
 try {

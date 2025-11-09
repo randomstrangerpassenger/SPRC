@@ -147,13 +147,13 @@ describe('PortfolioController', () => {
             }
         });
 
-        // 1. 모의 인스턴스 할당
+        // 모의 인스턴스 할당
         mockState = new PortfolioState();
         mockView = PortfolioView;
         mockCalculator = Calculator;
         mockValidator = Validator;
 
-        // 2. State 모의 메서드 설정 (Async)
+        // State 모의 메서드 설정 (Async)
         vi.mocked(mockState.ensureInitialized).mockResolvedValue(undefined);
         vi.mocked(mockState.getActivePortfolio).mockReturnValue(mockDefaultPortfolio);
         vi.mocked(mockState.getAllPortfolios).mockReturnValue({
@@ -175,7 +175,7 @@ describe('PortfolioController', () => {
         vi.mocked(mockState.updatePortfolioSettings).mockResolvedValue(undefined);
         vi.mocked(mockState.importData).mockResolvedValue(undefined);
 
-        // 3. Calculator 모의 설정
+        // Calculator 모의 설정
         vi.mocked(mockCalculator.calculatePortfolioState).mockReturnValue({
             portfolioData: mockDefaultPortfolio.portfolioData as any,
             currentTotal: new Decimal(5500),
@@ -187,7 +187,7 @@ describe('PortfolioController', () => {
             return strategy.calculate();
         });
 
-        // 5. 컨트롤러 생성 (이때 bindControllerEvents가 호출됨)
+        // 컨트롤러 생성 (이때 bindControllerEvents가 호출됨)
         controller = new PortfolioController(mockState, mockView);
         await controller.initialize();
     });

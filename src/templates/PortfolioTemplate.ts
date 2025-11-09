@@ -1,7 +1,6 @@
 // src/templates/PortfolioTemplate.ts
 /**
  * @description 포트폴리오 템플릿 전략 인터페이스
- * (Phase 2-3: handleApplyTemplate 리팩토링 - Strategy Pattern)
  */
 
 import type { Stock } from '../types';

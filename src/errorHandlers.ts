@@ -1,7 +1,6 @@
 // src/errorHandlers.ts
 /**
  * @description 전역 에러 핸들러 등록
- * (Phase 3-1: 에러 핸들링 개선)
  */
 
 import { ErrorService } from './errorService';

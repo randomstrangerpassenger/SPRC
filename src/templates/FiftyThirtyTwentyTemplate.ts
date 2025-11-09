@@ -1,7 +1,6 @@
 // src/templates/FiftyThirtyTwentyTemplate.ts
 /**
  * @description 50/30/20 포트폴리오 템플릿
- * (Phase 2-3: handleApplyTemplate 리팩토링 - Strategy Pattern)
  */
 
 import type { Stock } from '../types';

@@ -3,7 +3,7 @@
 type Lang = 'en' | 'ko';
 type Replacements = Record<string, string | number>;
 
-// 1. 모든 문자열을 계층 구조로 정의합니다.
+// 모든 문자열을 계층 구조로 정의합니다.
 const locales = {
     // --- English Messages (from en.json) ---
     en: {
@@ -388,7 +388,7 @@ function getStoredLanguage(): Lang {
     return getBrowserLanguage();
 }
 
-// 2. 현재 언어 설정 (localStorage 우선, 없으면 브라우저 언어)
+// 현재 언어 설정 (localStorage 우선, 없으면 브라우저 언어)
 let currentLang: Lang = getStoredLanguage();
 let messages: any = locales[currentLang] || locales.en;
 

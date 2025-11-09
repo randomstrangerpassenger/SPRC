@@ -1,7 +1,6 @@
 // src/state/validation.ts
 /**
  * @description Portfolio 데이터 검증 및 업그레이드 로직
- * (Phase 2-2: state.ts 모듈 분리 - validation 추출)
  */
 
 import Decimal from 'decimal.js';

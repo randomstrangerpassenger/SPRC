@@ -1,7 +1,6 @@
 // src/state/helpers.ts
 /**
  * @description Portfolio 및 Stock 생성을 위한 헬퍼 함수
- * (Phase 2-2: state.ts 모듈 분리 - helpers 추출)
  */
 
 import Decimal from 'decimal.js';

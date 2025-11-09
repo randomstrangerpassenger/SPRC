@@ -1,7 +1,6 @@
 // src/templates/EqualWeightTemplate.ts
 /**
  * @description 동일 비중 포트폴리오 템플릿
- * (Phase 2-3: handleApplyTemplate 리팩토링 - Strategy Pattern)
  */
 
 import type { Stock } from '../types';

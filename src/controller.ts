@@ -137,7 +137,6 @@ export class PortfolioController {
                     activePortfolio.settings.exchangeRate = rate;
                     await this.state.saveActivePortfolio();
 
-                    // Phase 2-1: MVC architecture improvement - delegate DOM manipulation to view
                     this.view.updateExchangeRateInputs(rate);
 
                     console.log('[Controller] Exchange rate auto-loaded:', rate);
@@ -401,7 +400,6 @@ export class PortfolioController {
 
     /**
      * @description 자산 배분 템플릿 적용 (Strategy Pattern)
-     * (Phase 2-3: handleApplyTemplate 리팩토링 - 기존 165줄 → 25줄)
      */
     handleApplyTemplate(templateName: string): void {
         const activePortfolio = this.state.getActivePortfolio();
@@ -443,7 +441,7 @@ export class PortfolioController {
 
         if (currentTotalDec.isZero()) return;
 
-        // 1. 단일 종목 비중 경고 (30% 초과)
+        // 단일 종목 비중 경고 (30% 초과)
         const SINGLE_STOCK_THRESHOLD = 30;
         for (const stock of portfolioData) {
             const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
@@ -454,7 +452,7 @@ export class PortfolioController {
             }
         }
 
-        // 2. 섹터 집중도 경고 (40% 초과)
+        // 섹터 집중도 경고 (40% 초과)
         const SECTOR_CONCENTRATION_THRESHOLD = 40;
         for (const sector of sectorData) {
             const percentage = new Decimal(sector.percentage || 0);
@@ -491,7 +489,6 @@ export class PortfolioController {
                 return;
             }
 
-            // Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer
             this.view.resultsRenderer.showPerformanceHistoryView(true);
 
             const ChartClass = await ChartLoaderService.getChart();
@@ -526,7 +523,6 @@ export class PortfolioController {
                 return;
             }
 
-            // Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer
             this.view.resultsRenderer.showSnapshotListView(true);
             this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
 
@@ -539,7 +535,6 @@ export class PortfolioController {
 
     /**
      * @description 스냅샷 목록 렌더링
-     * (Phase 2-1: MVC architecture improvement - delegate to ResultsRenderer)
      */
     private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
         this.view.resultsRenderer.displaySnapshotList(snapshots, currency);

@@ -284,7 +284,6 @@ export function checkTouchTargetSize(element: HTMLElement): {
 }
 /**
  * @description 키보드 단축키 관리
- * (Phase 3-3: 접근성 개선)
  */
 export class KeyboardShortcutManager {
     private shortcuts: Map<string, (e: KeyboardEvent) => void> = new Map();
@@ -356,7 +355,6 @@ export class KeyboardShortcutManager {
 
 /**
  * @description 읽기 전용 모드 토글 (폼 필드 비활성화)
- * (Phase 3-3: 접근성 개선)
  * @param container - 컨테이너 요소
  * @param readOnly - 읽기 전용 여부
  */
@@ -378,7 +376,6 @@ export function setReadOnlyMode(container: HTMLElement, readOnly: boolean): void
 
 /**
  * @description 랜드마크 영역 설정 헬퍼
- * (Phase 3-3: 접근성 개선)
  * @param element - 요소
  * @param role - ARIA 랜드마크 역할
  * @param label - aria-label (선택)

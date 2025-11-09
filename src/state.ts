@@ -7,7 +7,6 @@ import { Validator } from './validator.ts';
 import { DataStore } from './dataStore.ts';
 import { generateId } from './utils.ts';
 import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
-// Phase 2-2: state.ts 모듈 분리 - 새로운 모듈 import
 import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
 import { validateAndUpgradeData } from './state/validation.ts';
 
@@ -15,7 +14,7 @@ export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
     #activePortfolioId: string | null = null;
     #initializationPromise: Promise<void> | null = null;
-    // Phase 4-1: 증분 저장을 위한 dirty flag (변경된 포트폴리오 ID 추적)
+    // 증분 저장을 위한 dirty flag (변경된 포트폴리오 ID 추적)
     #dirtyPortfolioIds: Set<string> = new Set();
 
     constructor() {
@@ -34,11 +33,11 @@ export class PortfolioState {
      */
     async _initialize(): Promise<void> {
         try {
-            // 1. IndexedDB에서 데이터 로드 시도
+            // IndexedDB에서 데이터 로드 시도
             let loadedMetaData = await this._loadMeta();
             let loadedPortfolios = await this._loadPortfolios();
 
-            // 2. IDB에 데이터가 없는 경우, LocalStorage에서 마이그레이션 시도
+            // IDB에 데이터가 없는 경우, LocalStorage에서 마이그레이션 시도
             if (
                 !loadedMetaData ||
                 !loadedPortfolios ||
@@ -54,13 +53,13 @@ export class PortfolioState {
                 }
             }
 
-            // 3. 데이터 유효성 검사 (소독 포함) - Phase 2-2: validation 모듈 사용
+            // 데이터 유효성 검사 (소독 포함) - validation 모듈 사용
             const { meta, portfolios } = validateAndUpgradeData(loadedMetaData, loadedPortfolios);
 
             this.#portfolios = portfolios;
             this.#activePortfolioId = meta.activePortfolioId;
 
-            // 4. 유효한 데이터가 전혀 없으면 기본값 생성 (비동기 저장)
+            // 유효한 데이터가 전혀 없으면 기본값 생성 (비동기 저장)
             if (
                 Object.keys(this.#portfolios).length === 0 ||
                 !this.#portfolios[this.#activePortfolioId]
@@ -124,7 +123,7 @@ export class PortfolioState {
 
     async createNewPortfolio(name: string): Promise<Portfolio> {
         const newId = `p-${generateId()}`;
-        // Phase 2-2: helpers 모듈 사용
+        // helpers 모듈 사용
         const newPortfolio = createDefaultPortfolio(newId, name);
         this.#portfolios[newId] = newPortfolio;
         this.#activePortfolioId = newId;
@@ -192,7 +191,7 @@ export class PortfolioState {
     async addNewStock(): Promise<Stock | null> {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
-            // Phase 2-2: helpers 모듈 사용
+            // helpers 모듈 사용
             const newStock = createDefaultStock();
             activePortfolio.portfolioData.push(newStock);
             await this.saveActivePortfolio(); // 비동기 저장
@@ -394,7 +393,7 @@ export class PortfolioState {
     }
 
     async resetData(save: boolean = true): Promise<void> {
-        // Phase 2-2: helpers 모듈 사용 (generateId는 helpers에서 사용)
+        // helpers 모듈 사용 (generateId는 helpers에서 사용)
         const defaultPortfolio = createDefaultPortfolio(`p-${Date.now()}`);
         this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
         this.#activePortfolioId = defaultPortfolio.id;
@@ -436,7 +435,7 @@ export class PortfolioState {
             throw new Error('Imported data structure is invalid.');
         }
 
-        // Phase 2-2: validation 모듈이 소독을 처리
+        // validation 모듈이 소독을 처리
         const { meta, portfolios } = validateAndUpgradeData(
             importedData.meta,
             importedData.portfolios
@@ -529,5 +528,4 @@ export class PortfolioState {
 
     // --- Private Helper Methods ---
 
-    // Phase 2-2: _createDefaultPortfolio, _createDefaultStock 제거 (state/helpers.ts로 이동)
 }

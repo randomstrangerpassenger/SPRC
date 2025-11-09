@@ -1,7 +1,6 @@
 // src/utils/resultHelpers.ts
 /**
  * @description Railway-Oriented Programming을 위한 Result<T, E> 헬퍼 함수들
- * (Phase 3-1: 에러 핸들링 개선)
  */
 
 import type { Result } from '../types';

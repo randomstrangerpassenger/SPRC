@@ -1,7 +1,6 @@
 // src/utils/memoize.ts
 /**
  * @description 메모이제이션 헬퍼 함수들
- * (Phase 3-2: 성능 최적화)
  */
 
 /**

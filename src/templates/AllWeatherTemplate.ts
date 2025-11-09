@@ -1,7 +1,6 @@
 // src/templates/AllWeatherTemplate.ts
 /**
  * @description All-Weather 포트폴리오 템플릿 (레이 달리오 전략)
- * (Phase 2-3: handleApplyTemplate 리팩토링 - Strategy Pattern)
  */
 
 import type { Stock } from '../types';

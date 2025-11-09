@@ -83,7 +83,7 @@ export class DataManager {
     }
 
     /**
-     * @description 거래 내역 CSV 내보내기 (Phase 4.1)
+     * @description 거래 내역 CSV 내보내기
      */
     handleExportTransactionsCSV(): void {
         try {

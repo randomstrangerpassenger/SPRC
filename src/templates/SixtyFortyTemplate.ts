@@ -1,7 +1,6 @@
 // src/templates/SixtyFortyTemplate.ts
 /**
  * @description 60/40 포트폴리오 템플릿 (주식 60%, 채권 40%)
- * (Phase 2-3: handleApplyTemplate 리팩토링 - Strategy Pattern)
  */
 
 import type { Stock } from '../types';

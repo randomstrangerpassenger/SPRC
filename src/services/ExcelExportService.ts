@@ -23,13 +23,13 @@ export class ExcelExportService {
             workbook.created = new Date();
             workbook.modified = new Date();
 
-            // 1. 포트폴리오 요약 시트
+            // 포트폴리오 요약 시트
             this.createSummarySheet(workbook, portfolio);
 
-            // 2. 거래 내역 시트
+            // 거래 내역 시트
             this.createTransactionsSheet(workbook, portfolio);
 
-            // 3. 종목별 상세 시트
+            // 종목별 상세 시트
             this.createStocksDetailSheet(workbook, portfolio);
 
             // Excel 파일 생성 및 다운로드

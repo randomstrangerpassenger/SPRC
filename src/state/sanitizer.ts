@@ -1,7 +1,6 @@
 // src/state/sanitizer.ts
 /**
  * @description DOMPurify를 사용한 데이터 소독 (XSS 방어)
- * (Phase 2-2: state.ts 모듈 분리 - sanitizer 추출)
  */
 
 import DOMPurify from 'dompurify';

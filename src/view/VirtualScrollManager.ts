@@ -123,7 +123,6 @@ export class VirtualScrollManager {
         header.innerHTML = headersHTML;
     }
 
-    // createStockRowFragment는 RowRenderer.ts로 이동
 
     /**
      * @description 가상 테이블을 렌더링합니다 (초기화).
@@ -186,7 +185,6 @@ export class VirtualScrollManager {
      * @param stockId - 주식 ID
      * @param field - 필드명
      * @param value - 값
-     * (Phase 2-5: 타입 안전성 개선)
      */
     updateStockInVirtualData(
         stockId: string,
@@ -204,7 +202,6 @@ export class VirtualScrollManager {
      * @description 특정 주식 행의 출력 부분만 업데이트합니다.
      * @param stockId - 주식 ID
      * @param calculatedData - 재계산된 데이터
-     * (Phase 2-5: 타입 안전성 개선)
      */
     updateSingleStockRow(
         stockId: string,
@@ -341,7 +338,7 @@ export class VirtualScrollManager {
             inputs.forEach((input) => {
                 if (!(input instanceof HTMLInputElement)) return;
 
-                // Phase 2-5: IME composition 체크 (타입 안전성 개선)
+                // Phase 2-5: IME composition 체크
                 const isComposing = 'isComposing' in input && (input as HTMLInputElement & { isComposing?: boolean }).isComposing;
                 if (input === activeElement || isComposing) {
                     return;
@@ -350,7 +347,6 @@ export class VirtualScrollManager {
                 const field = input.dataset.field;
                 if (!field) return;
 
-                // Phase 2-5: 타입 안전성 개선
                 let value: string | number | boolean;
                 if (input.type === 'checkbox') {
                     value = input.checked;
