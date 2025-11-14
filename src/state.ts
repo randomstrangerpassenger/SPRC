@@ -23,14 +23,14 @@ export class PortfolioState {
     }
 
     /**
-     * @description public async 메서드로 변경
+     * @description Ensure state initialization is complete before use
      */
     async ensureInitialized(): Promise<void> {
         await this.#initializationPromise;
     }
 
     /**
-     * @description 비동기 초기화 및 LocalStorage 마이그레이션 로직
+     * @description Async initialization and LocalStorage migration logic
      */
     async _initialize(): Promise<void> {
         try {
@@ -87,14 +87,14 @@ export class PortfolioState {
     }
 
     /**
-     * @description LocalStorage -> IndexedDB 마이그레이션 (PortfolioRepository 위임)
+     * @description Migrate data from LocalStorage to IndexedDB (delegated to PortfolioRepository)
      */
     async _migrateFromLocalStorage(): Promise<boolean> {
         return await this.#portfolioRepo.migrateFromLocalStorage();
     }
 
     /**
-     * @description IDB에서 Meta 로드 (PortfolioRepository 위임)
+     * @description Load meta state from IndexedDB (delegated to PortfolioRepository)
      */
     async _loadMeta(): Promise<MetaState | null> {
         return await this.#portfolioRepo.loadMeta();
