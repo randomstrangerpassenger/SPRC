@@ -1,6 +1,7 @@
 // src/view/AccessibilityAnnouncer.ts
 
 import { logger } from '../services/Logger';
+import { TIMING } from '../constants';
 
 /**
  * @class AccessibilityAnnouncer
@@ -44,7 +45,7 @@ export class AccessibilityAnnouncer {
             if (this.announcer) {
                 this.announcer.textContent = message;
             }
-        }, 100);
+        }, TIMING.A11Y_SCREEN_READER_DELAY);
     }
 
     /**

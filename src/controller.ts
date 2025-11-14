@@ -1,9 +1,8 @@
 // src/controller.ts
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
-import { Calculator } from './calculator';
 import { debounce, getRatioSum, isInputElement } from './utils';
-import { CONFIG, DECIMAL_ZERO } from './constants';
+import { CONFIG, DECIMAL_ZERO, TIMING } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
@@ -48,13 +47,15 @@ export class PortfolioController {
 
     private calculatorWorker = getCalculatorWorkerService();
 
-    #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
 
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
         this.view = view;
-        this.debouncedSave = debounce(() => this.state.saveActivePortfolio(), 500);
+        this.debouncedSave = debounce(
+            () => this.state.saveActivePortfolio(),
+            TIMING.DEBOUNCE_SAVE_DELAY
+        );
 
         // Repository 인스턴스 생성
         this.snapshotRepo = new SnapshotRepository();

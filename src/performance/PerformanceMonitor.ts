@@ -214,7 +214,7 @@ export class PerformanceMonitor {
 
         // 통계 계산
         const stats: PerformanceStats[] = [];
-        grouped.forEach((metrics, key) => {
+        grouped.forEach((metrics, _key) => {
             const durations = metrics.map((m) => m.duration).sort((a, b) => a - b);
             const totalDuration = durations.reduce((sum, d) => sum + d, 0);
 

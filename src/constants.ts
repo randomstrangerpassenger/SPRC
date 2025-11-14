@@ -132,4 +132,16 @@ export const ARIA_POLITENESS = {
     ASSERTIVE: 'assertive',
 } as const;
 
+/**
+ * @description UI 타이밍 및 지연 설정 (밀리초)
+ */
+export const TIMING = {
+    /** 자동 저장 debounce 지연 시간 */
+    DEBOUNCE_SAVE_DELAY: 500,
+    /** 스크린 리더 알림을 위한 지연 시간 */
+    A11Y_SCREEN_READER_DELAY: 100,
+    /** Toast 메시지 기본 표시 시간 */
+    TOAST_DEFAULT_DURATION: 3000,
+} as const;
+
 export type ConfigType = typeof CONFIG;

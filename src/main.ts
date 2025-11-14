@@ -34,7 +34,7 @@ try {
     ErrorService.setViewInstance(view);
 
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
-    const app = new PortfolioController(state, view);
+    void new PortfolioController(state, view);
 
     logger.info('Application setup complete.');
 } catch (error) {
