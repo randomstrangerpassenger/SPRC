@@ -38,30 +38,25 @@ export class CalculationManager {
     ) {}
 
     /**
-     * @description 리밸런싱 계산 실행
+     * @description Validate calculation inputs and ratio sum
+     * @returns true if validation passes, false otherwise
      */
-    async handleCalculate(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        const additionalInvestment = this.getInvestmentAmountInKRW();
-
-        const inputs = {
-            mainMode: activePortfolio.settings.mainMode,
-            portfolioData: activePortfolio.portfolioData,
-            additionalInvestment: additionalInvestment,
-        };
-
+    private async validateCalculationInputs(
+        portfolioData: Stock[],
+        mainMode: 'add' | 'sell' | 'simple',
+        additionalInvestment: Decimal
+    ): Promise<boolean> {
+        const inputs = { mainMode, portfolioData, additionalInvestment };
         const validationErrors = Validator.validateForCalculation(inputs);
 
         if (validationErrors.length > 0) {
             const errorMessages = validationErrors.map((err) => err.message).join('\n');
             ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
             this.view.hideResults();
-            return;
+            return false;
         }
 
-        const totalRatio = getRatioSum(inputs.portfolioData);
+        const totalRatio = getRatioSum(portfolioData);
         if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
             const proceed = await this.view.showConfirm(
                 t('modal.confirmRatioSumWarnTitle'),
@@ -69,97 +64,175 @@ export class CalculationManager {
             );
             if (!proceed) {
                 this.view.hideResults();
-                return;
+                return false;
             }
         }
 
-        const calculatedState = Calculator.calculatePortfolioState({
-            portfolioData: inputs.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency,
-        });
-        activePortfolio.portfolioData = calculatedState.portfolioData;
+        return true;
+    }
 
-        // Save portfolio snapshot
+    /**
+     * @description Save portfolio snapshot (non-critical operation)
+     */
+    private async savePortfolioSnapshot(
+        portfolioId: string,
+        portfolioData: CalculatedStock[],
+        exchangeRate: number,
+        currency: 'krw' | 'usd'
+    ): Promise<void> {
         try {
             const snapshot = Calculator.createSnapshot(
-                activePortfolio.id,
-                calculatedState.portfolioData,
-                activePortfolio.settings.exchangeRate,
-                activePortfolio.settings.currentCurrency
+                portfolioId,
+                portfolioData,
+                exchangeRate,
+                currency
             );
             await this.snapshotRepo.add(snapshot);
             logger.info(`Snapshot saved: ${snapshot.date}`, 'CalculationManager');
         } catch (error) {
-            // 스냅샷 저장 실패는 치명적이지 않으므로 계속 진행
+            // Snapshot failure is non-critical, continue execution
             ErrorService.handle(error as Error, 'CalculationManager.saveSnapshot');
-            // 사용자에게 알림 (선택적)
-            // this.view.showToast('스냅샷 저장 실패. 계산은 정상적으로 완료되었습니다.', 'warning');
         }
+    }
 
-        let strategy;
-        if (activePortfolio.settings.mainMode === 'add') {
-            strategy = new AddRebalanceStrategy(
-                calculatedState.portfolioData,
-                additionalInvestment
-            );
-        } else if (activePortfolio.settings.mainMode === 'simple') {
-            strategy = new SimpleRatioStrategy(calculatedState.portfolioData, additionalInvestment);
+    /**
+     * @description Select rebalancing strategy based on mode
+     */
+    private selectRebalancingStrategy(
+        mainMode: 'add' | 'sell' | 'simple',
+        portfolioData: CalculatedStock[],
+        additionalInvestment: Decimal
+    ): RebalanceStrategy {
+        if (mainMode === 'add') {
+            return new AddRebalanceStrategy(portfolioData, additionalInvestment);
+        } else if (mainMode === 'simple') {
+            return new SimpleRatioStrategy(portfolioData, additionalInvestment);
         } else {
-            strategy = new SellRebalanceStrategy(calculatedState.portfolioData);
+            return new SellRebalanceStrategy(portfolioData);
         }
-        const rebalancingResults = Calculator.calculateRebalancing(strategy);
+    }
 
-        const resultsHTML =
-            activePortfolio.settings.mainMode === 'add'
-                ? generateAddModeResultsHTML(
-                      rebalancingResults.results,
-                      {
-                          currentTotal: calculatedState.currentTotal,
-                          additionalInvestment: additionalInvestment,
-                          finalTotal: calculatedState.currentTotal.plus(additionalInvestment),
-                      },
-                      activePortfolio.settings.currentCurrency,
-                      activePortfolio.settings.tradingFeeRate,
-                      activePortfolio.settings.taxRate
-                  )
-                : activePortfolio.settings.mainMode === 'simple'
-                  ? generateSimpleModeResultsHTML(
-                        rebalancingResults.results,
-                        {
-                            currentTotal: calculatedState.currentTotal,
-                            additionalInvestment: additionalInvestment,
-                            finalTotal: calculatedState.currentTotal.plus(additionalInvestment),
-                        },
-                        activePortfolio.settings.currentCurrency
-                    )
-                  : generateSellModeResultsHTML(
-                        rebalancingResults.results,
-                        activePortfolio.settings.currentCurrency
-                    );
+    /**
+     * @description Generate results HTML based on mode
+     */
+    private generateResultsHTML(
+        mainMode: 'add' | 'sell' | 'simple',
+        rebalancingResults: RebalancingResults,
+        currentTotal: Decimal,
+        additionalInvestment: Decimal,
+        currency: 'krw' | 'usd',
+        tradingFeeRate: number,
+        taxRate: number
+    ): string {
+        const totals = {
+            currentTotal,
+            additionalInvestment,
+            finalTotal: currentTotal.plus(additionalInvestment),
+        };
 
-        this.view.displayResults(resultsHTML);
+        if (mainMode === 'add') {
+            return generateAddModeResultsHTML(
+                rebalancingResults.results,
+                totals,
+                currency,
+                tradingFeeRate,
+                taxRate
+            );
+        } else if (mainMode === 'simple') {
+            return generateSimpleModeResultsHTML(rebalancingResults.results, totals, currency);
+        } else {
+            return generateSellModeResultsHTML(rebalancingResults.results, currency);
+        }
+    }
 
-        const chartLabels = rebalancingResults.results.map((r) => r.stock.name);
-        const chartData = rebalancingResults.results.map((r) => {
+    /**
+     * @description Prepare chart data and title
+     */
+    private prepareChartData(
+        rebalancingResults: RebalancingResults,
+        mainMode: 'add' | 'sell' | 'simple'
+    ): { labels: string[]; data: number[]; title: string } {
+        const labels = rebalancingResults.results.map((r) => r.stock.name);
+        const data = rebalancingResults.results.map((r) => {
             const ratio =
                 r.stock.targetRatio instanceof Decimal
                     ? r.stock.targetRatio
                     : new Decimal(r.stock.targetRatio ?? 0);
             return ratio.toNumber();
         });
-        const chartTitle =
-            activePortfolio.settings.mainMode === 'simple'
-                ? '포트폴리오 목표 비율 (간단 계산 모드)'
-                : activePortfolio.settings.mainMode === 'add'
-                  ? '포트폴리오 목표 비율 (추가 매수 모드)'
-                  : '포트폴리오 목표 비율 (매도 리밸런싱 모드)';
 
+        const titleMap = {
+            simple: '포트폴리오 목표 비율 (간단 계산 모드)',
+            add: '포트폴리오 목표 비율 (추가 매수 모드)',
+            sell: '포트폴리오 목표 비율 (매도 리밸런싱 모드)',
+        };
+
+        return { labels, data, title: titleMap[mainMode] };
+    }
+
+    /**
+     * @description Execute rebalancing calculation
+     */
+    async handleCalculate(): Promise<void> {
+        const activePortfolio = this.state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        const additionalInvestment = this.getInvestmentAmountInKRW();
+
+        // Validate inputs
+        const isValid = await this.validateCalculationInputs(
+            activePortfolio.portfolioData,
+            activePortfolio.settings.mainMode,
+            additionalInvestment
+        );
+        if (!isValid) return;
+
+        // Calculate portfolio state
+        const calculatedState = Calculator.calculatePortfolioState({
+            portfolioData: activePortfolio.portfolioData,
+            exchangeRate: activePortfolio.settings.exchangeRate,
+            currentCurrency: activePortfolio.settings.currentCurrency,
+        });
+        activePortfolio.portfolioData = calculatedState.portfolioData;
+
+        // Save portfolio snapshot (non-critical)
+        await this.savePortfolioSnapshot(
+            activePortfolio.id,
+            calculatedState.portfolioData,
+            activePortfolio.settings.exchangeRate,
+            activePortfolio.settings.currentCurrency
+        );
+
+        // Select and execute rebalancing strategy
+        const strategy = this.selectRebalancingStrategy(
+            activePortfolio.settings.mainMode,
+            calculatedState.portfolioData,
+            additionalInvestment
+        );
+        const rebalancingResults = Calculator.calculateRebalancing(strategy);
+
+        // Generate and display results
+        const resultsHTML = this.generateResultsHTML(
+            activePortfolio.settings.mainMode,
+            rebalancingResults,
+            calculatedState.currentTotal,
+            additionalInvestment,
+            activePortfolio.settings.currentCurrency,
+            activePortfolio.settings.tradingFeeRate,
+            activePortfolio.settings.taxRate
+        );
+        this.view.displayResults(resultsHTML);
+
+        // Prepare and display chart
+        const chartData = this.prepareChartData(
+            rebalancingResults,
+            activePortfolio.settings.mainMode
+        );
         this.view.displayChart(
             await ChartLoaderService.getChart(),
-            chartLabels,
-            chartData,
-            chartTitle
+            chartData.labels,
+            chartData.data,
+            chartData.title
         );
 
         this.debouncedSave();
