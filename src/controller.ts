@@ -20,8 +20,7 @@ import { StockManager } from './controller/StockManager';
 import { TransactionManager } from './controller/TransactionManager';
 import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
-// 다크 모드 관리 분리
-import { DarkModeManager } from './DarkModeManager';
+import { AppInitializer } from './controller/AppInitializer';
 
 /**
  * @class PortfolioController
@@ -38,8 +37,7 @@ export class PortfolioController {
     private transactionManager: TransactionManager;
     private calculationManager: CalculationManager;
     private dataManager: DataManager;
-    // 다크 모드 관리 분리
-    private darkModeManager: DarkModeManager;
+    private appInitializer: AppInitializer;
 
     private calculatorWorker = getCalculatorWorkerService();
 
@@ -62,8 +60,7 @@ export class PortfolioController {
             this.getInvestmentAmountInKRW.bind(this)
         );
         this.dataManager = new DataManager(this.state, this.view);
-        // 다크 모드 관리 분리
-        this.darkModeManager = new DarkModeManager();
+        this.appInitializer = new AppInitializer(this.state, this.view);
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
@@ -73,15 +70,15 @@ export class PortfolioController {
     }
 
     /**
-     * @description 컨트롤러 초기화
+     * @description 컨트롤러 초기화 (AppInitializer로 위임)
      */
     async initialize(): Promise<void> {
-        await this.state.ensureInitialized();
-        this.view.cacheDomElements();
-        ErrorService.setViewInstance(this.view);
-        this.setupInitialUI();
-        this.bindControllerEvents();
-        this.#eventAbortController = bindEventListeners(this.view);
+        this.#eventAbortController = await this.appInitializer.initialize(
+            this.bindControllerEvents.bind(this),
+            bindEventListeners
+        );
+        // fullRender는 초기화 후 호출
+        this.fullRender();
     }
 
     /**
@@ -93,58 +90,7 @@ export class PortfolioController {
             this.#eventAbortController = null;
             console.log('[Controller] Event listeners cleaned up');
         }
-
-        // 다크 모드 관리 분리
-        this.darkModeManager.cleanup();
-    }
-
-    /**
-     * @description 초기 UI 설정
-     */
-    setupInitialUI(): void {
-        this.darkModeManager.initialize();
-
-        const activePortfolio = this.state.getActivePortfolio();
-        if (activePortfolio) {
-            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
-            this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-
-            // Phase 2-1: MVC architecture improvement - delegate DOM manipulation to view
-            this.view.updatePortfolioSettingsInputs({
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                rebalancingTolerance: activePortfolio.settings.rebalancingTolerance ?? 5,
-                tradingFeeRate: activePortfolio.settings.tradingFeeRate ?? 0.3,
-                taxRate: activePortfolio.settings.taxRate ?? 15,
-            });
-
-            this.fullRender();
-
-            // 환율 자동 로드
-            this.loadExchangeRate();
-        }
-    }
-
-    /**
-     * @description 환율 자동 로드
-     */
-    async loadExchangeRate(): Promise<void> {
-        try {
-            const rate = await (await import('./apiService')).apiService.fetchExchangeRate();
-            if (rate) {
-                const activePortfolio = this.state.getActivePortfolio();
-                if (activePortfolio) {
-                    activePortfolio.settings.exchangeRate = rate;
-                    await this.state.saveActivePortfolio();
-
-                    this.view.updateExchangeRateInputs(rate);
-
-                    console.log('[Controller] Exchange rate auto-loaded:', rate);
-                }
-            }
-        } catch (error) {
-            console.warn('[Controller] Failed to auto-load exchange rate:', error);
-        }
+        this.appInitializer.cleanup();
     }
 
     /**
@@ -554,10 +500,9 @@ export class PortfolioController {
 
     /**
      * @description 다크 모드 토글
-     * 다크 모드 관리 분리
      */
     handleToggleDarkMode(): void {
-        this.darkModeManager.toggle();
+        this.appInitializer.getDarkModeManager().toggleDarkMode();
         this.view.destroyChart();
         this.fullRender(); // async but we don't await
     }
