@@ -229,9 +229,10 @@ export class StockManager {
                     calculatedMetrics.currentAmount.times(exchangeRateDec);
             }
 
-            // 포트폴리오 데이터의 calculated 필드 업데이트
-            // Stock 타입을 CalculatedStock으로 타입 단언
-            (stock as any).calculated = calculatedMetrics;
+            // Update calculated metrics (portfolioData is actually CalculatedStock[] at runtime)
+            // Type assertion is safe here as Calculator ensures all stocks have calculated field
+            const calculatedStock = stock as CalculatedStock;
+            calculatedStock.calculated = calculatedMetrics;
 
             // 뷰 업데이트
             this.view.updateSingleStockRow(stockId, calculatedMetrics);

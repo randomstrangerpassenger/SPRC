@@ -346,17 +346,15 @@ export class VirtualScrollManager {
                 const field = input.dataset.field;
                 if (!field) return;
 
-                let value: string | number | boolean;
+                // Update stock data with proper type handling
+                const stock = this.#virtualData[stockIndex];
                 if (input.type === 'checkbox') {
-                    value = input.checked;
+                    (stock as Record<string, boolean>)[field] = input.checked;
                 } else if (input.type === 'number') {
-                    value = parseFloat(input.value) || 0;
+                    (stock as Record<string, number>)[field] = parseFloat(input.value) || 0;
                 } else {
-                    value = input.value;
+                    (stock as Record<string, string>)[field] = input.value;
                 }
-
-                // Type assertion for dynamic field access
-                (this.#virtualData[stockIndex] as Record<string, typeof value>)[field] = value;
             });
         });
 

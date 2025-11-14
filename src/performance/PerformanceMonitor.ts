@@ -36,6 +36,7 @@ export class PerformanceMonitor {
     static #instance: PerformanceMonitor | null = null;
     #metrics: PerformanceMetric[] = [];
     #activeTimers: Map<string, number> = new Map();
+    #metadata: Map<string, Record<string, any>> = new Map();
     #maxMetrics: number = PERFORMANCE.MAX_METRICS;
     #enabled: boolean = true;
 
@@ -73,9 +74,9 @@ export class PerformanceMonitor {
         const timerId = `${category}:${name}`;
         this.#activeTimers.set(timerId, performance.now());
 
-        // 메타데이터를 임시 저장 (end에서 사용)
+        // Store metadata in Map for type safety
         if (metadata) {
-            (this as any)[`_meta_${timerId}`] = metadata;
+            this.#metadata.set(timerId, metadata);
         }
     }
 
@@ -102,9 +103,9 @@ export class PerformanceMonitor {
             memoryUsed = performance.memory.usedJSHeapSize;
         }
 
-        // 메타데이터 가져오기
-        const metadata = (this as any)[`_meta_${timerId}`];
-        delete (this as any)[`_meta_${timerId}`];
+        // Retrieve and clean up metadata
+        const metadata = this.#metadata.get(timerId);
+        this.#metadata.delete(timerId);
 
         const metric: PerformanceMetric = {
             name,
@@ -277,6 +278,7 @@ export class PerformanceMonitor {
     clear(): void {
         this.#metrics = [];
         this.#activeTimers.clear();
+        this.#metadata.clear();
     }
 
     /**
