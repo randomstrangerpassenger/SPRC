@@ -11,16 +11,96 @@ import { CONFIG } from '../constants';
 import { ErrorService } from '../errorService';
 import Decimal from 'decimal.js';
 
+// ==================== Worker Message Types ====================
+
+/**
+ * @description Worker message types
+ */
+type WorkerMessageType = 'calculatePortfolioState' | 'calculateSectorAnalysis';
+
+/**
+ * @description Worker request message structure
+ */
+interface WorkerRequest<T = unknown> {
+    type: WorkerMessageType;
+    data: T;
+    requestId: string;
+}
+
+/**
+ * @description Worker response message structure
+ */
+interface WorkerResponse<T = unknown> {
+    type: WorkerMessageType;
+    result?: T;
+    error?: string;
+    requestId: string;
+}
+
+/**
+ * @description Calculate portfolio state request data
+ */
+interface CalculatePortfolioStateRequest {
+    portfolioData: Stock[];
+    exchangeRate?: number;
+    currentCurrency?: Currency;
+}
+
+/**
+ * @description Calculate portfolio state response data (serialized)
+ */
+interface CalculatePortfolioStateResponse {
+    portfolioData: SerializedCalculatedStock[];
+    currentTotal: string; // Decimal serialized as string
+}
+
+/**
+ * @description Calculate sector analysis request data
+ */
+interface CalculateSectorAnalysisRequest {
+    portfolioData: CalculatedStock[];
+    currentCurrency: Currency;
+}
+
+/**
+ * @description Serialized calculated stock (Decimal values as strings)
+ */
+interface SerializedCalculatedStock extends Omit<CalculatedStock, 'calculated'> {
+    calculated: SerializedMetrics;
+}
+
+/**
+ * @description Serialized metrics (Decimal values as strings)
+ */
+interface SerializedMetrics {
+    [key: string]: string | number | boolean;
+}
+
+/**
+ * @description Sector analysis item (serialized)
+ */
+interface SerializedSectorAnalysis {
+    sector: string;
+    amount: string; // Decimal serialized as string
+    percentage: string; // Decimal serialized as string
+}
+
+/**
+ * @description Pending request tracker
+ */
+interface PendingRequest<T = unknown> {
+    resolve: (value: T) => void;
+    reject: (reason: Error) => void;
+    timeoutId: number;
+}
+
 export class CalculatorWorkerService {
     private worker: Worker | null = null;
     private isWorkerAvailable: boolean = false;
-    private pendingRequests: Map<
-        string,
-        { resolve: (value: any) => void; reject: (reason: any) => void; timeoutId: number }
-    > = new Map();
+    private pendingRequests: Map<string, PendingRequest> = new Map();
     private requestId: number = 0;
-    private fallbackCount: number = 0; // Track fallback occurrences
-    private initializationPromise: Promise<void> | null = null; // Track initialization state
+    private fallbackCount: number = 0;
+    private initializationPromise: Promise<void> | null = null;
 
     constructor() {
         // Don't await here - store the promise instead
@@ -74,14 +154,14 @@ export class CalculatorWorkerService {
     /**
      * @description Handle messages from worker
      */
-    private handleWorkerMessage(event: MessageEvent): void {
-        const { type, result, error, requestId } = event.data;
+    private handleWorkerMessage(event: MessageEvent<WorkerResponse>): void {
+        const { result, error, requestId } = event.data;
 
         if (error) {
             console.error('[CalculatorWorkerService] Worker error:', error);
             const request = this.pendingRequests.get(requestId);
             if (request) {
-                clearTimeout(request.timeoutId); // Clear timeout to prevent memory leak
+                clearTimeout(request.timeoutId);
                 request.reject(new Error(error));
                 this.pendingRequests.delete(requestId);
             }
@@ -90,7 +170,7 @@ export class CalculatorWorkerService {
 
         const request = this.pendingRequests.get(requestId);
         if (request) {
-            clearTimeout(request.timeoutId); // Clear timeout to prevent memory leak
+            clearTimeout(request.timeoutId);
             request.resolve(result);
             this.pendingRequests.delete(requestId);
         }
@@ -99,8 +179,11 @@ export class CalculatorWorkerService {
     /**
      * @description Send message to worker and wait for response
      */
-    private sendToWorker(type: string, data: any): Promise<any> {
-        return new Promise((resolve, reject) => {
+    private sendToWorker<TRequest, TResponse>(
+        type: WorkerMessageType,
+        data: TRequest
+    ): Promise<TResponse> {
+        return new Promise<TResponse>((resolve, reject) => {
             if (!this.worker || !this.isWorkerAvailable) {
                 reject(new Error('Worker not available'));
                 return;
@@ -108,7 +191,6 @@ export class CalculatorWorkerService {
 
             const requestId = `req_${++this.requestId}`;
 
-            // Create timeout handler and store timeout ID
             const timeoutId = window.setTimeout(() => {
                 if (this.pendingRequests.has(requestId)) {
                     this.pendingRequests.delete(requestId);
@@ -116,9 +198,14 @@ export class CalculatorWorkerService {
                 }
             }, CONFIG.WORKER_TIMEOUT);
 
-            this.pendingRequests.set(requestId, { resolve, reject, timeoutId });
+            this.pendingRequests.set(requestId, {
+                resolve: resolve as (value: unknown) => void,
+                reject,
+                timeoutId,
+            });
 
-            this.worker.postMessage({ type, data, requestId });
+            const message: WorkerRequest<TRequest> = { type, data, requestId };
+            this.worker.postMessage(message);
         });
     }
 
@@ -130,16 +217,18 @@ export class CalculatorWorkerService {
         exchangeRate?: number;
         currentCurrency?: Currency;
     }): Promise<{ portfolioData: CalculatedStock[]; currentTotal: Decimal }> {
-        // Wait for worker initialization to complete
         await this.ensureInitialized();
 
         if (this.isWorkerAvailable) {
             try {
-                const result = await this.sendToWorker('calculatePortfolioState', options);
+                const result = await this.sendToWorker<
+                    CalculatePortfolioStateRequest,
+                    CalculatePortfolioStateResponse
+                >('calculatePortfolioState', options);
 
                 // Deserialize Decimal strings back to Decimal objects
                 return {
-                    portfolioData: result.portfolioData.map((stock: any) => ({
+                    portfolioData: result.portfolioData.map((stock) => ({
                         ...stock,
                         calculated: this.deserializeMetrics(stock.calculated),
                     })),
@@ -165,17 +254,19 @@ export class CalculatorWorkerService {
         portfolioData: CalculatedStock[],
         currentCurrency: Currency = 'krw'
     ): Promise<{ sector: string; amount: Decimal; percentage: Decimal }[]> {
-        // Wait for worker initialization to complete
         await this.ensureInitialized();
 
         if (this.isWorkerAvailable) {
             try {
-                const result = await this.sendToWorker('calculateSectorAnalysis', {
+                const result = await this.sendToWorker<
+                    CalculateSectorAnalysisRequest,
+                    SerializedSectorAnalysis[]
+                >('calculateSectorAnalysis', {
                     portfolioData,
                     currentCurrency,
                 });
 
-                return result.map((item: any) => ({
+                return result.map((item) => ({
                     sector: item.sector,
                     amount: new Decimal(item.amount),
                     percentage: new Decimal(item.percentage),
@@ -215,8 +306,8 @@ export class CalculatorWorkerService {
     /**
      * @description Deserialize metrics from worker (string -> Decimal)
      */
-    private deserializeMetrics(metrics: any): any {
-        const deserialized: any = {};
+    private deserializeMetrics(metrics: SerializedMetrics): Record<string, Decimal | number | boolean> {
+        const deserialized: Record<string, Decimal | number | boolean> = {};
         for (const key in metrics) {
             const value = metrics[key];
             deserialized[key] =
