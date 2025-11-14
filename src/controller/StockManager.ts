@@ -24,6 +24,7 @@ interface FieldChangeResult {
 interface FieldHandlerContext {
     row: Element;
     activePortfolio: any;
+    field: string;
 }
 
 /**
@@ -124,6 +125,7 @@ export class StockManager {
         const context: FieldHandlerContext = {
             row,
             activePortfolio,
+            field,
         };
 
         // Strategy Pattern: 필드별 핸들러를 맵에서 조회하여 실행
@@ -195,14 +197,7 @@ export class StockManager {
         value: any,
         context: FieldHandlerContext
     ): FieldChangeResult {
-        // field 이름은 context에서 유추 (name 또는 ticker)
-        const target = context.row.querySelector(`[data-id="${stockId}"]`);
-        const field =
-            target?.querySelector('input[data-field="name"]')?.getAttribute('data-field') === 'name'
-                ? 'name'
-                : 'ticker';
-
-        this.view.updateStockInVirtualData(stockId, field, value);
+        this.view.updateStockInVirtualData(stockId, context.field, value);
         this.debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
