@@ -23,6 +23,7 @@ import { TransactionManager } from './controller/TransactionManager';
 import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
 import { AppInitializer } from './controller/AppInitializer';
+import { bindControllerEvents as bindControllerEventsExternal } from './controller/ControllerEventBinder';
 
 /**
  * @class PortfolioController
@@ -33,12 +34,12 @@ export class PortfolioController {
     view: PortfolioView;
     debouncedSave: () => void;
 
-    // 분리된 매니저들
-    private portfolioManager: PortfolioManager;
-    private stockManager: StockManager;
-    private transactionManager: TransactionManager;
-    private calculationManager: CalculationManager;
-    private dataManager: DataManager;
+    // 분리된 매니저들 (public - ControllerEventBinder 접근용)
+    portfolioManager: PortfolioManager;
+    stockManager: StockManager;
+    transactionManager: TransactionManager;
+    calculationManager: CalculationManager;
+    dataManager: DataManager;
     private appInitializer: AppInitializer;
 
     private calculatorWorker = getCalculatorWorkerService();
@@ -96,114 +97,10 @@ export class PortfolioController {
     }
 
     /**
-     * @description 컨트롤러 이벤트 바인딩
+     * @description 컨트롤러 이벤트 바인딩 (ControllerEventBinder로 위임)
      */
     bindControllerEvents(): void {
-        // 포트폴리오 관리
-        this.view.on('newPortfolioClicked', async () => {
-            await this.portfolioManager.handleNewPortfolio();
-            this.fullRender();
-        });
-        this.view.on('renamePortfolioClicked', () => this.portfolioManager.handleRenamePortfolio());
-        this.view.on('deletePortfolioClicked', async () => {
-            await this.portfolioManager.handleDeletePortfolio();
-        });
-        this.view.on('portfolioSwitched', async (data) => {
-            await this.portfolioManager.handleSwitchPortfolio(data.newId);
-            this.fullRender();
-        });
-
-        // 주식 관리
-        this.view.on('addNewStockClicked', async () => {
-            const result = await this.stockManager.handleAddNewStock();
-            if (result.needsFullRender) {
-                this.fullRender();
-                if (result.stockId) this.view.focusOnNewStock(result.stockId);
-            }
-        });
-        this.view.on('normalizeRatiosClicked', () =>
-            this.calculationManager.handleNormalizeRatios()
-        );
-        this.view.on('applyTemplateClicked', (data) => this.handleApplyTemplate(data.template));
-        this.view.on('fetchAllPricesClicked', async () => {
-            const result = await this.calculationManager.handleFetchAllPrices();
-            if (result.needsUIUpdate) this.updateUIState();
-        });
-
-        // 데이터 관리
-        this.view.on('resetDataClicked', async () => {
-            const result = await this.dataManager.handleResetData();
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
-        this.view.on('importDataClicked', () => this.dataManager.handleImportData());
-        this.view.on('exportTransactionsCSVClicked', () =>
-            this.dataManager.handleExportTransactionsCSV()
-        );
-        this.view.on('fileSelected', async (e) => {
-            const result = await this.dataManager.handleFileSelected(e);
-            if (result.needsUISetup) this.setupInitialUI();
-        });
-
-        // 테이블 상호작용
-        this.view.on('portfolioBodyChanged', (e) => this.stockManager.handlePortfolioBodyChange(e));
-        this.view.on('portfolioBodyClicked', (e) => {
-            const result = this.stockManager.handlePortfolioBodyClick(e);
-            if (result.action === 'manage' && result.stockId) {
-                this.transactionManager.openTransactionModalByStockId(result.stockId);
-            } else if (result.action === 'delete' && result.stockId) {
-                this.stockManager.handleDeleteStock(result.stockId).then((deleteResult) => {
-                    if (deleteResult.needsFullRender) this.fullRender();
-                });
-            }
-        });
-        this.view.on('manageStockClicked', (data) =>
-            this.transactionManager.openTransactionModalByStockId(data.stockId)
-        );
-        this.view.on('deleteStockShortcut', async (data) => {
-            const result = await this.stockManager.handleDeleteStock(data.stockId);
-            if (result.needsFullRender) this.fullRender();
-        });
-
-        // 계산 및 통화
-        this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
-        this.view.on('showPerformanceHistoryClicked', () => this.handleShowPerformanceHistory());
-        this.view.on('showSnapshotListClicked', () => this.handleShowSnapshotList());
-        this.view.on('mainModeChanged', async (data) => {
-            const result = await this.calculationManager.handleMainModeChange(data.mode);
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('currencyModeChanged', async (data) => {
-            const result = await this.calculationManager.handleCurrencyModeChange(data.currency);
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('currencyConversion', (data) =>
-            this.calculationManager.handleCurrencyConversion(data.source)
-        );
-        this.view.on('portfolioExchangeRateChanged', (data) =>
-            this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
-        );
-        this.view.on('rebalancingToleranceChanged', (data) =>
-            this.handleRebalancingToleranceChange(data.tolerance)
-        );
-
-        // 모달 상호작용
-        this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
-        this.view.on('newTransactionSubmitted', async (e) => {
-            const result = await this.transactionManager.handleAddNewTransaction(e);
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('transactionDeleteClicked', async (data) => {
-            const result = await this.transactionManager.handleTransactionListClick(
-                data.stockId,
-                data.txId
-            );
-            if (result.needsUIUpdate) this.updateUIState();
-        });
-
-        // 기타
-        this.view.on('darkModeToggleClicked', () => this.handleToggleDarkMode());
-        this.view.on('pageUnloading', () => this.handleSaveDataOnExit());
+        bindControllerEventsExternal(this);
     }
 
     // === 렌더링 메서드 ===
