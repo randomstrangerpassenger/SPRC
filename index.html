@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>포트폴리오 리밸런싱 계산기</title>
     <meta name="description" content="포트폴리오 리밸런싱 계산기를 통해 목표 비율에 맞춰 투자 전략을 최적화하세요.">
-    
+
+    <!-- Content Security Policy: Strict script-src, relaxed style-src for gradual migration -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https:;
+        font-src 'self' data:;
+        connect-src 'self' https://finnhub.io https://api.exchangerate-api.com;
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+        object-src 'none';
+    ">
+
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
