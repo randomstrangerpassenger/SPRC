@@ -50,12 +50,9 @@
 
 ```typescript
 import {
-    memoize,           // 단순 메모이제이션
-    memoizeComplex,    // 객체 키 메모이제이션
-    memoizeWithTTL,    // 시간 제한 캐싱
-    memoizeLRU,        // LRU 방식
-    memoizeMultiArg    // 다중 인자
-} from './utils/memoize';
+    memoize,           // 단순 메모이제이션 (LRU 캐시 크기 제한 포함)
+    memoizeWithKey     // 다중 인자 함수 메모이제이션
+} from './cache/memoization';
 ```
 
 ### 활용 예시

@@ -75,19 +75,3 @@ export function validateDecimalValue(value: any, defaultValue: Decimal = new Dec
     }
 }
 
-/**
- * @description 안전한 Decimal 변환
- * @param value - 변환할 값
- * @returns Decimal 객체
- */
-export function convertToDecimal(value: any): Decimal {
-    try {
-        const decimalValue = new Decimal(value ?? 0);
-        if (decimalValue.isNaN()) {
-            throw new Error('Invalid number for Decimal');
-        }
-        return decimalValue;
-    } catch (error) {
-        return new Decimal(0);
-    }
-}

@@ -7,7 +7,7 @@ import { DECIMAL_ZERO } from '../constants';
 import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
-import { LRUCache } from '../utils/LRUCache';
+import { LRUCache } from '../cache/LRUCache';
 
 // UI 렌더링용 헬퍼 함수
 /**

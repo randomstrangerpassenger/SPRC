@@ -5,6 +5,28 @@ import { ErrorService } from './errorService.ts';
 import type { Portfolio, MetaState, PortfolioSnapshot } from './types.ts';
 
 /**
+ * @description 에러 처리를 위한 헬퍼 함수
+ * @param label - 작업 레이블 (에러 로깅용)
+ * @param fn - 실행할 비동기 함수
+ * @param throwOnError - true일 경우 에러를 다시 throw, false일 경우 null 반환
+ */
+async function executeWithErrorHandling<T>(
+    label: string,
+    fn: () => Promise<T>,
+    throwOnError = false
+): Promise<T | null> {
+    try {
+        return await fn();
+    } catch (error) {
+        ErrorService.handle(error as Error, label);
+        if (throwOnError) {
+            throw error;
+        }
+        return null;
+    }
+}
+
+/**
  * @description IndexedDB 저장/로드 및 마이그레이션을 담당하는 클래스
  *
  * ⚠️ SECURITY NOTE:
@@ -31,50 +53,46 @@ export class DataStore {
      * @description Meta 데이터 로드
      */
     static async loadMeta(): Promise<MetaState | null> {
-        try {
-            const metaData = await get<MetaState>(CONFIG.IDB_META_KEY);
-            return metaData || null;
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.loadMeta');
-            return null;
-        }
+        return executeWithErrorHandling(
+            'DataStore.loadMeta',
+            async () => (await get<MetaState>(CONFIG.IDB_META_KEY)) || null
+        );
     }
 
     /**
      * @description Meta 데이터 저장
      */
     static async saveMeta(metaData: MetaState): Promise<void> {
-        try {
-            await set(CONFIG.IDB_META_KEY, metaData);
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.saveMeta');
-            throw error;
-        }
+        await executeWithErrorHandling(
+            'DataStore.saveMeta',
+            async () => {
+                await set(CONFIG.IDB_META_KEY, metaData);
+            },
+            true
+        );
     }
 
     /**
      * @description 포트폴리오 데이터 로드
      */
     static async loadPortfolios(): Promise<Record<string, Portfolio> | null> {
-        try {
-            const portfolioData = await get<Record<string, Portfolio>>(CONFIG.IDB_PORTFOLIOS_KEY);
-            return portfolioData || null;
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.loadPortfolios');
-            return null;
-        }
+        return executeWithErrorHandling(
+            'DataStore.loadPortfolios',
+            async () => (await get<Record<string, Portfolio>>(CONFIG.IDB_PORTFOLIOS_KEY)) || null
+        );
     }
 
     /**
      * @description 포트폴리오 데이터 저장
      */
     static async savePortfolios(portfolios: Record<string, Portfolio>): Promise<void> {
-        try {
-            await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolios);
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.savePortfolios');
-            throw error;
-        }
+        await executeWithErrorHandling(
+            'DataStore.savePortfolios',
+            async () => {
+                await set(CONFIG.IDB_PORTFOLIOS_KEY, portfolios);
+            },
+            true
+        );
     }
 
     /**
@@ -146,82 +164,81 @@ export class DataStore {
      * @description 포트폴리오 스냅샷 전체 로드
      */
     static async loadSnapshots(): Promise<Record<string, PortfolioSnapshot[]> | null> {
-        try {
-            const snapshots = await get<Record<string, PortfolioSnapshot[]>>(
-                CONFIG.IDB_SNAPSHOTS_KEY
-            );
-            return snapshots || null;
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.loadSnapshots');
-            return null;
-        }
+        return executeWithErrorHandling(
+            'DataStore.loadSnapshots',
+            async () => (await get<Record<string, PortfolioSnapshot[]>>(CONFIG.IDB_SNAPSHOTS_KEY)) || null
+        );
     }
 
     /**
      * @description 특정 포트폴리오의 스냅샷 목록 로드
      */
     static async getSnapshotsForPortfolio(portfolioId: string): Promise<PortfolioSnapshot[]> {
-        try {
-            const allSnapshots = await this.loadSnapshots();
-            return allSnapshots?.[portfolioId] || [];
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.getSnapshotsForPortfolio');
-            return [];
-        }
+        const result = await executeWithErrorHandling(
+            'DataStore.getSnapshotsForPortfolio',
+            async () => {
+                const allSnapshots = await this.loadSnapshots();
+                return allSnapshots?.[portfolioId] || [];
+            }
+        );
+        return result || [];
     }
 
     /**
      * @description 새 스냅샷 추가
      */
     static async addSnapshot(snapshot: PortfolioSnapshot): Promise<void> {
-        try {
-            const allSnapshots = (await this.loadSnapshots()) || {};
-            const portfolioSnapshots = allSnapshots[snapshot.portfolioId] || [];
+        await executeWithErrorHandling(
+            'DataStore.addSnapshot',
+            async () => {
+                const allSnapshots = (await this.loadSnapshots()) || {};
+                const portfolioSnapshots = allSnapshots[snapshot.portfolioId] || [];
 
-            // 새 스냅샷은 항상 최신이므로 unshift로 맨 앞에 추가 (O(1) vs O(n log n))
-            portfolioSnapshots.unshift(snapshot);
+                // 새 스냅샷은 항상 최신이므로 unshift로 맨 앞에 추가 (O(1) vs O(n log n))
+                portfolioSnapshots.unshift(snapshot);
 
-            // 최대 365개 스냅샷 유지 (1년치)
-            if (portfolioSnapshots.length > 365) {
-                portfolioSnapshots.splice(365);
-            }
+                // 최대 365개 스냅샷 유지 (1년치)
+                if (portfolioSnapshots.length > 365) {
+                    portfolioSnapshots.splice(365);
+                }
 
-            allSnapshots[snapshot.portfolioId] = portfolioSnapshots;
-            await set(CONFIG.IDB_SNAPSHOTS_KEY, allSnapshots);
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.addSnapshot');
-            throw error;
-        }
+                allSnapshots[snapshot.portfolioId] = portfolioSnapshots;
+                await set(CONFIG.IDB_SNAPSHOTS_KEY, allSnapshots);
+            },
+            true
+        );
     }
 
     /**
      * @description 특정 포트폴리오의 스냅샷 삭제
      */
     static async deleteSnapshotsForPortfolio(portfolioId: string): Promise<void> {
-        try {
-            const allSnapshots = await this.loadSnapshots();
-            if (allSnapshots && allSnapshots[portfolioId]) {
-                delete allSnapshots[portfolioId];
-                await set(CONFIG.IDB_SNAPSHOTS_KEY, allSnapshots);
-            }
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.deleteSnapshotsForPortfolio');
-            throw error;
-        }
+        await executeWithErrorHandling(
+            'DataStore.deleteSnapshotsForPortfolio',
+            async () => {
+                const allSnapshots = await this.loadSnapshots();
+                if (allSnapshots && allSnapshots[portfolioId]) {
+                    delete allSnapshots[portfolioId];
+                    await set(CONFIG.IDB_SNAPSHOTS_KEY, allSnapshots);
+                }
+            },
+            true
+        );
     }
 
     /**
      * @description 모든 데이터 삭제
      */
     static async clearAll(): Promise<void> {
-        try {
-            await del(CONFIG.IDB_META_KEY);
-            await del(CONFIG.IDB_PORTFOLIOS_KEY);
-            await del(CONFIG.IDB_SNAPSHOTS_KEY);
-            console.log('[DataStore] All data cleared');
-        } catch (error) {
-            ErrorService.handle(error as Error, 'DataStore.clearAll');
-            throw error;
-        }
+        await executeWithErrorHandling(
+            'DataStore.clearAll',
+            async () => {
+                await del(CONFIG.IDB_META_KEY);
+                await del(CONFIG.IDB_PORTFOLIOS_KEY);
+                await del(CONFIG.IDB_SNAPSHOTS_KEY);
+                console.log('[DataStore] All data cleared');
+            },
+            true
+        );
     }
 }

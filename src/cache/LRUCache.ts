@@ -49,7 +49,9 @@ export class LRUCache<K, V> {
         // 용량 초과 시 가장 오래된 항목 제거 (Map의 첫 번째 항목)
         if (this.#cache.size >= this.#capacity) {
             const firstKey = this.#cache.keys().next().value;
-            this.#cache.delete(firstKey);
+            if (firstKey !== undefined) {
+                this.#cache.delete(firstKey);
+            }
         }
 
         this.#cache.set(key, value);
