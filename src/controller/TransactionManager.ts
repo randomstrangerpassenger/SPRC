@@ -13,20 +13,26 @@ import { isInputElement } from '../utils';
  * @description 거래 내역 추가, 삭제 관리
  */
 export class TransactionManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+
     constructor(
-        private state: PortfolioState,
-        private view: PortfolioView
-    ) {}
+        state: PortfolioState,
+        view: PortfolioView
+    ) {
+        this.#state = state;
+        this.#view = view;
+    }
 
     /**
      * @description 주식 ID로 거래 내역 모달 열기
      * @param stockId - 주식 ID
      */
     openTransactionModalByStockId(stockId: string): void {
-        const stock = this.state.getStockById(stockId);
-        const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+        const stock = this.#state.getStockById(stockId);
+        const currency = this.#state.getActivePortfolio()?.settings.currentCurrency;
         if (stock && currency) {
-            this.view.openTransactionModal(stock, currency, this.state.getTransactions(stockId));
+            this.#view.openTransactionModal(stock, currency, this.#state.getTransactions(stockId));
         }
     }
 
@@ -61,7 +67,7 @@ export class TransactionManager {
 
         if (inputMode === 'amount') {
             if (!totalAmountInput || !totalAmountInput.value) {
-                this.view.showToast(t('toast.invalidTransactionInfo'), 'error');
+                this.#view.showToast(t('toast.invalidTransactionInfo'), 'error');
                 return { needsFullRender: false };
             }
 
@@ -72,19 +78,19 @@ export class TransactionManager {
                 const priceDec = new Decimal(priceStr);
 
                 if (priceDec.isZero() || priceDec.isNegative()) {
-                    this.view.showToast('단가는 0보다 커야 합니다.', 'error');
+                    this.#view.showToast('단가는 0보다 커야 합니다.', 'error');
                     return { needsFullRender: false };
                 }
 
                 const quantityDec = totalAmountDec.div(priceDec);
                 finalQuantity = quantityDec.toNumber();
             } catch (error) {
-                this.view.showToast('금액 또는 단가 입력이 올바르지 않습니다.', 'error');
+                this.#view.showToast('금액 또는 단가 입력이 올바르지 않습니다.', 'error');
                 return { needsFullRender: false };
             }
         } else {
             if (!quantityInput || !quantityInput.value) {
-                this.view.showToast(t('toast.invalidTransactionInfo'), 'error');
+                this.#view.showToast(t('toast.invalidTransactionInfo'), 'error');
                 return { needsFullRender: false };
             }
 
@@ -96,14 +102,14 @@ export class TransactionManager {
         const validationResult = Validator.validateTransaction(txData);
 
         if (!validationResult.isValid) {
-            this.view.showToast(
+            this.#view.showToast(
                 validationResult.message || t('toast.invalidTransactionInfo'),
                 'error'
             );
             return { needsFullRender: false };
         }
 
-        const success = await this.state.addTransaction(stockId, {
+        const success = await this.#state.addTransaction(stockId, {
             type,
             date,
             quantity: finalQuantity,
@@ -111,9 +117,9 @@ export class TransactionManager {
         });
 
         if (success) {
-            const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+            const currency = this.#state.getActivePortfolio()?.settings.currentCurrency;
             if (currency) {
-                this.view.renderTransactionList(this.state.getTransactions(stockId), currency);
+                this.#view.renderTransactionList(this.#state.getTransactions(stockId), currency);
             }
             form.reset();
             dateInput.valueAsDate = new Date();
@@ -135,11 +141,11 @@ export class TransactionManager {
                 if (totalAmountInput) totalAmountInput.required = false;
             }
 
-            this.view.showToast(t('toast.transactionAdded'), 'success');
+            this.#view.showToast(t('toast.transactionAdded'), 'success');
             Calculator.clearPortfolioStateCache();
             return { needsFullRender: true };
         } else {
-            this.view.showToast(t('toast.transactionAddFailed'), 'error');
+            this.#view.showToast(t('toast.transactionAddFailed'), 'error');
             return { needsFullRender: false };
         }
     }
@@ -154,23 +160,23 @@ export class TransactionManager {
         txId: string
     ): Promise<{ needsUIUpdate: boolean }> {
         if (stockId && txId) {
-            const confirmDelete = await this.view.showConfirm(
+            const confirmDelete = await this.#view.showConfirm(
                 t('modal.confirmDeleteTransactionTitle'),
                 t('modal.confirmDeleteTransactionMsg')
             );
             if (confirmDelete) {
-                const success = await this.state.deleteTransaction(stockId, txId);
+                const success = await this.#state.deleteTransaction(stockId, txId);
                 if (success) {
-                    const currency = this.state.getActivePortfolio()?.settings.currentCurrency;
+                    const currency = this.#state.getActivePortfolio()?.settings.currentCurrency;
                     if (currency) {
-                        const transactionsBeforeRender = this.state.getTransactions(stockId);
-                        this.view.renderTransactionList(transactionsBeforeRender, currency);
+                        const transactionsBeforeRender = this.#state.getTransactions(stockId);
+                        this.#view.renderTransactionList(transactionsBeforeRender, currency);
                     }
-                    this.view.showToast(t('toast.transactionDeleted'), 'success');
+                    this.#view.showToast(t('toast.transactionDeleted'), 'success');
                     Calculator.clearPortfolioStateCache();
                     return { needsUIUpdate: true };
                 } else {
-                    this.view.showToast(t('toast.transactionDeleteFailed'), 'error');
+                    this.#view.showToast(t('toast.transactionDeleteFailed'), 'error');
                 }
             }
         } else {

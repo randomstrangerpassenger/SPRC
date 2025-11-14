@@ -10,28 +10,34 @@ import { isInputElement } from '../utils';
  * @description 포트폴리오 CRUD 작업 관리
  */
 export class PortfolioManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+
     constructor(
-        private state: PortfolioState,
-        private view: PortfolioView
-    ) {}
+        state: PortfolioState,
+        view: PortfolioView
+    ) {
+        this.#state = state;
+        this.#view = view;
+    }
 
     /**
      * @description 새 포트폴리오 생성
      */
     async handleNewPortfolio(): Promise<void> {
-        let name = await this.view.showPrompt(
+        let name = await this.#view.showPrompt(
             t('modal.promptNewPortfolioNameTitle'),
             t('modal.promptNewPortfolioNameMsg')
         );
 
         if (name) {
             name = DOMPurify.sanitize(name);
-            await this.state.createNewPortfolio(name);
-            this.view.renderPortfolioSelector(
-                this.state.getAllPortfolios(),
-                this.state.getActivePortfolio()?.id || ''
+            await this.#state.createNewPortfolio(name);
+            this.#view.renderPortfolioSelector(
+                this.#state.getAllPortfolios(),
+                this.#state.getActivePortfolio()?.id || ''
             );
-            this.view.showToast(t('toast.portfolioCreated', { name }), 'success');
+            this.#view.showToast(t('toast.portfolioCreated', { name }), 'success');
             return; // 신호: fullRender 필요
         }
     }
@@ -40,10 +46,10 @@ export class PortfolioManager {
      * @description 포트폴리오 이름 변경
      */
     async handleRenamePortfolio(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        let newName = await this.view.showPrompt(
+        let newName = await this.#view.showPrompt(
             t('modal.promptRenamePortfolioTitle'),
             t('modal.promptRenamePortfolioMsg'),
             activePortfolio.name
@@ -51,9 +57,9 @@ export class PortfolioManager {
 
         if (newName && newName.trim()) {
             newName = DOMPurify.sanitize(newName.trim());
-            await this.state.renamePortfolio(activePortfolio.id, newName);
-            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
-            this.view.showToast(t('toast.portfolioRenamed'), 'success');
+            await this.#state.renamePortfolio(activePortfolio.id, newName);
+            this.#view.renderPortfolioSelector(this.#state.getAllPortfolios(), activePortfolio.id);
+            this.#view.showToast(t('toast.portfolioRenamed'), 'success');
         }
     }
 
@@ -61,29 +67,29 @@ export class PortfolioManager {
      * @description 포트폴리오 삭제
      */
     async handleDeletePortfolio(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        if (Object.keys(this.state.getAllPortfolios()).length <= 1) {
-            this.view.showToast(t('toast.lastPortfolioDeleteError'), 'error');
+        if (Object.keys(this.#state.getAllPortfolios()).length <= 1) {
+            this.#view.showToast(t('toast.lastPortfolioDeleteError'), 'error');
             return;
         }
 
-        const confirmDelete = await this.view.showConfirm(
+        const confirmDelete = await this.#view.showConfirm(
             t('modal.confirmDeletePortfolioTitle'),
             t('modal.confirmDeletePortfolioMsg', { name: activePortfolio.name })
         );
 
         if (confirmDelete) {
             const deletedId = activePortfolio.id;
-            if (await this.state.deletePortfolio(deletedId)) {
-                const newActivePortfolio = this.state.getActivePortfolio();
+            if (await this.#state.deletePortfolio(deletedId)) {
+                const newActivePortfolio = this.#state.getActivePortfolio();
                 if (newActivePortfolio) {
-                    this.view.renderPortfolioSelector(
-                        this.state.getAllPortfolios(),
+                    this.#view.renderPortfolioSelector(
+                        this.#state.getAllPortfolios(),
                         newActivePortfolio.id
                     );
-                    this.view.showToast(t('toast.portfolioDeleted'), 'success');
+                    this.#view.showToast(t('toast.portfolioDeleted'), 'success');
                     return; // 신호: fullRender 필요
                 }
             }
@@ -98,17 +104,17 @@ export class PortfolioManager {
         let targetId = newId;
 
         if (!targetId) {
-            targetId = this.view.getPortfolioSelectorValue() || '';
+            targetId = this.#view.getPortfolioSelectorValue() || '';
         }
 
         if (targetId) {
-            await this.state.setActivePortfolioId(targetId);
-            const activePortfolio = this.state.getActivePortfolio();
+            await this.#state.setActivePortfolioId(targetId);
+            const activePortfolio = this.#state.getActivePortfolio();
             if (activePortfolio) {
-                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+                this.#view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+                this.#view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.#view.dom;
                 if (isInputElement(exchangeRateInput)) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }

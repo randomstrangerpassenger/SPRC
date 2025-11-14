@@ -72,84 +72,93 @@ export class Calculator {
      * @important stock.currentPrice는 항상 USD로 저장되어 있어야 합니다.
      * 통화 표시는 calculatePortfolioState에서 환율을 적용하여 처리합니다.
      */
+    /**
+     * @description Aggregate transaction data (buy/sell/dividend)
+     */
+    private static aggregateTransactions(
+        transactions: Transaction[]
+    ): Pick<
+        CalculatedStockMetrics,
+        | 'totalBuyQuantity'
+        | 'totalSellQuantity'
+        | 'totalBuyAmount'
+        | 'totalSellAmount'
+        | 'totalDividends'
+    > {
+        const result = {
+            totalBuyQuantity: DECIMAL_ZERO,
+            totalSellQuantity: DECIMAL_ZERO,
+            totalBuyAmount: DECIMAL_ZERO,
+            totalSellAmount: DECIMAL_ZERO,
+            totalDividends: DECIMAL_ZERO,
+        };
+
+        for (const tx of transactions) {
+            const txQuantity = new Decimal(tx.quantity || 0);
+            const txPrice = new Decimal(tx.price || 0);
+
+            if (tx.type === 'buy') {
+                result.totalBuyQuantity = result.totalBuyQuantity.plus(txQuantity);
+                result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
+            } else if (tx.type === 'sell') {
+                result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
+                result.totalSellAmount = result.totalSellAmount.plus(txQuantity.times(txPrice));
+            } else if (tx.type === 'dividend') {
+                result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * @description Calculate stock indicators (quantity, avgBuyPrice, profitLoss, etc.)
+     */
+    private static calculateStockIndicators(
+        aggregated: ReturnType<typeof Calculator.aggregateTransactions>,
+        currentPrice: Decimal
+    ): CalculatedStockMetrics {
+        const quantity = Decimal.max(0, aggregated.totalBuyQuantity.minus(aggregated.totalSellQuantity));
+
+        const avgBuyPrice = aggregated.totalBuyQuantity.greaterThan(0)
+            ? aggregated.totalBuyAmount.div(aggregated.totalBuyQuantity)
+            : DECIMAL_ZERO;
+
+        const realizedPL =
+            aggregated.totalSellQuantity.greaterThan(0) && avgBuyPrice.greaterThan(0)
+                ? aggregated.totalSellAmount.minus(aggregated.totalSellQuantity.times(avgBuyPrice))
+                : DECIMAL_ZERO;
+
+        const totalRealizedPL = realizedPL.plus(aggregated.totalDividends);
+        const currentAmount = quantity.times(currentPrice);
+        const originalCostOfHolding = quantity.times(avgBuyPrice);
+        const profitLoss = currentAmount.minus(originalCostOfHolding);
+        const profitLossRate = originalCostOfHolding.isZero()
+            ? DECIMAL_ZERO
+            : profitLoss.div(originalCostOfHolding).times(DECIMAL_HUNDRED);
+
+        return {
+            ...aggregated,
+            quantity,
+            avgBuyPrice,
+            realizedPL,
+            totalRealizedPL,
+            currentAmount,
+            currentAmountUSD: DECIMAL_ZERO,
+            currentAmountKRW: DECIMAL_ZERO,
+            profitLoss,
+            profitLossRate,
+        };
+    }
+
     static calculateStockMetrics(stock: Stock): CalculatedStockMetrics {
         try {
-            const result: CalculatedStockMetrics = {
-                totalBuyQuantity: DECIMAL_ZERO,
-                totalSellQuantity: DECIMAL_ZERO,
-                quantity: DECIMAL_ZERO,
-                totalBuyAmount: DECIMAL_ZERO,
-                totalSellAmount: DECIMAL_ZERO,
-                currentAmount: DECIMAL_ZERO,
-                currentAmountUSD: DECIMAL_ZERO,
-                currentAmountKRW: DECIMAL_ZERO,
-                avgBuyPrice: DECIMAL_ZERO,
-                profitLoss: DECIMAL_ZERO,
-                profitLossRate: DECIMAL_ZERO,
-                totalDividends: DECIMAL_ZERO,
-                realizedPL: DECIMAL_ZERO,
-                totalRealizedPL: DECIMAL_ZERO,
-            };
-
             const currentPrice = new Decimal(stock.currentPrice || 0);
-
-            // 매수/매도 수량 및 금액 합산, 배당금 집계
-            for (const tx of stock.transactions) {
-                const txQuantity = new Decimal(tx.quantity || 0);
-                const txPrice = new Decimal(tx.price || 0);
-
-                if (tx.type === 'buy') {
-                    result.totalBuyQuantity = result.totalBuyQuantity.plus(txQuantity);
-                    result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
-                } else if (tx.type === 'sell') {
-                    result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
-                    result.totalSellAmount = result.totalSellAmount.plus(txQuantity.times(txPrice));
-                } else if (tx.type === 'dividend') {
-                    // 배당금: quantity 필드에 배당금액 저장, price는 1로 가정
-                    result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
-                }
-            }
-
-            // 순 보유 수량
-            result.quantity = Decimal.max(
-                0,
-                result.totalBuyQuantity.minus(result.totalSellQuantity)
-            );
-
-            // 평균 매입 단가 (totalBuyAmount / totalBuyQuantity)
-            if (result.totalBuyQuantity.greaterThan(0)) {
-                result.avgBuyPrice = result.totalBuyAmount.div(result.totalBuyQuantity);
-            }
-
-            // 실현 손익 계산 (매도금액 - 매도수량 × 평균매입가)
-            if (result.totalSellQuantity.greaterThan(0) && result.avgBuyPrice.greaterThan(0)) {
-                const costBasisOfSold = result.totalSellQuantity.times(result.avgBuyPrice);
-                result.realizedPL = result.totalSellAmount.minus(costBasisOfSold);
-            }
-
-            // 총 실현 손익 (실현손익 + 배당금)
-            result.totalRealizedPL = result.realizedPL.plus(result.totalDividends);
-
-            // 현재 가치 (quantity * currentPrice)
-            result.currentAmount = result.quantity.times(currentPrice);
-
-            // 미실현 손익 계산 (currentAmount - (quantity * avgBuyPrice))
-            const originalCostOfHolding = result.quantity.times(result.avgBuyPrice);
-            result.profitLoss = result.currentAmount.minus(originalCostOfHolding);
-
-            // 미실현 손익률
-            if (originalCostOfHolding.isZero()) {
-                result.profitLossRate = DECIMAL_ZERO;
-            } else {
-                result.profitLossRate = result.profitLoss
-                    .div(originalCostOfHolding)
-                    .times(DECIMAL_HUNDRED);
-            }
-
+            const aggregated = Calculator.aggregateTransactions(stock.transactions);
+            const result = Calculator.calculateStockIndicators(aggregated, currentPrice);
             return result;
         } catch (error) {
             ErrorService.handle(error as Error, 'calculateStockMetrics');
-            // 에러를 상위로 전파 (잘못된 계산 결과를 숨기지 않음)
             throw new Error(
                 `Failed to calculate metrics for stock: ${error instanceof Error ? error.message : 'Unknown error'}`
             );

@@ -12,43 +12,51 @@ import type { PortfolioSnapshot } from '../types';
  * Controller에서 분리된 스냅샷 관련 로직을 담당
  */
 export class SnapshotManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+    #snapshotRepo: SnapshotRepository;
+
     constructor(
-        private state: PortfolioState,
-        private view: PortfolioView,
-        private snapshotRepo: SnapshotRepository
-    ) {}
+        state: PortfolioState,
+        view: PortfolioView,
+        snapshotRepo: SnapshotRepository
+    ) {
+        this.#state = state;
+        this.#view = view;
+        this.#snapshotRepo = snapshotRepo;
+    }
 
     /**
      * @description 성과 히스토리 표시
      */
     async handleShowPerformanceHistory(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
         try {
-            const snapshots = await this.snapshotRepo.getByPortfolioId(activePortfolio.id);
+            const snapshots = await this.#snapshotRepo.getByPortfolioId(activePortfolio.id);
 
             if (snapshots.length === 0) {
-                this.view.showToast(
+                this.#view.showToast(
                     '성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.',
                     'info'
                 );
                 return;
             }
 
-            this.view.resultsRenderer.showPerformanceHistoryView(true);
+            this.#view.resultsRenderer.showPerformanceHistoryView(true);
 
             const ChartClass = await ChartLoaderService.getChart();
-            await this.view.displayPerformanceHistory(
+            await this.#view.displayPerformanceHistory(
                 ChartClass,
                 snapshots,
                 activePortfolio.settings.currentCurrency
             );
 
-            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+            this.#view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
         } catch (error) {
             logger.error('Failed to display performance history', 'SnapshotManager', error);
-            this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
+            this.#view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
         }
     }
 
@@ -56,27 +64,27 @@ export class SnapshotManager {
      * @description 스냅샷 목록 표시
      */
     async handleShowSnapshotList(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
         try {
-            const snapshots = await this.snapshotRepo.getByPortfolioId(activePortfolio.id);
+            const snapshots = await this.#snapshotRepo.getByPortfolioId(activePortfolio.id);
 
             if (snapshots.length === 0) {
-                this.view.showToast(
+                this.#view.showToast(
                     '저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.',
                     'info'
                 );
                 return;
             }
 
-            this.view.resultsRenderer.showSnapshotListView(true);
+            this.#view.resultsRenderer.showSnapshotListView(true);
             this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
 
-            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+            this.#view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
         } catch (error) {
             logger.error('Failed to display snapshot list', 'SnapshotManager', error);
-            this.view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
+            this.#view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
         }
     }
 
@@ -84,7 +92,7 @@ export class SnapshotManager {
      * @description 스냅샷 목록 렌더링
      */
     private renderSnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
-        this.view.resultsRenderer.displaySnapshotList(snapshots, currency);
+        this.#view.resultsRenderer.displaySnapshotList(snapshots, currency);
     }
 
     /**
@@ -92,7 +100,7 @@ export class SnapshotManager {
      */
     async getSnapshotCount(portfolioId: string): Promise<number> {
         try {
-            const snapshots = await this.snapshotRepo.getByPortfolioId(portfolioId);
+            const snapshots = await this.#snapshotRepo.getByPortfolioId(portfolioId);
             return snapshots.length;
         } catch (error) {
             logger.error('Failed to get snapshot count', 'SnapshotManager', error);
@@ -105,7 +113,7 @@ export class SnapshotManager {
      */
     async getLatestSnapshot(portfolioId: string): Promise<PortfolioSnapshot | null> {
         try {
-            return await this.snapshotRepo.getLatest(portfolioId);
+            return await this.#snapshotRepo.getLatest(portfolioId);
         } catch (error) {
             logger.error('Failed to get latest snapshot', 'SnapshotManager', error);
             return null;
@@ -117,7 +125,7 @@ export class SnapshotManager {
      */
     async deleteSnapshots(portfolioId: string): Promise<boolean> {
         try {
-            await this.snapshotRepo.deleteByPortfolioId(portfolioId);
+            await this.#snapshotRepo.deleteByPortfolioId(portfolioId);
             logger.info(`Snapshots deleted for portfolio ${portfolioId}`, 'SnapshotManager');
             return true;
         } catch (error) {

@@ -42,13 +42,20 @@ type FieldHandler = (
  * @description 주식 추가, 삭제, 수정 관리
  */
 export class StockManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+    #debouncedSave: () => void;
     #fieldHandlers: Map<string, FieldHandler>;
 
     constructor(
-        private state: PortfolioState,
-        private view: PortfolioView,
-        private debouncedSave: () => void
+        state: PortfolioState,
+        view: PortfolioView,
+        debouncedSave: () => void
     ) {
+        this.#state = state;
+        this.#view = view;
+        this.#debouncedSave = debouncedSave;
+
         // Initialize field-specific handlers using Strategy Pattern
         this.#fieldHandlers = new Map<string, FieldHandler>([
             ['manualAmount', this.handleManualAmountChangeStrategy.bind(this)],
@@ -63,7 +70,7 @@ export class StockManager {
      * @description 새 주식 추가
      */
     async handleAddNewStock(): Promise<{ needsFullRender: boolean; stockId?: string }> {
-        const newStock = await this.state.addNewStock();
+        const newStock = await this.#state.addNewStock();
         return { needsFullRender: true, stockId: newStock?.id };
     }
 
@@ -72,19 +79,19 @@ export class StockManager {
      * @param stockId - 주식 ID
      */
     async handleDeleteStock(stockId: string): Promise<{ needsFullRender: boolean }> {
-        const stockName = this.state.getStockById(stockId)?.name || t('defaults.unknownStock');
-        const confirmDelete = await this.view.showConfirm(
+        const stockName = this.#state.getStockById(stockId)?.name || t('defaults.unknownStock');
+        const confirmDelete = await this.#view.showConfirm(
             t('modal.confirmDeleteStockTitle'),
             t('modal.confirmDeleteStockMsg', { name: stockName })
         );
 
         if (confirmDelete) {
-            if (await this.state.deleteStock(stockId)) {
+            if (await this.#state.deleteStock(stockId)) {
                 Calculator.clearPortfolioStateCache();
-                this.view.showToast(t('toast.transactionDeleted'), 'success');
+                this.#view.showToast(t('toast.transactionDeleted'), 'success');
                 return { needsFullRender: true };
             } else {
-                this.view.showToast(t('toast.lastStockDeleteError'), 'error');
+                this.#view.showToast(t('toast.lastStockDeleteError'), 'error');
             }
         }
         return { needsFullRender: false };
@@ -108,19 +115,19 @@ export class StockManager {
             target.type === 'checkbox' && isInputElement(target) ? target.checked : target.value;
 
         const { isValid, value } = this.validateFieldValue(field, rawValue);
-        this.view.toggleInputValidation(target as HTMLInputElement, isValid);
+        this.#view.toggleInputValidation(target as HTMLInputElement, isValid);
 
         if (!isValid) {
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
         }
 
-        this.state.updateStockProperty(stockId, field as keyof Stock, value);
+        this.#state.updateStockProperty(stockId, field as keyof Stock, value);
 
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) {
             if (field === 'manualAmount') {
-                this.view.updateStockInVirtualData(stockId, 'manualAmount', value);
-                this.debouncedSave();
+                this.#view.updateStockInVirtualData(stockId, 'manualAmount', value);
+                this.#debouncedSave();
             }
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
         }
@@ -172,8 +179,8 @@ export class StockManager {
         value: string | number | boolean | Decimal,
         _context: FieldHandlerContext
     ): FieldChangeResult {
-        this.view.updateStockInVirtualData(stockId, 'manualAmount', value);
-        this.debouncedSave();
+        this.#view.updateStockInVirtualData(stockId, 'manualAmount', value);
+        this.#debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
@@ -185,8 +192,8 @@ export class StockManager {
         value: string | number | boolean | Decimal,
         context: FieldHandlerContext
     ): FieldChangeResult {
-        this.view.updateStockInVirtualData(stockId, context.field, value);
-        this.debouncedSave();
+        this.#view.updateStockInVirtualData(stockId, context.field, value);
+        this.#debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
@@ -198,10 +205,10 @@ export class StockManager {
         value: string | number | boolean | Decimal,
         context: FieldHandlerContext
     ): FieldChangeResult {
-        this.view.updateStockInVirtualData(stockId, 'sector', value);
+        this.#view.updateStockInVirtualData(stockId, 'sector', value);
         // 섹터는 메타데이터이므로 기존 계산된 메트릭을 재사용하고 섹터 분석만 재집계
         this.updateSectorAnalysis(context.activePortfolio, true);
-        this.debouncedSave();
+        this.#debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
@@ -235,13 +242,13 @@ export class StockManager {
             calculatedStock.calculated = calculatedMetrics;
 
             // 뷰 업데이트
-            this.view.updateSingleStockRow(stockId, calculatedMetrics);
+            this.#view.updateSingleStockRow(stockId, calculatedMetrics);
 
             // 기존 계산된 메트릭을 사용하여 섹터 분석만 재집계
             this.updateSectorAnalysis(context.activePortfolio, true);
         }
 
-        this.debouncedSave();
+        this.#debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
@@ -264,14 +271,14 @@ export class StockManager {
         });
         activePortfolio.portfolioData = calculatedState.portfolioData as Stock[];
 
-        this.view.updateVirtualTableData(calculatedState.portfolioData);
+        this.#view.updateVirtualTableData(calculatedState.portfolioData);
 
         const newRatioSum = getRatioSum(activePortfolio.portfolioData);
-        this.view.updateRatioSum(newRatioSum.toNumber());
+        this.#view.updateRatioSum(newRatioSum.toNumber());
 
         this.updateSectorAnalysis(activePortfolio, true);
 
-        this.debouncedSave();
+        this.#debouncedSave();
 
         // isFixedBuyEnabled 특수 처리
         if (field === 'isFixedBuyEnabled') {
@@ -280,8 +287,8 @@ export class StockManager {
                 amountInput.disabled = !value;
                 if (!value) {
                     amountInput.value = '0';
-                    this.state.updateStockProperty(stockId, 'fixedBuyAmount', 0);
-                    this.debouncedSave();
+                    this.#state.updateStockProperty(stockId, 'fixedBuyAmount', 0);
+                    this.#debouncedSave();
                 }
             }
         }
@@ -310,7 +317,7 @@ export class StockManager {
             portfolioData,
             activePortfolio.settings.currentCurrency
         );
-        this.view.displaySectorAnalysis(
+        this.#view.displaySectorAnalysis(
             generateSectorAnalysisHTML(newSectorData, activePortfolio.settings.currentCurrency)
         );
     }
