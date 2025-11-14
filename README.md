@@ -4,6 +4,108 @@
 
 ## 최근 업데이트
 
+### [2025-11-14] 리팩토링 로드맵 완료 - 안정성 및 아키텍처 개선
+
+전체 코드베이스에 대한 포괄적인 리팩토링을 완료했습니다. 이번 업데이트는 **안정성 확보 → 구조 개선 → 아키텍처 진화**의 3단계 접근 방식을 따랐습니다.
+
+#### Phase 3.3: 데이터 영속성 추상화 (Repository 패턴)
+
+**목적**: 상태 관리 로직과 데이터 영속성 로직을 분리하여 관심사 분리(SoC)와 테스트 용이성 향상
+
+**주요 변경사항:**
+
+1. **PortfolioRepository** (신규)
+   - 포트폴리오 및 메타데이터 영속성 관리
+   - Decimal ↔ number 변환 자동 처리 (IndexedDB 호환)
+   - LocalStorage 마이그레이션 지원
+   - 메서드: `loadMeta()`, `saveMeta()`, `loadPortfolios()`, `savePortfolios()`, `deletePortfolio()`
+
+2. **SnapshotRepository** (신규)
+   - 포트폴리오 스냅샷 영속성 관리
+   - 성과 히스토리 데이터 저장/조회
+   - 메서드: `loadAll()`, `getByPortfolioId()`, `add()`, `deleteByPortfolioId()`, `getLatest()`, `getByDateRange()`
+
+3. **state.ts 개선**
+   - 순수 인메모리 상태 관리에 집중
+   - 모든 영속성 작업을 PortfolioRepository에 위임
+   - 단일 책임 원칙(SRP) 준수
+
+**효과:**
+- ✅ 명확한 계층 분리: State ↔ Repository ↔ DataStore
+- ✅ 의존성 주입으로 테스트 용이성 향상
+- ✅ 저장소 백엔드 교체 시 Repository만 수정하면 됨
+- ✅ 완전한 테스트 커버리지 확보
+
+#### Phase 3.1: Controller "God Class" 분리
+
+**목적**: Controller의 비대화 문제 해결 - 단일 책임 원칙(SRP) 적용
+
+**주요 변경사항:**
+
+1. **RiskAnalyzerService** (신규 서비스)
+   - 리스크 분석 로직을 Controller에서 분리
+   - 메서드: `analyzeRebalancingNeeds()`, `analyzeRiskWarnings()`, `formatRiskWarnings()`
+   - 구조화된 분석 결과 반환 (Toast 표시는 Controller에서 처리)
+   - 완전한 단위 테스트 커버리지
+
+2. **SnapshotManager** (신규 컨트롤러 모듈)
+   - 스냅샷 관련 로직을 Controller에서 분리
+   - 성과 히스토리 및 스냅샷 목록 관리
+   - 메서드: `handleShowPerformanceHistory()`, `handleShowSnapshotList()`, `getSnapshotCount()`, `getLatestSnapshot()`
+   - SnapshotRepository 의존성 주입
+
+3. **controller.ts 정리**
+   - ~150 라인 감소
+   - 리스크 분석 및 스냅샷 로직 제거
+   - 불필요한 import 제거 (`PortfolioSnapshot`, `ChartLoaderService`, `THRESHOLDS`)
+
+**효과:**
+- ✅ Controller 복잡도 대폭 감소
+- ✅ 비즈니스 로직의 독립적 테스트 가능
+- ✅ 코드 재사용성 향상
+
+#### Phase 3.2: 선언형 이벤트 바인딩 시스템
+
+**목적**: 반복적인 이벤트 바인딩 코드를 제거하고 유지보수성 향상
+
+**주요 변경사항:**
+
+1. **EventBindingTypes** (신규 모듈)
+   - `EventBindingConfig` 인터페이스 정의
+   - `bindEvent()` 헬퍼: 공통 패턴(`needsFullRender`, `needsUIUpdate` 등) 자동 처리
+   - `bindEvents()`: 다중 바인딩 적용
+
+2. **ControllerEventBinder 리팩토링**
+   - 28개 이벤트 바인딩을 선언형 설정 배열로 변환
+   - `autoPostAction: true`로 render/update 자동 처리
+   - `customPostAction`으로 복잡한 후처리 지원
+   - 복잡한 로직은 별도 함수로 추출 (`bindPortfolioBodyClick`)
+
+**Before:**
+```typescript
+controller.view.on('mainModeChanged', async (data) => {
+    const result = await controller.calculationManager.handleMainModeChange(data.mode);
+    if (result.needsFullRender) controller.fullRender();
+});
+```
+
+**After:**
+```typescript
+{
+    event: 'mainModeChanged',
+    handler: async (data) => controller.calculationManager.handleMainModeChange(data.mode),
+    autoPostAction: true,  // Automatically handles needsFullRender
+},
+```
+
+**효과:**
+- ✅ DRY 원칙 적용 (중복 제거)
+- ✅ 설정 배열이 자체 문서화 역할
+- ✅ 이벤트 추가/수정 용이
+- ✅ 타입 안정성 유지
+
+---
+
 ### [2025-11-03] 간단 계산 모드 스크롤 시 입력값 초기화 문제 해결
 
 #### 문제 상황
@@ -197,8 +299,16 @@ SPRC/
 │   ├── main.ts                 # 애플리케이션 진입점
 │   ├── types.ts                # TypeScript 타입 정의
 │   ├── calculator.ts           # 계산 로직 (Decimal.js 활용)
-│   ├── state.ts                # 상태 관리 (IndexedDB)
+│   ├── state.ts                # 상태 관리 (인메모리)
 │   ├── utils.ts                # 유틸리티 함수
+│   │
+│   ├── state/                  # State Layer (데이터 영속성)
+│   │   ├── PortfolioRepository.ts      # 포트폴리오 영속성 관리
+│   │   ├── PortfolioRepository.test.ts # Repository 테스트
+│   │   ├── SnapshotRepository.ts       # 스냅샷 영속성 관리
+│   │   ├── SnapshotRepository.test.ts  # Repository 테스트
+│   │   ├── helpers.ts                  # 상태 관련 헬퍼 함수
+│   │   └── validation.ts               # 데이터 검증 및 업그레이드
 │   │
 │   ├── view/                   # View Layer (UI 렌더링)
 │   │   ├── view.ts            # 메인 View 클래스 (조정자)
@@ -213,8 +323,19 @@ SPRC/
 │   │   ├── StockManager.ts        # 종목 관리
 │   │   ├── TransactionManager.ts  # 거래 내역 관리
 │   │   ├── CalculationManager.ts  # 계산 및 API 호출
-│   │   └── DataManager.ts         # 데이터 가져오기/내보내기
+│   │   ├── DataManager.ts         # 데이터 가져오기/내보내기
+│   │   ├── SnapshotManager.ts     # 스냅샷 및 성과 히스토리 관리
+│   │   ├── EventBindingTypes.ts   # 선언형 이벤트 바인딩 시스템
+│   │   └── ControllerEventBinder.ts  # Controller 이벤트 바인딩
 │   │
+│   ├── services/               # Services Layer (비즈니스 로직)
+│   │   ├── Logger.ts           # 로깅 서비스
+│   │   ├── RiskAnalyzerService.ts      # 리스크 분석 서비스
+│   │   ├── RiskAnalyzerService.test.ts # 서비스 테스트
+│   │   ├── CalculatorWorkerService.ts  # Web Worker 계산 서비스
+│   │   └── ChartLoaderService.ts       # Chart.js 동적 로딩
+│   │
+│   ├── dataStore.ts            # IndexedDB 추상화
 │   ├── apiService.ts           # API 호출 (재시도 로직, 에러 처리)
 │   ├── a11yHelpers.ts          # 접근성 유틸리티 (WCAG 2.0)
 │   ├── i18nEnhancements.ts     # 국제화 (Intl API)
@@ -224,20 +345,42 @@ SPRC/
 ├── e2e/
 │   └── app.spec.ts             # E2E 테스트 (Playwright)
 ├── PERFORMANCE.md              # 성능 최적화 가이드
+├── ARCHITECTURE.md             # 아키텍처 문서
 └── package.json                # 프로젝트 의존성
 ```
 
 ### 아키텍처 개요
 
-이 프로젝트는 **모듈화된 MVC 아키텍처**를 따릅니다:
+이 프로젝트는 **개선된 MVC + Repository 패턴**을 따릅니다:
 
 - **View Layer**: UI 렌더링, 이벤트 발행 (비즈니스 로직 없음)
   - 위임 패턴으로 역할 분리 (EventEmitter, ModalManager, VirtualScrollManager, ResultsRenderer)
 
 - **Controller Layer**: 비즈니스 로직, API 호출, 상태 업데이트
-  - 책임별로 모듈 분리 (Portfolio, Stock, Transaction, Calculation, Data 관리자)
+  - 책임별로 모듈 분리 (Portfolio, Stock, Transaction, Calculation, Data, Snapshot 관리자)
+  - 선언형 이벤트 바인딩 시스템으로 중복 제거
 
-- **Model Layer**: 상태 관리 (IndexedDB), 계산 로직 (Calculator)
+- **Services Layer**: 재사용 가능한 비즈니스 로직
+  - RiskAnalyzerService: 리스크 분석 (단일 종목/섹터 집중도, 리밸런싱 필요 여부)
+  - CalculatorWorkerService: Web Worker를 통한 계산 오프로딩
+  - ChartLoaderService: Chart.js 지연 로딩
+
+- **State Layer**: 데이터 관리
+  - **PortfolioState**: 인메모리 상태 관리 (SSOT)
+  - **PortfolioRepository**: 포트폴리오 영속성 (IndexedDB)
+  - **SnapshotRepository**: 스냅샷 영속성 (성과 히스토리)
+  - **DataStore**: 저수준 IndexedDB 작업
+
+- **Model Layer**: 계산 및 전략 로직
+  - Calculator: 포트폴리오 계산 (Decimal.js 활용)
+  - Calculation Strategies: 리밸런싱 전략 (Add/Sell/Simple)
+
+**데이터 흐름:**
+```
+Controller → State (인메모리) → Repository (영속성) → DataStore (IndexedDB)
+          ↓
+          Services (비즈니스 로직)
+```
 
 자세한 내용은 [ARCHITECTURE.md](./ARCHITECTURE.md)를 참고하세요.
 
@@ -246,8 +389,9 @@ SPRC/
 - 포트폴리오 다중 관리
 - 추가 매수/매도 리밸런싱 계산
 - **간단 계산 모드** (거래 내역 없이 금액만 입력하여 목표 비율 리밸런싱)
-- 섹터별 분석
+- 섹터별 분석 및 리스크 경고
 - 거래 내역 관리 (수량/금액 입력 모드 지원)
+- 성과 히스토리 및 스냅샷 관리
 - KRW/USD 통화 전환
 - 현재가 자동 조회 (API 연동)
 - 다크 모드 지원
@@ -260,10 +404,16 @@ SPRC/
 - **Vite** - 빌드 도구 및 개발 서버
 - **Decimal.js** - 정밀 계산 (부동소수점 오류 방지)
 
+### 아키텍처 패턴
+- **MVC + Repository 패턴** - 관심사 분리 및 테스트 용이성
+- **Dependency Injection** - 느슨한 결합 및 모듈화
+- **Event-Driven Architecture** - 선언형 이벤트 바인딩 시스템
+
 ### UI & 성능
 - **Chart.js** - 데이터 시각화 (lazy loading)
 - **Virtual Scrolling** - 대량 데이터 렌더링 최적화
 - **RequestAnimationFrame** - 부드러운 UI 업데이트
+- **Web Workers** - 계산 오프로딩 (메인 스레드 블로킹 방지)
 
 ### 보안 & 접근성
 - **DOMPurify** - XSS 방지
@@ -273,8 +423,12 @@ SPRC/
 - **Intl API** - 로케일 기반 숫자/날짜/통화 포맷팅
 - **API Service** - 재시도 로직, 구조화된 에러 처리
 
+### 데이터 저장
+- **IndexedDB** - 클라이언트 사이드 데이터베이스
+- **Repository 패턴** - 데이터 접근 추상화
+
 ### 테스팅
-- **Vitest** - 유닛 테스트
+- **Vitest** - 유닛 테스트 (Services, Repositories)
 - **Playwright** - E2E 테스트
 
 ## 라이선스

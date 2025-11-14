@@ -2,19 +2,18 @@
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
-import { DataStore } from './dataStore';
 import { debounce, getRatioSum, isInputElement } from './utils';
-import { CONFIG, DECIMAL_ZERO, THRESHOLDS } from './constants';
+import { CONFIG, DECIMAL_ZERO } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
-import type { PortfolioSnapshot } from './types';
+import { SnapshotRepository } from './state/SnapshotRepository';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
-import { ChartLoaderService } from './services/ChartLoaderService';
 import { logger } from './services/Logger';
+import { RiskAnalyzerService } from './services/RiskAnalyzerService';
 
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
@@ -23,6 +22,7 @@ import { TransactionManager } from './controller/TransactionManager';
 import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
 import { AppInitializer } from './controller/AppInitializer';
+import { SnapshotManager } from './controller/SnapshotManager';
 import { bindControllerEvents as bindControllerEventsExternal } from './controller/ControllerEventBinder';
 
 /**
@@ -40,7 +40,11 @@ export class PortfolioController {
     transactionManager: TransactionManager;
     calculationManager: CalculationManager;
     dataManager: DataManager;
+    snapshotManager: SnapshotManager;
     private appInitializer: AppInitializer;
+
+    // Repository 인스턴스
+    private snapshotRepo: SnapshotRepository;
 
     private calculatorWorker = getCalculatorWorkerService();
 
@@ -52,6 +56,9 @@ export class PortfolioController {
         this.view = view;
         this.debouncedSave = debounce(() => this.state.saveActivePortfolio(), 500);
 
+        // Repository 인스턴스 생성
+        this.snapshotRepo = new SnapshotRepository();
+
         // 매니저 인스턴스 생성
         this.portfolioManager = new PortfolioManager(this.state, this.view);
         this.stockManager = new StockManager(this.state, this.view, this.debouncedSave);
@@ -60,9 +67,11 @@ export class PortfolioController {
             this.state,
             this.view,
             this.debouncedSave,
-            this.getInvestmentAmountInKRW.bind(this)
+            this.getInvestmentAmountInKRW.bind(this),
+            this.snapshotRepo
         );
         this.dataManager = new DataManager(this.state, this.view);
+        this.snapshotManager = new SnapshotManager(this.state, this.view, this.snapshotRepo);
         this.appInitializer = new AppInitializer(this.state, this.view);
 
         // 초기화 에러 처리
@@ -178,17 +187,28 @@ export class PortfolioController {
 
         // 5. 전체 렌더링 시에만 경고 및 UI 업데이트
         if (mode === 'full') {
-            this.checkRebalancingNeeds(
+            // 리밸런싱 필요 여부 분석
+            const rebalancingAnalysis = RiskAnalyzerService.analyzeRebalancingNeeds(
                 calculatedState.portfolioData,
                 calculatedState.currentTotal,
                 activePortfolio.settings.rebalancingTolerance
             );
 
-            this.checkRiskWarnings(
+            if (rebalancingAnalysis.hasRebalancingNeeds && rebalancingAnalysis.message) {
+                this.view.showToast(rebalancingAnalysis.message, 'info');
+            }
+
+            // 리스크 경고 분석
+            const riskAnalysis = RiskAnalyzerService.analyzeRiskWarnings(
                 calculatedState.portfolioData,
                 calculatedState.currentTotal,
                 sectorData
             );
+
+            const riskMessage = RiskAnalyzerService.formatRiskWarnings(riskAnalysis);
+            if (riskMessage) {
+                this.view.showToast(riskMessage, 'warning');
+            }
 
             this.view.updateMainModeUI(activePortfolio.settings.mainMode);
         }
@@ -199,45 +219,6 @@ export class PortfolioController {
     }
 
     // === 기타 핸들러 ===
-
-    /**
-     * @description 리밸런싱 필요 여부 확인
-     */
-    checkRebalancingNeeds(
-        portfolioData: import('./types').CalculatedStock[],
-        currentTotal: Decimal,
-        rebalancingTolerance?: number
-    ): void {
-        const tolerance = rebalancingTolerance ?? 5;
-        if (tolerance <= 0) return; // 허용 오차가 0이면 체크 안 함
-
-        const currentTotalDec = new Decimal(currentTotal);
-        if (currentTotalDec.isZero()) return;
-
-        const stocksNeedingRebalancing: string[] = [];
-
-        for (const stock of portfolioData) {
-            const currentAmount = stock.calculated?.currentAmount;
-            if (!currentAmount) continue;
-
-            const currentAmountDec = new Decimal(currentAmount);
-            const currentRatio = currentAmountDec.div(currentTotalDec).times(100);
-            const targetRatio = new Decimal(stock.targetRatio ?? 0);
-            const diff = currentRatio.minus(targetRatio).abs();
-
-            if (diff.greaterThan(tolerance)) {
-                stocksNeedingRebalancing.push(
-                    `${stock.name}: 현재 ${currentRatio.toFixed(1)}% (목표 ${targetRatio.toFixed(1)}%)`
-                );
-            }
-        }
-
-        // 경고 메시지 표시
-        if (stocksNeedingRebalancing.length > 0) {
-            const message = `🔔 리밸런싱이 필요한 종목: ${stocksNeedingRebalancing.join(', ')}`;
-            this.view.showToast(message, 'info');
-        }
-    }
 
     /**
      * @description 자산 배분 템플릿 적용 (Strategy Pattern)
@@ -267,116 +248,6 @@ export class PortfolioController {
         this.state.saveActivePortfolio();
         this.fullRender();
         this.view.showToast(`✨ ${templateName} 템플릿이 적용되었습니다!`, 'success');
-    }
-
-    /**
-     * @description 리스크 경고 확인
-     */
-    checkRiskWarnings(
-        portfolioData: import('./types').CalculatedStock[],
-        currentTotal: Decimal,
-        sectorData: import('./types').SectorData[]
-    ): void {
-        const warnings: string[] = [];
-        const currentTotalDec = new Decimal(currentTotal);
-
-        if (currentTotalDec.isZero()) return;
-
-        // 단일 종목 비중 경고
-        for (const stock of portfolioData) {
-            const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
-            const ratio = currentAmount.div(currentTotalDec).times(100);
-
-            if (ratio.greaterThan(THRESHOLDS.SINGLE_STOCK_WARNING)) {
-                warnings.push(`⚠️ ${stock.name}: ${ratio.toFixed(1)}% (단일 종목 비중 높음)`);
-            }
-        }
-
-        // 섹터 집중도 경고
-        for (const sector of sectorData) {
-            const percentage = new Decimal(sector.percentage || 0);
-
-            if (percentage.greaterThan(THRESHOLDS.SECTOR_CONCENTRATION_WARNING)) {
-                warnings.push(
-                    `⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`
-                );
-            }
-        }
-
-        // 경고 메시지 표시
-        if (warnings.length > 0) {
-            const message = `🔍 리스크 경고: ${warnings.join(', ')}`;
-            this.view.showToast(message, 'warning');
-        }
-    }
-
-    /**
-     * @description 성과 히스토리 표시
-     */
-    async handleShowPerformanceHistory(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        try {
-            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
-
-            if (snapshots.length === 0) {
-                this.view.showToast(
-                    '성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.',
-                    'info'
-                );
-                return;
-            }
-
-            this.view.resultsRenderer.showPerformanceHistoryView(true);
-
-            const ChartClass = await ChartLoaderService.getChart();
-            await this.view.displayPerformanceHistory(
-                ChartClass,
-                snapshots,
-                activePortfolio.settings.currentCurrency
-            );
-
-            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
-        } catch (error) {
-            logger.error('Failed to display performance history', 'Controller', error);
-            this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
-        }
-    }
-
-    /**
-     * @description 스냅샷 목록 표시
-     */
-    async handleShowSnapshotList(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) return;
-
-        try {
-            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
-
-            if (snapshots.length === 0) {
-                this.view.showToast(
-                    '저장된 스냅샷이 없습니다. 계산을 실행하여 데이터를 생성하세요.',
-                    'info'
-                );
-                return;
-            }
-
-            this.view.resultsRenderer.showSnapshotListView(true);
-            this.renderSnapshotList(snapshots, activePortfolio.settings.currentCurrency);
-
-            this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
-        } catch (error) {
-            logger.error('Failed to display snapshot list', 'Controller', error);
-            this.view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
-        }
-    }
-
-    /**
-     * @description 스냅샷 목록 렌더링
-     */
-    private renderSnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
-        this.view.resultsRenderer.displaySnapshotList(snapshots, currency);
     }
 
     /**

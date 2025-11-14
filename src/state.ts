@@ -8,17 +8,17 @@ import { generateId } from './utils.ts';
 import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
 import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
 import { validateAndUpgradeData } from './state/validation.ts';
-import { PersistenceRepository } from './state/PersistenceRepository.ts';
+import { PortfolioRepository } from './state/PortfolioRepository.ts';
 import { logger } from './services/Logger.ts';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
     #activePortfolioId: string | null = null;
     #initializationPromise: Promise<void> | null = null;
-    #persistenceRepo: PersistenceRepository;
+    #portfolioRepo: PortfolioRepository;
 
     constructor() {
-        this.#persistenceRepo = new PersistenceRepository();
+        this.#portfolioRepo = new PortfolioRepository();
         this.#initializationPromise = this._initialize();
     }
 
@@ -87,24 +87,24 @@ export class PortfolioState {
     }
 
     /**
-     * @description LocalStorage -> IndexedDB 마이그레이션 (PersistenceRepository 위임)
+     * @description LocalStorage -> IndexedDB 마이그레이션 (PortfolioRepository 위임)
      */
     async _migrateFromLocalStorage(): Promise<boolean> {
-        return await this.#persistenceRepo.migrateFromLocalStorage();
+        return await this.#portfolioRepo.migrateFromLocalStorage();
     }
 
     /**
-     * @description IDB에서 Meta 로드 (PersistenceRepository 위임)
+     * @description IDB에서 Meta 로드 (PortfolioRepository 위임)
      */
     async _loadMeta(): Promise<MetaState | null> {
-        return await this.#persistenceRepo.loadMeta();
+        return await this.#portfolioRepo.loadMeta();
     }
 
     /**
-     * @description IDB에서 Portfolios 로드 (PersistenceRepository 위임)
+     * @description IDB에서 Portfolios 로드 (PortfolioRepository 위임)
      */
     async _loadPortfolios(): Promise<Record<string, Portfolio> | null> {
-        return await this.#persistenceRepo.loadPortfolios();
+        return await this.#portfolioRepo.loadPortfolios();
     }
 
     // Phase 2-2: _validateAndUpgradeData 제거 (state/validation.ts로 이동)
@@ -499,11 +499,11 @@ export class PortfolioState {
     }
 
     async saveMeta(): Promise<void> {
-        await this.#persistenceRepo.saveMeta(this.#activePortfolioId);
+        await this.#portfolioRepo.saveMeta(this.#activePortfolioId);
     }
 
     async savePortfolios(): Promise<void> {
-        await this.#persistenceRepo.savePortfolios(this.#portfolios);
+        await this.#portfolioRepo.savePortfolios(this.#portfolios);
     }
 
     async saveActivePortfolio(): Promise<void> {
