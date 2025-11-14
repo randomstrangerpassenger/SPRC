@@ -224,7 +224,7 @@ export class PortfolioController {
     /**
      * @description 자산 배분 템플릿 적용 (Strategy Pattern)
      */
-    handleApplyTemplate(templateName: string): void {
+    async handleApplyTemplate(templateName: string): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
             this.view.showToast('적용할 종목이 없습니다.', 'warning');
@@ -246,7 +246,7 @@ export class PortfolioController {
         template.apply(stocks);
 
         // 저장 및 UI 업데이트
-        this.state.saveActivePortfolio();
+        await this.state.saveActivePortfolio();
         this.fullRender();
         this.view.showToast(`✨ ${templateName} 템플릿이 적용되었습니다!`, 'success');
     }

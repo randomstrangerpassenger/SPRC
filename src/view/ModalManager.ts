@@ -1,21 +1,12 @@
 // src/view/ModalManager.ts
 import { formatCurrency, escapeHTML, isInputElement } from '../utils';
+import { toNumber } from '../utils/converterUtil';
 import { t } from '../i18n';
 import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
 import { logger } from '../services/Logger';
 import { CSS_CLASSES } from '../constants';
-
-// UI 렌더링용 헬퍼 함수
-/**
- * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
- */
-function toNumber(value: Decimal | number | null | undefined): number {
-    if (value == null) return 0;
-    if (value instanceof Decimal) return value.toNumber();
-    return Number(value);
-}
 
 /**
  * @class ModalManager

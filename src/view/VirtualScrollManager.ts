@@ -1,6 +1,7 @@
 // src/view/VirtualScrollManager.ts
 // 모듈 분리
 import { formatCurrency, escapeHTML, isInputElement } from '../utils';
+import { toNumber } from '../utils/converterUtil';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
 import { UI, BREAKPOINTS } from '../constants';
@@ -8,16 +9,6 @@ import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
 import { LRUCache } from '../cache/LRUCache';
-
-// UI 렌더링용 헬퍼 함수
-/**
- * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
- */
-function toNumber(value: Decimal | number | null | undefined): number {
-    if (value == null) return 0;
-    if (value instanceof Decimal) return value.toNumber();
-    return Number(value);
-}
 
 // 가상 스크롤 상수 (constants.ts에서 import)
 const ROW_INPUT_HEIGHT = UI.ROW_INPUT_HEIGHT;
