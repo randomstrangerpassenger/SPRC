@@ -52,6 +52,16 @@ export class VirtualScrollManager {
     }
 
     /**
+     * @description DOM 참조 업데이트 (재생성 방지)
+     * @param dom - 새로운 DOM 참조
+     */
+    setDom(dom: DOMElements): void {
+        this.dom = dom;
+        this.initializeScrollElements();
+        // 캐시는 유지 (스크롤 위치 및 상태 보존)
+    }
+
+    /**
      * @description 스크롤 요소들을 초기화합니다.
      */
     private initializeScrollElements(): void {

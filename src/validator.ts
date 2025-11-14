@@ -254,6 +254,41 @@ export const Validator = {
     },
 
     /**
+     * @description 필드별 통합 유효성 검사
+     * @param field - 필드 이름
+     * @param value - 검증할 값
+     * @returns 검증 결과
+     */
+    validateField(
+        field: string,
+        value: string | number | boolean | Decimal
+    ): ValidationResult {
+        switch (field) {
+            case 'targetRatio':
+            case 'currentPrice':
+            case 'fixedBuyAmount':
+            case 'manualAmount':
+                return this.validateNumericInput(value);
+
+            case 'isFixedBuyEnabled':
+                return { isValid: true, value: Boolean(value) };
+
+            case 'ticker':
+                return this.validateTicker(value);
+
+            case 'name':
+                return this.validateText(value, 50);
+
+            case 'sector':
+                return this.validateText(value, 30);
+
+            default:
+                // 기본적으로 문자열로 처리
+                return this.validateText(value, 100);
+        }
+    },
+
+    /**
      * @description 가져온(import) 데이터의 기본 구조가 유효한지 검사합니다.
      * @param data - JSON.parse로 읽어온 데이터
      * @returns 구조 유효 여부

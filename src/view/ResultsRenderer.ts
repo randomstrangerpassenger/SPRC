@@ -18,6 +18,15 @@ export class ResultsRenderer {
     }
 
     /**
+     * @description DOM 참조 업데이트 (재생성 방지)
+     * @param dom - 새로운 DOM 참조
+     */
+    setDom(dom: DOMElements): void {
+        this.dom = dom;
+        // Chart 인스턴스는 유지 (상태 보존)
+    }
+
+    /**
      * @description 스켈레톤 로딩 화면을 표시합니다.
      */
     displaySkeleton(): void {

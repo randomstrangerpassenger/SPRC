@@ -142,44 +142,26 @@ export class StockManager {
     }
 
     /**
-     * @description 필드 값 유효성 검사
+     * @description 필드 값 유효성 검사 (Validator 모듈로 위임)
      */
     private validateFieldValue(
         field: string,
         value: string | number | boolean | Decimal
     ): { isValid: boolean; value: string | number | boolean | Decimal } {
-        let isValid = true;
-        let validatedValue = value;
+        // 1. Validation (Validator 모듈로 완전히 위임)
+        const validationResult = Validator.validateField(field, value);
 
-        switch (field) {
-            case 'targetRatio':
-            case 'currentPrice':
-            case 'fixedBuyAmount':
-            case 'manualAmount':
-                const validationResult = Validator.validateNumericInput(value);
-                isValid = validationResult.isValid;
-                if (isValid) validatedValue = validationResult.value ?? 0;
-                break;
-            case 'isFixedBuyEnabled':
-                validatedValue = Boolean(value);
-                break;
-            case 'ticker':
-                const tickerResult = Validator.validateTicker(value);
-                isValid = tickerResult.isValid;
-                if (isValid) validatedValue = tickerResult.value ?? '';
-                break;
-            case 'name':
-            case 'sector':
-                const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
-                isValid = textResult.isValid;
-                if (isValid) validatedValue = DOMPurify.sanitize(textResult.value ?? '');
-                break;
-            default:
-                validatedValue = DOMPurify.sanitize(String(value).trim());
-                break;
+        if (!validationResult.isValid) {
+            return validationResult;
         }
 
-        return { isValid, value: validatedValue };
+        // 2. Sanitization (텍스트 필드만)
+        let sanitizedValue = validationResult.value ?? value;
+        if (field === 'name' || field === 'sector') {
+            sanitizedValue = DOMPurify.sanitize(String(sanitizedValue));
+        }
+
+        return { isValid: true, value: sanitizedValue };
     }
 
     /**

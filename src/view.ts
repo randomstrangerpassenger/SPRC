@@ -78,10 +78,10 @@ export class PortfolioView {
 
         this.eventEmitter.clear();
 
-        // 모듈 재초기화 (DOM 참조 업데이트)
-        this.modalManager = new ModalManager(this.dom);
-        this.virtualScrollManager = new VirtualScrollManager(this.dom);
-        this.resultsRenderer = new ResultsRenderer(this.dom);
+        // DOM 참조 업데이트 (재생성하지 않고 상태 유지)
+        this.modalManager.setDom(this.dom);
+        this.virtualScrollManager.setDom(this.dom);
+        this.resultsRenderer.setDom(this.dom);
 
         // 모달 이벤트 바인딩
         this.modalManager.bindModalEvents();
@@ -112,6 +112,30 @@ export class PortfolioView {
      */
     closestWithData(element: HTMLElement, dataAttr: string): HTMLElement | null {
         return this.domCache.closest(element, dataAttr);
+    }
+
+    // ===== DOM Encapsulation =====
+
+    /**
+     * @description 파일 import input 클릭 트리거 (DOM 캡슐화)
+     */
+    triggerFileImport(): void {
+        const fileInput = this.dom.importFileInput;
+        if (isInputElement(fileInput)) {
+            fileInput.click();
+        }
+    }
+
+    /**
+     * @description 포트폴리오 선택기 값 가져오기 (DOM 캡슐화)
+     * @returns 선택된 포트폴리오 ID 또는 null
+     */
+    getPortfolioSelectorValue(): string | null {
+        const selector = this.dom.portfolioSelector;
+        if (selector instanceof HTMLSelectElement) {
+            return selector.value;
+        }
+        return null;
     }
 
     // ===== ARIA & Accessibility =====

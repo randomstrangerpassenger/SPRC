@@ -32,6 +32,14 @@ export class ModalManager {
     }
 
     /**
+     * @description DOM 참조 업데이트 (재생성 방지)
+     * @param dom - 새로운 DOM 참조
+     */
+    setDom(dom: DOMElements): void {
+        this.dom = dom;
+    }
+
+    /**
      * @description 현재 포커스 요소를 저장합니다.
      */
     private saveFocusContext(): void {

@@ -95,11 +95,10 @@ export class PortfolioManager {
      * @param newId - 새 포트폴리오 ID
      */
     async handleSwitchPortfolio(newId: string): Promise<void> {
-        const selector = this.view.dom.portfolioSelector;
         let targetId = newId;
 
-        if (!targetId && selector instanceof HTMLSelectElement) {
-            targetId = selector.value;
+        if (!targetId) {
+            targetId = this.view.getPortfolioSelectorValue() || '';
         }
 
         if (targetId) {

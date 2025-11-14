@@ -219,51 +219,10 @@ export class PortfolioController {
         this.view.showCalculationLoading();
 
         try {
-            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
-                portfolioData: activePortfolio.portfolioData,
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency,
-            });
-
-            this.view.renderTable(
-                calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency,
-                activePortfolio.settings.mainMode
-            );
-
-            const ratioSum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(ratioSum.toNumber());
-
-            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
-                calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency
-            );
-            this.view.displaySectorAnalysis(
-                generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
-            );
-
-            // 리밸런싱 경고 확인 및 표시
-            this.checkRebalancingNeeds(
-                calculatedState.portfolioData,
-                calculatedState.currentTotal,
-                activePortfolio.settings.rebalancingTolerance
-            );
-
-            // 리스크 분석 (Phase 4.3)
-            this.checkRiskWarnings(
-                calculatedState.portfolioData,
-                calculatedState.currentTotal,
-                sectorData
-            );
-
-            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-
-            activePortfolio.portfolioData = calculatedState.portfolioData;
-            this.debouncedSave();
+            await this.applyCalculatedState('full');
         } catch (error) {
             ErrorService.handle(error as Error, 'Controller.fullRender');
             this.view.showToast('계산 중 오류가 발생했습니다.', 'error');
-            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
         } finally {
             // 로딩 UI 숨김
             this.view.hideCalculationLoading();
@@ -274,35 +233,72 @@ export class PortfolioController {
      * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트) (Web Worker 사용)
      */
     async updateUIState(): Promise<void> {
+        try {
+            await this.applyCalculatedState('partial');
+        } catch (error) {
+            logger.error('updateUIState error', 'Controller', error);
+        }
+    }
+
+    /**
+     * @description 계산된 상태를 적용하는 공통 로직 (DRY)
+     * @param mode - 'full': 전체 렌더링, 'partial': 부분 업데이트
+     */
+    private async applyCalculatedState(mode: 'full' | 'partial'): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        try {
-            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
-                portfolioData: activePortfolio.portfolioData,
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency,
-            });
+        // 1. 포트폴리오 계산
+        const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+            portfolioData: activePortfolio.portfolioData,
+            exchangeRate: activePortfolio.settings.exchangeRate,
+            currentCurrency: activePortfolio.settings.currentCurrency,
+        });
 
-            this.view.updateVirtualTableData(calculatedState.portfolioData);
-
-            const ratioSum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(ratioSum.toNumber());
-
-            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+        // 2. 테이블 렌더링 (모드에 따라 다름)
+        if (mode === 'full') {
+            this.view.renderTable(
                 calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency
+                activePortfolio.settings.currentCurrency,
+                activePortfolio.settings.mainMode
             );
-            this.view.displaySectorAnalysis(
-                generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
+        } else {
+            this.view.updateVirtualTableData(calculatedState.portfolioData);
+        }
+
+        // 3. 비율 합계 업데이트
+        const ratioSum = getRatioSum(activePortfolio.portfolioData);
+        this.view.updateRatioSum(ratioSum.toNumber());
+
+        // 4. 섹터 분석
+        const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+            calculatedState.portfolioData,
+            activePortfolio.settings.currentCurrency
+        );
+        this.view.displaySectorAnalysis(
+            generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
+        );
+
+        // 5. 전체 렌더링 시에만 경고 및 UI 업데이트
+        if (mode === 'full') {
+            this.checkRebalancingNeeds(
+                calculatedState.portfolioData,
+                calculatedState.currentTotal,
+                activePortfolio.settings.rebalancingTolerance
             );
 
-            activePortfolio.portfolioData = calculatedState.portfolioData;
-            this.debouncedSave();
-        } catch (error) {
-            logger.error('updateUIState error', 'Controller', error);
-            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+            this.checkRiskWarnings(
+                calculatedState.portfolioData,
+                calculatedState.currentTotal,
+                sectorData
+            );
+
+            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
         }
+
+        // 6. 상태 저장
+        activePortfolio.portfolioData = calculatedState.portfolioData;
+        this.debouncedSave();
     }
 
     // === 기타 핸들러 ===

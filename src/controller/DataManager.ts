@@ -226,8 +226,7 @@ export class DataManager {
      * @description 데이터 가져오기 트리거
      */
     handleImportData(): void {
-        const fileInput = this.view.dom.importFileInput;
-        if (isInputElement(fileInput)) fileInput.click();
+        this.view.triggerFileImport();
     }
 
     /**

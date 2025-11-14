@@ -198,6 +198,77 @@ describe('Validator.validateForCalculation', () => {
     });
 });
 
+describe('Validator.validateField', () => {
+    it('숫자 필드를 올바르게 검증해야 합니다.', () => {
+        expect(Validator.validateField('targetRatio', '50')).toEqual({ isValid: true, value: 50 });
+        expect(Validator.validateField('currentPrice', 100)).toEqual({ isValid: true, value: 100 });
+        expect(Validator.validateField('fixedBuyAmount', '1000')).toEqual({ isValid: true, value: 1000 });
+        expect(Validator.validateField('manualAmount', 500)).toEqual({ isValid: true, value: 500 });
+    });
+
+    it('음수를 거부해야 합니다.', () => {
+        expect(Validator.validateField('targetRatio', -10).isValid).toBe(false);
+        expect(Validator.validateField('currentPrice', '-50').isValid).toBe(false);
+    });
+
+    it('불리언 필드를 올바르게 검증해야 합니다.', () => {
+        expect(Validator.validateField('isFixedBuyEnabled', true)).toEqual({ isValid: true, value: true });
+        expect(Validator.validateField('isFixedBuyEnabled', false)).toEqual({ isValid: true, value: false });
+        expect(Validator.validateField('isFixedBuyEnabled', 'true')).toEqual({ isValid: true, value: true });
+    });
+
+    it('티커를 올바르게 검증해야 합니다.', () => {
+        expect(Validator.validateField('ticker', 'AAPL')).toEqual({ isValid: true, value: 'AAPL' });
+        expect(Validator.validateField('ticker', 'aapl')).toEqual({ isValid: true, value: 'AAPL' });
+        expect(Validator.validateField('ticker', 'BRK.B')).toEqual({ isValid: true, value: 'BRK.B' });
+    });
+
+    it('티커 길이 제한을 적용해야 합니다.', () => {
+        const longTicker = 'A'.repeat(11);
+        expect(Validator.validateField('ticker', longTicker).isValid).toBe(false);
+    });
+
+    it('이름 필드를 올바르게 검증해야 합니다.', () => {
+        expect(Validator.validateField('name', 'Apple Inc.')).toEqual({
+            isValid: true,
+            value: 'Apple Inc.',
+        });
+        expect(Validator.validateField('name', '  Trimmed  ')).toEqual({
+            isValid: true,
+            value: 'Trimmed',
+        });
+    });
+
+    it('이름 길이 제한을 적용해야 합니다 (최대 50자)', () => {
+        const longName = 'A'.repeat(51);
+        expect(Validator.validateField('name', longName).isValid).toBe(false);
+    });
+
+    it('섹터 필드를 올바르게 검증해야 합니다.', () => {
+        expect(Validator.validateField('sector', 'Technology')).toEqual({
+            isValid: true,
+            value: 'Technology',
+        });
+    });
+
+    it('섹터 길이 제한을 적용해야 합니다 (최대 30자)', () => {
+        const longSector = 'A'.repeat(31);
+        expect(Validator.validateField('sector', longSector).isValid).toBe(false);
+    });
+
+    it('알 수 없는 필드는 기본 텍스트 검증을 사용해야 합니다.', () => {
+        expect(Validator.validateField('unknownField', 'some value')).toEqual({
+            isValid: true,
+            value: 'some value',
+        });
+    });
+
+    it('알 수 없는 필드의 기본 길이 제한을 적용해야 합니다 (최대 100자)', () => {
+        const longValue = 'A'.repeat(101);
+        expect(Validator.validateField('unknownField', longValue).isValid).toBe(false);
+    });
+});
+
 describe('Validator.isDataStructureValid', () => {
     it('유효한 데이터 구조를 통과시켜야 합니다.', () => {
         const validData = {
