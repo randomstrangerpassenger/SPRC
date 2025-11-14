@@ -3,6 +3,7 @@ import { PortfolioState } from '../state';
 import { PortfolioView } from '../view';
 import { t } from '../i18n';
 import DOMPurify from 'dompurify';
+import { isInputElement } from '../utils';
 
 /**
  * @class PortfolioManager
@@ -94,11 +95,10 @@ export class PortfolioManager {
      * @param newId - 새 포트폴리오 ID
      */
     async handleSwitchPortfolio(newId: string): Promise<void> {
-        const selector = this.view.dom.portfolioSelector;
         let targetId = newId;
 
-        if (!targetId && selector instanceof HTMLSelectElement) {
-            targetId = selector.value;
+        if (!targetId) {
+            targetId = this.view.getPortfolioSelectorValue() || '';
         }
 
         if (targetId) {
@@ -109,10 +109,10 @@ export class PortfolioManager {
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
                 const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
-                if (exchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(exchangeRateInput)) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
-                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(portfolioExchangeRateInput)) {
                     portfolioExchangeRateInput.value =
                         activePortfolio.settings.exchangeRate.toString();
                 }

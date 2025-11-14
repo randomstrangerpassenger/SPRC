@@ -282,7 +282,10 @@ export function generateSimpleModeResultsHTML(
             </div>
             ${generateGuideBoxHTML(
                 '💰 추가 구매 가이드',
-                ['<p style="margin-bottom: 10px; color: #666;">목표 비율에 맞추기 위해 다음과 같이 구매하세요:</p>', ...guideItems],
+                [
+                    '<p style="margin-bottom: 10px; color: #666;">목표 비율에 맞추기 위해 다음과 같이 구매하세요:</p>',
+                    ...guideItems,
+                ],
                 'buy',
                 t('template.noItemsToBuy')
             )}

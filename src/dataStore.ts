@@ -152,7 +152,9 @@ export class DataStore {
             return true;
         } catch (error) {
             // 세분화된 에러 메시지와 함께 로깅
-            logger.error('Migration failed', 'DataStore', 
+            logger.error(
+                'Migration failed',
+                'DataStore',
                 '[DataStore] Migration failed:',
                 error instanceof Error ? error.message : error
             );
@@ -167,7 +169,8 @@ export class DataStore {
     static async loadSnapshots(): Promise<Record<string, PortfolioSnapshot[]> | null> {
         return executeWithErrorHandling(
             'DataStore.loadSnapshots',
-            async () => (await get<Record<string, PortfolioSnapshot[]>>(CONFIG.IDB_SNAPSHOTS_KEY)) || null
+            async () =>
+                (await get<Record<string, PortfolioSnapshot[]>>(CONFIG.IDB_SNAPSHOTS_KEY)) || null
         );
     }
 

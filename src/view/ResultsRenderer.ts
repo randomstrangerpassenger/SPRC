@@ -18,6 +18,15 @@ export class ResultsRenderer {
     }
 
     /**
+     * @description DOM 참조 업데이트 (재생성 방지)
+     * @param dom - 새로운 DOM 참조
+     */
+    setDom(dom: DOMElements): void {
+        this.dom = dom;
+        // Chart 인스턴스는 유지 (상태 보존)
+    }
+
+    /**
      * @description 스켈레톤 로딩 화면을 표시합니다.
      */
     displaySkeleton(): void {
@@ -249,9 +258,13 @@ export class ResultsRenderer {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function (context: any) {
-                            const label = context.dataset.label || '';
-                            const value = context.parsed.y;
+                        label: function (context: unknown) {
+                            const ctx = context as {
+                                dataset: { label?: string };
+                                parsed: { y: number };
+                            };
+                            const label = ctx.dataset.label || '';
+                            const value = ctx.parsed.y;
                             const formatted = value.toLocaleString(undefined, {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -265,8 +278,11 @@ export class ResultsRenderer {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function (value: any) {
-                            return (currency === 'krw' ? '₩' : '$') + value.toLocaleString();
+                        callback: function (value: unknown) {
+                            return (
+                                (currency === 'krw' ? '₩' : '$') +
+                                (typeof value === 'number' ? value.toLocaleString() : String(value))
+                            );
                         },
                     },
                 },

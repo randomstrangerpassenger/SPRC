@@ -1,5 +1,6 @@
 // src/DarkModeManager.ts
 import { CONFIG } from './constants';
+import { logger } from './services/Logger';
 
 /**
  * @class DarkModeManager
@@ -54,7 +55,7 @@ export class DarkModeManager {
             this.#darkModeMediaQuery.removeEventListener('change', this.#darkModeHandler);
             this.#darkModeMediaQuery = undefined;
             this.#darkModeHandler = undefined;
-            console.log('[DarkModeManager] Dark mode listener cleaned up');
+            logger.debug('Dark mode listener cleaned up', 'DarkModeManager');
         }
     }
 }

@@ -60,7 +60,11 @@ describe('sanitizer', () => {
             const portfolio = {
                 id: 'p-1',
                 name: 'My Portfolio',
-                settings: { mainMode: 'simple' as const, currentCurrency: 'krw' as const, exchangeRate: 1300 },
+                settings: {
+                    mainMode: 'simple' as const,
+                    currentCurrency: 'krw' as const,
+                    exchangeRate: 1300,
+                },
                 portfolioData: [],
             };
 
@@ -72,7 +76,11 @@ describe('sanitizer', () => {
             const portfolio = {
                 id: 'p-1',
                 name: '<script>alert(1)</script>Portfolio',
-                settings: { mainMode: 'simple' as const, currentCurrency: 'krw' as const, exchangeRate: 1300 },
+                settings: {
+                    mainMode: 'simple' as const,
+                    currentCurrency: 'krw' as const,
+                    exchangeRate: 1300,
+                },
                 portfolioData: [],
             };
 
@@ -84,7 +92,11 @@ describe('sanitizer', () => {
             const portfolio = {
                 id: 'p-1',
                 name: '',
-                settings: { mainMode: 'simple' as const, currentCurrency: 'krw' as const, exchangeRate: 1300 },
+                settings: {
+                    mainMode: 'simple' as const,
+                    currentCurrency: 'krw' as const,
+                    exchangeRate: 1300,
+                },
                 portfolioData: [],
             };
 

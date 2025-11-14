@@ -1,5 +1,6 @@
 // src/services/ChartLoaderService.ts
 import type { ChartType, ChartConfiguration } from 'chart.js';
+import { logger } from './Logger';
 
 /**
  * @class ChartLoaderService
@@ -16,7 +17,7 @@ export class ChartLoaderService {
      */
     static async loadChartJs(): Promise<typeof import('chart.js/auto')> {
         if (!this.chartJsPromise) {
-            console.log('[ChartLoaderService] Loading Chart.js module...');
+            logger.info('Loading Chart.js module', 'ChartLoaderService');
             this.chartJsPromise = import('chart.js/auto');
         }
         return this.chartJsPromise;

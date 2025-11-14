@@ -1,5 +1,7 @@
 // src/view/AccessibilityAnnouncer.ts
 
+import { logger } from '../services/Logger';
+
 /**
  * @class AccessibilityAnnouncer
  * @description 스크린 리더를 위한 ARIA Live 영역 관리 클래스
@@ -29,7 +31,7 @@ export class AccessibilityAnnouncer {
      */
     announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
         if (!this.announcer) {
-            console.warn('[AccessibilityAnnouncer] Announcer element not set');
+            logger.warn('Announcer element not set', 'AccessibilityAnnouncer');
             return;
         }
 

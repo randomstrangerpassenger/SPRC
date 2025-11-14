@@ -209,10 +209,7 @@ export class PerformancePanel {
         ) as HTMLSelectElement;
         const category = categorySelect?.value as PerformanceMetric['category'] | '';
 
-        const stats = perfMonitor.getStats(
-            undefined,
-            category || undefined
-        );
+        const stats = perfMonitor.getStats(undefined, category || undefined);
         const slowOps = perfMonitor.getSlowOperations(100);
 
         this.renderStats(stats);
@@ -227,7 +224,8 @@ export class PerformancePanel {
         if (!container) return;
 
         if (stats.length === 0) {
-            container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No performance data yet</div>';
+            container.innerHTML =
+                '<div style="color: #666; text-align: center; padding: 20px;">No performance data yet</div>';
             return;
         }
 
@@ -327,7 +325,7 @@ export class PerformancePanel {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        console.log('[PerformancePanel] Data exported');
+        logger.info('Data exported', 'PerformancePanel');
     }
 }
 
@@ -337,7 +335,7 @@ let perfPanel: PerformancePanel | null = null;
 export function initPerformancePanel(): void {
     if (!perfPanel) {
         perfPanel = new PerformancePanel();
-        console.log('[PerformancePanel] Initialized. Press Ctrl+Shift+P to toggle.');
+        logger.info('Initialized. Press Ctrl+Shift+P to toggle', 'PerformancePanel');
     }
 }
 

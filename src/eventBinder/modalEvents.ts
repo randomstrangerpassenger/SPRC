@@ -1,6 +1,8 @@
 // src/eventBinder/modalEvents.ts
 import Decimal from 'decimal.js';
 import type { PortfolioView } from '../view';
+import { logger } from '../services/Logger';
+import { isInputElement } from '../utils';
 
 /**
  * @description 모달 관련 이벤트 바인딩
@@ -28,8 +30,7 @@ export function setupModalEvents(view: PortfolioView, signal: AbortSignal): void
     const calculatedQuantityDisplay = document.getElementById('calculatedQuantityDisplay');
 
     const toggleInputMode = (): void => {
-        const isQuantityMode =
-            inputModeQuantity instanceof HTMLInputElement && inputModeQuantity.checked;
+        const isQuantityMode = isInputElement(inputModeQuantity) && inputModeQuantity.checked;
 
         if (quantityInputGroup && totalAmountInputGroup && txQuantityInput && txTotalAmountInput) {
             if (isQuantityMode) {
@@ -57,7 +58,7 @@ export function setupModalEvents(view: PortfolioView, signal: AbortSignal): void
 
     // 금액 입력 모드에서 총 금액 또는 단가 변경 시 수량 자동 계산 (Decimal.js 사용)
     const calculateQuantityFromAmount = (): void => {
-        const isAmountMode = inputModeAmount instanceof HTMLInputElement && inputModeAmount.checked;
+        const isAmountMode = isInputElement(inputModeAmount) && inputModeAmount.checked;
         if (!isAmountMode) return;
 
         const txPriceInput = document.getElementById('txPrice') as HTMLInputElement | null;
@@ -78,7 +79,7 @@ export function setupModalEvents(view: PortfolioView, signal: AbortSignal): void
                 }
             } catch (error) {
                 calculatedQuantityValue.textContent = '0';
-                console.error('Error calculating quantity from amount:', error);
+                logger.error('Error calculating quantity from amount', 'ModalEvents', error);
             }
         }
     };

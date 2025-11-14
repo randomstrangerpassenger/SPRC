@@ -9,6 +9,7 @@ import {
     generateId,
     toDecimal,
     ensureDecimal,
+    isInputElement,
 } from './utils';
 import type { Stock } from './types';
 
@@ -284,6 +285,49 @@ describe('utils', () => {
         it('should throw TypeError for undefined', () => {
             expect(() => ensureDecimal(undefined)).toThrow(TypeError);
             expect(() => ensureDecimal(undefined)).toThrow('Expected Decimal, got undefined');
+        });
+    });
+
+    describe('isInputElement', () => {
+        it('should return true for HTMLInputElement', () => {
+            const input = document.createElement('input');
+            expect(isInputElement(input)).toBe(true);
+        });
+
+        it('should return false for other HTML elements', () => {
+            const div = document.createElement('div');
+            const button = document.createElement('button');
+            const select = document.createElement('select');
+
+            expect(isInputElement(div)).toBe(false);
+            expect(isInputElement(button)).toBe(false);
+            expect(isInputElement(select)).toBe(false);
+        });
+
+        it('should return false for null and undefined', () => {
+            expect(isInputElement(null)).toBe(false);
+            expect(isInputElement(undefined)).toBe(false);
+        });
+
+        it('should return false for primitives', () => {
+            expect(isInputElement(123)).toBe(false);
+            expect(isInputElement('string')).toBe(false);
+            expect(isInputElement(true)).toBe(false);
+        });
+
+        it('should return false for plain objects', () => {
+            expect(isInputElement({})).toBe(false);
+            expect(isInputElement({ type: 'text' })).toBe(false);
+        });
+
+        it('should work with type narrowing', () => {
+            const element: unknown = document.createElement('input');
+
+            if (isInputElement(element)) {
+                // TypeScript should recognize element as HTMLInputElement
+                element.value = 'test'; // This should not cause a type error
+                expect(element.value).toBe('test');
+            }
         });
     });
 });

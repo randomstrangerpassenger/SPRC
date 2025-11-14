@@ -110,12 +110,9 @@ describe('PDFReportService', () => {
         it('should set PDF text content', async () => {
             await PDFReportService.generatePortfolioReport(mockPortfolio);
 
-            expect(mockPdfFunctions.text).toHaveBeenCalledWith(
-                'Portfolio Report',
-                105,
-                20,
-                { align: 'center' }
-            );
+            expect(mockPdfFunctions.text).toHaveBeenCalledWith('Portfolio Report', 105, 20, {
+                align: 'center',
+            });
         });
 
         it('should include portfolio information', async () => {
@@ -183,13 +180,14 @@ describe('PDFReportService', () => {
         });
 
         it('should truncate long stock names', async () => {
-            mockPortfolio.portfolioData[0].name = 'Very Long Stock Name That Exceeds Maximum Length';
+            mockPortfolio.portfolioData[0].name =
+                'Very Long Stock Name That Exceeds Maximum Length';
 
             await PDFReportService.generatePortfolioReport(mockPortfolio);
 
             const textCalls = mockPdfFunctions.text.mock.calls;
-            const stockNameCalls = textCalls.filter((call: any) =>
-                typeof call[0] === 'string' && call[0].includes('...')
+            const stockNameCalls = textCalls.filter(
+                (call: any) => typeof call[0] === 'string' && call[0].includes('...')
             );
 
             expect(stockNameCalls.length).toBeGreaterThan(0);
@@ -249,9 +247,9 @@ describe('PDFReportService', () => {
                 throw new Error('Save failed');
             });
 
-            await expect(
-                PDFReportService.generatePortfolioReport(mockPortfolio)
-            ).rejects.toThrow('PDF 리포트 생성 실패');
+            await expect(PDFReportService.generatePortfolioReport(mockPortfolio)).rejects.toThrow(
+                'PDF 리포트 생성 실패'
+            );
         });
     });
 

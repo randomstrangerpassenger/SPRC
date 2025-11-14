@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import type { Portfolio, Stock } from '../types';
 import Decimal from 'decimal.js';
 import { PortfolioMetricsService } from './PortfolioMetricsService';
+import { logger } from './Logger';
 
 /**
  * @class PDFReportService
@@ -50,7 +51,11 @@ export class PDFReportService {
             );
 
             yPosition += 6;
-            pdf.text(`Rebalancing Mode: ${portfolio.settings.mainMode.toUpperCase()}`, 20, yPosition);
+            pdf.text(
+                `Rebalancing Mode: ${portfolio.settings.mainMode.toUpperCase()}`,
+                20,
+                yPosition
+            );
 
             yPosition += 6;
             pdf.text(`Generated: ${new Date().toLocaleString()}`, 20, yPosition);
@@ -100,7 +105,15 @@ export class PDFReportService {
 
             // 테이블 헤더
             pdf.setFontSize(9);
-            const tableHeaders = ['Stock', 'Ticker', 'Qty', 'Avg Price', 'Current', 'Value', 'P/L %'];
+            const tableHeaders = [
+                'Stock',
+                'Ticker',
+                'Qty',
+                'Avg Price',
+                'Current',
+                'Value',
+                'P/L %',
+            ];
             const colWidths = [40, 20, 18, 22, 22, 25, 23];
             let xPosition = 20;
 
@@ -136,7 +149,8 @@ export class PDFReportService {
                 xPosition = 20;
 
                 // Stock Name (truncate if too long)
-                const stockName = stock.name.length > 18 ? stock.name.substring(0, 15) + '...' : stock.name;
+                const stockName =
+                    stock.name.length > 18 ? stock.name.substring(0, 15) + '...' : stock.name;
                 pdf.text(stockName, xPosition, yPosition);
                 xPosition += colWidths[0];
 
@@ -179,7 +193,7 @@ export class PDFReportService {
             const filename = `portfolio_report_${portfolio.name}_${Date.now()}.pdf`;
             pdf.save(filename.replace(/\s+/g, '_'));
         } catch (error) {
-            console.error('PDF generation error:', error);
+            logger.error('PDF generation error', 'PDFReportService', error);
             throw new Error('PDF 리포트 생성 실패');
         }
     }
@@ -209,7 +223,7 @@ export class PDFReportService {
             totalInvested,
             currentValue,
             totalPL,
-            totalPLPercent
+            totalPLPercent,
         };
     }
 
@@ -233,7 +247,7 @@ export class PDFReportService {
                 // 차트 캡처
                 const canvas = await html2canvas(chartCanvas, {
                     scale: 2,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
                 });
 
                 const imgData = canvas.toDataURL('image/png');
@@ -244,7 +258,7 @@ export class PDFReportService {
                 pdf.addImage(imgData, 'PNG', 20, 30, imgWidth, imgHeight);
             }
         } catch (error) {
-            console.warn('차트 추가 실패 (차트가 없거나 오류 발생):', error);
+            logger.warn('차트 추가 실패 (차트가 없거나 오류 발생)', 'PDFReportService', error);
             // 차트 추가 실패는 치명적 오류가 아니므로 계속 진행
         }
     }
@@ -262,7 +276,7 @@ export class PDFReportService {
             const canvas = await html2canvas(element, {
                 scale: 2,
                 backgroundColor: '#ffffff',
-                logging: false
+                logging: false,
             });
 
             const imgData = canvas.toDataURL('image/png');
@@ -288,7 +302,7 @@ export class PDFReportService {
 
             pdf.save(filename.replace(/\s+/g, '_'));
         } catch (error) {
-            console.error('HTML to PDF conversion error:', error);
+            logger.error('HTML to PDF conversion error', 'PDFReportService', error);
             throw new Error('HTML to PDF 변환 실패');
         }
     }

@@ -149,10 +149,7 @@ describe('PortfolioManager', () => {
                 },
                 'portfolio-1'
             );
-            expect(mockView.showToast).toHaveBeenCalledWith(
-                'toast.portfolioRenamed',
-                'success'
-            );
+            expect(mockView.showToast).toHaveBeenCalledWith('toast.portfolioRenamed', 'success');
         });
 
         it('should do nothing when no active portfolio', async () => {
@@ -234,7 +231,10 @@ describe('PortfolioManager', () => {
             await portfolioManager.handleDeletePortfolio();
 
             expect(mockState.deletePortfolio).not.toHaveBeenCalled();
-            expect(mockView.showToast).not.toHaveBeenCalledWith('toast.portfolioDeleted', 'success');
+            expect(mockView.showToast).not.toHaveBeenCalledWith(
+                'toast.portfolioDeleted',
+                'success'
+            );
         });
 
         it('should not show success toast when deletion fails', async () => {

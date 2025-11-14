@@ -3,9 +3,10 @@ import { PortfolioState } from '../state';
 import { PortfolioView } from '../view';
 import { Calculator } from '../calculator';
 import { Validator } from '../validator';
-import { getRatioSum } from '../utils';
+import { getRatioSum, isInputElement } from '../utils';
 import { t } from '../i18n';
 import { generateSectorAnalysisHTML } from '../templates';
+import type { Portfolio, Stock } from '../types';
 import Decimal from 'decimal.js';
 import DOMPurify from 'dompurify';
 
@@ -23,7 +24,7 @@ interface FieldChangeResult {
  */
 interface FieldHandlerContext {
     row: Element;
-    activePortfolio: any;
+    activePortfolio: Portfolio;
     field: string;
 }
 
@@ -32,7 +33,7 @@ interface FieldHandlerContext {
  */
 type FieldHandler = (
     stockId: string,
-    value: any,
+    value: string | number | boolean | Decimal,
     context: FieldHandlerContext
 ) => FieldChangeResult;
 
@@ -104,9 +105,7 @@ export class StockManager {
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
 
         const rawValue =
-            target.type === 'checkbox' && target instanceof HTMLInputElement
-                ? target.checked
-                : target.value;
+            target.type === 'checkbox' && isInputElement(target) ? target.checked : target.value;
 
         const { isValid, value } = this.validateFieldValue(field, rawValue);
         this.view.toggleInputValidation(target as HTMLInputElement, isValid);
@@ -115,10 +114,14 @@ export class StockManager {
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
         }
 
-        this.state.updateStockProperty(stockId, field, value);
+        this.state.updateStockProperty(stockId, field as keyof Stock, value);
 
         const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio && field !== 'manualAmount') {
+        if (!activePortfolio) {
+            if (field === 'manualAmount') {
+                this.view.updateStockInVirtualData(stockId, 'manualAmount', value);
+                this.debouncedSave();
+            }
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
         }
 
@@ -139,41 +142,26 @@ export class StockManager {
     }
 
     /**
-     * @description 필드 값 유효성 검사
+     * @description 필드 값 유효성 검사 (Validator 모듈로 위임)
      */
-    private validateFieldValue(field: string, value: any): { isValid: boolean; value: any } {
-        let isValid = true;
-        let validatedValue = value;
+    private validateFieldValue(
+        field: string,
+        value: string | number | boolean | Decimal
+    ): { isValid: boolean; value: string | number | boolean | Decimal } {
+        // 1. Validation (Validator 모듈로 완전히 위임)
+        const validationResult = Validator.validateField(field, value);
 
-        switch (field) {
-            case 'targetRatio':
-            case 'currentPrice':
-            case 'fixedBuyAmount':
-            case 'manualAmount':
-                const validationResult = Validator.validateNumericInput(value);
-                isValid = validationResult.isValid;
-                if (isValid) validatedValue = validationResult.value ?? 0;
-                break;
-            case 'isFixedBuyEnabled':
-                validatedValue = Boolean(value);
-                break;
-            case 'ticker':
-                const tickerResult = Validator.validateTicker(value);
-                isValid = tickerResult.isValid;
-                if (isValid) validatedValue = tickerResult.value ?? '';
-                break;
-            case 'name':
-            case 'sector':
-                const textResult = Validator.validateText(value, field === 'name' ? 50 : 30);
-                isValid = textResult.isValid;
-                if (isValid) validatedValue = DOMPurify.sanitize(textResult.value ?? '');
-                break;
-            default:
-                validatedValue = DOMPurify.sanitize(String(value).trim());
-                break;
+        if (!validationResult.isValid) {
+            return validationResult;
         }
 
-        return { isValid, value: validatedValue };
+        // 2. Sanitization (텍스트 필드만)
+        let sanitizedValue = validationResult.value ?? value;
+        if (field === 'name' || field === 'sector') {
+            sanitizedValue = DOMPurify.sanitize(String(sanitizedValue));
+        }
+
+        return { isValid: true, value: sanitizedValue };
     }
 
     /**
@@ -181,7 +169,7 @@ export class StockManager {
      */
     private handleManualAmountChangeStrategy(
         stockId: string,
-        value: any,
+        value: string | number | boolean | Decimal,
         _context: FieldHandlerContext
     ): FieldChangeResult {
         this.view.updateStockInVirtualData(stockId, 'manualAmount', value);
@@ -194,7 +182,7 @@ export class StockManager {
      */
     private handleMetadataFieldChangeStrategy(
         stockId: string,
-        value: any,
+        value: string | number | boolean | Decimal,
         context: FieldHandlerContext
     ): FieldChangeResult {
         this.view.updateStockInVirtualData(stockId, context.field, value);
@@ -207,7 +195,7 @@ export class StockManager {
      */
     private handleSectorChangeStrategy(
         stockId: string,
-        value: any,
+        value: string | number | boolean | Decimal,
         context: FieldHandlerContext
     ): FieldChangeResult {
         this.view.updateStockInVirtualData(stockId, 'sector', value);
@@ -222,10 +210,10 @@ export class StockManager {
      */
     private handleCurrentPriceChangeStrategy(
         stockId: string,
-        _value: any,
+        _value: string | number | boolean | Decimal,
         context: FieldHandlerContext
     ): FieldChangeResult {
-        const stock = context.activePortfolio.portfolioData.find((s: any) => s.id === stockId);
+        const stock = context.activePortfolio.portfolioData.find((s: Stock) => s.id === stockId);
         if (stock) {
             // 개별 주식만 재계산
             const calculatedMetrics = Calculator.calculateStockMetrics(stock);
@@ -242,7 +230,8 @@ export class StockManager {
             }
 
             // 포트폴리오 데이터의 calculated 필드 업데이트
-            stock.calculated = calculatedMetrics;
+            // Stock 타입을 CalculatedStock으로 타입 단언
+            (stock as any).calculated = calculatedMetrics;
 
             // 뷰 업데이트
             this.view.updateSingleStockRow(stockId, calculatedMetrics);
@@ -261,9 +250,9 @@ export class StockManager {
     private handleOtherFieldChange(
         stockId: string,
         field: string,
-        value: any,
+        value: string | number | boolean | Decimal,
         row: Element,
-        activePortfolio: any
+        activePortfolio: Portfolio
     ) {
         Calculator.clearPortfolioStateCache();
 
@@ -272,7 +261,7 @@ export class StockManager {
             exchangeRate: activePortfolio.settings.exchangeRate,
             currentCurrency: activePortfolio.settings.currentCurrency,
         });
-        activePortfolio.portfolioData = calculatedState.portfolioData;
+        activePortfolio.portfolioData = calculatedState.portfolioData as Stock[];
 
         this.view.updateVirtualTableData(calculatedState.portfolioData);
 
@@ -286,7 +275,7 @@ export class StockManager {
         // isFixedBuyEnabled 특수 처리
         if (field === 'isFixedBuyEnabled') {
             const amountInput = row.querySelector('input[data-field="fixedBuyAmount"]');
-            if (amountInput instanceof HTMLInputElement) {
+            if (isInputElement(amountInput)) {
                 amountInput.disabled = !value;
                 if (!value) {
                     amountInput.value = '0';
@@ -304,7 +293,7 @@ export class StockManager {
      * @param activePortfolio - 활성 포트폴리오
      * @param useExistingState - 기존 계산 상태 재사용 여부
      */
-    private updateSectorAnalysis(activePortfolio: any, useExistingState: boolean) {
+    private updateSectorAnalysis(activePortfolio: Portfolio, useExistingState: boolean) {
         let portfolioData = activePortfolio.portfolioData;
 
         if (!useExistingState) {
@@ -335,9 +324,10 @@ export class StockManager {
         if (!actionButton) return { action: null, stockId: null };
 
         const row = actionButton.closest('div[data-id]');
-        if (!row?.dataset.id) return { action: null, stockId: null };
+        if (!row || !(row instanceof HTMLElement) || !row.dataset.id)
+            return { action: null, stockId: null };
 
-        const stockId = (row as HTMLElement).dataset.id;
+        const stockId = row.dataset.id || null;
         const action = (actionButton as HTMLElement).dataset.action || null;
 
         return { action, stockId };

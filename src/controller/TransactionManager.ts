@@ -5,6 +5,8 @@ import { Calculator } from '../calculator';
 import { Validator } from '../validator';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
+import { logger } from '../services/Logger';
+import { isInputElement } from '../utils';
 
 /**
  * @class TransactionManager
@@ -48,11 +50,10 @@ export class TransactionManager {
 
         if (!typeInput || !dateInput || !priceInput) return { needsFullRender: false };
 
-        const typeValue = typeInput instanceof HTMLInputElement ? typeInput.value : 'buy';
+        const typeValue = isInputElement(typeInput) ? typeInput.value : 'buy';
         const type: 'buy' | 'sell' | 'dividend' =
             typeValue === 'sell' ? 'sell' : typeValue === 'dividend' ? 'dividend' : 'buy';
-        const inputMode =
-            inputModeInput instanceof HTMLInputElement ? inputModeInput.value : 'quantity';
+        const inputMode = isInputElement(inputModeInput) ? inputModeInput.value : 'quantity';
         const date = dateInput.value;
         const priceStr = priceInput.value;
 
@@ -119,7 +120,7 @@ export class TransactionManager {
 
             // 입력 모드를 수량 입력으로 리셋
             const inputModeQuantity = form.querySelector('#inputModeQuantity');
-            if (inputModeQuantity instanceof HTMLInputElement) {
+            if (isInputElement(inputModeQuantity)) {
                 inputModeQuantity.checked = true;
                 const quantityInputGroup = document.getElementById('quantityInputGroup');
                 const totalAmountInputGroup = document.getElementById('totalAmountInputGroup');
@@ -173,7 +174,10 @@ export class TransactionManager {
                 }
             }
         } else {
-            console.error('handleTransactionListClick received invalid IDs:', stockId, txId);
+            logger.error(
+                `handleTransactionListClick received invalid IDs: ${stockId}, ${txId}`,
+                'TransactionManager'
+            );
         }
         return { needsUIUpdate: false };
     }

@@ -3,13 +3,14 @@ import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
 import { DataStore } from './dataStore';
-import { debounce, getRatioSum } from './utils';
-import { CONFIG, DECIMAL_ZERO } from './constants';
+import { debounce, getRatioSum, isInputElement } from './utils';
+import { CONFIG, DECIMAL_ZERO, THRESHOLDS } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
+import type { PortfolioSnapshot } from './types';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
 import { ChartLoaderService } from './services/ChartLoaderService';
@@ -22,6 +23,7 @@ import { TransactionManager } from './controller/TransactionManager';
 import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
 import { AppInitializer } from './controller/AppInitializer';
+import { bindControllerEvents as bindControllerEventsExternal } from './controller/ControllerEventBinder';
 
 /**
  * @class PortfolioController
@@ -32,12 +34,12 @@ export class PortfolioController {
     view: PortfolioView;
     debouncedSave: () => void;
 
-    // 분리된 매니저들
-    private portfolioManager: PortfolioManager;
-    private stockManager: StockManager;
-    private transactionManager: TransactionManager;
-    private calculationManager: CalculationManager;
-    private dataManager: DataManager;
+    // 분리된 매니저들 (public - ControllerEventBinder 접근용)
+    portfolioManager: PortfolioManager;
+    stockManager: StockManager;
+    transactionManager: TransactionManager;
+    calculationManager: CalculationManager;
+    dataManager: DataManager;
     private appInitializer: AppInitializer;
 
     private calculatorWorker = getCalculatorWorkerService();
@@ -95,114 +97,10 @@ export class PortfolioController {
     }
 
     /**
-     * @description 컨트롤러 이벤트 바인딩
+     * @description 컨트롤러 이벤트 바인딩 (ControllerEventBinder로 위임)
      */
     bindControllerEvents(): void {
-        // 포트폴리오 관리
-        this.view.on('newPortfolioClicked', async () => {
-            await this.portfolioManager.handleNewPortfolio();
-            this.fullRender();
-        });
-        this.view.on('renamePortfolioClicked', () => this.portfolioManager.handleRenamePortfolio());
-        this.view.on('deletePortfolioClicked', async () => {
-            await this.portfolioManager.handleDeletePortfolio();
-        });
-        this.view.on('portfolioSwitched', async (data) => {
-            await this.portfolioManager.handleSwitchPortfolio(data.newId);
-            this.fullRender();
-        });
-
-        // 주식 관리
-        this.view.on('addNewStockClicked', async () => {
-            const result = await this.stockManager.handleAddNewStock();
-            if (result.needsFullRender) {
-                this.fullRender();
-                if (result.stockId) this.view.focusOnNewStock(result.stockId);
-            }
-        });
-        this.view.on('normalizeRatiosClicked', () =>
-            this.calculationManager.handleNormalizeRatios()
-        );
-        this.view.on('applyTemplateClicked', (data) => this.handleApplyTemplate(data.template));
-        this.view.on('fetchAllPricesClicked', async () => {
-            const result = await this.calculationManager.handleFetchAllPrices();
-            if (result.needsUIUpdate) this.updateUIState();
-        });
-
-        // 데이터 관리
-        this.view.on('resetDataClicked', async () => {
-            const result = await this.dataManager.handleResetData();
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('exportDataClicked', () => this.dataManager.handleExportData());
-        this.view.on('importDataClicked', () => this.dataManager.handleImportData());
-        this.view.on('exportTransactionsCSVClicked', () =>
-            this.dataManager.handleExportTransactionsCSV()
-        );
-        this.view.on('fileSelected', async (e) => {
-            const result = await this.dataManager.handleFileSelected(e);
-            if (result.needsUISetup) this.setupInitialUI();
-        });
-
-        // 테이블 상호작용
-        this.view.on('portfolioBodyChanged', (e) => this.stockManager.handlePortfolioBodyChange(e));
-        this.view.on('portfolioBodyClicked', (e) => {
-            const result = this.stockManager.handlePortfolioBodyClick(e);
-            if (result.action === 'manage' && result.stockId) {
-                this.transactionManager.openTransactionModalByStockId(result.stockId);
-            } else if (result.action === 'delete' && result.stockId) {
-                this.stockManager.handleDeleteStock(result.stockId).then((deleteResult) => {
-                    if (deleteResult.needsFullRender) this.fullRender();
-                });
-            }
-        });
-        this.view.on('manageStockClicked', (data) =>
-            this.transactionManager.openTransactionModalByStockId(data.stockId)
-        );
-        this.view.on('deleteStockShortcut', async (data) => {
-            const result = await this.stockManager.handleDeleteStock(data.stockId);
-            if (result.needsFullRender) this.fullRender();
-        });
-
-        // 계산 및 통화
-        this.view.on('calculateClicked', () => this.calculationManager.handleCalculate());
-        this.view.on('showPerformanceHistoryClicked', () => this.handleShowPerformanceHistory());
-        this.view.on('showSnapshotListClicked', () => this.handleShowSnapshotList());
-        this.view.on('mainModeChanged', async (data) => {
-            const result = await this.calculationManager.handleMainModeChange(data.mode);
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('currencyModeChanged', async (data) => {
-            const result = await this.calculationManager.handleCurrencyModeChange(data.currency);
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('currencyConversion', (data) =>
-            this.calculationManager.handleCurrencyConversion(data.source)
-        );
-        this.view.on('portfolioExchangeRateChanged', (data) =>
-            this.calculationManager.handlePortfolioExchangeRateChange(data.rate)
-        );
-        this.view.on('rebalancingToleranceChanged', (data) =>
-            this.handleRebalancingToleranceChange(data.tolerance)
-        );
-
-        // 모달 상호작용
-        this.view.on('closeTransactionModalClicked', () => this.view.closeTransactionModal());
-        this.view.on('newTransactionSubmitted', async (e) => {
-            const result = await this.transactionManager.handleAddNewTransaction(e);
-            if (result.needsFullRender) this.fullRender();
-        });
-        this.view.on('transactionDeleteClicked', async (data) => {
-            const result = await this.transactionManager.handleTransactionListClick(
-                data.stockId,
-                data.txId
-            );
-            if (result.needsUIUpdate) this.updateUIState();
-        });
-
-        // 기타
-        this.view.on('darkModeToggleClicked', () => this.handleToggleDarkMode());
-        this.view.on('pageUnloading', () => this.handleSaveDataOnExit());
+        bindControllerEventsExternal(this);
     }
 
     // === 렌더링 메서드 ===
@@ -218,51 +116,10 @@ export class PortfolioController {
         this.view.showCalculationLoading();
 
         try {
-            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
-                portfolioData: activePortfolio.portfolioData,
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency,
-            });
-
-            this.view.renderTable(
-                calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency,
-                activePortfolio.settings.mainMode
-            );
-
-            const ratioSum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(ratioSum.toNumber());
-
-            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
-                calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency
-            );
-            this.view.displaySectorAnalysis(
-                generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
-            );
-
-            // 리밸런싱 경고 확인 및 표시
-            this.checkRebalancingNeeds(
-                calculatedState.portfolioData,
-                calculatedState.currentTotal,
-                activePortfolio.settings.rebalancingTolerance
-            );
-
-            // 리스크 분석 (Phase 4.3)
-            this.checkRiskWarnings(
-                calculatedState.portfolioData,
-                calculatedState.currentTotal,
-                sectorData
-            );
-
-            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-
-            activePortfolio.portfolioData = calculatedState.portfolioData;
-            this.debouncedSave();
+            await this.applyCalculatedState('full');
         } catch (error) {
             ErrorService.handle(error as Error, 'Controller.fullRender');
             this.view.showToast('계산 중 오류가 발생했습니다.', 'error');
-            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
         } finally {
             // 로딩 UI 숨김
             this.view.hideCalculationLoading();
@@ -273,35 +130,72 @@ export class PortfolioController {
      * @description UI 상태 업데이트 (가상 스크롤 데이터 업데이트) (Web Worker 사용)
      */
     async updateUIState(): Promise<void> {
+        try {
+            await this.applyCalculatedState('partial');
+        } catch (error) {
+            logger.error('updateUIState error', 'Controller', error);
+        }
+    }
+
+    /**
+     * @description 계산된 상태를 적용하는 공통 로직 (DRY)
+     * @param mode - 'full': 전체 렌더링, 'partial': 부분 업데이트
+     */
+    private async applyCalculatedState(mode: 'full' | 'partial'): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        try {
-            const calculatedState = await this.calculatorWorker.calculatePortfolioState({
-                portfolioData: activePortfolio.portfolioData,
-                exchangeRate: activePortfolio.settings.exchangeRate,
-                currentCurrency: activePortfolio.settings.currentCurrency,
-            });
+        // 1. 포트폴리오 계산
+        const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+            portfolioData: activePortfolio.portfolioData,
+            exchangeRate: activePortfolio.settings.exchangeRate,
+            currentCurrency: activePortfolio.settings.currentCurrency,
+        });
 
-            this.view.updateVirtualTableData(calculatedState.portfolioData);
-
-            const ratioSum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(ratioSum.toNumber());
-
-            const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+        // 2. 테이블 렌더링 (모드에 따라 다름)
+        if (mode === 'full') {
+            this.view.renderTable(
                 calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency
+                activePortfolio.settings.currentCurrency,
+                activePortfolio.settings.mainMode
             );
-            this.view.displaySectorAnalysis(
-                generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
+        } else {
+            this.view.updateVirtualTableData(calculatedState.portfolioData);
+        }
+
+        // 3. 비율 합계 업데이트
+        const ratioSum = getRatioSum(activePortfolio.portfolioData);
+        this.view.updateRatioSum(ratioSum.toNumber());
+
+        // 4. 섹터 분석
+        const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+            calculatedState.portfolioData,
+            activePortfolio.settings.currentCurrency
+        );
+        this.view.displaySectorAnalysis(
+            generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
+        );
+
+        // 5. 전체 렌더링 시에만 경고 및 UI 업데이트
+        if (mode === 'full') {
+            this.checkRebalancingNeeds(
+                calculatedState.portfolioData,
+                calculatedState.currentTotal,
+                activePortfolio.settings.rebalancingTolerance
             );
 
-            activePortfolio.portfolioData = calculatedState.portfolioData;
-            this.debouncedSave();
-        } catch (error) {
-            logger.error('updateUIState error', 'Controller', error);
-            // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
+            this.checkRiskWarnings(
+                calculatedState.portfolioData,
+                calculatedState.currentTotal,
+                sectorData
+            );
+
+            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
         }
+
+        // 6. 상태 저장
+        activePortfolio.portfolioData = calculatedState.portfolioData;
+        this.debouncedSave();
     }
 
     // === 기타 핸들러 ===
@@ -388,23 +282,21 @@ export class PortfolioController {
 
         if (currentTotalDec.isZero()) return;
 
-        // 단일 종목 비중 경고 (30% 초과)
-        const SINGLE_STOCK_THRESHOLD = 30;
+        // 단일 종목 비중 경고
         for (const stock of portfolioData) {
             const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
             const ratio = currentAmount.div(currentTotalDec).times(100);
 
-            if (ratio.greaterThan(SINGLE_STOCK_THRESHOLD)) {
+            if (ratio.greaterThan(THRESHOLDS.SINGLE_STOCK_WARNING)) {
                 warnings.push(`⚠️ ${stock.name}: ${ratio.toFixed(1)}% (단일 종목 비중 높음)`);
             }
         }
 
-        // 섹터 집중도 경고 (40% 초과)
-        const SECTOR_CONCENTRATION_THRESHOLD = 40;
+        // 섹터 집중도 경고
         for (const sector of sectorData) {
             const percentage = new Decimal(sector.percentage || 0);
 
-            if (percentage.greaterThan(SECTOR_CONCENTRATION_THRESHOLD)) {
+            if (percentage.greaterThan(THRESHOLDS.SECTOR_CONCENTRATION_WARNING)) {
                 warnings.push(
                     `⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`
                 );
@@ -483,7 +375,7 @@ export class PortfolioController {
     /**
      * @description 스냅샷 목록 렌더링
      */
-    private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
+    private renderSnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
         this.view.resultsRenderer.displaySnapshotList(snapshots, currency);
     }
 
@@ -528,9 +420,9 @@ export class PortfolioController {
             this.view.dom;
 
         if (
-            !(additionalAmountInput instanceof HTMLInputElement) ||
-            !(additionalAmountUSDInput instanceof HTMLInputElement) ||
-            !(exchangeRateInput instanceof HTMLInputElement)
+            !isInputElement(additionalAmountInput) ||
+            !isInputElement(additionalAmountUSDInput) ||
+            !isInputElement(exchangeRateInput)
         ) {
             return DECIMAL_ZERO;
         }
@@ -552,7 +444,7 @@ export class PortfolioController {
                 return calculatedKRW.isNegative() ? DECIMAL_ZERO : calculatedKRW;
             }
         } catch (e) {
-            console.error('Error parsing investment amount:', e);
+            logger.error('Error parsing investment amount', 'Controller', e);
             return DECIMAL_ZERO;
         }
     }

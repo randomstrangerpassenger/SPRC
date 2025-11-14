@@ -1,9 +1,9 @@
 // src/view/VirtualScrollManager.ts
 // 모듈 분리
-import { formatCurrency, escapeHTML } from '../utils';
+import { formatCurrency, escapeHTML, isInputElement } from '../utils';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
-import { DECIMAL_ZERO } from '../constants';
+import { UI, BREAKPOINTS } from '../constants';
 import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
@@ -19,11 +19,11 @@ function toNumber(value: Decimal | number | null | undefined): number {
     return Number(value);
 }
 
-// 가상 스크롤 상수
-const ROW_INPUT_HEIGHT = 60;
-const ROW_OUTPUT_HEIGHT = 50;
+// 가상 스크롤 상수 (constants.ts에서 import)
+const ROW_INPUT_HEIGHT = UI.ROW_INPUT_HEIGHT;
+const ROW_OUTPUT_HEIGHT = UI.ROW_OUTPUT_HEIGHT;
 const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT;
-const VISIBLE_ROWS_BUFFER = 5;
+const VISIBLE_ROWS_BUFFER = UI.VISIBLE_ROWS_BUFFER;
 
 /**
  * @class VirtualScrollManager
@@ -42,15 +42,23 @@ export class VirtualScrollManager {
     #currentMainMode: 'add' | 'sell' | 'simple' = 'add';
     #currentCurrency: 'krw' | 'usd' = 'krw';
 
-    // DOM 참조 캐싱 (LRU 캐시 사용 - 최대 50개 행 캐시)
-    #rowCache: LRUCache<
-        string,
-        { inputRow: HTMLElement | null; outputRow: HTMLElement | null }
-    > = new LRUCache(50);
+    // DOM 참조 캐싱 (LRU 캐시 사용)
+    #rowCache: LRUCache<string, { inputRow: HTMLElement | null; outputRow: HTMLElement | null }> =
+        new LRUCache(UI.ROW_CACHE_SIZE);
 
     constructor(dom: DOMElements) {
         this.dom = dom;
         this.initializeScrollElements();
+    }
+
+    /**
+     * @description DOM 참조 업데이트 (재생성 방지)
+     * @param dom - 새로운 DOM 참조
+     */
+    setDom(dom: DOMElements): void {
+        this.dom = dom;
+        this.initializeScrollElements();
+        // 캐시는 유지 (스크롤 위치 및 상태 보존)
     }
 
     /**
@@ -79,7 +87,7 @@ export class VirtualScrollManager {
         const currencySymbol = currency.toLowerCase() === 'usd' ? t('ui.usd') : t('ui.krw');
         let headersHTML = '';
 
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = window.innerWidth <= BREAKPOINTS.MOBILE;
 
         if (isMobile) {
             if (mainMode === 'simple') {
@@ -122,7 +130,6 @@ export class VirtualScrollManager {
         }
         header.innerHTML = headersHTML;
     }
-
 
     /**
      * @description 가상 테이블을 렌더링합니다 (초기화).
@@ -203,10 +210,7 @@ export class VirtualScrollManager {
      * @param stockId - 주식 ID
      * @param calculatedData - 재계산된 데이터
      */
-    updateSingleStockRow(
-        stockId: string,
-        calculatedData: CalculatedStock['calculated']
-    ): void {
+    updateSingleStockRow(stockId: string, calculatedData: CalculatedStock['calculated']): void {
         const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
         if (stockIndex === -1) return;
 
@@ -255,7 +259,7 @@ export class VirtualScrollManager {
         const profitClass = profitLoss < 0 ? 'text-sell' : 'text-buy';
         const profitSign = profitLoss > 0 ? '+' : '';
 
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = window.innerWidth <= BREAKPOINTS.MOBILE;
 
         const cells = outputRow.querySelectorAll('.output-cell');
         let cellIndex = 0;
@@ -336,10 +340,12 @@ export class VirtualScrollManager {
 
             const inputs = row.querySelectorAll('input[data-field]');
             inputs.forEach((input) => {
-                if (!(input instanceof HTMLInputElement)) return;
+                if (!isInputElement(input)) return;
 
                 // Phase 2-5: IME composition 체크
-                const isComposing = 'isComposing' in input && (input as HTMLInputElement & { isComposing?: boolean }).isComposing;
+                const isComposing =
+                    'isComposing' in input &&
+                    (input as HTMLInputElement & { isComposing?: boolean }).isComposing;
                 if (input === activeElement || isComposing) {
                     return;
                 }
@@ -413,7 +419,7 @@ export class VirtualScrollManager {
             if (!inputRow) return;
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
-            if (targetRatioInput instanceof HTMLInputElement) {
+            if (isInputElement(targetRatioInput)) {
                 // Decimal 대신 number 사용
                 const ratio = toNumber(stock.targetRatio);
                 targetRatioInput.value = ratio.toFixed(2);
@@ -443,7 +449,7 @@ export class VirtualScrollManager {
         if (!inputRow) return;
 
         const currentPriceInput = inputRow.querySelector('input[data-field="currentPrice"]');
-        if (currentPriceInput instanceof HTMLInputElement) {
+        if (isInputElement(currentPriceInput)) {
             currentPriceInput.value = price;
         }
     }
@@ -466,7 +472,7 @@ export class VirtualScrollManager {
             if (!inputRow) return;
 
             const nameInput = inputRow.querySelector('input[data-field="name"]');
-            if (nameInput instanceof HTMLInputElement) {
+            if (isInputElement(nameInput)) {
                 nameInput.focus();
                 nameInput.select();
             }

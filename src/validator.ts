@@ -1,6 +1,7 @@
 // src/validator.ts
 import { t } from './i18n.ts';
 import Decimal from 'decimal.js';
+import { logger } from './services/Logger.ts';
 import type {
     Transaction,
     ValidationResult,
@@ -87,7 +88,7 @@ export const Validator = {
                 throw new Error('Number is too large for standard JS number');
             }
         } catch (e) {
-            console.error('Decimal validation error:', e);
+            logger.error('Decimal validation error', 'Validator', e);
             return { isValid: false, message: t('validation.calcErrorDecimal') };
         }
 
@@ -250,6 +251,41 @@ export const Validator = {
         }
 
         return errors;
+    },
+
+    /**
+     * @description 필드별 통합 유효성 검사
+     * @param field - 필드 이름
+     * @param value - 검증할 값
+     * @returns 검증 결과
+     */
+    validateField(
+        field: string,
+        value: string | number | boolean | Decimal
+    ): ValidationResult {
+        switch (field) {
+            case 'targetRatio':
+            case 'currentPrice':
+            case 'fixedBuyAmount':
+            case 'manualAmount':
+                return this.validateNumericInput(value);
+
+            case 'isFixedBuyEnabled':
+                return { isValid: true, value: Boolean(value) };
+
+            case 'ticker':
+                return this.validateTicker(value);
+
+            case 'name':
+                return this.validateText(value, 50);
+
+            case 'sector':
+                return this.validateText(value, 30);
+
+            default:
+                // 기본적으로 문자열로 처리
+                return this.validateText(value, 100);
+        }
     },
 
     /**

@@ -99,10 +99,7 @@ describe('StockManager', () => {
                 expect.stringContaining('modal.confirmDeleteStockMsg')
             );
             expect(mockState.deleteStock).toHaveBeenCalledWith('stock-1');
-            expect(mockView.showToast).toHaveBeenCalledWith(
-                'toast.transactionDeleted',
-                'success'
-            );
+            expect(mockView.showToast).toHaveBeenCalledWith('toast.transactionDeleted', 'success');
             expect(result.needsFullRender).toBe(true);
         });
 
@@ -121,10 +118,7 @@ describe('StockManager', () => {
 
             const result = await stockManager.handleDeleteStock('stock-1');
 
-            expect(mockView.showToast).toHaveBeenCalledWith(
-                'toast.lastStockDeleteError',
-                'error'
-            );
+            expect(mockView.showToast).toHaveBeenCalledWith('toast.lastStockDeleteError', 'error');
             expect(result.needsFullRender).toBe(false);
         });
 

@@ -97,10 +97,7 @@ export function unwrap<T, E>(result: Result<T, E>): T {
  * @param fn - 변환 함수
  * @returns Result<U, E>
  */
-export function mapResult<T, U, E>(
-    result: Result<T, E>,
-    fn: (data: T) => U
-): Result<U, E> {
+export function mapResult<T, U, E>(result: Result<T, E>, fn: (data: T) => U): Result<U, E> {
     if (isOk(result)) {
         return ok(fn(result.data));
     }
@@ -129,10 +126,7 @@ export function flatMapResult<T, U, E>(
  * @param fn - 에러 변환 함수
  * @returns Result<T, F>
  */
-export function mapError<T, E, F>(
-    result: Result<T, E>,
-    fn: (error: E) => F
-): Result<T, F> {
+export function mapError<T, E, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F> {
     if (isErr(result)) {
         return err(fn(result.error));
     }

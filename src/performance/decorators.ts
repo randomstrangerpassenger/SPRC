@@ -17,8 +17,8 @@ export function withPerformance<T extends (...args: any[]) => any>(
     name: string,
     category: PerformanceMetric['category'] = 'other'
 ): T {
-    return ((...args: any[]) => {
-        return perfMonitor.measure(name, () => fn(...args), category);
+    return ((...args: unknown[]) => {
+        return perfMonitor.measure(name, () => fn(...(args as Parameters<T>)), category);
     }) as T;
 }
 
@@ -33,8 +33,8 @@ export function withPerformanceAsync<T extends (...args: any[]) => Promise<any>>
     name: string,
     category: PerformanceMetric['category'] = 'other'
 ): T {
-    return (async (...args: any[]) => {
-        return perfMonitor.measureAsync(name, () => fn(...args), category);
+    return (async (...args: unknown[]) => {
+        return perfMonitor.measureAsync(name, () => fn(...(args as Parameters<T>)), category);
     }) as T;
 }
 
@@ -54,7 +54,7 @@ export function measurePerformance(category: PerformanceMetric['category'] = 'ot
     ): PropertyDescriptor {
         const originalMethod = descriptor.value;
 
-        descriptor.value = function (...args: any[]) {
+        descriptor.value = function (...args: unknown[]) {
             const className = target.constructor.name;
             const methodName = `${className}.${propertyKey}`;
 
@@ -80,7 +80,7 @@ export function measurePerformanceAsync(category: PerformanceMetric['category'] 
     ): PropertyDescriptor {
         const originalMethod = descriptor.value;
 
-        descriptor.value = async function (...args: any[]) {
+        descriptor.value = async function (...args: unknown[]) {
             const className = target.constructor.name;
             const methodName = `${className}.${propertyKey}`;
 
@@ -105,10 +105,10 @@ export function conditionalPerformance<T extends (...args: any[]) => any>(
     category: PerformanceMetric['category'] = 'other',
     condition: () => boolean = () => true
 ): T {
-    return ((...args: any[]) => {
+    return ((...args: unknown[]) => {
         if (condition()) {
-            return perfMonitor.measure(name, () => fn(...args), category);
+            return perfMonitor.measure(name, () => fn(...(args as Parameters<T>)), category);
         }
-        return fn(...args);
+        return fn(...(args as Parameters<T>));
     }) as T;
 }

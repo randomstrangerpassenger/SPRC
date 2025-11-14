@@ -54,12 +54,10 @@ describe('EmailService', () => {
                 json: async () => ({ success: true }),
             } as Response);
 
-            await EmailService.sendPortfolioReport(
-                mockPortfolio,
-                'test@example.com',
-                undefined,
-                { includeExcel: true, includePDF: true }
-            );
+            await EmailService.sendPortfolioReport(mockPortfolio, 'test@example.com', undefined, {
+                includeExcel: true,
+                includePDF: true,
+            });
 
             expect(fetch).toHaveBeenCalledWith(
                 'http://localhost:3001/api/send-email',
@@ -79,12 +77,10 @@ describe('EmailService', () => {
                 json: async () => ({ success: true }),
             } as Response);
 
-            await EmailService.sendPortfolioReport(
-                mockPortfolio,
-                'test@example.com',
-                undefined,
-                { includeExcel: true, includePDF: false }
-            );
+            await EmailService.sendPortfolioReport(mockPortfolio, 'test@example.com', undefined, {
+                includeExcel: true,
+                includePDF: false,
+            });
 
             expect(fetch).toHaveBeenCalled();
             const callArgs = vi.mocked(fetch).mock.calls[0];
@@ -98,12 +94,10 @@ describe('EmailService', () => {
                 json: async () => ({ success: true }),
             } as Response);
 
-            await EmailService.sendPortfolioReport(
-                mockPortfolio,
-                'test@example.com',
-                undefined,
-                { includeExcel: false, includePDF: true }
-            );
+            await EmailService.sendPortfolioReport(mockPortfolio, 'test@example.com', undefined, {
+                includeExcel: false,
+                includePDF: true,
+            });
 
             expect(fetch).toHaveBeenCalled();
             const callArgs = vi.mocked(fetch).mock.calls[0];

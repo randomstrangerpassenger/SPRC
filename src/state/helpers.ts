@@ -59,7 +59,10 @@ export function createDefaultStock(): Stock {
  * @param defaultValue - 기본값 (NaN 시)
  * @returns Decimal 객체
  */
-export function validateDecimalValue(value: any, defaultValue: Decimal = new Decimal(0)): Decimal {
+export function validateDecimalValue(
+    value: unknown,
+    defaultValue: Decimal = new Decimal(0)
+): Decimal {
     if (value === null || value === undefined) {
         return defaultValue;
     }
@@ -74,4 +77,3 @@ export function validateDecimalValue(value: any, defaultValue: Decimal = new Dec
         return defaultValue;
     }
 }
-

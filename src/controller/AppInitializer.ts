@@ -3,6 +3,7 @@ import type { PortfolioState } from '../state';
 import type { PortfolioView } from '../view';
 import { ErrorService } from '../errorService';
 import { DarkModeManager } from '../DarkModeManager';
+import { logger } from '../services/Logger';
 
 /**
  * @class AppInitializer
@@ -77,11 +78,11 @@ export class AppInitializer {
 
                     this.view.updateExchangeRateInputs(rate);
 
-                    console.log('[AppInitializer] Exchange rate auto-loaded:', rate);
+                    logger.info(`Exchange rate auto-loaded: ${rate}`, 'AppInitializer');
                 }
             }
         } catch (error) {
-            console.warn('[AppInitializer] Failed to auto-load exchange rate:', error);
+            logger.warn('Failed to auto-load exchange rate', 'AppInitializer', error);
         }
     }
 

@@ -14,7 +14,7 @@ import { memoizeWithKey } from '../cache/memoization';
 export function createInput(
     type: string,
     field: string,
-    value: any,
+    value: string | number | boolean | Decimal | undefined,
     placeholder: string = '',
     disabled: boolean = false,
     ariaLabel: string = ''

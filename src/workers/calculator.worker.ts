@@ -134,6 +134,8 @@ function calculateStockMetrics(stock: Stock): SerializedCalculatedMetrics {
         // Convert Decimal to serializable format
         return serializeCalculatedMetrics(result);
     } catch (error) {
+        // In worker context, we can't import logger, so use console
+        // This is acceptable as it's in a separate worker thread
         console.error('Worker: calculateStockMetrics error', error);
         return {
             totalBuyQuantity: '0',
@@ -271,6 +273,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
                 break;
 
             default:
+                // In worker context, console is acceptable for debugging
                 console.warn('Worker: Unknown message type', type);
         }
     } catch (error) {

@@ -1,5 +1,6 @@
 import { t } from './i18n.ts';
 import type { IView } from './types';
+import { logger } from './services/Logger';
 
 /**
  * @description 유효성 검사 오류를 나타내는 커스텀 에러 클래스
@@ -61,7 +62,7 @@ export const ErrorService = {
      * @description 중앙 집중식 에러 핸들러. 콘솔에 에러를 기록하고 사용자에게 토스트 메시지를 표시합니다.
      */
     handle(error: Error, context: string = 'General'): void {
-        console.error(`Error in ${context}:`, error);
+        logger.error(`Error in ${context}`, context, error);
 
         // 기본 오류 메시지
         let userMessage = t('validation.calculationError');
@@ -77,7 +78,7 @@ export const ErrorService = {
         } else if (error instanceof StorageError) {
             userMessage = `저장소 오류: ${error.message}`;
             if (error.cause) {
-                console.error('[StorageError] Cause:', error.cause);
+                logger.error('StorageError cause', 'ErrorService', error.cause);
             }
         } else if (error.name === 'QuotaExceededError') {
             // LocalStorage quota exceeded
@@ -100,7 +101,7 @@ export const ErrorService = {
         if (this._viewInstance) {
             this._viewInstance.showToast(userMessage, 'error');
         } else {
-            console.warn('[ErrorService] View instance not set. Cannot show toast.');
+            logger.warn('View instance not set. Cannot show toast', 'ErrorService');
         }
     },
 };

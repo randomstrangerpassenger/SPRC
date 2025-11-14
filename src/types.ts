@@ -46,7 +46,7 @@ export interface CalculatedStock extends Stock {
     calculated: CalculatedStockMetrics;
 }
 
-export type MainMode = 'add' | 'sell';
+export type MainMode = 'add' | 'sell' | 'simple';
 export type Currency = 'krw' | 'usd';
 
 export interface PortfolioSettings {

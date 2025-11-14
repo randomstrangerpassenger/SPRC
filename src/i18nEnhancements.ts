@@ -5,6 +5,7 @@
 
 import Decimal from 'decimal.js';
 import type { Currency } from './types';
+import { logger } from './services/Logger';
 
 // Intl.NumberFormat 캐싱
 /**
@@ -169,7 +170,7 @@ export function formatCurrencyEnhanced(
 
         return getCachedNumberFormat(locale, options).format(num);
     } catch (e) {
-        console.error('formatCurrencyEnhanced error:', e);
+        logger.error('formatCurrencyEnhanced error', 'i18nEnhancements', e);
         return String(amount);
     }
 }
