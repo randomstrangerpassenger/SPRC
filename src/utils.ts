@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import type { Stock, Currency } from './types.ts';
+import type { Stock, Currency } from './types';
 // Import enhanced i18n formatters
 import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
 import { DECIMAL_ZERO } from './constants';

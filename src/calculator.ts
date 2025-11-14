@@ -1,9 +1,9 @@
 // src/calculator.ts
 import Decimal from 'decimal.js';
-import { generateId } from './utils.ts';
-import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
-import { ErrorService } from './errorService.ts';
-import { LRUCache } from './cache/LRUCache.ts';
+import { generateId } from './utils';
+import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED, CACHE } from './constants';
+import { ErrorService } from './errorService';
+import { LRUCache } from './cache/LRUCache';
 import { logger } from './services/Logger';
 import type {
     Stock,
@@ -11,8 +11,8 @@ import type {
     CalculatedStockMetrics,
     Currency,
     PortfolioSnapshot,
-} from './types.ts';
-import type { IRebalanceStrategy } from './calculationStrategies.ts';
+} from './types';
+import type { IRebalanceStrategy } from './calculationStrategies';
 
 /**
  * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.
@@ -56,8 +56,16 @@ export interface PortfolioCalculationResult {
 }
 
 export class Calculator {
-    // LRU 캐시로 여러 계산 결과 저장 (기본 용량: 20)
-    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(20);
+    // LRU 캐시로 여러 계산 결과 저장
+    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(
+        CACHE.PORTFOLIO_CACHE_SIZE
+    );
+
+    // 섹터 분석 결과 캐시
+    static #sectorAnalysisCache = new LRUCache<
+        string,
+        { sector: string; amount: Decimal; percentage: Decimal }[]
+    >(20);
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
@@ -217,11 +225,33 @@ export class Calculator {
 
     /**
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
+     * @memoized LRU 캐시 적용 (크기: 20)
      */
     static calculateSectorAnalysis(
         portfolioData: CalculatedStock[],
         currentCurrency: Currency = 'krw'
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
+        // Generate cache key based on stock IDs, sectors, amounts, and currency
+        const cacheKey =
+            portfolioData
+                .map((s) => {
+                    const amount =
+                        currentCurrency === 'krw'
+                            ? s.calculated?.currentAmountKRW || DECIMAL_ZERO
+                            : s.calculated?.currentAmountUSD || DECIMAL_ZERO;
+                    return `${s.id}:${s.sector}:${amount.toString()}`;
+                })
+                .join('|') + `:${currentCurrency}`;
+
+        // Check cache
+        const cached = Calculator.#sectorAnalysisCache.get(cacheKey);
+        if (cached) {
+            if (import.meta.env.DEV) {
+                logger.debug('calculateSectorAnalysis: cache hit', 'Calculator');
+            }
+            return cached;
+        }
+
         let startTime: number | undefined;
         if (import.meta.env.DEV) {
             startTime = performance.now();
@@ -253,6 +283,9 @@ export class Calculator {
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
+        // Store in cache
+        Calculator.#sectorAnalysisCache.set(cacheKey, result);
+
         if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
             logger.debug(
@@ -269,6 +302,7 @@ export class Calculator {
      */
     static clearPortfolioStateCache(): void {
         Calculator.#portfolioCache.clear();
+        Calculator.#sectorAnalysisCache.clear();
     }
 
     /**

@@ -1,14 +1,14 @@
 // src/validator.ts
-import { t } from './i18n.ts';
+import { t } from './i18n';
 import Decimal from 'decimal.js';
-import { logger } from './services/Logger.ts';
+import { logger } from './services/Logger';
 import type {
     Transaction,
     ValidationResult,
     ValidationErrorDetail,
     CalculatedStock,
     MainMode,
-} from './types.ts';
+} from './types';
 
 export const Validator = {
     /**
@@ -87,8 +87,8 @@ export const Validator = {
             if (!isFinite(num)) {
                 throw new Error('Number is too large for standard JS number');
             }
-        } catch (e) {
-            logger.error('Decimal validation error', 'Validator', e);
+        } catch (error) {
+            logger.error('Decimal validation error', 'Validator', error);
             return { isValid: false, message: t('validation.calcErrorDecimal') };
         }
 

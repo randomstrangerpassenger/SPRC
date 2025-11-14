@@ -5,9 +5,9 @@ import { isInputElement } from '../utils';
 /**
  * @description 포트폴리오 테이블 관련 이벤트 바인딩
  * @param view - PortfolioView 인스턴스
- * @param signal - AbortController signal
+ * @param _signal - AbortController signal (reserved for future use)
  */
-export function setupTableEvents(view: PortfolioView, signal: AbortSignal): void {
+export function setupTableEvents(view: PortfolioView, _signal: AbortSignal): void {
     const dom = view.dom;
 
     // 포트폴리오 테이블 입력 처리

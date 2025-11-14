@@ -1,15 +1,15 @@
 // src/state.ts
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.ts';
-import { t } from './i18n.ts';
-import { ErrorService } from './errorService.ts';
-import { Validator } from './validator.ts';
-import { generateId } from './utils.ts';
-import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
-import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
-import { validateAndUpgradeData } from './state/validation.ts';
-import { PortfolioRepository } from './state/PortfolioRepository.ts';
-import { logger } from './services/Logger.ts';
+import { CONFIG } from './constants';
+import { t } from './i18n';
+import { ErrorService } from './errorService';
+import { Validator } from './validator';
+import { generateId } from './utils';
+import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types';
+import { createDefaultPortfolio, createDefaultStock } from './state/helpers';
+import { validateAndUpgradeData } from './state/validation';
+import { PortfolioRepository } from './state/PortfolioRepository';
+import { logger } from './services/Logger';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
@@ -23,14 +23,14 @@ export class PortfolioState {
     }
 
     /**
-     * @description public async 메서드로 변경
+     * @description Ensure state initialization is complete before use
      */
     async ensureInitialized(): Promise<void> {
         await this.#initializationPromise;
     }
 
     /**
-     * @description 비동기 초기화 및 LocalStorage 마이그레이션 로직
+     * @description Async initialization and LocalStorage migration logic
      */
     async _initialize(): Promise<void> {
         try {
@@ -87,14 +87,14 @@ export class PortfolioState {
     }
 
     /**
-     * @description LocalStorage -> IndexedDB 마이그레이션 (PortfolioRepository 위임)
+     * @description Migrate data from LocalStorage to IndexedDB (delegated to PortfolioRepository)
      */
     async _migrateFromLocalStorage(): Promise<boolean> {
         return await this.#portfolioRepo.migrateFromLocalStorage();
     }
 
     /**
-     * @description IDB에서 Meta 로드 (PortfolioRepository 위임)
+     * @description Load meta state from IndexedDB (delegated to PortfolioRepository)
      */
     async _loadMeta(): Promise<MetaState | null> {
         return await this.#portfolioRepo.loadMeta();
@@ -267,7 +267,7 @@ export class PortfolioState {
                         const decimalValue = new Decimal(value ?? 0);
                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
                         stock[field] = decimalValue;
-                    } catch (e) {
+                    } catch (error) {
                         ErrorService.handle(
                             new Error(`Invalid numeric value for ${field}: ${value}`),
                             'updateStockProperty'
@@ -333,9 +333,9 @@ export class PortfolioState {
                 stock.transactions.sort((a, b) => a.date.localeCompare(b.date));
                 await this.saveActivePortfolio(); // 비동기 저장
                 return true;
-            } catch (e) {
+            } catch (error) {
                 ErrorService.handle(
-                    new Error(`Error converting transaction data to Decimal: ${e.message}`),
+                    new Error(`Error converting transaction data to Decimal: ${error instanceof Error ? error.message : String(error)}`),
                     'addTransaction'
                 );
                 return false;

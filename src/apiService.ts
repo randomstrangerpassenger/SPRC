@@ -1,7 +1,7 @@
 // src/apiService.ts
-import type { FetchStockResult } from './types.ts';
-import { CONFIG } from './constants.ts';
-import { logger } from './services/Logger.ts';
+import type { FetchStockResult } from './types';
+import { CONFIG } from './constants';
+import { logger } from './services/Logger';
 
 /**
  * @enum APIErrorType
@@ -196,8 +196,8 @@ async function fetchStockPrice(ticker: string): Promise<number> {
                     );
                 }
                 errorBody = errorData.error || (await response.text());
-            } catch (e) {
-                errorBody = e instanceof Error ? e.message : await response.text();
+            } catch (error) {
+                errorBody = error instanceof Error ? error.message : await response.text();
             }
 
             throw new APIError(

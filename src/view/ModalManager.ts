@@ -1,34 +1,26 @@
 // src/view/ModalManager.ts
 import { formatCurrency, escapeHTML, isInputElement } from '../utils';
+import { toNumber } from '../utils/converterUtil';
 import { t } from '../i18n';
 import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
 import { logger } from '../services/Logger';
-
-// UI 렌더링용 헬퍼 함수
-/**
- * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
- */
-function toNumber(value: Decimal | number | null | undefined): number {
-    if (value == null) return 0;
-    if (value instanceof Decimal) return value.toNumber();
-    return Number(value);
-}
+import { CSS_CLASSES } from '../constants';
 
 /**
  * @class ModalManager
  * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
  */
 export class ModalManager {
-    private dom: DOMElements;
-    private activeModalResolver: ((value: boolean | string | null) => void) | null = null;
-    private focusManager: FocusManager;
-    private focusTrapCleanup: (() => void) | null = null;
+    #dom: DOMElements;
+    #activeModalResolver: ((value: boolean | string | null) => void) | null = null;
+    #focusManager: FocusManager;
+    #focusTrapCleanup: (() => void) | null = null;
 
     constructor(dom: DOMElements) {
-        this.dom = dom;
-        this.focusManager = new FocusManager();
+        this.#dom = dom;
+        this.#focusManager = new FocusManager();
     }
 
     /**
@@ -36,25 +28,25 @@ export class ModalManager {
      * @param dom - 새로운 DOM 참조
      */
     setDom(dom: DOMElements): void {
-        this.dom = dom;
+        this.#dom = dom;
     }
 
     /**
      * @description 현재 포커스 요소를 저장합니다.
      */
     private saveFocusContext(): void {
-        this.focusManager.saveFocus();
+        this.#focusManager.saveFocus();
     }
 
     /**
      * @description 저장된 포커스 요소로 복원합니다.
      */
     private restoreFocus(): void {
-        this.focusManager.restoreFocus();
+        this.#focusManager.restoreFocus();
         // Cleanup focus trap
-        if (this.focusTrapCleanup) {
-            this.focusTrapCleanup();
-            this.focusTrapCleanup = null;
+        if (this.#focusTrapCleanup) {
+            this.#focusTrapCleanup();
+            this.#focusTrapCleanup = null;
         }
     }
 
@@ -98,29 +90,29 @@ export class ModalManager {
     }): Promise<boolean | string | null> {
         return new Promise((resolve) => {
             this.saveFocusContext();
-            this.activeModalResolver = resolve;
+            this.#activeModalResolver = resolve;
             const { title, message, defaultValue, type } = options;
-            const titleEl = this.dom.customModalTitle;
-            const messageEl = this.dom.customModalMessage;
-            const inputEl = this.dom.customModalInput;
-            const modalEl = this.dom.customModal;
-            const confirmBtnEl = this.dom.customModalConfirm;
+            const titleEl = this.#dom.customModalTitle;
+            const messageEl = this.#dom.customModalMessage;
+            const inputEl = this.#dom.customModalInput;
+            const modalEl = this.#dom.customModal;
+            const confirmBtnEl = this.#dom.customModalConfirm;
 
             if (titleEl) titleEl.textContent = title;
             if (messageEl) messageEl.textContent = message;
 
             if (type === 'prompt' && isInputElement(inputEl)) {
                 inputEl.value = defaultValue ?? '';
-                inputEl.classList.remove('hidden');
+                inputEl.classList.remove(CSS_CLASSES.HIDDEN);
             } else if (inputEl) {
-                inputEl.classList.add('hidden');
+                inputEl.classList.add(CSS_CLASSES.HIDDEN);
             }
 
             if (modalEl) {
-                modalEl.classList.remove('hidden');
+                modalEl.classList.remove(CSS_CLASSES.HIDDEN);
                 modalEl.setAttribute('aria-modal', 'true');
                 // Use enhanced focus trap from a11yHelpers
-                this.focusTrapCleanup = createFocusTrap(modalEl);
+                this.#focusTrapCleanup = createFocusTrap(modalEl);
             }
 
             if (type === 'prompt' && isInputElement(inputEl)) {
@@ -136,18 +128,18 @@ export class ModalManager {
      * @param confirmed - 확인 여부
      */
     handleCustomModal(confirmed: boolean): void {
-        if (!this.activeModalResolver) return;
+        if (!this.#activeModalResolver) return;
 
-        const inputEl = this.dom.customModalInput;
-        const modalEl = this.dom.customModal;
-        const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains('hidden');
+        const inputEl = this.#dom.customModalInput;
+        const modalEl = this.#dom.customModal;
+        const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains(CSS_CLASSES.HIDDEN);
         const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
 
-        this.activeModalResolver(value);
-        modalEl?.classList.add('hidden');
+        this.#activeModalResolver(value);
+        modalEl?.classList.add(CSS_CLASSES.HIDDEN);
         modalEl?.removeAttribute('aria-modal');
         this.restoreFocus();
-        this.activeModalResolver = null;
+        this.#activeModalResolver = null;
     }
 
     /**
@@ -158,9 +150,9 @@ export class ModalManager {
      */
     openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
         this.saveFocusContext();
-        const modal = this.dom.transactionModal;
-        const modalTitle = this.dom.modalStockName;
-        const dateInput = this.dom.txDate;
+        const modal = this.#dom.transactionModal;
+        const modalTitle = this.#dom.modalStockName;
+        const dateInput = this.#dom.txDate;
 
         if (!modal) return;
 
@@ -175,11 +167,11 @@ export class ModalManager {
             dateInput.valueAsDate = new Date();
         }
 
-        modal.classList.remove('hidden');
+        modal.classList.remove(CSS_CLASSES.HIDDEN);
         modal.setAttribute('aria-modal', 'true');
-        this.focusTrapCleanup = createFocusTrap(modal);
+        this.#focusTrapCleanup = createFocusTrap(modal);
 
-        const closeBtn = this.dom.closeModalBtn;
+        const closeBtn = this.#dom.closeModalBtn;
         if (closeBtn instanceof HTMLButtonElement) {
             closeBtn.focus();
         }
@@ -189,12 +181,12 @@ export class ModalManager {
      * @description 거래 내역 모달을 닫습니다.
      */
     closeTransactionModal(): void {
-        const modal = this.dom.transactionModal;
-        const form = this.dom.newTransactionForm;
+        const modal = this.#dom.transactionModal;
+        const form = this.#dom.newTransactionForm;
 
         if (!modal) return;
 
-        modal.classList.add('hidden');
+        modal.classList.add(CSS_CLASSES.HIDDEN);
         modal.removeAttribute('aria-modal');
         if (form instanceof HTMLFormElement) form.reset();
         modal.removeAttribute('data-stock-id');
@@ -207,7 +199,7 @@ export class ModalManager {
      * @param currency - 통화 모드
      */
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
-        const listBody = this.dom.transactionListBody;
+        const listBody = this.#dom.transactionListBody;
         if (!listBody) {
             logger.error('renderTransactionList - listBody not found', 'ModalManager');
             return;
@@ -306,9 +298,9 @@ export class ModalManager {
      * @description 커스텀 모달 이벤트 리스너를 바인딩합니다.
      */
     bindModalEvents(): void {
-        const cancelBtn = this.dom.customModalCancel;
-        const confirmBtn = this.dom.customModalConfirm;
-        const customModalEl = this.dom.customModal;
+        const cancelBtn = this.#dom.customModalCancel;
+        const confirmBtn = this.#dom.customModalConfirm;
+        const customModalEl = this.#dom.customModal;
 
         cancelBtn?.addEventListener('click', () => this.handleCustomModal(false));
         confirmBtn?.addEventListener('click', () => this.handleCustomModal(true));

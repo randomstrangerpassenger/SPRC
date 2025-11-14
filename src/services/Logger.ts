@@ -20,29 +20,29 @@ export enum LogLevel {
  * - 타임스탬프 자동 추가
  */
 export class Logger {
-    private static instance: Logger;
-    private currentLevel: LogLevel;
-    private isDevelopment: boolean;
+    static #instance: Logger;
+    #currentLevel: LogLevel;
+    #isDevelopment: boolean;
 
     private constructor() {
         // NODE_ENV가 설정되지 않았거나 'production'이 아니면 development로 간주
-        this.isDevelopment =
+        this.#isDevelopment =
             typeof process !== 'undefined'
                 ? process.env.NODE_ENV !== 'production'
                 : import.meta.env?.MODE !== 'production';
 
         // 개발 환경: INFO 레벨, 프로덕션: WARN 레벨
-        this.currentLevel = this.isDevelopment ? LogLevel.INFO : LogLevel.WARN;
+        this.#currentLevel = this.#isDevelopment ? LogLevel.INFO : LogLevel.WARN;
     }
 
     /**
      * @description Singleton 인스턴스 반환
      */
     static getInstance(): Logger {
-        if (!Logger.instance) {
-            Logger.instance = new Logger();
+        if (!Logger.#instance) {
+            Logger.#instance = new Logger();
         }
-        return Logger.instance;
+        return Logger.#instance;
     }
 
     /**
@@ -50,14 +50,14 @@ export class Logger {
      * @param level - 설정할 로그 레벨
      */
     setLevel(level: LogLevel): void {
-        this.currentLevel = level;
+        this.#currentLevel = level;
     }
 
     /**
      * @description 현재 로그 레벨 반환
      */
     getLevel(): LogLevel {
-        return this.currentLevel;
+        return this.#currentLevel;
     }
 
     /**
@@ -65,7 +65,7 @@ export class Logger {
      * @param level - 확인할 로그 레벨
      */
     private shouldLog(level: LogLevel): boolean {
-        return level >= this.currentLevel;
+        return level >= this.#currentLevel;
     }
 
     /**
@@ -135,7 +135,7 @@ export class Logger {
      * @param label - 그룹 레이블
      */
     group(label: string): void {
-        if (this.isDevelopment && this.shouldLog(LogLevel.INFO)) {
+        if (this.#isDevelopment && this.shouldLog(LogLevel.INFO)) {
             console.group(label);
         }
     }
@@ -144,7 +144,7 @@ export class Logger {
      * @description 그룹 종료
      */
     groupEnd(): void {
-        if (this.isDevelopment && this.shouldLog(LogLevel.INFO)) {
+        if (this.#isDevelopment && this.shouldLog(LogLevel.INFO)) {
             console.groupEnd();
         }
     }
@@ -154,7 +154,7 @@ export class Logger {
      * @param data - 테이블 데이터
      */
     table(data: any): void {
-        if (this.isDevelopment && this.shouldLog(LogLevel.DEBUG)) {
+        if (this.#isDevelopment && this.shouldLog(LogLevel.DEBUG)) {
             console.table(data);
         }
     }

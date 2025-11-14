@@ -1,8 +1,8 @@
 // src/dataStore.ts
 import { get, set, del } from 'idb-keyval';
-import { CONFIG } from './constants.ts';
-import { ErrorService } from './errorService.ts';
-import type { Portfolio, MetaState, PortfolioSnapshot } from './types.ts';
+import { CONFIG } from './constants';
+import { ErrorService } from './errorService';
+import type { Portfolio, MetaState, PortfolioSnapshot } from './types';
 
 import { logger } from './services/Logger';
 /**

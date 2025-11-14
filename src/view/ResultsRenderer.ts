@@ -2,19 +2,20 @@
 import { t } from '../i18n';
 import type { Chart } from 'chart.js';
 import type { PortfolioSnapshot, DOMElements } from '../types';
+import { CSS_CLASSES } from '../constants';
 
 /**
  * @class ResultsRenderer
  * @description 계산 결과, 섹터 분석, 차트 렌더링 관리
  */
 export class ResultsRenderer {
-    private dom: DOMElements;
-    private chartInstance: Chart | null = null;
-    private performanceChartInstance: Chart | null = null;
-    private currentObserver: IntersectionObserver | null = null;
+    #dom: DOMElements;
+    #chartInstance: Chart | null = null;
+    #performanceChartInstance: Chart | null = null;
+    #currentObserver: IntersectionObserver | null = null;
 
     constructor(dom: DOMElements) {
-        this.dom = dom;
+        this.#dom = dom;
     }
 
     /**
@@ -22,7 +23,7 @@ export class ResultsRenderer {
      * @param dom - 새로운 DOM 참조
      */
     setDom(dom: DOMElements): void {
-        this.dom = dom;
+        this.#dom = dom;
         // Chart 인스턴스는 유지 (상태 보존)
     }
 
@@ -37,11 +38,11 @@ export class ResultsRenderer {
                 <div class="skeleton-row"></div>
             </div>
         `;
-        const resultsEl = this.dom.resultsSection;
+        const resultsEl = this.#dom.resultsSection;
         if (!resultsEl) return;
 
         resultsEl.innerHTML = skeletonHTML;
-        resultsEl.classList.remove('hidden');
+        resultsEl.classList.remove(CSS_CLASSES.HIDDEN);
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -51,32 +52,32 @@ export class ResultsRenderer {
      */
     displayResults(html: string): void {
         requestAnimationFrame(() => {
-            const resultsEl = this.dom.resultsSection;
+            const resultsEl = this.#dom.resultsSection;
             if (!resultsEl) return;
 
             resultsEl.innerHTML = html;
-            resultsEl.classList.remove('hidden');
+            resultsEl.classList.remove(CSS_CLASSES.HIDDEN);
             resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             const rows = resultsEl.querySelectorAll('.result-row-highlight');
             if (rows.length === 0) return;
 
             this.cleanupObserver();
-            this.currentObserver = new IntersectionObserver(
+            this.#currentObserver = new IntersectionObserver(
                 (entries) => {
                     entries.forEach((entry) => {
                         if (entry.isIntersecting) {
                             const target = entry.target as HTMLElement;
                             target.style.transitionDelay = target.dataset.delay || '0s';
                             target.classList.add('in-view');
-                            this.currentObserver?.unobserve(target);
+                            this.#currentObserver?.unobserve(target);
                         }
                     });
                 },
                 { threshold: 0.1 }
             );
 
-            rows.forEach((row) => this.currentObserver?.observe(row));
+            rows.forEach((row) => this.#currentObserver?.observe(row));
         });
     }
 
@@ -86,11 +87,11 @@ export class ResultsRenderer {
      */
     displaySectorAnalysis(html: string): void {
         requestAnimationFrame(() => {
-            const sectorEl = this.dom.sectorAnalysisSection;
+            const sectorEl = this.#dom.sectorAnalysisSection;
             if (!sectorEl) return;
 
             sectorEl.innerHTML = html;
-            sectorEl.classList.remove('hidden');
+            sectorEl.classList.remove(CSS_CLASSES.HIDDEN);
         });
     }
 
@@ -102,12 +103,12 @@ export class ResultsRenderer {
      * @param title - 차트 제목
      */
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
-        const chartEl = this.dom.chartSection;
-        const canvas = this.dom.portfolioChart;
+        const chartEl = this.#dom.chartSection;
+        const canvas = this.#dom.portfolioChart;
 
         if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;
 
-        chartEl.classList.remove('hidden');
+        chartEl.classList.remove(CSS_CLASSES.HIDDEN);
 
         const chartOptions = {
             responsive: true,
@@ -146,14 +147,14 @@ export class ResultsRenderer {
             ],
         };
 
-        if (this.chartInstance) {
-            this.chartInstance.data = chartData;
-            this.chartInstance.options = chartOptions;
-            this.chartInstance.update();
+        if (this.#chartInstance) {
+            this.#chartInstance.data = chartData;
+            this.#chartInstance.options = chartOptions;
+            this.#chartInstance.update();
         } else {
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                this.chartInstance = new ChartClass(ctx, {
+                this.#chartInstance = new ChartClass(ctx, {
                     type: 'doughnut',
                     data: chartData,
                     options: chartOptions,
@@ -166,20 +167,20 @@ export class ResultsRenderer {
      * @description 결과 화면을 숨깁니다.
      */
     hideResults(): void {
-        const resultsEl = this.dom.resultsSection;
-        const sectorEl = this.dom.sectorAnalysisSection;
-        const chartEl = this.dom.chartSection;
+        const resultsEl = this.#dom.resultsSection;
+        const sectorEl = this.#dom.sectorAnalysisSection;
+        const chartEl = this.#dom.chartSection;
 
         if (resultsEl) {
             resultsEl.innerHTML = '';
-            resultsEl.classList.add('hidden');
+            resultsEl.classList.add(CSS_CLASSES.HIDDEN);
         }
         if (sectorEl) {
             sectorEl.innerHTML = '';
-            sectorEl.classList.add('hidden');
+            sectorEl.classList.add(CSS_CLASSES.HIDDEN);
         }
         if (chartEl) {
-            chartEl.classList.add('hidden');
+            chartEl.classList.add(CSS_CLASSES.HIDDEN);
         }
 
         this.cleanupObserver();
@@ -196,15 +197,15 @@ export class ResultsRenderer {
         snapshots: PortfolioSnapshot[],
         currency: 'krw' | 'usd'
     ): Promise<void> {
-        const section = this.dom.performanceHistorySection;
-        const container = this.dom.performanceChartContainer;
-        const canvas = this.dom.performanceChart;
+        const section = this.#dom.performanceHistorySection;
+        const container = this.#dom.performanceChartContainer;
+        const canvas = this.#dom.performanceChart;
 
         if (!section || !container || !(canvas instanceof HTMLCanvasElement)) return;
 
         // Show section
-        section.classList.remove('hidden');
-        container.classList.remove('hidden');
+        section.classList.remove(CSS_CLASSES.HIDDEN);
+        container.classList.remove(CSS_CLASSES.HIDDEN);
 
         // Sort snapshots by date (oldest first for chart)
         const sorted = [...snapshots].sort((a, b) => a.timestamp - b.timestamp);
@@ -289,14 +290,14 @@ export class ResultsRenderer {
             },
         };
 
-        if (this.performanceChartInstance) {
-            this.performanceChartInstance.data = chartData;
-            this.performanceChartInstance.options = chartOptions;
-            this.performanceChartInstance.update();
+        if (this.#performanceChartInstance) {
+            this.#performanceChartInstance.data = chartData;
+            this.#performanceChartInstance.options = chartOptions;
+            this.#performanceChartInstance.update();
         } else {
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                this.performanceChartInstance = new ChartClass(ctx, {
+                this.#performanceChartInstance = new ChartClass(ctx, {
                     type: 'line',
                     data: chartData,
                     options: chartOptions,
@@ -312,9 +313,9 @@ export class ResultsRenderer {
      * @description Intersection Observer를 정리합니다.
      */
     cleanupObserver(): void {
-        if (this.currentObserver) {
-            this.currentObserver.disconnect();
-            this.currentObserver = null;
+        if (this.#currentObserver) {
+            this.#currentObserver.disconnect();
+            this.#currentObserver = null;
         }
     }
 
@@ -322,13 +323,13 @@ export class ResultsRenderer {
      * @description 차트 인스턴스를 제거합니다.
      */
     destroyChart(): void {
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
-            this.chartInstance = null;
+        if (this.#chartInstance) {
+            this.#chartInstance.destroy();
+            this.#chartInstance = null;
         }
-        if (this.performanceChartInstance) {
-            this.performanceChartInstance.destroy();
-            this.performanceChartInstance = null;
+        if (this.#performanceChartInstance) {
+            this.#performanceChartInstance.destroy();
+            this.#performanceChartInstance = null;
         }
     }
 
@@ -346,7 +347,7 @@ export class ResultsRenderer {
      * @param currency - 통화 ('krw' | 'usd')
      */
     displaySnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
-        const listEl = this.dom.snapshotList;
+        const listEl = this.#dom.snapshotList;
         if (!listEl) return;
 
         const currencySymbol = currency === 'krw' ? '₩' : '$';
@@ -416,16 +417,16 @@ export class ResultsRenderer {
      * @param show - 표시 여부
      */
     showPerformanceHistoryView(show: boolean): void {
-        const section = this.dom.performanceHistorySection;
-        const chartContainer = this.dom.performanceChartContainer;
-        const listContainer = this.dom.snapshotListContainer;
+        const section = this.#dom.performanceHistorySection;
+        const chartContainer = this.#dom.performanceChartContainer;
+        const listContainer = this.#dom.snapshotListContainer;
 
         if (show) {
-            section?.classList.remove('hidden');
-            chartContainer?.classList.remove('hidden');
-            listContainer?.classList.add('hidden');
+            section?.classList.remove(CSS_CLASSES.HIDDEN);
+            chartContainer?.classList.remove(CSS_CLASSES.HIDDEN);
+            listContainer?.classList.add(CSS_CLASSES.HIDDEN);
         } else {
-            section?.classList.add('hidden');
+            section?.classList.add(CSS_CLASSES.HIDDEN);
         }
     }
 
@@ -434,16 +435,16 @@ export class ResultsRenderer {
      * @param show - 표시 여부
      */
     showSnapshotListView(show: boolean): void {
-        const section = this.dom.performanceHistorySection;
-        const chartContainer = this.dom.performanceChartContainer;
-        const listContainer = this.dom.snapshotListContainer;
+        const section = this.#dom.performanceHistorySection;
+        const chartContainer = this.#dom.performanceChartContainer;
+        const listContainer = this.#dom.snapshotListContainer;
 
         if (show) {
-            section?.classList.remove('hidden');
-            chartContainer?.classList.add('hidden');
-            listContainer?.classList.remove('hidden');
+            section?.classList.remove(CSS_CLASSES.HIDDEN);
+            chartContainer?.classList.add(CSS_CLASSES.HIDDEN);
+            listContainer?.classList.remove(CSS_CLASSES.HIDDEN);
         } else {
-            section?.classList.add('hidden');
+            section?.classList.add(CSS_CLASSES.HIDDEN);
         }
     }
 }

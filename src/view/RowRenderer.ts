@@ -4,6 +4,7 @@
  */
 
 import { formatCurrency, escapeHTML } from '../utils';
+import { toNumber } from '../utils/converterUtil';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
 import type { CalculatedStock } from '../types';
@@ -14,16 +15,6 @@ import {
     createCell,
     getGridTemplate,
 } from './DOMHelpers';
-
-// UI 렌더링용 헬퍼 함수
-/**
- * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
- */
-function toNumber(value: Decimal | number | null | undefined): number {
-    if (value == null) return 0;
-    if (value instanceof Decimal) return value.toNumber();
-    return Number(value);
-}
 
 /**
  * @description 주식 행 Fragment를 생성합니다.

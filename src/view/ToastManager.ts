@@ -1,12 +1,13 @@
 // src/view/ToastManager.ts
 import { escapeHTML } from '../utils';
+import { TIMING } from '../constants';
 
 /**
  * @class ToastManager
  * @description Toast 메시지 표시를 담당하는 클래스
  */
 export class ToastManager {
-    private readonly DEFAULT_DURATION = 3000; // 3초
+    private readonly DEFAULT_DURATION = TIMING.TOAST_DEFAULT_DURATION;
 
     /**
      * @description Toast 메시지 표시

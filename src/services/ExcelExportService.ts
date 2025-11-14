@@ -2,7 +2,6 @@
 import { Workbook } from 'exceljs';
 import type { Style } from 'exceljs';
 import type { Portfolio, Stock, Transaction } from '../types';
-import Decimal from 'decimal.js';
 import { PortfolioMetricsService } from './PortfolioMetricsService';
 import { toNumber } from '../utils/converterUtil';
 import { logger } from './Logger';

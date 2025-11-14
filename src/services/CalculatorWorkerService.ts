@@ -96,16 +96,16 @@ interface PendingRequest<T = unknown> {
 }
 
 export class CalculatorWorkerService {
-    private worker: Worker | null = null;
-    private isWorkerAvailable: boolean = false;
-    private pendingRequests: Map<string, PendingRequest> = new Map();
-    private requestId: number = 0;
-    private fallbackCount: number = 0;
-    private initializationPromise: Promise<void> | null = null;
+    #worker: Worker | null = null;
+    #isWorkerAvailable: boolean = false;
+    #pendingRequests: Map<string, PendingRequest> = new Map();
+    #requestId: number = 0;
+    #fallbackCount: number = 0;
+    #initializationPromise: Promise<void> | null = null;
 
     constructor() {
         // Don't await here - store the promise instead
-        this.initializationPromise = this.initializeWorker();
+        this.#initializationPromise = this.initializeWorker();
     }
 
     /**
@@ -117,29 +117,29 @@ export class CalculatorWorkerService {
             if (typeof Worker !== 'undefined') {
                 // Vite handles worker import with ?worker suffix
                 const CalculatorWorker = await import('../workers/calculator.worker?worker');
-                this.worker = new CalculatorWorker.default();
+                this.#worker = new CalculatorWorker.default();
 
-                this.worker.onmessage = (event) => {
+                this.#worker.onmessage = (event) => {
                     this.handleWorkerMessage(event);
                 };
 
-                this.worker.onerror = (error) => {
+                this.#worker.onerror = (error) => {
                     logger.error('Worker error', 'CalculatorWorkerService', error);
-                    this.isWorkerAvailable = false;
+                    this.#isWorkerAvailable = false;
                 };
 
-                this.isWorkerAvailable = true;
+                this.#isWorkerAvailable = true;
                 logger.info('Worker initialized successfully', 'CalculatorWorkerService');
             } else {
                 logger.warn(
                     'Web Workers not supported, using synchronous calculator',
                     'CalculatorWorkerService'
                 );
-                this.isWorkerAvailable = false;
+                this.#isWorkerAvailable = false;
             }
         } catch (error) {
             logger.error('Failed to initialize worker', 'CalculatorWorkerService', error);
-            this.isWorkerAvailable = false;
+            this.#isWorkerAvailable = false;
         }
     }
 
@@ -147,9 +147,9 @@ export class CalculatorWorkerService {
      * @description Ensure worker is initialized before use
      */
     private async ensureInitialized(): Promise<void> {
-        if (this.initializationPromise) {
-            await this.initializationPromise;
-            this.initializationPromise = null; // Clear after first initialization
+        if (this.#initializationPromise) {
+            await this.#initializationPromise;
+            this.#initializationPromise = null; // Clear after first initialization
         }
     }
 
@@ -161,20 +161,20 @@ export class CalculatorWorkerService {
 
         if (error) {
             logger.error('Worker error', 'CalculatorWorkerService', error);
-            const request = this.pendingRequests.get(requestId);
+            const request = this.#pendingRequests.get(requestId);
             if (request) {
                 clearTimeout(request.timeoutId);
                 request.reject(new Error(error));
-                this.pendingRequests.delete(requestId);
+                this.#pendingRequests.delete(requestId);
             }
             return;
         }
 
-        const request = this.pendingRequests.get(requestId);
+        const request = this.#pendingRequests.get(requestId);
         if (request) {
             clearTimeout(request.timeoutId);
             request.resolve(result);
-            this.pendingRequests.delete(requestId);
+            this.#pendingRequests.delete(requestId);
         }
     }
 
@@ -186,28 +186,28 @@ export class CalculatorWorkerService {
         data: TRequest
     ): Promise<TResponse> {
         return new Promise<TResponse>((resolve, reject) => {
-            if (!this.worker || !this.isWorkerAvailable) {
+            if (!this.#worker || !this.#isWorkerAvailable) {
                 reject(new Error('Worker not available'));
                 return;
             }
 
-            const requestId = `req_${++this.requestId}`;
+            const requestId = `req_${++this.#requestId}`;
 
             const timeoutId = window.setTimeout(() => {
-                if (this.pendingRequests.has(requestId)) {
-                    this.pendingRequests.delete(requestId);
+                if (this.#pendingRequests.has(requestId)) {
+                    this.#pendingRequests.delete(requestId);
                     reject(new Error('Worker request timeout'));
                 }
             }, CONFIG.WORKER_TIMEOUT);
 
-            this.pendingRequests.set(requestId, {
+            this.#pendingRequests.set(requestId, {
                 resolve: resolve as (value: unknown) => void,
                 reject,
                 timeoutId,
             });
 
             const message: WorkerRequest<TRequest> = { type, data, requestId };
-            this.worker.postMessage(message);
+            this.#worker.postMessage(message);
         });
     }
 
@@ -221,7 +221,7 @@ export class CalculatorWorkerService {
     }): Promise<{ portfolioData: CalculatedStock[]; currentTotal: Decimal }> {
         await this.ensureInitialized();
 
-        if (this.isWorkerAvailable) {
+        if (this.#isWorkerAvailable) {
             try {
                 const result = await this.sendToWorker<
                     CalculatePortfolioStateRequest,
@@ -258,7 +258,7 @@ export class CalculatorWorkerService {
     ): Promise<{ sector: string; amount: Decimal; percentage: Decimal }[]> {
         await this.ensureInitialized();
 
-        if (this.isWorkerAvailable) {
+        if (this.#isWorkerAvailable) {
             try {
                 const result = await this.sendToWorker<
                     CalculateSectorAnalysisRequest,
@@ -286,21 +286,21 @@ export class CalculatorWorkerService {
      * @description Handle worker failure and fallback
      */
     private handleWorkerFailure(error: Error, context: string): void {
-        this.fallbackCount++;
+        this.#fallbackCount++;
         ErrorService.handle(error, `CalculatorWorkerService.${context}`);
 
         logger.warn(
-            `Worker failed (${this.fallbackCount} times), falling back to sync: ${error.message}`,
+            `Worker failed (${this.#fallbackCount} times), falling back to sync: ${error.message}`,
             'CalculatorWorkerService'
         );
 
-        this.isWorkerAvailable = false;
+        this.#isWorkerAvailable = false;
 
         // Attempt to reinitialize worker after 3 failures
-        if (this.fallbackCount >= 3 && this.fallbackCount % 3 === 0) {
+        if (this.#fallbackCount >= 3 && this.#fallbackCount % 3 === 0) {
             logger.info('Attempting to reinitialize worker', 'CalculatorWorkerService');
             setTimeout(() => {
-                this.initializationPromise = this.initializeWorker();
+                this.#initializationPromise = this.initializeWorker();
             }, 1000);
         }
     }
@@ -324,10 +324,10 @@ export class CalculatorWorkerService {
      * @description Terminate worker (cleanup)
      */
     terminate(): void {
-        if (this.worker) {
-            this.worker.terminate();
-            this.worker = null;
-            this.isWorkerAvailable = false;
+        if (this.#worker) {
+            this.#worker.terminate();
+            this.#worker = null;
+            this.#isWorkerAvailable = false;
             logger.info('Worker terminated', 'CalculatorWorkerService');
         }
     }

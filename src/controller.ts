@@ -1,9 +1,8 @@
 // src/controller.ts
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
-import { Calculator } from './calculator';
 import { debounce, getRatioSum, isInputElement } from './utils';
-import { CONFIG, DECIMAL_ZERO } from './constants';
+import { CONFIG, DECIMAL_ZERO, TIMING } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
@@ -41,23 +40,25 @@ export class PortfolioController {
     calculationManager: CalculationManager;
     dataManager: DataManager;
     snapshotManager: SnapshotManager;
-    private appInitializer: AppInitializer;
+    #appInitializer: AppInitializer;
 
     // Repository 인스턴스
-    private snapshotRepo: SnapshotRepository;
+    #snapshotRepo: SnapshotRepository;
 
-    private calculatorWorker = getCalculatorWorkerService();
+    #calculatorWorker = getCalculatorWorkerService();
 
-    #lastCalculationKey: string | null = null;
     #eventAbortController: AbortController | null = null;
 
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
         this.view = view;
-        this.debouncedSave = debounce(() => this.state.saveActivePortfolio(), 500);
+        this.debouncedSave = debounce(
+            () => this.state.saveActivePortfolio(),
+            TIMING.DEBOUNCE_SAVE_DELAY
+        );
 
         // Repository 인스턴스 생성
-        this.snapshotRepo = new SnapshotRepository();
+        this.#snapshotRepo = new SnapshotRepository();
 
         // 매니저 인스턴스 생성
         this.portfolioManager = new PortfolioManager(this.state, this.view);
@@ -68,11 +69,11 @@ export class PortfolioController {
             this.view,
             this.debouncedSave,
             this.getInvestmentAmountInKRW.bind(this),
-            this.snapshotRepo
+            this.#snapshotRepo
         );
         this.dataManager = new DataManager(this.state, this.view);
-        this.snapshotManager = new SnapshotManager(this.state, this.view, this.snapshotRepo);
-        this.appInitializer = new AppInitializer(this.state, this.view);
+        this.snapshotManager = new SnapshotManager(this.state, this.view, this.#snapshotRepo);
+        this.#appInitializer = new AppInitializer(this.state, this.view);
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
@@ -85,7 +86,7 @@ export class PortfolioController {
      * @description 컨트롤러 초기화 (AppInitializer로 위임)
      */
     async initialize(): Promise<void> {
-        this.#eventAbortController = await this.appInitializer.initialize(
+        this.#eventAbortController = await this.#appInitializer.initialize(
             this.bindControllerEvents.bind(this),
             bindEventListeners
         );
@@ -102,7 +103,7 @@ export class PortfolioController {
             this.#eventAbortController = null;
             logger.debug('Event listeners cleaned up', 'Controller');
         }
-        this.appInitializer.cleanup();
+        this.#appInitializer.cleanup();
     }
 
     /**
@@ -155,7 +156,7 @@ export class PortfolioController {
         if (!activePortfolio) return;
 
         // 1. 포트폴리오 계산
-        const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+        const calculatedState = await this.#calculatorWorker.calculatePortfolioState({
             portfolioData: activePortfolio.portfolioData,
             exchangeRate: activePortfolio.settings.exchangeRate,
             currentCurrency: activePortfolio.settings.currentCurrency,
@@ -177,7 +178,7 @@ export class PortfolioController {
         this.view.updateRatioSum(ratioSum.toNumber());
 
         // 4. 섹터 분석
-        const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+        const sectorData = await this.#calculatorWorker.calculateSectorAnalysis(
             calculatedState.portfolioData,
             activePortfolio.settings.currentCurrency
         );
@@ -223,7 +224,7 @@ export class PortfolioController {
     /**
      * @description 자산 배분 템플릿 적용 (Strategy Pattern)
      */
-    handleApplyTemplate(templateName: string): void {
+    async handleApplyTemplate(templateName: string): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
             this.view.showToast('적용할 종목이 없습니다.', 'warning');
@@ -245,7 +246,7 @@ export class PortfolioController {
         template.apply(stocks);
 
         // 저장 및 UI 업데이트
-        this.state.saveActivePortfolio();
+        await this.state.saveActivePortfolio();
         this.fullRender();
         this.view.showToast(`✨ ${templateName} 템플릿이 적용되었습니다!`, 'success');
     }
@@ -266,7 +267,7 @@ export class PortfolioController {
      * @description 다크 모드 토글
      */
     handleToggleDarkMode(): void {
-        this.appInitializer.getDarkModeManager().toggleDarkMode();
+        this.#appInitializer.getDarkModeManager().toggleDarkMode();
         this.view.destroyChart();
         this.fullRender(); // async but we don't await
     }
@@ -314,8 +315,8 @@ export class PortfolioController {
                 const calculatedKRW = amountUSD.times(exchangeRate);
                 return calculatedKRW.isNegative() ? DECIMAL_ZERO : calculatedKRW;
             }
-        } catch (e) {
-            logger.error('Error parsing investment amount', 'Controller', e);
+        } catch (error) {
+            logger.error('Error parsing investment amount', 'Controller', error);
             return DECIMAL_ZERO;
         }
     }

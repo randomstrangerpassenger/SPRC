@@ -7,6 +7,7 @@
  */
 
 import { logger } from '../services/Logger';
+import { PERFORMANCE } from '../constants';
 
 export interface PerformanceMetric {
     name: string;
@@ -32,11 +33,12 @@ export interface PerformanceStats {
 }
 
 export class PerformanceMonitor {
-    private static instance: PerformanceMonitor | null = null;
-    private metrics: PerformanceMetric[] = [];
-    private activeTimers: Map<string, number> = new Map();
-    private maxMetrics: number = 1000; // 최대 저장 메트릭 수
-    private enabled: boolean = true;
+    static #instance: PerformanceMonitor | null = null;
+    #metrics: PerformanceMetric[] = [];
+    #activeTimers: Map<string, number> = new Map();
+    #metadata: Map<string, Record<string, any>> = new Map();
+    #maxMetrics: number = PERFORMANCE.MAX_METRICS;
+    #enabled: boolean = true;
 
     private constructor() {
         // Singleton pattern
@@ -46,17 +48,17 @@ export class PerformanceMonitor {
      * @description 싱글톤 인스턴스 가져오기
      */
     static getInstance(): PerformanceMonitor {
-        if (!PerformanceMonitor.instance) {
-            PerformanceMonitor.instance = new PerformanceMonitor();
+        if (!PerformanceMonitor.#instance) {
+            PerformanceMonitor.#instance = new PerformanceMonitor();
         }
-        return PerformanceMonitor.instance;
+        return PerformanceMonitor.#instance;
     }
 
     /**
      * @description 성능 모니터링 활성화/비활성화
      */
     setEnabled(enabled: boolean): void {
-        this.enabled = enabled;
+        this.#enabled = enabled;
     }
 
     /**
@@ -67,14 +69,14 @@ export class PerformanceMonitor {
         category: PerformanceMetric['category'] = 'other',
         metadata?: Record<string, any>
     ): void {
-        if (!this.enabled) return;
+        if (!this.#enabled) return;
 
         const timerId = `${category}:${name}`;
-        this.activeTimers.set(timerId, performance.now());
+        this.#activeTimers.set(timerId, performance.now());
 
-        // 메타데이터를 임시 저장 (end에서 사용)
+        // Store metadata in Map for type safety
         if (metadata) {
-            (this as any)[`_meta_${timerId}`] = metadata;
+            this.#metadata.set(timerId, metadata);
         }
     }
 
@@ -82,10 +84,10 @@ export class PerformanceMonitor {
      * @description 성능 측정 종료
      */
     end(name: string, category: PerformanceMetric['category'] = 'other'): number {
-        if (!this.enabled) return 0;
+        if (!this.#enabled) return 0;
 
         const timerId = `${category}:${name}`;
-        const startTime = this.activeTimers.get(timerId);
+        const startTime = this.#activeTimers.get(timerId);
 
         if (startTime === undefined) {
             logger.warn(`No start time found for: ${timerId}`, 'PerformanceMonitor');
@@ -101,9 +103,9 @@ export class PerformanceMonitor {
             memoryUsed = performance.memory.usedJSHeapSize;
         }
 
-        // 메타데이터 가져오기
-        const metadata = (this as any)[`_meta_${timerId}`];
-        delete (this as any)[`_meta_${timerId}`];
+        // Retrieve and clean up metadata
+        const metadata = this.#metadata.get(timerId);
+        this.#metadata.delete(timerId);
 
         const metric: PerformanceMetric = {
             name,
@@ -116,7 +118,7 @@ export class PerformanceMonitor {
         };
 
         this.addMetric(metric);
-        this.activeTimers.delete(timerId);
+        this.#activeTimers.delete(timerId);
 
         return duration;
     }
@@ -125,11 +127,11 @@ export class PerformanceMonitor {
      * @description 메트릭 추가
      */
     private addMetric(metric: PerformanceMetric): void {
-        this.metrics.push(metric);
+        this.#metrics.push(metric);
 
         // 최대 메트릭 수 초과 시 오래된 것 제거
-        if (this.metrics.length > this.maxMetrics) {
-            this.metrics.shift();
+        if (this.#metrics.length > this.#maxMetrics) {
+            this.#metrics.shift();
         }
     }
 
@@ -142,7 +144,7 @@ export class PerformanceMonitor {
         category: PerformanceMetric['category'] = 'other',
         metadata?: Record<string, any>
     ): T {
-        if (!this.enabled) return fn();
+        if (!this.#enabled) return fn();
 
         this.start(name, category, metadata);
         try {
@@ -164,7 +166,7 @@ export class PerformanceMonitor {
         category: PerformanceMetric['category'] = 'other',
         metadata?: Record<string, any>
     ): Promise<T> {
-        if (!this.enabled) return fn();
+        if (!this.#enabled) return fn();
 
         this.start(name, category, metadata);
         try {
@@ -182,16 +184,16 @@ export class PerformanceMonitor {
      */
     getMetrics(category?: PerformanceMetric['category']): PerformanceMetric[] {
         if (category) {
-            return this.metrics.filter((m) => m.category === category);
+            return this.#metrics.filter((m) => m.category === category);
         }
-        return [...this.metrics];
+        return [...this.#metrics];
     }
 
     /**
      * @description 성능 통계 계산
      */
     getStats(name?: string, category?: PerformanceMetric['category']): PerformanceStats[] {
-        let filteredMetrics = this.metrics;
+        let filteredMetrics = this.#metrics;
 
         if (category) {
             filteredMetrics = filteredMetrics.filter((m) => m.category === category);
@@ -213,7 +215,7 @@ export class PerformanceMonitor {
 
         // 통계 계산
         const stats: PerformanceStats[] = [];
-        grouped.forEach((metrics, key) => {
+        grouped.forEach((metrics, _key) => {
             const durations = metrics.map((m) => m.duration).sort((a, b) => a - b);
             const totalDuration = durations.reduce((sum, d) => sum + d, 0);
 
@@ -246,7 +248,7 @@ export class PerformanceMonitor {
      * @description 느린 작업 감지 (임계값 초과)
      */
     getSlowOperations(thresholdMs: number = 100): PerformanceMetric[] {
-        return this.metrics.filter((m) => m.duration > thresholdMs);
+        return this.#metrics.filter((m) => m.duration > thresholdMs);
     }
 
     /**
@@ -274,8 +276,9 @@ export class PerformanceMonitor {
      * @description 메트릭 초기화
      */
     clear(): void {
-        this.metrics = [];
-        this.activeTimers.clear();
+        this.#metrics = [];
+        this.#activeTimers.clear();
+        this.#metadata.clear();
     }
 
     /**
@@ -283,7 +286,7 @@ export class PerformanceMonitor {
      */
     export(): string {
         return JSON.stringify({
-            metrics: this.metrics,
+            metrics: this.#metrics,
             stats: this.getStats(),
             timestamp: Date.now(),
         });

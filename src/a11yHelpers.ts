@@ -193,22 +193,22 @@ export function createSkipLink(
  * @description 모달 오픈 시 이전 포커스 저장 및 복원
  */
 export class FocusManager {
-    private previousFocus: HTMLElement | null = null;
+    #previousFocus: HTMLElement | null = null;
 
     /**
      * @description 현재 포커스 저장
      */
     saveFocus(): void {
-        this.previousFocus = document.activeElement as HTMLElement;
+        this.#previousFocus = document.activeElement as HTMLElement;
     }
 
     /**
      * @description 이전 포커스 복원
      */
     restoreFocus(): void {
-        if (this.previousFocus && typeof this.previousFocus.focus === 'function') {
-            this.previousFocus.focus();
-            this.previousFocus = null;
+        if (this.#previousFocus && typeof this.#previousFocus.focus === 'function') {
+            this.#previousFocus.focus();
+            this.#previousFocus = null;
         }
     }
 }
@@ -286,7 +286,7 @@ export function checkTouchTargetSize(element: HTMLElement): {
  * @description 키보드 단축키 관리
  */
 export class KeyboardShortcutManager {
-    private shortcuts: Map<string, (e: KeyboardEvent) => void> = new Map();
+    #shortcuts: Map<string, (e: KeyboardEvent) => void> = new Map();
 
     /**
      * @description 단축키 등록
@@ -294,7 +294,7 @@ export class KeyboardShortcutManager {
      * @param callback - 실행할 콜백
      */
     register(key: string, callback: (e: KeyboardEvent) => void): void {
-        this.shortcuts.set(key.toLowerCase(), callback);
+        this.#shortcuts.set(key.toLowerCase(), callback);
     }
 
     /**
@@ -302,7 +302,7 @@ export class KeyboardShortcutManager {
      * @param key - 키 조합
      */
     unregister(key: string): void {
-        this.shortcuts.delete(key.toLowerCase());
+        this.#shortcuts.delete(key.toLowerCase());
     }
 
     /**
@@ -310,8 +310,8 @@ export class KeyboardShortcutManager {
      * @param e - KeyboardEvent
      */
     handleKeyDown(e: KeyboardEvent): void {
-        const key = this.getKeyString(e);
-        const callback = this.shortcuts.get(key.toLowerCase());
+        const key = this.#getKeyString(e);
+        const callback = this.#shortcuts.get(key.toLowerCase());
 
         if (callback) {
             e.preventDefault();
@@ -324,7 +324,7 @@ export class KeyboardShortcutManager {
      * @param e - KeyboardEvent
      * @returns 키 조합 문자열 (예: 'ctrl+s')
      */
-    private getKeyString(e: KeyboardEvent): string {
+    #getKeyString(e: KeyboardEvent): string {
         const parts: string[] = [];
 
         if (e.ctrlKey) parts.push('ctrl');
@@ -341,7 +341,7 @@ export class KeyboardShortcutManager {
      * @description 모든 단축키 제거
      */
     clear(): void {
-        this.shortcuts.clear();
+        this.#shortcuts.clear();
     }
 
     /**
@@ -349,7 +349,7 @@ export class KeyboardShortcutManager {
      * @returns 단축키 배열
      */
     getRegisteredShortcuts(): string[] {
-        return Array.from(this.shortcuts.keys());
+        return Array.from(this.#shortcuts.keys());
     }
 }
 

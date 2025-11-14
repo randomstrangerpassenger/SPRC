@@ -169,8 +169,8 @@ export function formatCurrencyEnhanced(
         }
 
         return getCachedNumberFormat(locale, options).format(num);
-    } catch (e) {
-        logger.error('formatCurrencyEnhanced error', 'i18nEnhancements', e);
+    } catch (error) {
+        logger.error('formatCurrencyEnhanced error', 'i18nEnhancements', error);
         return String(amount);
     }
 }
@@ -205,7 +205,7 @@ export function formatCompactNumber(
             minimumFractionDigits: 0,
             maximumFractionDigits: fractionDigits,
         }).format(num);
-    } catch (e) {
+    } catch (error) {
         // Fallback: 수동 축약
         if (num >= 1_000_000_000) {
             return `${(num / 1_000_000_000).toFixed(fractionDigits)}B`;
@@ -266,7 +266,7 @@ export function formatRelativeTime(date: Date | string): string {
         if (diffHour > 0) return rtf.format(-diffHour, 'hour');
         if (diffMin > 0) return rtf.format(-diffMin, 'minute');
         return rtf.format(-diffSec, 'second');
-    } catch (e) {
+    } catch (error) {
         // Fallback
         if (diffYear > 0) return lang === 'ko' ? `${diffYear}년 전` : `${diffYear} years ago`;
         if (diffMonth > 0) return lang === 'ko' ? `${diffMonth}개월 전` : `${diffMonth} months ago`;

@@ -1,13 +1,13 @@
 // src/main.ts
-import { PortfolioState } from './state.ts';
-import { PortfolioView } from './view.ts';
-import { PortfolioController } from './controller.ts';
-import { ErrorService } from './errorService.ts';
-import { setupGlobalErrorHandlers } from './errorHandlers.ts';
-import { initPerformancePanel } from './performance/PerformancePanel.ts';
-import { perfMonitor } from './performance/PerformanceMonitor.ts';
-import { logger } from './services/Logger.ts';
-import { displayBootstrapError } from './BootstrapError.ts';
+import { PortfolioState } from './state';
+import { PortfolioView } from './view';
+import { PortfolioController } from './controller';
+import { ErrorService } from './errorService';
+import { setupGlobalErrorHandlers } from './errorHandlers';
+import { initPerformancePanel } from './performance/PerformancePanel';
+import { perfMonitor } from './performance/PerformanceMonitor';
+import { logger } from './services/Logger';
+import { displayBootstrapError } from './BootstrapError';
 
 // Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
 // (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
@@ -34,7 +34,7 @@ try {
     ErrorService.setViewInstance(view);
 
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
-    const app = new PortfolioController(state, view);
+    void new PortfolioController(state, view);
 
     logger.info('Application setup complete.');
 } catch (error) {

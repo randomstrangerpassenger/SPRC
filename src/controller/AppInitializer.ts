@@ -11,14 +11,14 @@ import { logger } from '../services/Logger';
  * initialize, setupInitialUI, loadExchangeRate 등 앱 시작 시 필요한 로직 처리
  */
 export class AppInitializer {
-    private state: PortfolioState;
-    private view: PortfolioView;
-    private darkModeManager: DarkModeManager;
+    #state: PortfolioState;
+    #view: PortfolioView;
+    #darkModeManager: DarkModeManager;
 
     constructor(state: PortfolioState, view: PortfolioView) {
-        this.state = state;
-        this.view = view;
-        this.darkModeManager = new DarkModeManager();
+        this.#state = state;
+        this.#view = view;
+        this.#darkModeManager = new DarkModeManager();
     }
 
     /**
@@ -31,27 +31,27 @@ export class AppInitializer {
         bindControllerEvents: () => void,
         bindEventListeners: (view: PortfolioView) => AbortController
     ): Promise<AbortController> {
-        await this.state.ensureInitialized();
-        this.view.cacheDomElements();
-        ErrorService.setViewInstance(this.view);
+        await this.#state.ensureInitialized();
+        this.#view.cacheDomElements();
+        ErrorService.setViewInstance(this.#view);
         this.setupInitialUI();
         bindControllerEvents();
-        return bindEventListeners(this.view);
+        return bindEventListeners(this.#view);
     }
 
     /**
      * @description 초기 UI 설정
      */
     setupInitialUI(): void {
-        this.darkModeManager.initialize();
+        this.#darkModeManager.initialize();
 
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (activePortfolio) {
-            this.view.renderPortfolioSelector(this.state.getAllPortfolios(), activePortfolio.id);
-            this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+            this.#view.renderPortfolioSelector(this.#state.getAllPortfolios(), activePortfolio.id);
+            this.#view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+            this.#view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-            this.view.updatePortfolioSettingsInputs({
+            this.#view.updatePortfolioSettingsInputs({
                 exchangeRate: activePortfolio.settings.exchangeRate,
                 rebalancingTolerance: activePortfolio.settings.rebalancingTolerance ?? 5,
                 tradingFeeRate: activePortfolio.settings.tradingFeeRate ?? 0.3,
@@ -71,12 +71,12 @@ export class AppInitializer {
             const { apiService } = await import('../apiService');
             const rate = await apiService.fetchExchangeRate();
             if (rate) {
-                const activePortfolio = this.state.getActivePortfolio();
+                const activePortfolio = this.#state.getActivePortfolio();
                 if (activePortfolio) {
                     activePortfolio.settings.exchangeRate = rate;
-                    await this.state.saveActivePortfolio();
+                    await this.#state.saveActivePortfolio();
 
-                    this.view.updateExchangeRateInputs(rate);
+                    this.#view.updateExchangeRateInputs(rate);
 
                     logger.info(`Exchange rate auto-loaded: ${rate}`, 'AppInitializer');
                 }
@@ -90,13 +90,13 @@ export class AppInitializer {
      * @description 다크 모드 매니저 정리
      */
     cleanup(): void {
-        this.darkModeManager.cleanup();
+        this.#darkModeManager.cleanup();
     }
 
     /**
      * @description 다크 모드 매니저 접근자
      */
     getDarkModeManager(): DarkModeManager {
-        return this.darkModeManager;
+        return this.#darkModeManager;
     }
 }

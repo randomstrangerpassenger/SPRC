@@ -8,9 +8,9 @@
 import { perfMonitor, type PerformanceMetric } from './PerformanceMonitor';
 
 export class PerformancePanel {
-    private panelElement: HTMLDivElement | null = null;
-    private isVisible: boolean = false;
-    private refreshInterval: number | null = null;
+    #panelElement: HTMLDivElement | null = null;
+    #isVisible: boolean = false;
+    #refreshInterval: number | null = null;
 
     constructor() {
         this.createPanel();
@@ -115,7 +115,7 @@ export class PerformancePanel {
         document.head.appendChild(style);
 
         document.body.appendChild(panel);
-        this.panelElement = panel;
+        this.#panelElement = panel;
 
         this.bindPanelEvents();
     }
@@ -124,13 +124,13 @@ export class PerformancePanel {
      * @description 패널 이벤트 바인딩
      */
     private bindPanelEvents(): void {
-        if (!this.panelElement) return;
+        if (!this.#panelElement) return;
 
-        const closeBtn = this.panelElement.querySelector('#perf-panel-close');
-        const refreshBtn = this.panelElement.querySelector('#perf-refresh');
-        const clearBtn = this.panelElement.querySelector('#perf-clear');
-        const exportBtn = this.panelElement.querySelector('#perf-export');
-        const categorySelect = this.panelElement.querySelector(
+        const closeBtn = this.#panelElement.querySelector('#perf-panel-close');
+        const refreshBtn = this.#panelElement.querySelector('#perf-refresh');
+        const clearBtn = this.#panelElement.querySelector('#perf-clear');
+        const exportBtn = this.#panelElement.querySelector('#perf-export');
+        const categorySelect = this.#panelElement.querySelector(
             '#perf-category'
         ) as HTMLSelectElement;
 
@@ -160,14 +160,14 @@ export class PerformancePanel {
      * @description 패널 표시
      */
     show(): void {
-        if (!this.panelElement) return;
+        if (!this.#panelElement) return;
 
-        this.panelElement.style.display = 'block';
-        this.isVisible = true;
+        this.#panelElement.style.display = 'block';
+        this.#isVisible = true;
         this.refresh();
 
         // 자동 새로고침 (5초마다)
-        this.refreshInterval = window.setInterval(() => {
+        this.#refreshInterval = window.setInterval(() => {
             this.refresh();
         }, 5000);
     }
@@ -176,14 +176,14 @@ export class PerformancePanel {
      * @description 패널 숨기기
      */
     hide(): void {
-        if (!this.panelElement) return;
+        if (!this.#panelElement) return;
 
-        this.panelElement.style.display = 'none';
-        this.isVisible = false;
+        this.#panelElement.style.display = 'none';
+        this.#isVisible = false;
 
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
+        if (this.#refreshInterval) {
+            clearInterval(this.#refreshInterval);
+            this.#refreshInterval = null;
         }
     }
 
@@ -191,7 +191,7 @@ export class PerformancePanel {
      * @description 패널 토글
      */
     toggle(): void {
-        if (this.isVisible) {
+        if (this.#isVisible) {
             this.hide();
         } else {
             this.show();
@@ -202,9 +202,9 @@ export class PerformancePanel {
      * @description 데이터 새로고침
      */
     private refresh(): void {
-        if (!this.panelElement) return;
+        if (!this.#panelElement) return;
 
-        const categorySelect = this.panelElement.querySelector(
+        const categorySelect = this.#panelElement.querySelector(
             '#perf-category'
         ) as HTMLSelectElement;
         const category = categorySelect?.value as PerformanceMetric['category'] | '';
@@ -220,7 +220,7 @@ export class PerformancePanel {
      * @description 통계 렌더링
      */
     private renderStats(stats: any[]): void {
-        const container = this.panelElement?.querySelector('#perf-stats-container');
+        const container = this.#panelElement?.querySelector('#perf-stats-container');
         if (!container) return;
 
         if (stats.length === 0) {
@@ -269,7 +269,7 @@ export class PerformancePanel {
      * @description 느린 작업 렌더링
      */
     private renderSlowOps(slowOps: PerformanceMetric[]): void {
-        const container = this.panelElement?.querySelector('#perf-slow-ops');
+        const container = this.#panelElement?.querySelector('#perf-slow-ops');
         if (!container) return;
 
         if (slowOps.length === 0) {

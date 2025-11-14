@@ -1,6 +1,7 @@
 // src/view/VirtualScrollManager.ts
 // 모듈 분리
 import { formatCurrency, escapeHTML, isInputElement } from '../utils';
+import { toNumber } from '../utils/converterUtil';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
 import { UI, BREAKPOINTS } from '../constants';
@@ -8,16 +9,6 @@ import type { CalculatedStock, DOMElements } from '../types';
 import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
 import { LRUCache } from '../cache/LRUCache';
-
-// UI 렌더링용 헬퍼 함수
-/**
- * @description Decimal 또는 number를 네이티브 number로 변환 (UI 렌더링용)
- */
-function toNumber(value: Decimal | number | null | undefined): number {
-    if (value == null) return 0;
-    if (value instanceof Decimal) return value.toNumber();
-    return Number(value);
-}
 
 // 가상 스크롤 상수 (constants.ts에서 import)
 const ROW_INPUT_HEIGHT = UI.ROW_INPUT_HEIGHT;
@@ -30,7 +21,7 @@ const VISIBLE_ROWS_BUFFER = UI.VISIBLE_ROWS_BUFFER;
  * @description 가상 스크롤 관리 - 대량 데이터를 효율적으로 렌더링
  */
 export class VirtualScrollManager {
-    private dom: DOMElements;
+    #dom: DOMElements;
     #virtualData: CalculatedStock[] = [];
     #scrollWrapper: HTMLElement | null = null;
     #scrollSpacer: HTMLElement | null = null;
@@ -47,7 +38,7 @@ export class VirtualScrollManager {
         new LRUCache(UI.ROW_CACHE_SIZE);
 
     constructor(dom: DOMElements) {
-        this.dom = dom;
+        this.#dom = dom;
         this.initializeScrollElements();
     }
 
@@ -56,7 +47,7 @@ export class VirtualScrollManager {
      * @param dom - 새로운 DOM 참조
      */
     setDom(dom: DOMElements): void {
-        this.dom = dom;
+        this.#dom = dom;
         this.initializeScrollElements();
         // 캐시는 유지 (스크롤 위치 및 상태 보존)
     }
@@ -65,10 +56,12 @@ export class VirtualScrollManager {
      * @description 스크롤 요소들을 초기화합니다.
      */
     private initializeScrollElements(): void {
-        this.#scrollWrapper = this.dom.virtualScrollWrapper;
-        this.#scrollSpacer = this.dom.virtualScrollSpacer;
-        this.#scrollContent = this.dom.virtualScrollContent;
-        this.#viewportHeight = this.#scrollWrapper ? this.#scrollWrapper.clientHeight : 600;
+        this.#scrollWrapper = this.#dom.virtualScrollWrapper;
+        this.#scrollSpacer = this.#dom.virtualScrollSpacer;
+        this.#scrollContent = this.#dom.virtualScrollContent;
+        this.#viewportHeight = this.#scrollWrapper
+            ? this.#scrollWrapper.clientHeight
+            : UI.DEFAULT_VIEWPORT_HEIGHT;
     }
 
     /**
@@ -79,7 +72,7 @@ export class VirtualScrollManager {
     updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
         this.#currentMainMode = mainMode;
         this.#currentCurrency = currency;
-        const header = this.dom.virtualTableHeader;
+        const header = this.#dom.virtualTableHeader;
         if (!header) return;
 
         header.style.gridTemplateColumns = getGridTemplate(mainMode);
@@ -147,8 +140,8 @@ export class VirtualScrollManager {
         this.updateTableHeader(currency, mainMode);
 
         this.#virtualData = calculatedPortfolioData;
-        if (this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute(
+        if (this.#dom.virtualScrollWrapper) {
+            this.#dom.virtualScrollWrapper.setAttribute(
                 'aria-rowcount',
                 String(this.#virtualData.length)
             );
@@ -177,8 +170,8 @@ export class VirtualScrollManager {
         this.#virtualData = calculatedPortfolioData;
         const totalHeight = this.#virtualData.length * ROW_PAIR_HEIGHT;
         if (this.#scrollSpacer) this.#scrollSpacer.style.height = `${totalHeight}px`;
-        if (this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute(
+        if (this.#dom.virtualScrollWrapper) {
+            this.#dom.virtualScrollWrapper.setAttribute(
                 'aria-rowcount',
                 String(this.#virtualData.length)
             );
@@ -353,17 +346,15 @@ export class VirtualScrollManager {
                 const field = input.dataset.field;
                 if (!field) return;
 
-                let value: string | number | boolean;
+                // Update stock data with proper type handling
+                const stock = this.#virtualData[stockIndex];
                 if (input.type === 'checkbox') {
-                    value = input.checked;
+                    (stock as Record<string, boolean>)[field] = input.checked;
                 } else if (input.type === 'number') {
-                    value = parseFloat(input.value) || 0;
+                    (stock as Record<string, number>)[field] = parseFloat(input.value) || 0;
                 } else {
-                    value = input.value;
+                    (stock as Record<string, string>)[field] = input.value;
                 }
-
-                // Type assertion for dynamic field access
-                (this.#virtualData[stockIndex] as Record<string, typeof value>)[field] = value;
             });
         });
 
