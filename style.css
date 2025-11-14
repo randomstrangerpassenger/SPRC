@@ -443,3 +443,58 @@ body.dark-mode .skeleton {
     white-space: nowrap;
     border-width: 0;
 }
+
+/* --- Utility Classes --- */
+/* Width utilities */
+.w-full { width: 100%; }
+
+/* Margin utilities */
+.mt-2 { margin-top: 5px; }
+.mt-3 { margin-top: 10px; }
+.mt-4 { margin-top: 15px; }
+.mb-3 { margin-top: 15px; }
+.mb-4 { margin-bottom: 20px; }
+.mb-6 { margin-bottom: 25px; }
+.mx-2 { margin-left: 10px; margin-right: 10px; }
+
+/* Padding utilities */
+.p-2 { padding: 8px; }
+.p-3 { padding: 10px; }
+.p-4 { padding: 15px; }
+
+/* Display utilities */
+.d-none { display: none !important; }
+.d-contents { display: contents; }
+
+/* Text utilities */
+.text-lg { font-size: 1.2rem; }
+
+/* Border utilities */
+.rounded { border-radius: 4px; }
+.border-input {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* Specific component utilities */
+.input-select-custom {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.calculated-display {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 5px;
+}
+
+.snapshot-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.btn-controls-end {
+    justify-content: flex-end;
+}
