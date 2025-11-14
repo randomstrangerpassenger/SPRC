@@ -87,8 +87,8 @@ export const Validator = {
             if (!isFinite(num)) {
                 throw new Error('Number is too large for standard JS number');
             }
-        } catch (e) {
-            logger.error('Decimal validation error', 'Validator', e);
+        } catch (error) {
+            logger.error('Decimal validation error', 'Validator', error);
             return { isValid: false, message: t('validation.calcErrorDecimal') };
         }
 

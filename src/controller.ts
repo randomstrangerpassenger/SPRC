@@ -315,8 +315,8 @@ export class PortfolioController {
                 const calculatedKRW = amountUSD.times(exchangeRate);
                 return calculatedKRW.isNegative() ? DECIMAL_ZERO : calculatedKRW;
             }
-        } catch (e) {
-            logger.error('Error parsing investment amount', 'Controller', e);
+        } catch (error) {
+            logger.error('Error parsing investment amount', 'Controller', error);
             return DECIMAL_ZERO;
         }
     }

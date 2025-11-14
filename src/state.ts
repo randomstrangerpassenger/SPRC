@@ -267,7 +267,7 @@ export class PortfolioState {
                         const decimalValue = new Decimal(value ?? 0);
                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
                         stock[field] = decimalValue;
-                    } catch (e) {
+                    } catch (error) {
                         ErrorService.handle(
                             new Error(`Invalid numeric value for ${field}: ${value}`),
                             'updateStockProperty'
@@ -333,9 +333,9 @@ export class PortfolioState {
                 stock.transactions.sort((a, b) => a.date.localeCompare(b.date));
                 await this.saveActivePortfolio(); // 비동기 저장
                 return true;
-            } catch (e) {
+            } catch (error) {
                 ErrorService.handle(
-                    new Error(`Error converting transaction data to Decimal: ${e.message}`),
+                    new Error(`Error converting transaction data to Decimal: ${error instanceof Error ? error.message : String(error)}`),
                     'addTransaction'
                 );
                 return false;

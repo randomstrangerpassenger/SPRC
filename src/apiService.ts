@@ -196,8 +196,8 @@ async function fetchStockPrice(ticker: string): Promise<number> {
                     );
                 }
                 errorBody = errorData.error || (await response.text());
-            } catch (e) {
-                errorBody = e instanceof Error ? e.message : await response.text();
+            } catch (error) {
+                errorBody = error instanceof Error ? error.message : await response.text();
             }
 
             throw new APIError(

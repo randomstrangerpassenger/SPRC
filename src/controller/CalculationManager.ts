@@ -358,8 +358,8 @@ export class CalculationManager {
             }
 
             this.debouncedSave();
-        } catch (e) {
-            ErrorService.handle(e as Error, 'CalculationManager.convertCurrency');
+        } catch (error) {
+            ErrorService.handle(error as Error, 'CalculationManager.convertCurrency');
             this.view.showToast(t('toast.amountInputError'), 'error');
             if (source === 'krw') additionalAmountUSDInput.value = '';
             else additionalAmountInput.value = '';
