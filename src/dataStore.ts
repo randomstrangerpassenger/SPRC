@@ -4,6 +4,7 @@ import { CONFIG } from './constants.ts';
 import { ErrorService } from './errorService.ts';
 import type { Portfolio, MetaState, PortfolioSnapshot } from './types.ts';
 
+import { logger } from './services/Logger';
 /**
  * @description 에러 처리를 위한 헬퍼 함수
  * @param label - 작업 레이블 (에러 로깅용)
@@ -104,7 +105,7 @@ export class DataStore {
             const lsPortfolios = localStorage.getItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
 
             if (!lsMeta || !lsPortfolios) {
-                console.log('[DataStore] No legacy data found in LocalStorage');
+                logger.debug('No legacy data found in LocalStorage', 'DataStore');
                 return false;
             }
 
@@ -147,11 +148,11 @@ export class DataStore {
             localStorage.removeItem(CONFIG.LEGACY_LS_META_KEY);
             localStorage.removeItem(CONFIG.LEGACY_LS_PORTFOLIOS_KEY);
 
-            console.log('[DataStore] Successfully migrated from LocalStorage to IndexedDB');
+            logger.info('Successfully migrated from LocalStorage to IndexedDB', 'DataStore');
             return true;
         } catch (error) {
             // 세분화된 에러 메시지와 함께 로깅
-            console.error(
+            logger.error('Migration failed', 'DataStore', 
                 '[DataStore] Migration failed:',
                 error instanceof Error ? error.message : error
             );
@@ -236,7 +237,7 @@ export class DataStore {
                 await del(CONFIG.IDB_META_KEY);
                 await del(CONFIG.IDB_PORTFOLIOS_KEY);
                 await del(CONFIG.IDB_SNAPSHOTS_KEY);
-                console.log('[DataStore] All data cleared');
+                logger.debug('All data cleared', 'DataStore');
             },
             true
         );

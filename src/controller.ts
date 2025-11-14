@@ -13,6 +13,7 @@ import { bindEventListeners } from './eventBinder';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
 import { ChartLoaderService } from './services/ChartLoaderService';
+import { logger } from './services/Logger';
 
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
@@ -88,7 +89,7 @@ export class PortfolioController {
         if (this.#eventAbortController) {
             this.#eventAbortController.abort();
             this.#eventAbortController = null;
-            console.log('[Controller] Event listeners cleaned up');
+            logger.debug('Event listeners cleaned up', 'Controller');
         }
         this.appInitializer.cleanup();
     }
@@ -298,7 +299,7 @@ export class PortfolioController {
             activePortfolio.portfolioData = calculatedState.portfolioData;
             this.debouncedSave();
         } catch (error) {
-            console.error('[Controller] updateUIState error:', error);
+            logger.error('updateUIState error', 'Controller', error);
             // Fallback은 CalculatorWorkerService에서 자동으로 처리됨
         }
     }
@@ -446,7 +447,7 @@ export class PortfolioController {
 
             this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
         } catch (error) {
-            console.error('[Controller] Failed to display performance history:', error);
+            logger.error('Failed to display performance history', 'Controller', error);
             this.view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');
         }
     }
@@ -474,7 +475,7 @@ export class PortfolioController {
 
             this.view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
         } catch (error) {
-            console.error('[Controller] Failed to display snapshot list:', error);
+            logger.error('Failed to display snapshot list', 'Controller', error);
             this.view.showToast('스냅샷 목록을 불러오는데 실패했습니다.', 'error');
         }
     }
@@ -511,7 +512,7 @@ export class PortfolioController {
      * @description 페이지 종료 시 저장
      */
     handleSaveDataOnExit(): void {
-        console.log('Page unloading. Relaying on debounced save.');
+        logger.debug('Page unloading. Relaying on debounced save.', 'Controller');
     }
 
     /**

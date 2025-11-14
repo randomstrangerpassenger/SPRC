@@ -9,6 +9,7 @@ import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from
 import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
 import { validateAndUpgradeData } from './state/validation.ts';
 import { PersistenceRepository } from './state/PersistenceRepository.ts';
+import { logger } from './services/Logger.ts';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
@@ -43,11 +44,11 @@ export class PortfolioState {
                 !loadedPortfolios ||
                 Object.keys(loadedPortfolios).length === 0
             ) {
-                console.log('IndexedDB empty. Attempting migration from LocalStorage...');
+                logger.info('IndexedDB empty. Attempting migration from LocalStorage...', 'PortfolioState');
                 const migrated = await this._migrateFromLocalStorage();
 
                 if (migrated) {
-                    console.log('Migration successful. Reloading from IndexedDB.');
+                    logger.info('Migration successful. Reloading from IndexedDB.', 'PortfolioState');
                     loadedMetaData = await this._loadMeta();
                     loadedPortfolios = await this._loadPortfolios();
                 }
@@ -134,11 +135,11 @@ export class PortfolioState {
 
     async deletePortfolio(id: string): Promise<boolean> {
         if (Object.keys(this.#portfolios).length <= 1) {
-            console.warn('Cannot delete the last portfolio.');
+            logger.warn('Cannot delete the last portfolio.', 'PortfolioState');
             return false;
         }
         if (!this.#portfolios[id]) {
-            console.warn(`Portfolio with ID ${id} not found for deletion.`);
+            logger.warn(`Portfolio with ID ${id} not found for deletion.`, 'PortfolioState');
             return false;
         }
 
