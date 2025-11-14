@@ -10,9 +10,9 @@ import { CSS_CLASSES } from '../constants';
  */
 export class ResultsRenderer {
     private dom: DOMElements;
-    private chartInstance: Chart | null = null;
-    private performanceChartInstance: Chart | null = null;
-    private currentObserver: IntersectionObserver | null = null;
+    #chartInstance: Chart | null = null;
+    #performanceChartInstance: Chart | null = null;
+    #currentObserver: IntersectionObserver | null = null;
 
     constructor(dom: DOMElements) {
         this.dom = dom;
@@ -63,21 +63,21 @@ export class ResultsRenderer {
             if (rows.length === 0) return;
 
             this.cleanupObserver();
-            this.currentObserver = new IntersectionObserver(
+            this.#currentObserver = new IntersectionObserver(
                 (entries) => {
                     entries.forEach((entry) => {
                         if (entry.isIntersecting) {
                             const target = entry.target as HTMLElement;
                             target.style.transitionDelay = target.dataset.delay || '0s';
                             target.classList.add('in-view');
-                            this.currentObserver?.unobserve(target);
+                            this.#currentObserver?.unobserve(target);
                         }
                     });
                 },
                 { threshold: 0.1 }
             );
 
-            rows.forEach((row) => this.currentObserver?.observe(row));
+            rows.forEach((row) => this.#currentObserver?.observe(row));
         });
     }
 
@@ -147,14 +147,14 @@ export class ResultsRenderer {
             ],
         };
 
-        if (this.chartInstance) {
-            this.chartInstance.data = chartData;
-            this.chartInstance.options = chartOptions;
-            this.chartInstance.update();
+        if (this.#chartInstance) {
+            this.#chartInstance.data = chartData;
+            this.#chartInstance.options = chartOptions;
+            this.#chartInstance.update();
         } else {
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                this.chartInstance = new ChartClass(ctx, {
+                this.#chartInstance = new ChartClass(ctx, {
                     type: 'doughnut',
                     data: chartData,
                     options: chartOptions,
@@ -290,14 +290,14 @@ export class ResultsRenderer {
             },
         };
 
-        if (this.performanceChartInstance) {
-            this.performanceChartInstance.data = chartData;
-            this.performanceChartInstance.options = chartOptions;
-            this.performanceChartInstance.update();
+        if (this.#performanceChartInstance) {
+            this.#performanceChartInstance.data = chartData;
+            this.#performanceChartInstance.options = chartOptions;
+            this.#performanceChartInstance.update();
         } else {
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                this.performanceChartInstance = new ChartClass(ctx, {
+                this.#performanceChartInstance = new ChartClass(ctx, {
                     type: 'line',
                     data: chartData,
                     options: chartOptions,
@@ -313,9 +313,9 @@ export class ResultsRenderer {
      * @description Intersection Observer를 정리합니다.
      */
     cleanupObserver(): void {
-        if (this.currentObserver) {
-            this.currentObserver.disconnect();
-            this.currentObserver = null;
+        if (this.#currentObserver) {
+            this.#currentObserver.disconnect();
+            this.#currentObserver = null;
         }
     }
 
@@ -323,13 +323,13 @@ export class ResultsRenderer {
      * @description 차트 인스턴스를 제거합니다.
      */
     destroyChart(): void {
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
-            this.chartInstance = null;
+        if (this.#chartInstance) {
+            this.#chartInstance.destroy();
+            this.#chartInstance = null;
         }
-        if (this.performanceChartInstance) {
-            this.performanceChartInstance.destroy();
-            this.performanceChartInstance = null;
+        if (this.#performanceChartInstance) {
+            this.#performanceChartInstance.destroy();
+            this.#performanceChartInstance = null;
         }
     }
 

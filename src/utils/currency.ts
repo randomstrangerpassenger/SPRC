@@ -7,10 +7,10 @@ import type { Currency } from '../types';
  * Handles conversion between KRW and USD based on exchange rate
  */
 export class CurrencyConverter {
-    private exchangeRate: Decimal;
+    #exchangeRate: Decimal;
 
     constructor(exchangeRate: number | Decimal) {
-        this.exchangeRate = exchangeRate instanceof Decimal ? exchangeRate : new Decimal(exchangeRate);
+        this.#exchangeRate = exchangeRate instanceof Decimal ? exchangeRate : new Decimal(exchangeRate);
     }
 
     /**
@@ -18,7 +18,7 @@ export class CurrencyConverter {
      */
     toKRW(usdAmount: Decimal | number): Decimal {
         const amount = usdAmount instanceof Decimal ? usdAmount : new Decimal(usdAmount);
-        return amount.times(this.exchangeRate);
+        return amount.times(this.#exchangeRate);
     }
 
     /**
@@ -26,7 +26,7 @@ export class CurrencyConverter {
      */
     toUSD(krwAmount: Decimal | number): Decimal {
         const amount = krwAmount instanceof Decimal ? krwAmount : new Decimal(krwAmount);
-        return amount.div(this.exchangeRate);
+        return amount.div(this.#exchangeRate);
     }
 
     /**
@@ -56,13 +56,13 @@ export class CurrencyConverter {
      * Get the current exchange rate
      */
     getExchangeRate(): Decimal {
-        return this.exchangeRate;
+        return this.#exchangeRate;
     }
 
     /**
      * Update the exchange rate
      */
     setExchangeRate(rate: number | Decimal): void {
-        this.exchangeRate = rate instanceof Decimal ? rate : new Decimal(rate);
+        this.#exchangeRate = rate instanceof Decimal ? rate : new Decimal(rate);
     }
 }

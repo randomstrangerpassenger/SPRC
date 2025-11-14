@@ -15,13 +15,13 @@ import { EqualWeightTemplate } from './EqualWeightTemplate';
  */
 export class TemplateRegistry {
     private static instance: TemplateRegistry;
-    private templates: Map<string, PortfolioTemplate>;
+    #templates: Map<string, PortfolioTemplate>;
 
     /**
      * @description Private constructor (싱글톤 패턴)
      */
     private constructor() {
-        this.templates = new Map<string, PortfolioTemplate>();
+        this.#templates = new Map<string, PortfolioTemplate>();
         this.registerDefaultTemplates();
     }
 
@@ -50,7 +50,7 @@ export class TemplateRegistry {
      * @param template - 등록할 템플릿
      */
     register(template: PortfolioTemplate): void {
-        this.templates.set(template.name, template);
+        this.#templates.set(template.name, template);
     }
 
     /**
@@ -59,7 +59,7 @@ export class TemplateRegistry {
      * @returns 템플릿 객체 또는 undefined
      */
     get(name: string): PortfolioTemplate | undefined {
-        return this.templates.get(name);
+        return this.#templates.get(name);
     }
 
     /**
@@ -67,7 +67,7 @@ export class TemplateRegistry {
      * @returns 템플릿 이름 배열
      */
     getAvailableTemplates(): string[] {
-        return Array.from(this.templates.keys());
+        return Array.from(this.#templates.keys());
     }
 
     /**
@@ -76,7 +76,7 @@ export class TemplateRegistry {
      * @returns 존재 여부
      */
     has(name: string): boolean {
-        return this.templates.has(name);
+        return this.#templates.has(name);
     }
 
     /**
@@ -84,7 +84,7 @@ export class TemplateRegistry {
      * @returns 템플릿 정보 배열 [{ name, description }]
      */
     getAllTemplateInfo(): Array<{ name: string; description: string }> {
-        return Array.from(this.templates.values()).map((template) => ({
+        return Array.from(this.#templates.values()).map((template) => ({
             name: template.name,
             description: template.description,
         }));

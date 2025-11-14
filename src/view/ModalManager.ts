@@ -14,13 +14,13 @@ import { CSS_CLASSES } from '../constants';
  */
 export class ModalManager {
     private dom: DOMElements;
-    private activeModalResolver: ((value: boolean | string | null) => void) | null = null;
-    private focusManager: FocusManager;
-    private focusTrapCleanup: (() => void) | null = null;
+    #activeModalResolver: ((value: boolean | string | null) => void) | null = null;
+    #focusManager: FocusManager;
+    #focusTrapCleanup: (() => void) | null = null;
 
     constructor(dom: DOMElements) {
         this.dom = dom;
-        this.focusManager = new FocusManager();
+        this.#focusManager = new FocusManager();
     }
 
     /**
@@ -35,18 +35,18 @@ export class ModalManager {
      * @description 현재 포커스 요소를 저장합니다.
      */
     private saveFocusContext(): void {
-        this.focusManager.saveFocus();
+        this.#focusManager.saveFocus();
     }
 
     /**
      * @description 저장된 포커스 요소로 복원합니다.
      */
     private restoreFocus(): void {
-        this.focusManager.restoreFocus();
+        this.#focusManager.restoreFocus();
         // Cleanup focus trap
-        if (this.focusTrapCleanup) {
-            this.focusTrapCleanup();
-            this.focusTrapCleanup = null;
+        if (this.#focusTrapCleanup) {
+            this.#focusTrapCleanup();
+            this.#focusTrapCleanup = null;
         }
     }
 
@@ -90,7 +90,7 @@ export class ModalManager {
     }): Promise<boolean | string | null> {
         return new Promise((resolve) => {
             this.saveFocusContext();
-            this.activeModalResolver = resolve;
+            this.#activeModalResolver = resolve;
             const { title, message, defaultValue, type } = options;
             const titleEl = this.dom.customModalTitle;
             const messageEl = this.dom.customModalMessage;
@@ -112,7 +112,7 @@ export class ModalManager {
                 modalEl.classList.remove(CSS_CLASSES.HIDDEN);
                 modalEl.setAttribute('aria-modal', 'true');
                 // Use enhanced focus trap from a11yHelpers
-                this.focusTrapCleanup = createFocusTrap(modalEl);
+                this.#focusTrapCleanup = createFocusTrap(modalEl);
             }
 
             if (type === 'prompt' && isInputElement(inputEl)) {
@@ -128,18 +128,18 @@ export class ModalManager {
      * @param confirmed - 확인 여부
      */
     handleCustomModal(confirmed: boolean): void {
-        if (!this.activeModalResolver) return;
+        if (!this.#activeModalResolver) return;
 
         const inputEl = this.dom.customModalInput;
         const modalEl = this.dom.customModal;
         const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains(CSS_CLASSES.HIDDEN);
         const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
 
-        this.activeModalResolver(value);
+        this.#activeModalResolver(value);
         modalEl?.classList.add(CSS_CLASSES.HIDDEN);
         modalEl?.removeAttribute('aria-modal');
         this.restoreFocus();
-        this.activeModalResolver = null;
+        this.#activeModalResolver = null;
     }
 
     /**
@@ -169,7 +169,7 @@ export class ModalManager {
 
         modal.classList.remove(CSS_CLASSES.HIDDEN);
         modal.setAttribute('aria-modal', 'true');
-        this.focusTrapCleanup = createFocusTrap(modal);
+        this.#focusTrapCleanup = createFocusTrap(modal);
 
         const closeBtn = this.dom.closeModalBtn;
         if (closeBtn instanceof HTMLButtonElement) {

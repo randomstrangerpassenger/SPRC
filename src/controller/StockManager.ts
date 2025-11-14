@@ -42,7 +42,7 @@ type FieldHandler = (
  * @description 주식 추가, 삭제, 수정 관리
  */
 export class StockManager {
-    private fieldHandlers: Map<string, FieldHandler>;
+    #fieldHandlers: Map<string, FieldHandler>;
 
     constructor(
         private state: PortfolioState,
@@ -50,7 +50,7 @@ export class StockManager {
         private debouncedSave: () => void
     ) {
         // Initialize field-specific handlers using Strategy Pattern
-        this.fieldHandlers = new Map<string, FieldHandler>([
+        this.#fieldHandlers = new Map<string, FieldHandler>([
             ['manualAmount', this.handleManualAmountChangeStrategy.bind(this)],
             ['name', this.handleMetadataFieldChangeStrategy.bind(this)],
             ['ticker', this.handleMetadataFieldChangeStrategy.bind(this)],
@@ -132,7 +132,7 @@ export class StockManager {
         };
 
         // Strategy Pattern: 필드별 핸들러를 맵에서 조회하여 실행
-        const handler = this.fieldHandlers.get(field);
+        const handler = this.#fieldHandlers.get(field);
         if (handler) {
             return handler(stockId, value, context);
         }

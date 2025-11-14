@@ -40,12 +40,12 @@ export class PortfolioController {
     calculationManager: CalculationManager;
     dataManager: DataManager;
     snapshotManager: SnapshotManager;
-    private appInitializer: AppInitializer;
+    #appInitializer: AppInitializer;
 
     // Repository 인스턴스
-    private snapshotRepo: SnapshotRepository;
+    #snapshotRepo: SnapshotRepository;
 
-    private calculatorWorker = getCalculatorWorkerService();
+    #calculatorWorker = getCalculatorWorkerService();
 
     #eventAbortController: AbortController | null = null;
 
@@ -58,7 +58,7 @@ export class PortfolioController {
         );
 
         // Repository 인스턴스 생성
-        this.snapshotRepo = new SnapshotRepository();
+        this.#snapshotRepo = new SnapshotRepository();
 
         // 매니저 인스턴스 생성
         this.portfolioManager = new PortfolioManager(this.state, this.view);
@@ -69,11 +69,11 @@ export class PortfolioController {
             this.view,
             this.debouncedSave,
             this.getInvestmentAmountInKRW.bind(this),
-            this.snapshotRepo
+            this.#snapshotRepo
         );
         this.dataManager = new DataManager(this.state, this.view);
-        this.snapshotManager = new SnapshotManager(this.state, this.view, this.snapshotRepo);
-        this.appInitializer = new AppInitializer(this.state, this.view);
+        this.snapshotManager = new SnapshotManager(this.state, this.view, this.#snapshotRepo);
+        this.#appInitializer = new AppInitializer(this.state, this.view);
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
@@ -86,7 +86,7 @@ export class PortfolioController {
      * @description 컨트롤러 초기화 (AppInitializer로 위임)
      */
     async initialize(): Promise<void> {
-        this.#eventAbortController = await this.appInitializer.initialize(
+        this.#eventAbortController = await this.#appInitializer.initialize(
             this.bindControllerEvents.bind(this),
             bindEventListeners
         );
@@ -103,7 +103,7 @@ export class PortfolioController {
             this.#eventAbortController = null;
             logger.debug('Event listeners cleaned up', 'Controller');
         }
-        this.appInitializer.cleanup();
+        this.#appInitializer.cleanup();
     }
 
     /**
@@ -156,7 +156,7 @@ export class PortfolioController {
         if (!activePortfolio) return;
 
         // 1. 포트폴리오 계산
-        const calculatedState = await this.calculatorWorker.calculatePortfolioState({
+        const calculatedState = await this.#calculatorWorker.calculatePortfolioState({
             portfolioData: activePortfolio.portfolioData,
             exchangeRate: activePortfolio.settings.exchangeRate,
             currentCurrency: activePortfolio.settings.currentCurrency,
@@ -178,7 +178,7 @@ export class PortfolioController {
         this.view.updateRatioSum(ratioSum.toNumber());
 
         // 4. 섹터 분석
-        const sectorData = await this.calculatorWorker.calculateSectorAnalysis(
+        const sectorData = await this.#calculatorWorker.calculateSectorAnalysis(
             calculatedState.portfolioData,
             activePortfolio.settings.currentCurrency
         );
@@ -267,7 +267,7 @@ export class PortfolioController {
      * @description 다크 모드 토글
      */
     handleToggleDarkMode(): void {
-        this.appInitializer.getDarkModeManager().toggleDarkMode();
+        this.#appInitializer.getDarkModeManager().toggleDarkMode();
         this.view.destroyChart();
         this.fullRender(); // async but we don't await
     }

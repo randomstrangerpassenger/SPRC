@@ -6,14 +6,14 @@ import type { DOMElements } from '../types';
  * @description DOM 요소 캐싱 및 동적 조회를 위한 헬퍼 클래스
  */
 export class DOMCache {
-    private cache: DOMElements = {} as DOMElements;
+    #cache: DOMElements = {} as DOMElements;
 
     /**
      * @description 모든 DOM 요소를 캐싱
      */
     cacheAll(): DOMElements {
         const D = document;
-        this.cache = {
+        this.#cache = {
             ariaAnnouncer: D.getElementById('aria-announcer'),
             resultsSection: D.getElementById('resultsSection'),
             sectorAnalysisSection: D.getElementById('sectorAnalysisSection'),
@@ -78,14 +78,14 @@ export class DOMCache {
             snapshotList: D.getElementById('snapshotList'),
         };
 
-        return this.cache;
+        return this.#cache;
     }
 
     /**
      * @description 캐시된 DOM 요소 반환
      */
     getCache(): DOMElements {
-        return this.cache;
+        return this.#cache;
     }
 
     /**
@@ -131,6 +131,6 @@ export class DOMCache {
      * @description 캐시 무효화
      */
     clearCache(): void {
-        this.cache = {} as DOMElements;
+        this.#cache = {} as DOMElements;
     }
 }

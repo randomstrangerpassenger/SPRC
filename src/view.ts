@@ -30,13 +30,13 @@ export class PortfolioView {
     dom: DOMElements = {} as DOMElements;
 
     // 분리된 모듈들
-    private eventEmitter: EventEmitter;
-    private modalManager: ModalManager;
-    private virtualScrollManager: VirtualScrollManager;
-    private resultsRenderer: ResultsRenderer;
-    private toastManager: ToastManager;
-    private accessibilityAnnouncer: AccessibilityAnnouncer;
-    private domCache: DOMCache;
+    #eventEmitter: EventEmitter;
+    #modalManager: ModalManager;
+    #virtualScrollManager: VirtualScrollManager;
+    #resultsRenderer: ResultsRenderer;
+    #toastManager: ToastManager;
+    #accessibilityAnnouncer: AccessibilityAnnouncer;
+    #domCache: DOMCache;
 
     /**
      * @constructor
@@ -44,24 +44,24 @@ export class PortfolioView {
      */
     constructor() {
         // 모듈 인스턴스 생성 (DOM 캐싱 후 초기화됨)
-        this.eventEmitter = new EventEmitter();
-        this.modalManager = new ModalManager(this.dom);
-        this.virtualScrollManager = new VirtualScrollManager(this.dom);
-        this.resultsRenderer = new ResultsRenderer(this.dom);
-        this.toastManager = new ToastManager();
-        this.accessibilityAnnouncer = new AccessibilityAnnouncer();
-        this.domCache = new DOMCache();
+        this.#eventEmitter = new EventEmitter();
+        this.#modalManager = new ModalManager(this.dom);
+        this.#virtualScrollManager = new VirtualScrollManager(this.dom);
+        this.#resultsRenderer = new ResultsRenderer(this.dom);
+        this.#toastManager = new ToastManager();
+        this.#accessibilityAnnouncer = new AccessibilityAnnouncer();
+        this.#domCache = new DOMCache();
     }
 
     /**
      * @description EventEmitter 메서드 위임
      */
     on(event: string, callback: EventCallback): void {
-        this.eventEmitter.on(event, callback);
+        this.#eventEmitter.on(event, callback);
     }
 
     emit(event: string, data?: unknown): void {
-        this.eventEmitter.emit(event, data);
+        this.#eventEmitter.emit(event, data);
     }
 
     /**
@@ -69,22 +69,22 @@ export class PortfolioView {
      */
     cacheDomElements(): void {
         // DOMCache를 사용하여 모든 DOM 요소 캐싱
-        this.dom = this.domCache.cacheAll();
+        this.dom = this.#domCache.cacheAll();
 
         // AccessibilityAnnouncer 엘리먼트 설정
         if (this.dom.ariaAnnouncer) {
-            this.accessibilityAnnouncer.setElement(this.dom.ariaAnnouncer);
+            this.#accessibilityAnnouncer.setElement(this.dom.ariaAnnouncer);
         }
 
-        this.eventEmitter.clear();
+        this.#eventEmitter.clear();
 
         // DOM 참조 업데이트 (재생성하지 않고 상태 유지)
-        this.modalManager.setDom(this.dom);
-        this.virtualScrollManager.setDom(this.dom);
-        this.resultsRenderer.setDom(this.dom);
+        this.#modalManager.setDom(this.dom);
+        this.#virtualScrollManager.setDom(this.dom);
+        this.#resultsRenderer.setDom(this.dom);
 
         // 모달 이벤트 바인딩
-        this.modalManager.bindModalEvents();
+        this.#modalManager.bindModalEvents();
     }
 
     /**
@@ -93,7 +93,7 @@ export class PortfolioView {
      * @param context - 검색 컨텍스트
      */
     queryByData(selector: string, context?: Document | Element): HTMLElement | null {
-        return this.domCache.queryByData(selector, context);
+        return this.#domCache.queryByData(selector, context);
     }
 
     /**
@@ -102,7 +102,7 @@ export class PortfolioView {
      * @param context - 검색 컨텍스트
      */
     queryAllByData(selector: string, context?: Document | Element): NodeListOf<HTMLElement> {
-        return this.domCache.queryAllByData(selector, context);
+        return this.#domCache.queryAllByData(selector, context);
     }
 
     /**
@@ -111,7 +111,7 @@ export class PortfolioView {
      * @param dataAttr - data 속성 이름
      */
     closestWithData(element: HTMLElement, dataAttr: string): HTMLElement | null {
-        return this.domCache.closest(element, dataAttr);
+        return this.#domCache.closest(element, dataAttr);
     }
 
     // ===== DOM Encapsulation =====
@@ -146,7 +146,7 @@ export class PortfolioView {
      * @param politeness - 우선순위
      */
     announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
-        this.accessibilityAnnouncer.announce(message, politeness);
+        this.#accessibilityAnnouncer.announce(message, politeness);
     }
 
     /**
@@ -155,7 +155,7 @@ export class PortfolioView {
      * @param type - 메시지 타입
      */
     showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
-        this.toastManager.show(message, type);
+        this.#toastManager.show(message, type);
     }
 
     /**
@@ -203,7 +203,7 @@ export class PortfolioView {
     // ===== Modal 위임 =====
 
     async showConfirm(title: string, message: string): Promise<boolean> {
-        return this.modalManager.showConfirm(title, message);
+        return this.#modalManager.showConfirm(title, message);
     }
 
     async showPrompt(
@@ -211,19 +211,19 @@ export class PortfolioView {
         message: string,
         defaultValue: string = ''
     ): Promise<string | null> {
-        return this.modalManager.showPrompt(title, message, defaultValue);
+        return this.#modalManager.showPrompt(title, message, defaultValue);
     }
 
     openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
-        this.modalManager.openTransactionModal(stock, currency, transactions);
+        this.#modalManager.openTransactionModal(stock, currency, transactions);
     }
 
     closeTransactionModal(): void {
-        this.modalManager.closeTransactionModal();
+        this.#modalManager.closeTransactionModal();
     }
 
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
-        this.modalManager.renderTransactionList(transactions, currency);
+        this.#modalManager.renderTransactionList(transactions, currency);
     }
 
     // ===== VirtualScroll 위임 =====
@@ -233,11 +233,11 @@ export class PortfolioView {
         currency: 'krw' | 'usd',
         mainMode: 'add' | 'sell' | 'simple'
     ): void {
-        this.virtualScrollManager.renderTable(calculatedPortfolioData, currency, mainMode);
+        this.#virtualScrollManager.renderTable(calculatedPortfolioData, currency, mainMode);
     }
 
     updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
-        this.virtualScrollManager.updateVirtualTableData(calculatedPortfolioData);
+        this.#virtualScrollManager.updateVirtualTableData(calculatedPortfolioData);
     }
 
     updateStockInVirtualData(
@@ -245,42 +245,42 @@ export class PortfolioView {
         field: string,
         value: string | number | boolean | Decimal
     ): void {
-        this.virtualScrollManager.updateStockInVirtualData(stockId, field, value);
+        this.#virtualScrollManager.updateStockInVirtualData(stockId, field, value);
     }
 
     updateSingleStockRow(stockId: string, calculatedData: CalculatedStockMetrics): void {
-        this.virtualScrollManager.updateSingleStockRow(stockId, calculatedData);
+        this.#virtualScrollManager.updateSingleStockRow(stockId, calculatedData);
     }
 
     updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
-        this.virtualScrollManager.updateAllTargetRatioInputs(portfolioData);
+        this.#virtualScrollManager.updateAllTargetRatioInputs(portfolioData);
     }
 
     updateCurrentPriceInput(id: string, price: string): void {
-        this.virtualScrollManager.updateCurrentPriceInput(id, price);
+        this.#virtualScrollManager.updateCurrentPriceInput(id, price);
     }
 
     focusOnNewStock(stockId: string): void {
-        this.virtualScrollManager.focusOnNewStock(stockId);
+        this.#virtualScrollManager.focusOnNewStock(stockId);
     }
 
     // ===== ResultsRenderer 위임 =====
 
     displaySkeleton(): void {
-        this.resultsRenderer.displaySkeleton();
+        this.#resultsRenderer.displaySkeleton();
     }
 
     displayResults(html: string): void {
-        this.resultsRenderer.displayResults(html);
+        this.#resultsRenderer.displayResults(html);
         this.announce(t('aria.resultsLoaded'), 'assertive');
     }
 
     displaySectorAnalysis(html: string): void {
-        this.resultsRenderer.displaySectorAnalysis(html);
+        this.#resultsRenderer.displaySectorAnalysis(html);
     }
 
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
-        this.resultsRenderer.displayChart(ChartClass, labels, data, title);
+        this.#resultsRenderer.displayChart(ChartClass, labels, data, title);
     }
 
     async displayPerformanceHistory(
@@ -288,23 +288,23 @@ export class PortfolioView {
         snapshots: PortfolioSnapshot[],
         currency: 'krw' | 'usd'
     ): Promise<void> {
-        await this.resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
+        await this.#resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
     }
 
     hideResults(): void {
-        this.resultsRenderer.hideResults();
+        this.#resultsRenderer.hideResults();
     }
 
     cleanupObserver(): void {
-        this.resultsRenderer.cleanupObserver();
+        this.#resultsRenderer.cleanupObserver();
     }
 
     destroyChart(): void {
-        this.resultsRenderer.destroyChart();
+        this.#resultsRenderer.destroyChart();
     }
 
     cleanup(): void {
-        this.resultsRenderer.cleanup();
+        this.#resultsRenderer.cleanup();
     }
 
     // ===== 포트폴리오 UI =====
