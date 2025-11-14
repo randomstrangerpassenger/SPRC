@@ -4,18 +4,20 @@ import { CONFIG } from './constants.ts';
 import { t } from './i18n.ts';
 import { ErrorService } from './errorService.ts';
 import { Validator } from './validator.ts';
-import { DataStore } from './dataStore.ts';
 import { generateId } from './utils.ts';
 import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
 import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
 import { validateAndUpgradeData } from './state/validation.ts';
+import { PersistenceRepository } from './state/PersistenceRepository.ts';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};
     #activePortfolioId: string | null = null;
     #initializationPromise: Promise<void> | null = null;
+    #persistenceRepo: PersistenceRepository;
 
     constructor() {
+        this.#persistenceRepo = new PersistenceRepository();
         this.#initializationPromise = this._initialize();
     }
 
@@ -77,24 +79,24 @@ export class PortfolioState {
     }
 
     /**
-     * @description LocalStorage -> IndexedDB 마이그레이션 (DataStore 위임)
+     * @description LocalStorage -> IndexedDB 마이그레이션 (PersistenceRepository 위임)
      */
     async _migrateFromLocalStorage(): Promise<boolean> {
-        return await DataStore.migrateFromLocalStorage();
+        return await this.#persistenceRepo.migrateFromLocalStorage();
     }
 
     /**
-     * @description IDB에서 Meta 로드 (DataStore 위임)
+     * @description IDB에서 Meta 로드 (PersistenceRepository 위임)
      */
     async _loadMeta(): Promise<MetaState | null> {
-        return await DataStore.loadMeta();
+        return await this.#persistenceRepo.loadMeta();
     }
 
     /**
-     * @description IDB에서 Portfolios 로드 (DataStore 위임)
+     * @description IDB에서 Portfolios 로드 (PersistenceRepository 위임)
      */
     async _loadPortfolios(): Promise<Record<string, Portfolio> | null> {
-        return await DataStore.loadPortfolios();
+        return await this.#persistenceRepo.loadPortfolios();
     }
 
     // Phase 2-2: _validateAndUpgradeData 제거 (state/validation.ts로 이동)
@@ -456,68 +458,11 @@ export class PortfolioState {
     }
 
     async saveMeta(): Promise<void> {
-        try {
-            const metaData: MetaState = {
-                activePortfolioId: this.#activePortfolioId || '',
-                version: CONFIG.DATA_VERSION,
-            };
-            await DataStore.saveMeta(metaData); // DataStore 사용
-        } catch (error) {
-            ErrorService.handle(error as Error, 'saveMeta');
-        }
+        await this.#persistenceRepo.saveMeta(this.#activePortfolioId);
     }
 
     async savePortfolios(): Promise<void> {
-        try {
-            const saveablePortfolios = {};
-            Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
-                saveablePortfolios[id] = {
-                    ...portfolio,
-                    portfolioData: portfolio.portfolioData.map((stock) => {
-                        // 'calculated' 속성을 분해해서 저장 대상에서 제외
-                        const { calculated, ...saveableStock } = stock;
-
-                        return {
-                            ...saveableStock,
-                            targetRatio:
-                                saveableStock.targetRatio instanceof Decimal
-                                    ? saveableStock.targetRatio.toNumber()
-                                    : Number(saveableStock.targetRatio ?? 0),
-                            currentPrice:
-                                saveableStock.currentPrice instanceof Decimal
-                                    ? saveableStock.currentPrice.toNumber()
-                                    : Number(saveableStock.currentPrice ?? 0),
-                            fixedBuyAmount:
-                                saveableStock.fixedBuyAmount instanceof Decimal
-                                    ? saveableStock.fixedBuyAmount.toNumber()
-                                    : Number(saveableStock.fixedBuyAmount ?? 0),
-                            manualAmount:
-                                saveableStock.manualAmount instanceof Decimal
-                                    ? saveableStock.manualAmount.toNumber()
-                                    : Number(saveableStock.manualAmount ?? 0),
-                            transactions: saveableStock.transactions.map((tx) => ({
-                                ...tx,
-                                quantity:
-                                    tx.quantity instanceof Decimal
-                                        ? tx.quantity.toNumber()
-                                        : Number(tx.quantity ?? 0),
-                                price:
-                                    tx.price instanceof Decimal
-                                        ? tx.price.toNumber()
-                                        : Number(tx.price ?? 0),
-                            })),
-                        };
-                    }),
-                };
-            });
-            await DataStore.savePortfolios(saveablePortfolios); // DataStore 사용
-        } catch (error) {
-            if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-                ErrorService.handle(error, 'savePortfolios - Quota Exceeded');
-            } else {
-                ErrorService.handle(error as Error, 'savePortfolios');
-            }
-        }
+        await this.#persistenceRepo.savePortfolios(this.#portfolios);
     }
 
     async saveActivePortfolio(): Promise<void> {
