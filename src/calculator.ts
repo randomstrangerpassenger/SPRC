@@ -15,35 +15,35 @@ import type {
 import type { IRebalanceStrategy } from './calculationStrategies';
 
 /**
- * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.
+ * @description Generates cache key based on stock ID and current price combination
  */
 function _generateStockKey(stock: Stock): string {
-    // 모든 거래 ID를 조합하여 중간 거래 수정/삭제도 감지
+    // Combine all transaction IDs to detect modifications/deletions of intermediate transactions
     const txIds = stock.transactions.map((tx) => tx.id).join(',');
 
-    // 섹터 정보도 계산에 영향을 주지 않으므로 제외
+    // Exclude sector information as it does not affect calculations
     return `${stock.id}:${stock.currentPrice}:${txIds}`;
 }
 
 /**
- * @description 포트폴리오 전체를 위한 캐시 키를 생성합니다.
- * 최적화: 전체 객체 정렬 대신 ID만 정렬하여 O(n log n) -> O(n + k log k) (k=종목 수)
+ * @description Generates cache key for entire portfolio
+ * Optimization: Sort IDs only instead of full objects, reducing O(n log n) to O(n + k log k) (k=number of stocks)
  */
 function _generatePortfolioKey(
     portfolioData: Stock[],
     exchangeRate: number,
     currentCurrency: Currency
 ): string {
-    // Map을 사용하여 ID -> stock key 매핑 생성 (O(n))
+    // Create ID -> stock key mapping using Map (O(n))
     const stockKeyMap = new Map<string, string>();
     for (const stock of portfolioData) {
         stockKeyMap.set(stock.id, _generateStockKey(stock));
     }
 
-    // ID만 정렬 (O(k log k), k = 종목 수, 객체 정렬보다 빠름)
+    // Sort IDs only (O(k log k), k = number of stocks, faster than sorting objects)
     const sortedIds = Array.from(stockKeyMap.keys()).sort();
 
-    // 정렬된 ID 순서로 키 조합 (O(k))
+    // Combine keys in sorted ID order (O(k))
     const stockKeys = sortedIds.map((id) => stockKeyMap.get(id)!).join('|');
     const settingsKey = `${exchangeRate}:${currentCurrency}`;
     return `${stockKeys}|${settingsKey}`;
@@ -56,21 +56,21 @@ export interface PortfolioCalculationResult {
 }
 
 export class Calculator {
-    // LRU 캐시로 여러 계산 결과 저장
+    // Store multiple calculation results using LRU cache
     static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(
         CACHE.PORTFOLIO_CACHE_SIZE
     );
 
-    // 섹터 분석 결과 캐시
+    // Sector analysis result cache
     static #sectorAnalysisCache = new LRUCache<
         string,
         { sector: string; amount: Decimal; percentage: Decimal }[]
     >(20);
 
     /**
-     * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
-     * @important stock.currentPrice는 항상 USD로 저장되어 있어야 합니다.
-     * 통화 표시는 calculatePortfolioState에서 환율을 적용하여 처리합니다.
+     * @description Calculates average purchase price, current value, profit/loss for a single stock
+     * @important stock.currentPrice must always be stored in USD
+     * Currency display is handled in calculatePortfolioState by applying exchange rates
      */
     /**
      * @description Aggregate transaction data (buy/sell/dividend)
@@ -166,7 +166,7 @@ export class Calculator {
     }
 
     /**
-     * @description 포트폴리오 상태를 계산하고 캐싱합니다.
+     * @description Calculates and caches portfolio state
      */
     static calculatePortfolioState(options: {
         portfolioData: Stock[];
@@ -233,8 +233,8 @@ export class Calculator {
     }
 
     /**
-     * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
-     * @memoized LRU 캐시 적용 (크기: 20)
+     * @description Calculates sector-wise amounts and percentages for portfolio
+     * @memoized LRU cache applied (size: 20)
      */
     static calculateSectorAnalysis(
         portfolioData: CalculatedStock[],
@@ -289,7 +289,7 @@ export class Calculator {
             result.push({ sector, amount, percentage });
         }
 
-        // 금액 내림차순 정렬
+        // Sort by amount in descending order
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
         // Store in cache
@@ -307,7 +307,7 @@ export class Calculator {
     }
 
     /**
-     * @description 포트폴리오 계산 캐시를 초기화합니다.
+     * @description Clears portfolio calculation cache
      */
     static clearPortfolioStateCache(): void {
         Calculator.#portfolioCache.clear();
@@ -315,7 +315,7 @@ export class Calculator {
     }
 
     /**
-     * @description 현재 포트폴리오 상태에서 스냅샷을 생성합니다.
+     * @description Creates snapshot from current portfolio state
      */
     static createSnapshot(
         portfolioId: string,
@@ -333,29 +333,29 @@ export class Calculator {
             let totalRealizedPL = DECIMAL_ZERO;
             let totalDividends = DECIMAL_ZERO;
 
-            // 모든 주식의 메트릭 집계
+            // Aggregate metrics from all stocks
             for (const stock of portfolioData) {
                 const metrics = stock.calculated;
                 if (!metrics) continue;
 
-                // USD 기준으로 집계
+                // Aggregate in USD
                 totalValue = totalValue.plus(metrics.currentAmountUSD || 0);
 
-                // 투자 원금 = 현재 보유수량 × 평균매입가
+                // Invested capital = current holding quantity × average buy price
                 const investedForHolding = metrics.quantity.times(metrics.avgBuyPrice);
                 totalInvestedCapital = totalInvestedCapital.plus(investedForHolding);
 
-                // 미실현 손익
+                // Unrealized profit/loss
                 totalUnrealizedPL = totalUnrealizedPL.plus(metrics.profitLoss || 0);
 
-                // 실현 손익
+                // Realized profit/loss
                 totalRealizedPL = totalRealizedPL.plus(metrics.realizedPL || 0);
 
-                // 배당금
+                // Dividends
                 totalDividends = totalDividends.plus(metrics.totalDividends || 0);
             }
 
-            // 총 전체 손익 = 미실현 + 실현 + 배당금
+            // Total overall P/L = unrealized + realized + dividends
             const totalOverallPL = totalUnrealizedPL.plus(totalRealizedPL).plus(totalDividends);
 
             const exchangeRateDec = new Decimal(exchangeRate);
@@ -382,7 +382,7 @@ export class Calculator {
             return snapshot;
         } catch (error) {
             ErrorService.handle(error as Error, 'Calculator.createSnapshot');
-            // 에러를 상위로 전파 (빈 스냅샷을 저장하지 않음)
+            // Propagate error to caller (do not save empty snapshot)
             throw new Error(
                 `Failed to create snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`
             );
