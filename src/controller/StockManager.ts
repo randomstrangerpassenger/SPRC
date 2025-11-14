@@ -10,15 +10,52 @@ import Decimal from 'decimal.js';
 import DOMPurify from 'dompurify';
 
 /**
+ * @description Field change handler return type
+ */
+interface FieldChangeResult {
+    needsFullRender: boolean;
+    needsUIUpdate: boolean;
+    needsSave: boolean;
+}
+
+/**
+ * @description Context for field handlers
+ */
+interface FieldHandlerContext {
+    row: Element;
+    activePortfolio: any;
+}
+
+/**
+ * @description Field handler function type
+ */
+type FieldHandler = (
+    stockId: string,
+    value: any,
+    context: FieldHandlerContext
+) => FieldChangeResult;
+
+/**
  * @class StockManager
  * @description 주식 추가, 삭제, 수정 관리
  */
 export class StockManager {
+    private fieldHandlers: Map<string, FieldHandler>;
+
     constructor(
         private state: PortfolioState,
         private view: PortfolioView,
         private debouncedSave: () => void
-    ) {}
+    ) {
+        // Initialize field-specific handlers using Strategy Pattern
+        this.fieldHandlers = new Map<string, FieldHandler>([
+            ['manualAmount', this.handleManualAmountChangeStrategy.bind(this)],
+            ['name', this.handleMetadataFieldChangeStrategy.bind(this)],
+            ['ticker', this.handleMetadataFieldChangeStrategy.bind(this)],
+            ['sector', this.handleSectorChangeStrategy.bind(this)],
+            ['currentPrice', this.handleCurrentPriceChangeStrategy.bind(this)],
+        ]);
+    }
 
     /**
      * @description 새 주식 추가
@@ -52,14 +89,10 @@ export class StockManager {
     }
 
     /**
-     * @description 포트폴리오 테이블 변경 핸들러
+     * @description 포트폴리오 테이블 변경 핸들러 (Strategy Pattern 적용)
      * @param e - 이벤트
      */
-    handlePortfolioBodyChange(e: Event): {
-        needsFullRender: boolean;
-        needsUIUpdate: boolean;
-        needsSave: boolean;
-    } {
+    handlePortfolioBodyChange(e: Event): FieldChangeResult {
         const target = e.target as HTMLInputElement | HTMLSelectElement;
         const row = target.closest('div[data-id]');
         if (!row) return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
@@ -83,32 +116,23 @@ export class StockManager {
 
         this.state.updateStockProperty(stockId, field, value);
 
-        // manualAmount 변경 처리
-        if (field === 'manualAmount') {
-            return this.handleManualAmountChange(stockId, value);
-        }
-
         const activePortfolio = this.state.getActivePortfolio();
-        if (!activePortfolio) {
+        if (!activePortfolio && field !== 'manualAmount') {
             return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
         }
 
-        // 메타데이터 필드 변경 처리
-        if (field === 'name' || field === 'ticker') {
-            return this.handleMetadataFieldChange(stockId, field, value);
+        const context: FieldHandlerContext = {
+            row,
+            activePortfolio,
+        };
+
+        // Strategy Pattern: 필드별 핸들러를 맵에서 조회하여 실행
+        const handler = this.fieldHandlers.get(field);
+        if (handler) {
+            return handler(stockId, value, context);
         }
 
-        // 섹터 변경 처리
-        if (field === 'sector') {
-            return this.handleSectorChange(stockId, value, activePortfolio);
-        }
-
-        // 현재가 변경 처리
-        if (field === 'currentPrice') {
-            return this.handleCurrentPriceChange(stockId, activePortfolio);
-        }
-
-        // 기타 필드 변경 처리
+        // 기본 핸들러: 전체 재계산이 필요한 필드들
         return this.handleOtherFieldChange(stockId, field, value, row, activePortfolio);
     }
 
@@ -151,45 +175,68 @@ export class StockManager {
     }
 
     /**
-     * @description manualAmount 변경 처리
+     * @description manualAmount 변경 처리 (Strategy Pattern)
      */
-    private handleManualAmountChange(stockId: string, value: any) {
+    private handleManualAmountChangeStrategy(
+        stockId: string,
+        value: any,
+        _context: FieldHandlerContext
+    ): FieldChangeResult {
         this.view.updateStockInVirtualData(stockId, 'manualAmount', value);
         this.debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
     /**
-     * @description 메타데이터 필드 변경 처리 (name, ticker)
+     * @description 메타데이터 필드 변경 처리 (name, ticker) (Strategy Pattern)
      */
-    private handleMetadataFieldChange(stockId: string, field: string, value: any) {
+    private handleMetadataFieldChangeStrategy(
+        stockId: string,
+        value: any,
+        context: FieldHandlerContext
+    ): FieldChangeResult {
+        // field 이름은 context에서 유추 (name 또는 ticker)
+        const target = context.row.querySelector(`[data-id="${stockId}"]`);
+        const field =
+            target?.querySelector('input[data-field="name"]')?.getAttribute('data-field') === 'name'
+                ? 'name'
+                : 'ticker';
+
         this.view.updateStockInVirtualData(stockId, field, value);
         this.debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
     /**
-     * @description 섹터 변경 처리
+     * @description 섹터 변경 처리 (Strategy Pattern)
      */
-    private handleSectorChange(stockId: string, value: any, activePortfolio: any) {
+    private handleSectorChangeStrategy(
+        stockId: string,
+        value: any,
+        context: FieldHandlerContext
+    ): FieldChangeResult {
         this.view.updateStockInVirtualData(stockId, 'sector', value);
         // 섹터는 메타데이터이므로 기존 계산된 메트릭을 재사용하고 섹터 분석만 재집계
-        this.updateSectorAnalysis(activePortfolio, true);
+        this.updateSectorAnalysis(context.activePortfolio, true);
         this.debouncedSave();
         return { needsFullRender: false, needsUIUpdate: false, needsSave: false };
     }
 
     /**
-     * @description 현재가 변경 처리
+     * @description 현재가 변경 처리 (Strategy Pattern)
      */
-    private handleCurrentPriceChange(stockId: string, activePortfolio: any) {
-        const stock = activePortfolio.portfolioData.find((s: any) => s.id === stockId);
+    private handleCurrentPriceChangeStrategy(
+        stockId: string,
+        _value: any,
+        context: FieldHandlerContext
+    ): FieldChangeResult {
+        const stock = context.activePortfolio.portfolioData.find((s: any) => s.id === stockId);
         if (stock) {
             // 개별 주식만 재계산
             const calculatedMetrics = Calculator.calculateStockMetrics(stock);
-            const exchangeRateDec = new Decimal(activePortfolio.settings.exchangeRate);
+            const exchangeRateDec = new Decimal(context.activePortfolio.settings.exchangeRate);
 
-            if (activePortfolio.settings.currentCurrency === 'krw') {
+            if (context.activePortfolio.settings.currentCurrency === 'krw') {
                 calculatedMetrics.currentAmountKRW = calculatedMetrics.currentAmount;
                 calculatedMetrics.currentAmountUSD =
                     calculatedMetrics.currentAmount.div(exchangeRateDec);
@@ -206,7 +253,7 @@ export class StockManager {
             this.view.updateSingleStockRow(stockId, calculatedMetrics);
 
             // 기존 계산된 메트릭을 사용하여 섹터 분석만 재집계
-            this.updateSectorAnalysis(activePortfolio, true);
+            this.updateSectorAnalysis(context.activePortfolio, true);
         }
 
         this.debouncedSave();

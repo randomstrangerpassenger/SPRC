@@ -26,6 +26,96 @@ export interface AddModeSummary {
     finalTotal: Decimal;
 }
 
+// ==================== Helper Functions ====================
+
+/**
+ * @description 비율 값을 안전하게 포맷팅
+ */
+function formatRatioSafe(ratio: Decimal | number | undefined, defaultValue = 'N/A'): string {
+    if (typeof ratio === 'number') {
+        return isFinite(ratio) ? ratio.toFixed(1) : defaultValue;
+    }
+    return ratio?.isFinite() ? ratio.toFixed(1) : defaultValue;
+}
+
+/**
+ * @description 주식 배열을 특정 필드로 정렬
+ */
+function sortStocksByField<T extends Record<string, any>>(
+    stocks: T[],
+    field: keyof T,
+    descending = true
+): T[] {
+    return [...stocks].sort((a, b) => {
+        const valA = a[field] instanceof Decimal ? a[field] : new Decimal(a[field] ?? 0);
+        const valB = b[field] instanceof Decimal ? b[field] : new Decimal(b[field] ?? 0);
+        return descending ? valB.comparedTo(valA) : valA.comparedTo(valB);
+    });
+}
+
+/**
+ * @description 매수 가능한 주식 필터링
+ */
+function filterBuyableStocks<T extends { finalBuyAmount?: Decimal }>(stocks: T[]): T[] {
+    return stocks.filter(
+        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
+    );
+}
+
+/**
+ * @description 비용 요약 HTML 생성
+ */
+function generateCostSummaryHTML(
+    totalBuyAmount: Decimal,
+    feeRate: number | undefined,
+    currency: Currency
+): string {
+    if (!feeRate || feeRate <= 0) return '';
+
+    const feeRateDec = new Decimal(feeRate).div(100);
+    const estimatedFee = totalBuyAmount.times(feeRateDec);
+    const netInvestment = totalBuyAmount.minus(estimatedFee);
+
+    return `
+        <div class="summary-grid" style="margin-top: 15px; background: #fff9e6; border: 1px solid #ffd700;">
+            <div class="summary-item"><h3>💸 예상 수수료 (${feeRate}%)</h3><div class="amount" style="color: #ff6b6b;">${formatCurrency(estimatedFee, currency)}</div></div>
+            <div class="summary-item"><h3>💰 순 투자금액</h3><div class="amount" style="color: #51cf66;">${formatCurrency(netInvestment, currency)}</div></div>
+        </div>`;
+}
+
+/**
+ * @description 요약 정보 HTML 생성 (3-column grid)
+ */
+function generateSummaryGridHTML(summary: AddModeSummary, currency: Currency): string {
+    return `
+        <div class="summary-grid">
+            <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
+            <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
+            <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
+        </div>`;
+}
+
+/**
+ * @description 가이드 박스 HTML 생성
+ */
+function generateGuideBoxHTML(
+    title: string,
+    items: string[],
+    boxType: 'buy' | 'sell',
+    emptyMessage?: string
+): string {
+    const content =
+        items.length > 0
+            ? items.join('')
+            : `<p style="text-align: center;">${emptyMessage || t('template.noItemsToBuy')}</p>`;
+
+    return `
+        <div class="guide-box guide-box--${boxType}">
+            <h3>${title}</h3>
+            ${content}
+        </div>`;
+}
+
 /**
  * @description '추가 매수' 모드의 계산 결과를 표시할 HTML 문자열을 생성합니다.
  * @param results - 계산 결과 배열
@@ -42,17 +132,12 @@ export function generateAddModeResultsHTML(
     feeRate?: number,
     taxRate?: number
 ): string {
-    if (!results) return ''; // Null check for results
+    if (!results) return '';
 
-    const sortedResults = [...results].sort((a, b) => {
-        // Ensure finalBuyAmount exists before comparing
-        const amountA = a.finalBuyAmount ?? new Decimal(0);
-        const amountB = b.finalBuyAmount ?? new Decimal(0);
-        return amountB.comparedTo(amountA);
-    });
+    const sortedResults = sortStocksByField(results, 'finalBuyAmount', true);
+
     const resultsRows = sortedResults
         .map((stock, index) => {
-            // Ensure calculated exists
             const metrics = stock.calculated ?? {
                 profitLoss: new Decimal(0),
                 profitLossRate: new Decimal(0),
@@ -61,12 +146,8 @@ export function generateAddModeResultsHTML(
             const profitClass = profitLoss.isNegative() ? 'text-sell' : 'text-buy';
             const profitSign = profitLoss.isPositive() ? '+' : '';
 
-            // Ensure ratios exist and handle potential NaN/Infinity from division
-            const currentRatioVal = stock.currentRatio?.isFinite()
-                ? stock.currentRatio.toFixed(1)
-                : 'N/A';
-            const targetRatioVal =
-                typeof stock.targetRatio === 'number' ? stock.targetRatio.toFixed(1) : 'N/A';
+            const currentRatioVal = formatRatioSafe(stock.currentRatio);
+            const targetRatioVal = formatRatioSafe(stock.targetRatio);
             const profitLossRateVal = profitLossRate?.isFinite()
                 ? profitLossRate.toFixed(2)
                 : 'N/A';
@@ -83,51 +164,32 @@ export function generateAddModeResultsHTML(
                     </div>
                 </td>
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
-            </tr>
-        `;
+            </tr>`;
         })
         .join('');
 
-    // Filter buyable stocks using Decimal comparison method
-    const buyableStocks = sortedResults.filter(
-        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT) // Use greaterThan()
-    );
-    const guideContent =
-        buyableStocks.length > 0
-            ? buyableStocks
-                  .map((s, i) => {
-                      const buyRatioVal = s.buyRatio?.isFinite() ? s.buyRatio.toFixed(1) : 'N/A';
-                      return `
-                <div class="guide-item">
-                    <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
-                    <span style="font-weight: bold;">(${buyRatioVal}%)</span>
-                </div>`;
-                  })
-                  .join('')
-            : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+    const buyableStocks = filterBuyableStocks(sortedResults);
+    const guideItems = buyableStocks.map((s, i) => {
+        const buyRatioVal = formatRatioSafe(s.buyRatio);
+        return `
+            <div class="guide-item">
+                <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
+                <span style="font-weight: bold;">(${buyRatioVal}%)</span>
+            </div>`;
+    });
 
-    // 비용 계산
     const totalBuyAmount = summary?.additionalInvestment ?? new Decimal(0);
-    const feeRateDec = new Decimal(feeRate ?? 0).div(100);
-    const estimatedFee = totalBuyAmount.times(feeRateDec);
-    const netInvestment = totalBuyAmount.minus(estimatedFee);
-
-    const costSummaryHTML =
-        feeRate && feeRate > 0
-            ? `
-        <div class="summary-grid" style="margin-top: 15px; background: #fff9e6; border: 1px solid #ffd700;">
-            <div class="summary-item"><h3>💸 예상 수수료 (${feeRate}%)</h3><div class="amount" style="color: #ff6b6b;">${formatCurrency(estimatedFee, currency)}</div></div>
-            <div class="summary-item"><h3>💰 순 투자금액</h3><div class="amount" style="color: #51cf66;">${formatCurrency(netInvestment, currency)}</div></div>
-        </div>
-    `
-            : '';
+    const costSummaryHTML = generateCostSummaryHTML(totalBuyAmount, feeRate, currency);
+    const summaryGridHTML = generateSummaryGridHTML(summary, currency);
+    const guideBoxHTML = generateGuideBoxHTML(
+        t('template.buyGuideTitle'),
+        guideItems,
+        'buy',
+        t('template.noItemsToBuy')
+    );
 
     return `
-        <div class="summary-grid">
-            <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
-            <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
-            <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
-        </div>
+        ${summaryGridHTML}
         ${costSummaryHTML}
         <div class="card">
             <h2>${t('template.addModeGuideTitle')}</h2>
@@ -143,7 +205,7 @@ export function generateAddModeResultsHTML(
                     <tbody>${resultsRows}</tbody>
                 </table>
             </div>
-            <div class="guide-box guide-box--buy"><h3>${t('template.buyGuideTitle')}</h3>${guideContent}</div>
+            ${guideBoxHTML}
         </div>`;
 }
 
@@ -161,11 +223,7 @@ export function generateSimpleModeResultsHTML(
 ): string {
     if (!results) return '';
 
-    const sortedResults = [...results].sort((a, b) => {
-        const ratioA = a.currentRatio ?? new Decimal(0);
-        const ratioB = b.currentRatio ?? new Decimal(0);
-        return ratioB.comparedTo(ratioA);
-    });
+    const sortedResults = sortStocksByField(results, 'currentRatio', true);
 
     const resultsRows = sortedResults
         .map((stock, index) => {
@@ -175,13 +233,8 @@ export function generateSimpleModeResultsHTML(
                     ? metrics.currentAmount
                     : new Decimal(metrics.currentAmount ?? 0);
 
-            const currentRatioVal = stock.currentRatio?.isFinite()
-                ? stock.currentRatio.toFixed(1)
-                : '0.0';
-            const targetRatioVal =
-                typeof stock.targetRatio === 'number'
-                    ? stock.targetRatio.toFixed(1)
-                    : (stock.targetRatio?.toFixed(1) ?? '0.0');
+            const currentRatioVal = formatRatioSafe(stock.currentRatio, '0.0');
+            const targetRatioVal = formatRatioSafe(stock.targetRatio, '0.0');
             const finalBuyAmountVal = stock.finalBuyAmount ?? new Decimal(0);
 
             return `
@@ -191,37 +244,24 @@ export function generateSimpleModeResultsHTML(
                 <td style="text-align: center;">${currentRatioVal}%</td>
                 <td style="text-align: center;"><strong>${targetRatioVal}%</strong></td>
                 <td style="text-align: right;"><div class="text-buy">${formatCurrency(finalBuyAmountVal, currency)}</div></td>
-            </tr>
-        `;
+            </tr>`;
         })
         .join('');
 
-    const buyableStocks = sortedResults.filter(
-        (s) => s.finalBuyAmount && s.finalBuyAmount.greaterThan(CONFIG.MIN_BUYABLE_AMOUNT)
-    );
+    const buyableStocks = filterBuyableStocks(sortedResults);
+    const guideItems = buyableStocks.map((s, i) => {
+        const currentRatioVal = formatRatioSafe(s.currentRatio, '0.0');
+        return `
+            <div class="guide-item">
+                <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
+                <span style="font-weight: bold; color: #666;">(현재 비율: ${currentRatioVal}%)</span>
+            </div>`;
+    });
 
-    const guideContent =
-        buyableStocks.length > 0
-            ? buyableStocks
-                  .map((s, i) => {
-                      const currentRatioVal = s.currentRatio?.isFinite()
-                          ? s.currentRatio.toFixed(1)
-                          : '0.0';
-                      return `
-                <div class="guide-item">
-                    <div><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.finalBuyAmount, currency)}</div>
-                    <span style="font-weight: bold; color: #666;">(현재 비율: ${currentRatioVal}%)</span>
-                </div>`;
-                  })
-                  .join('')
-            : `<p style="text-align: center;">${t('template.noItemsToBuy')}</p>`;
+    const summaryGridHTML = generateSummaryGridHTML(summary, currency);
 
     return `
-        <div class="summary-grid">
-            <div class="summary-item summary-item--current"><h3>${t('template.currentTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.currentTotal, currency)}</div></div>
-            <div class="summary-item summary-item--additional"><h3>${t('template.additionalInvestment')}</h3><div class="amount">${formatCurrency(summary?.additionalInvestment, currency)}</div></div>
-            <div class="summary-item summary-item--final"><h3>${t('template.finalTotalAsset')}</h3><div class="amount">${formatCurrency(summary?.finalTotal, currency)}</div></div>
-        </div>
+        ${summaryGridHTML}
         <div class="card">
             <h2>🎯 간단 계산 결과</h2>
             <p style="margin-bottom: 15px; color: #666; font-size: 1.05em;">
@@ -240,11 +280,12 @@ export function generateSimpleModeResultsHTML(
                     <tbody>${resultsRows}</tbody>
                 </table>
             </div>
-            <div class="guide-box guide-box--buy">
-                <h3>💰 추가 구매 가이드</h3>
-                <p style="margin-bottom: 10px; color: #666;">목표 비율에 맞추기 위해 다음과 같이 구매하세요:</p>
-                ${guideContent}
-            </div>
+            ${generateGuideBoxHTML(
+                '💰 추가 구매 가이드',
+                ['<p style="margin-bottom: 10px; color: #666;">목표 비율에 맞추기 위해 다음과 같이 구매하세요:</p>', ...guideItems],
+                'buy',
+                t('template.noItemsToBuy')
+            )}
         </div>`;
 }
 
@@ -258,25 +299,14 @@ export function generateSellModeResultsHTML(
     results: SellModeResultStock[],
     currency: Currency
 ): string {
-    if (!results) return ''; // Null check for results
-    // Sort results safely checking for adjustment property
-    const sortedResults = [...results].sort((a, b) => {
-        const adjA = a.adjustment ?? new Decimal(0);
-        const adjB = b.adjustment ?? new Decimal(0);
-        return adjB.comparedTo(adjA);
-    });
+    if (!results) return '';
+
+    const sortedResults = sortStocksByField(results, 'adjustment', true);
 
     const resultsRows = sortedResults
         .map((s, index) => {
-            // Use default values if properties might be missing/NaN
-            const currentRatioVal =
-                typeof s.currentRatio === 'number' && isFinite(s.currentRatio)
-                    ? s.currentRatio.toFixed(1)
-                    : 'N/A';
-            const targetRatioVal =
-                typeof s.targetRatioNum === 'number' && isFinite(s.targetRatioNum)
-                    ? s.targetRatioNum.toFixed(1)
-                    : 'N/A';
+            const currentRatioVal = formatRatioSafe(s.currentRatio);
+            const targetRatioVal = formatRatioSafe(s.targetRatioNum);
             const adjustmentVal = s.adjustment ?? new Decimal(0);
 
             return `
@@ -296,27 +326,19 @@ export function generateSellModeResultsHTML(
     const totalSell = results.reduce((sum, s) => {
         return s.adjustment?.isPositive() ? sum.plus(s.adjustment) : sum;
     }, new Decimal(0));
-    const stocksToSell = sortedResults.filter((s) => s.adjustment?.isPositive());
-    const stocksToBuy = sortedResults.filter((s) => s.adjustment?.isNegative()); // isNegative includes zero implicitly, filter < 0 if needed
 
-    const sellGuide =
-        stocksToSell.length > 0
-            ? stocksToSell
-                  .map(
-                      (s, i) =>
-                          `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment, currency)} 매도</div>`
-                  )
-                  .join('')
-            : `<p>${t('template.noItemsToSell')}</p>`;
-    const buyGuide =
-        stocksToBuy.length > 0
-            ? stocksToBuy
-                  .map(
-                      (s, i) =>
-                          `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment?.abs(), currency)} 매수</div>`
-                  )
-                  .join('')
-            : `<p>${t('template.noItemsToBuy')}</p>`;
+    const stocksToSell = sortedResults.filter((s) => s.adjustment?.isPositive());
+    const stocksToBuy = sortedResults.filter((s) => s.adjustment?.isNegative());
+
+    const sellGuideItems = stocksToSell.map(
+        (s, i) =>
+            `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment, currency)} 매도</div>`
+    );
+
+    const buyGuideItems = stocksToBuy.map(
+        (s, i) =>
+            `<div class="guide-item"><strong>${i + 1}. ${escapeHTML(s.ticker)}</strong> (${escapeHTML(s.name)}): ${formatCurrency(s.adjustment?.abs(), currency)} 매수</div>`
+    );
 
     return `
         <div class="summary-grid">
@@ -335,8 +357,8 @@ export function generateSellModeResultsHTML(
                     <tbody>${resultsRows}</tbody>
                 </table>
             </div>
-            <div class="guide-box guide-box--sell"><h3>${t('template.sellItemsTitle')}</h3>${sellGuide}</div>
-            <div class="guide-box guide-box--buy"><h3>${t('template.buyItemsTitle')}</h3>${buyGuide}</div>
+            ${generateGuideBoxHTML(t('template.sellItemsTitle'), sellGuideItems, 'sell', t('template.noItemsToSell'))}
+            ${generateGuideBoxHTML(t('template.buyItemsTitle'), buyGuideItems, 'buy', t('template.noItemsToBuy'))}
         </div>`;
 }
 
