@@ -5,6 +5,7 @@ import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
 import { logger } from '../services/Logger';
+import { CSS_CLASSES } from '../constants';
 
 // UI 렌더링용 헬퍼 함수
 /**
@@ -111,13 +112,13 @@ export class ModalManager {
 
             if (type === 'prompt' && isInputElement(inputEl)) {
                 inputEl.value = defaultValue ?? '';
-                inputEl.classList.remove('hidden');
+                inputEl.classList.remove(CSS_CLASSES.HIDDEN);
             } else if (inputEl) {
-                inputEl.classList.add('hidden');
+                inputEl.classList.add(CSS_CLASSES.HIDDEN);
             }
 
             if (modalEl) {
-                modalEl.classList.remove('hidden');
+                modalEl.classList.remove(CSS_CLASSES.HIDDEN);
                 modalEl.setAttribute('aria-modal', 'true');
                 // Use enhanced focus trap from a11yHelpers
                 this.focusTrapCleanup = createFocusTrap(modalEl);
@@ -140,11 +141,11 @@ export class ModalManager {
 
         const inputEl = this.dom.customModalInput;
         const modalEl = this.dom.customModal;
-        const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains('hidden');
+        const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains(CSS_CLASSES.HIDDEN);
         const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
 
         this.activeModalResolver(value);
-        modalEl?.classList.add('hidden');
+        modalEl?.classList.add(CSS_CLASSES.HIDDEN);
         modalEl?.removeAttribute('aria-modal');
         this.restoreFocus();
         this.activeModalResolver = null;
@@ -175,7 +176,7 @@ export class ModalManager {
             dateInput.valueAsDate = new Date();
         }
 
-        modal.classList.remove('hidden');
+        modal.classList.remove(CSS_CLASSES.HIDDEN);
         modal.setAttribute('aria-modal', 'true');
         this.focusTrapCleanup = createFocusTrap(modal);
 
@@ -194,7 +195,7 @@ export class ModalManager {
 
         if (!modal) return;
 
-        modal.classList.add('hidden');
+        modal.classList.add(CSS_CLASSES.HIDDEN);
         modal.removeAttribute('aria-modal');
         if (form instanceof HTMLFormElement) form.reset();
         modal.removeAttribute('data-stock-id');

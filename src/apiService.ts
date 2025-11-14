@@ -1,7 +1,7 @@
 // src/apiService.ts
-import type { FetchStockResult } from './types.ts';
-import { CONFIG } from './constants.ts';
-import { logger } from './services/Logger.ts';
+import type { FetchStockResult } from './types';
+import { CONFIG } from './constants';
+import { logger } from './services/Logger';
 
 /**
  * @enum APIErrorType

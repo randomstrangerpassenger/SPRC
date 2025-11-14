@@ -1,5 +1,5 @@
 // src/i18n.ts
-import { logger } from './services/Logger.ts';
+import { logger } from './services/Logger';
 import { en, type Locale } from './i18n/locales/en';
 import { ko } from './i18n/locales/ko';
 

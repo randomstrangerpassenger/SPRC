@@ -68,7 +68,9 @@ export class VirtualScrollManager {
         this.#scrollWrapper = this.dom.virtualScrollWrapper;
         this.#scrollSpacer = this.dom.virtualScrollSpacer;
         this.#scrollContent = this.dom.virtualScrollContent;
-        this.#viewportHeight = this.#scrollWrapper ? this.#scrollWrapper.clientHeight : 600;
+        this.#viewportHeight = this.#scrollWrapper
+            ? this.#scrollWrapper.clientHeight
+            : UI.DEFAULT_VIEWPORT_HEIGHT;
     }
 
     /**

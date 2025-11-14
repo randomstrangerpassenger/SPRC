@@ -1,6 +1,6 @@
 // src/calculationStrategies.ts
 import Decimal from 'decimal.js';
-import type { CalculatedStock } from './types.ts';
+import type { CalculatedStock } from './types';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';
 import { logger } from './services/Logger';
 

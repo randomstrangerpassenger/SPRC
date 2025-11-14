@@ -69,6 +69,26 @@ export const UI = {
     VISIBLE_ROWS_BUFFER: 5,
     /** 가상 스크롤: LRU 캐시 크기 */
     ROW_CACHE_SIZE: 50,
+    /** 가상 스크롤: 기본 뷰포트 높이 (px) - 계산 실패 시 fallback */
+    DEFAULT_VIEWPORT_HEIGHT: 600,
+} as const;
+
+/**
+ * @description 캐시 관련 상수
+ */
+export const CACHE = {
+    /** 포트폴리오 계산 LRU 캐시 크기 */
+    PORTFOLIO_CACHE_SIZE: 20,
+    /** 주식 계산 LRU 캐시 크기 */
+    STOCK_CACHE_SIZE: 20,
+} as const;
+
+/**
+ * @description 성능 모니터링 관련 상수
+ */
+export const PERFORMANCE = {
+    /** 성능 메트릭 최대 저장 개수 */
+    MAX_METRICS: 1000,
 } as const;
 
 /**
@@ -77,6 +97,39 @@ export const UI = {
 export const BREAKPOINTS = {
     /** 모바일 분기점 (px) */
     MOBILE: 768,
+} as const;
+
+/**
+ * @description CSS 클래스 이름 상수
+ */
+export const CSS_CLASSES = {
+    HIDDEN: 'hidden',
+    INPUT_INVALID: 'input-invalid',
+    VALID: 'valid',
+    INVALID: 'invalid',
+    KEYBOARD_NAV: 'keyboard-nav',
+    DARK_MODE: 'dark-mode',
+    IN_VIEW: 'in-view',
+    SHOW: 'show',
+    CALCULATION_LOADER: 'calculation-loader',
+} as const;
+
+/**
+ * @description Toast 메시지 타입
+ */
+export const TOAST_TYPES = {
+    SUCCESS: 'success',
+    ERROR: 'error',
+    INFO: 'info',
+    WARNING: 'warning',
+} as const;
+
+/**
+ * @description ARIA 우선순위
+ */
+export const ARIA_POLITENESS = {
+    POLITE: 'polite',
+    ASSERTIVE: 'assertive',
 } as const;
 
 export type ConfigType = typeof CONFIG;

@@ -2,6 +2,7 @@
 import { t } from '../i18n';
 import type { Chart } from 'chart.js';
 import type { PortfolioSnapshot, DOMElements } from '../types';
+import { CSS_CLASSES } from '../constants';
 
 /**
  * @class ResultsRenderer
@@ -41,7 +42,7 @@ export class ResultsRenderer {
         if (!resultsEl) return;
 
         resultsEl.innerHTML = skeletonHTML;
-        resultsEl.classList.remove('hidden');
+        resultsEl.classList.remove(CSS_CLASSES.HIDDEN);
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -55,7 +56,7 @@ export class ResultsRenderer {
             if (!resultsEl) return;
 
             resultsEl.innerHTML = html;
-            resultsEl.classList.remove('hidden');
+            resultsEl.classList.remove(CSS_CLASSES.HIDDEN);
             resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             const rows = resultsEl.querySelectorAll('.result-row-highlight');
@@ -90,7 +91,7 @@ export class ResultsRenderer {
             if (!sectorEl) return;
 
             sectorEl.innerHTML = html;
-            sectorEl.classList.remove('hidden');
+            sectorEl.classList.remove(CSS_CLASSES.HIDDEN);
         });
     }
 
@@ -107,7 +108,7 @@ export class ResultsRenderer {
 
         if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;
 
-        chartEl.classList.remove('hidden');
+        chartEl.classList.remove(CSS_CLASSES.HIDDEN);
 
         const chartOptions = {
             responsive: true,
@@ -172,14 +173,14 @@ export class ResultsRenderer {
 
         if (resultsEl) {
             resultsEl.innerHTML = '';
-            resultsEl.classList.add('hidden');
+            resultsEl.classList.add(CSS_CLASSES.HIDDEN);
         }
         if (sectorEl) {
             sectorEl.innerHTML = '';
-            sectorEl.classList.add('hidden');
+            sectorEl.classList.add(CSS_CLASSES.HIDDEN);
         }
         if (chartEl) {
-            chartEl.classList.add('hidden');
+            chartEl.classList.add(CSS_CLASSES.HIDDEN);
         }
 
         this.cleanupObserver();
@@ -203,8 +204,8 @@ export class ResultsRenderer {
         if (!section || !container || !(canvas instanceof HTMLCanvasElement)) return;
 
         // Show section
-        section.classList.remove('hidden');
-        container.classList.remove('hidden');
+        section.classList.remove(CSS_CLASSES.HIDDEN);
+        container.classList.remove(CSS_CLASSES.HIDDEN);
 
         // Sort snapshots by date (oldest first for chart)
         const sorted = [...snapshots].sort((a, b) => a.timestamp - b.timestamp);
@@ -421,11 +422,11 @@ export class ResultsRenderer {
         const listContainer = this.dom.snapshotListContainer;
 
         if (show) {
-            section?.classList.remove('hidden');
-            chartContainer?.classList.remove('hidden');
-            listContainer?.classList.add('hidden');
+            section?.classList.remove(CSS_CLASSES.HIDDEN);
+            chartContainer?.classList.remove(CSS_CLASSES.HIDDEN);
+            listContainer?.classList.add(CSS_CLASSES.HIDDEN);
         } else {
-            section?.classList.add('hidden');
+            section?.classList.add(CSS_CLASSES.HIDDEN);
         }
     }
 
@@ -439,11 +440,11 @@ export class ResultsRenderer {
         const listContainer = this.dom.snapshotListContainer;
 
         if (show) {
-            section?.classList.remove('hidden');
-            chartContainer?.classList.add('hidden');
-            listContainer?.classList.remove('hidden');
+            section?.classList.remove(CSS_CLASSES.HIDDEN);
+            chartContainer?.classList.add(CSS_CLASSES.HIDDEN);
+            listContainer?.classList.remove(CSS_CLASSES.HIDDEN);
         } else {
-            section?.classList.add('hidden');
+            section?.classList.add(CSS_CLASSES.HIDDEN);
         }
     }
 }

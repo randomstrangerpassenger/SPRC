@@ -1,15 +1,15 @@
 // src/state.ts
 import Decimal from 'decimal.js';
-import { CONFIG } from './constants.ts';
-import { t } from './i18n.ts';
-import { ErrorService } from './errorService.ts';
-import { Validator } from './validator.ts';
-import { generateId } from './utils.ts';
-import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types.ts';
-import { createDefaultPortfolio, createDefaultStock } from './state/helpers.ts';
-import { validateAndUpgradeData } from './state/validation.ts';
-import { PortfolioRepository } from './state/PortfolioRepository.ts';
-import { logger } from './services/Logger.ts';
+import { CONFIG } from './constants';
+import { t } from './i18n';
+import { ErrorService } from './errorService';
+import { Validator } from './validator';
+import { generateId } from './utils';
+import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types';
+import { createDefaultPortfolio, createDefaultStock } from './state/helpers';
+import { validateAndUpgradeData } from './state/validation';
+import { PortfolioRepository } from './state/PortfolioRepository';
+import { logger } from './services/Logger';
 
 export class PortfolioState {
     #portfolios: Record<string, Portfolio> = {};

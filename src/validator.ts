@@ -1,14 +1,14 @@
 // src/validator.ts
-import { t } from './i18n.ts';
+import { t } from './i18n';
 import Decimal from 'decimal.js';
-import { logger } from './services/Logger.ts';
+import { logger } from './services/Logger';
 import type {
     Transaction,
     ValidationResult,
     ValidationErrorDetail,
     CalculatedStock,
     MainMode,
-} from './types.ts';
+} from './types';
 
 export const Validator = {
     /**

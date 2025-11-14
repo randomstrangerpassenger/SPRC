@@ -1,9 +1,9 @@
 // src/calculator.ts
 import Decimal from 'decimal.js';
-import { generateId } from './utils.ts';
-import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
-import { ErrorService } from './errorService.ts';
-import { LRUCache } from './cache/LRUCache.ts';
+import { generateId } from './utils';
+import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED, CACHE } from './constants';
+import { ErrorService } from './errorService';
+import { LRUCache } from './cache/LRUCache';
 import { logger } from './services/Logger';
 import type {
     Stock,
@@ -11,8 +11,8 @@ import type {
     CalculatedStockMetrics,
     Currency,
     PortfolioSnapshot,
-} from './types.ts';
-import type { IRebalanceStrategy } from './calculationStrategies.ts';
+} from './types';
+import type { IRebalanceStrategy } from './calculationStrategies';
 
 /**
  * @description 주식 ID와 현재 가격의 조합을 기반으로 캐시 키를 생성합니다.
@@ -56,8 +56,10 @@ export interface PortfolioCalculationResult {
 }
 
 export class Calculator {
-    // LRU 캐시로 여러 계산 결과 저장 (기본 용량: 20)
-    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(20);
+    // LRU 캐시로 여러 계산 결과 저장
+    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(
+        CACHE.PORTFOLIO_CACHE_SIZE
+    );
 
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.

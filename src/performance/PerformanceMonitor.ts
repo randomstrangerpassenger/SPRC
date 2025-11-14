@@ -7,6 +7,7 @@
  */
 
 import { logger } from '../services/Logger';
+import { PERFORMANCE } from '../constants';
 
 export interface PerformanceMetric {
     name: string;
@@ -35,7 +36,7 @@ export class PerformanceMonitor {
     private static instance: PerformanceMonitor | null = null;
     private metrics: PerformanceMetric[] = [];
     private activeTimers: Map<string, number> = new Map();
-    private maxMetrics: number = 1000; // 최대 저장 메트릭 수
+    private maxMetrics: number = PERFORMANCE.MAX_METRICS;
     private enabled: boolean = true;
 
     private constructor() {
