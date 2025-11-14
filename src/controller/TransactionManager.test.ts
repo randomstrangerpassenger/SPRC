@@ -315,10 +315,7 @@ describe('TransactionManager', () => {
         it('should close modal and render transaction list after adding', async () => {
             await transactionManager.handleAddNewTransaction(mockEvent);
 
-            expect(mockView.renderTransactionList).toHaveBeenCalledWith(
-                expect.any(Array),
-                'krw'
-            );
+            expect(mockView.renderTransactionList).toHaveBeenCalledWith(expect.any(Array), 'krw');
             expect(mockForm.reset).toBeDefined(); // Form should be reset
         });
     });

@@ -6,6 +6,15 @@ import { DECIMAL_ZERO } from './constants';
 import { memoizeWithKey } from './cache/memoization';
 
 /**
+ * @description HTMLInputElement 타입 가드
+ * @param element - 검사할 요소
+ * @returns element가 HTMLInputElement인지 여부
+ */
+export function isInputElement(element: unknown): element is HTMLInputElement {
+    return element instanceof HTMLInputElement;
+}
+
+/**
  * HTML 문자열을 이스케이프하여 XSS 공격을 방지합니다.
  * @param str - 이스케이프할 문자열
  * @returns 이스케이프된 안전한 HTML 문자열
@@ -88,13 +97,17 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 /**
- * @description 고유 ID를 생성합니다. (nanoid 대체)
- * @returns 고유 ID 문자열
+ * @description 고유 ID 생성 (crypto.randomUUID 사용)
+ * @returns UUID v4 형식의 고유 ID
  */
 export function generateId(): string {
-    // nanoid 대체
-    // nanoid를 간단한 유틸 함수로 교체하여 번들 크기 감소
-    // Date.now()와 Math.random()을 조합하여 충분히 고유한 ID 생성
+    // crypto.randomUUID()를 사용하여 충돌 가능성 원천 차단
+    // 브라우저 환경에서는 Web Crypto API 사용
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+
+    // 폴백: 이전 방식 (테스트 환경 등)
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 

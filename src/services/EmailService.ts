@@ -4,6 +4,7 @@ import { ExcelExportService } from './ExcelExportService';
 import { PDFReportService } from './PDFReportService';
 import jsPDF from 'jspdf';
 import { Workbook } from 'exceljs';
+import { logger } from './Logger';
 
 /**
  * 이메일 설정 인터페이스
@@ -57,7 +58,7 @@ export class EmailService {
                 attachments.push({
                     filename: `portfolio_${portfolio.name}_${Date.now()}.xlsx`,
                     content: excelBase64,
-                    encoding: 'base64'
+                    encoding: 'base64',
                 });
             }
 
@@ -68,7 +69,7 @@ export class EmailService {
                 attachments.push({
                     filename: `portfolio_report_${portfolio.name}_${Date.now()}.pdf`,
                     content: pdfBase64,
-                    encoding: 'base64'
+                    encoding: 'base64',
                 });
             }
 
@@ -79,7 +80,7 @@ export class EmailService {
             const response = await fetch(`${this.API_BASE_URL}/send-email`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     to: toEmail,
@@ -87,8 +88,8 @@ export class EmailService {
                     html,
                     text: `Portfolio Report for ${portfolio.name}`,
                     attachments,
-                    emailConfig
-                })
+                    emailConfig,
+                }),
             });
 
             const result = await response.json();
@@ -97,8 +98,10 @@ export class EmailService {
                 throw new Error(result.message || 'Failed to send email');
             }
         } catch (error) {
-            console.error('Email sending error:', error);
-            throw new Error('이메일 전송 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+            logger.error('Email sending error', 'EmailService', error);
+            throw new Error(
+                '이메일 전송 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류')
+            );
         }
     }
 
@@ -110,15 +113,15 @@ export class EmailService {
             const response = await fetch(`${this.API_BASE_URL}/test-email-config`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ emailConfig })
+                body: JSON.stringify({ emailConfig }),
             });
 
             const result = await response.json();
             return result.success;
         } catch (error) {
-            console.error('Email config test error:', error);
+            logger.error('Email config test error', 'EmailService', error);
             return false;
         }
     }
@@ -132,7 +135,7 @@ export class EmailService {
             const result = await response.json();
             return result.status === 'ok';
         } catch (error) {
-            console.error('Server health check failed:', error);
+            logger.error('Server health check failed', 'EmailService', error);
             return false;
         }
     }
@@ -169,7 +172,7 @@ export class EmailService {
                     tx.date,
                     parseFloat(qty.toString()),
                     parseFloat(price.toString()),
-                    total
+                    total,
                 ]);
             });
         });

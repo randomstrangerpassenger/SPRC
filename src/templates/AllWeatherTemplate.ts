@@ -5,7 +5,11 @@
 
 import type { Stock } from '../types';
 import type { PortfolioTemplate } from './PortfolioTemplate';
-import { filterStocksBySector, filterStocksBySectorOrName, setEqualRatios } from './PortfolioTemplate';
+import {
+    filterStocksBySector,
+    filterStocksBySectorOrName,
+    setEqualRatios,
+} from './PortfolioTemplate';
 
 /**
  * @class AllWeatherTemplate
@@ -42,9 +46,7 @@ export class AllWeatherTemplate implements PortfolioTemplate {
         const commodityStocks = filterStocksBySectorOrName(stocks, this.COMMODITY_KEYWORDS);
         const otherStocks = stocks.filter(
             (s) =>
-                !equityStocks.includes(s) &&
-                !bondStocks.includes(s) &&
-                !commodityStocks.includes(s)
+                !equityStocks.includes(s) && !bondStocks.includes(s) && !commodityStocks.includes(s)
         );
 
         // 주식 30%

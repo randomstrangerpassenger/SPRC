@@ -3,6 +3,7 @@ import { PortfolioState } from '../state';
 import { PortfolioView } from '../view';
 import { t } from '../i18n';
 import DOMPurify from 'dompurify';
+import { isInputElement } from '../utils';
 
 /**
  * @class PortfolioManager
@@ -109,10 +110,10 @@ export class PortfolioManager {
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
                 const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
-                if (exchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(exchangeRateInput)) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
-                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(portfolioExchangeRateInput)) {
                     portfolioExchangeRateInput.value =
                         activePortfolio.settings.exchangeRate.toString();
                 }

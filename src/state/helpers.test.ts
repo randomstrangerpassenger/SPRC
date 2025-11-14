@@ -1,11 +1,7 @@
 // src/state/helpers.test.ts
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import {
-    createDefaultPortfolio,
-    createDefaultStock,
-    validateDecimalValue,
-} from './helpers';
+import { createDefaultPortfolio, createDefaultStock, validateDecimalValue } from './helpers';
 
 describe('helpers', () => {
     describe('createDefaultPortfolio', () => {

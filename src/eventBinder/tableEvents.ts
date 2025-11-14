@@ -1,5 +1,6 @@
 // src/eventBinder/tableEvents.ts
 import type { PortfolioView } from '../view';
+import { isInputElement } from '../utils';
 
 /**
  * @description 포트폴리오 테이블 관련 이벤트 바인딩
@@ -74,7 +75,7 @@ export function setupTableEvents(view: PortfolioView, signal: AbortSignal): void
             case 'ArrowLeft':
             case 'ArrowRight':
                 if (
-                    target instanceof HTMLInputElement &&
+                    isInputElement(target) &&
                     (target.type !== 'text' ||
                         target.selectionStart ===
                             (e.key === 'ArrowLeft' ? 0 : target.value.length)) &&

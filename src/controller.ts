@@ -3,13 +3,14 @@ import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
 import { DataStore } from './dataStore';
-import { debounce, getRatioSum } from './utils';
-import { CONFIG, DECIMAL_ZERO } from './constants';
+import { debounce, getRatioSum, isInputElement } from './utils';
+import { CONFIG, DECIMAL_ZERO, THRESHOLDS } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
+import type { PortfolioSnapshot } from './types';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
 import { ChartLoaderService } from './services/ChartLoaderService';
@@ -388,23 +389,21 @@ export class PortfolioController {
 
         if (currentTotalDec.isZero()) return;
 
-        // 단일 종목 비중 경고 (30% 초과)
-        const SINGLE_STOCK_THRESHOLD = 30;
+        // 단일 종목 비중 경고
         for (const stock of portfolioData) {
             const currentAmount = new Decimal(stock.calculated?.currentAmount || 0);
             const ratio = currentAmount.div(currentTotalDec).times(100);
 
-            if (ratio.greaterThan(SINGLE_STOCK_THRESHOLD)) {
+            if (ratio.greaterThan(THRESHOLDS.SINGLE_STOCK_WARNING)) {
                 warnings.push(`⚠️ ${stock.name}: ${ratio.toFixed(1)}% (단일 종목 비중 높음)`);
             }
         }
 
-        // 섹터 집중도 경고 (40% 초과)
-        const SECTOR_CONCENTRATION_THRESHOLD = 40;
+        // 섹터 집중도 경고
         for (const sector of sectorData) {
             const percentage = new Decimal(sector.percentage || 0);
 
-            if (percentage.greaterThan(SECTOR_CONCENTRATION_THRESHOLD)) {
+            if (percentage.greaterThan(THRESHOLDS.SECTOR_CONCENTRATION_WARNING)) {
                 warnings.push(
                     `⚠️ ${sector.sector} 섹터: ${percentage.toFixed(1)}% (섹터 집중도 높음)`
                 );
@@ -483,7 +482,7 @@ export class PortfolioController {
     /**
      * @description 스냅샷 목록 렌더링
      */
-    private renderSnapshotList(snapshots: any[], currency: 'krw' | 'usd'): void {
+    private renderSnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
         this.view.resultsRenderer.displaySnapshotList(snapshots, currency);
     }
 
@@ -528,9 +527,9 @@ export class PortfolioController {
             this.view.dom;
 
         if (
-            !(additionalAmountInput instanceof HTMLInputElement) ||
-            !(additionalAmountUSDInput instanceof HTMLInputElement) ||
-            !(exchangeRateInput instanceof HTMLInputElement)
+            !isInputElement(additionalAmountInput) ||
+            !isInputElement(additionalAmountUSDInput) ||
+            !isInputElement(exchangeRateInput)
         ) {
             return DECIMAL_ZERO;
         }
@@ -552,7 +551,7 @@ export class PortfolioController {
                 return calculatedKRW.isNegative() ? DECIMAL_ZERO : calculatedKRW;
             }
         } catch (e) {
-            console.error('Error parsing investment amount:', e);
+            logger.error('Error parsing investment amount', 'Controller', e);
             return DECIMAL_ZERO;
         }
     }

@@ -42,10 +42,41 @@ export const CONFIG = {
     LEGACY_LS_META_KEY: 'portfolioCalculatorMeta_v1',
     LEGACY_LS_PORTFOLIOS_KEY: 'portfolioCalculatorData_v1_all',
 
-
     DATA_VERSION: '2.0.0', // state.js가 참조하는 버전 키
 
     // DATA_PREFIX: 'portfolioCalculatorData_v1_', // (현재 state.js에서 미사용)
+} as const;
+
+/**
+ * @description 리스크 분석 임계값
+ */
+export const THRESHOLDS = {
+    /** 단일 종목 비중 경고 임계값 (%) */
+    SINGLE_STOCK_WARNING: 30,
+    /** 섹터 집중도 경고 임계값 (%) */
+    SECTOR_CONCENTRATION_WARNING: 40,
+} as const;
+
+/**
+ * @description UI 관련 상수
+ */
+export const UI = {
+    /** 가상 스크롤: 입력 행 높이 (px) */
+    ROW_INPUT_HEIGHT: 60,
+    /** 가상 스크롤: 출력 행 높이 (px) */
+    ROW_OUTPUT_HEIGHT: 50,
+    /** 가상 스크롤: 버퍼 행 수 */
+    VISIBLE_ROWS_BUFFER: 5,
+    /** 가상 스크롤: LRU 캐시 크기 */
+    ROW_CACHE_SIZE: 50,
+} as const;
+
+/**
+ * @description 반응형 디자인 분기점
+ */
+export const BREAKPOINTS = {
+    /** 모바일 분기점 (px) */
+    MOBILE: 768,
 } as const;
 
 export type ConfigType = typeof CONFIG;

@@ -6,7 +6,6 @@
 import { formatCurrency, escapeHTML } from '../utils';
 import { t } from '../i18n';
 import Decimal from 'decimal.js';
-import { DECIMAL_ZERO } from '../constants';
 import type { CalculatedStock } from '../types';
 import {
     createInput,

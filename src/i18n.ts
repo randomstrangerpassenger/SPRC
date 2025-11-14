@@ -1,4 +1,5 @@
 // src/i18n.ts
+import { logger } from './services/Logger.ts';
 
 type Lang = 'en' | 'ko';
 type Replacements = Record<string, string | number>;
@@ -372,8 +373,13 @@ const locales = {
  * @description 브라우저 언어 설정을 감지하여 'en' 또는 'ko'를 반환합니다.
  */
 function getBrowserLanguage(): Lang {
-    const lang = (navigator as any).language || (navigator as any).userLanguage;
-    if (lang.toLowerCase().startsWith('ko')) {
+    const nav = navigator as unknown;
+    const lang =
+        (nav && typeof nav === 'object' && 'language' in nav ? nav.language : null) ||
+        (nav && typeof nav === 'object' && 'userLanguage' in nav
+            ? (nav as { userLanguage: string }).userLanguage
+            : null);
+    if (typeof lang === 'string' && lang.toLowerCase().startsWith('ko')) {
         return 'ko';
     }
     return 'en'; // 기본값
@@ -392,20 +398,20 @@ function getStoredLanguage(): Lang {
 
 // 현재 언어 설정 (localStorage 우선, 없으면 브라우저 언어)
 let currentLang: Lang = getStoredLanguage();
-let messages: any = locales[currentLang] || locales.en;
+let messages: typeof locales.en | typeof locales.ko = locales[currentLang] || locales.en;
 
 /**
  * @description 언어 변경 및 localStorage 저장
  */
 export function setLanguage(newLang: Lang): void {
     if (newLang !== 'en' && newLang !== 'ko') {
-        console.warn(`[i18n] Unsupported language: ${newLang}`);
+        logger.warn(`Unsupported language: ${newLang}`, 'i18n');
         return;
     }
     currentLang = newLang;
     messages = locales[currentLang] || locales.en;
     localStorage.setItem('sprc_language', newLang);
-    console.log(`[i18n] Language changed to ${newLang}`);
+    logger.info(`Language changed to ${newLang}`, 'i18n');
 }
 
 /**
@@ -420,18 +426,22 @@ export function getCurrentLanguage(): Lang {
  */
 export function t(key: string, replacements: Replacements = {}): string {
     const keys = key.split('.');
-    let message: any = keys.reduce(
-        (obj: any, k: string) => (obj && obj[k] !== undefined ? obj[k] : key),
-        messages
+    let message: unknown = keys.reduce(
+        (obj: unknown, k: string) =>
+            obj && typeof obj === 'object' && k in obj ? (obj as Record<string, unknown>)[k] : key,
+        messages as unknown
     );
 
     if (typeof message !== 'string') {
         message = keys.reduce(
-            (obj: any, k: string) => (obj && obj[k] !== undefined ? obj[k] : key),
-            locales.en
+            (obj: unknown, k: string) =>
+                obj && typeof obj === 'object' && k in obj
+                    ? (obj as Record<string, unknown>)[k]
+                    : key,
+            locales.en as unknown
         ); // Fallback to English
         if (typeof message !== 'string') {
-            console.warn(`[i18n] Missing key in all locales: ${key}`);
+            logger.warn(`Missing key in all locales: ${key}`, 'i18n');
             return key;
         }
     }

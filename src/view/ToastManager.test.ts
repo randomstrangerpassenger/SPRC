@@ -182,7 +182,9 @@ describe('ToastManager', () => {
             toastManager.show('<b>Bold</b>\n\n<i>Italic</i>', 'info');
 
             const toast = document.querySelector('.toast');
-            expect(toast?.innerHTML).toBe('&lt;b&gt;Bold&lt;/b&gt;<br><br>&lt;i&gt;Italic&lt;/i&gt;');
+            expect(toast?.innerHTML).toBe(
+                '&lt;b&gt;Bold&lt;/b&gt;<br><br>&lt;i&gt;Italic&lt;/i&gt;'
+            );
         });
     });
 });

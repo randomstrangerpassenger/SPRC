@@ -6,6 +6,8 @@
  * - 성능 메트릭 저장 및 분석
  */
 
+import { logger } from '../services/Logger';
+
 export interface PerformanceMetric {
     name: string;
     category: 'calculation' | 'rendering' | 'api' | 'storage' | 'other';
@@ -86,7 +88,7 @@ export class PerformanceMonitor {
         const startTime = this.activeTimers.get(timerId);
 
         if (startTime === undefined) {
-            console.warn(`[PerformanceMonitor] No start time found for: ${timerId}`);
+            logger.warn(`No start time found for: ${timerId}`, 'PerformanceMonitor');
             return 0;
         }
 

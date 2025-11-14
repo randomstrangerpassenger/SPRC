@@ -1,10 +1,16 @@
 // src/view.ts
 import { CONFIG } from './constants';
-import { getRatioSum, escapeHTML } from './utils';
+import { getRatioSum, escapeHTML, isInputElement } from './utils';
 import { t } from './i18n';
-// UI에서 불필요한 Decimal import 제거
-// import Decimal from 'decimal.js'; // UI 렌더링에서는 사용하지 않음
-import type { Stock, CalculatedStock, Transaction, PortfolioSnapshot, DOMElements } from './types';
+import type {
+    Stock,
+    CalculatedStock,
+    Transaction,
+    PortfolioSnapshot,
+    DOMElements,
+    CalculatedStockMetrics,
+} from './types';
+import Decimal from 'decimal.js';
 import type { Chart } from 'chart.js';
 
 // 분리된 모듈들
@@ -67,7 +73,7 @@ export class PortfolioView {
 
         // AccessibilityAnnouncer 엘리먼트 설정
         if (this.dom.ariaAnnouncer) {
-            this.accessibilityAnnouncer.setElement(this.dom.ariaAnnouncer as HTMLElement);
+            this.accessibilityAnnouncer.setElement(this.dom.ariaAnnouncer);
         }
 
         this.eventEmitter.clear();
@@ -163,7 +169,7 @@ export class PortfolioView {
     toggleInputValidation(
         inputElement: HTMLInputElement,
         isValid: boolean,
-        errorMessage: string = ''
+        _errorMessage: string = ''
     ): void {
         if (!inputElement) return;
         inputElement.classList.toggle('input-invalid', !isValid);
@@ -210,11 +216,15 @@ export class PortfolioView {
         this.virtualScrollManager.updateVirtualTableData(calculatedPortfolioData);
     }
 
-    updateStockInVirtualData(stockId: string, field: string, value: any): void {
+    updateStockInVirtualData(
+        stockId: string,
+        field: string,
+        value: string | number | boolean | Decimal
+    ): void {
         this.virtualScrollManager.updateStockInVirtualData(stockId, field, value);
     }
 
-    updateSingleStockRow(stockId: string, calculatedData: any): void {
+    updateSingleStockRow(stockId: string, calculatedData: CalculatedStockMetrics): void {
         this.virtualScrollManager.updateSingleStockRow(stockId, calculatedData);
     }
 
@@ -328,7 +338,7 @@ export class PortfolioView {
         addCard?.classList.toggle('hidden', mainMode !== 'add' && mainMode !== 'simple');
 
         modeRadios?.forEach((radio) => {
-            if (radio instanceof HTMLInputElement) radio.checked = radio.value === mainMode;
+            if (isInputElement(radio)) radio.checked = radio.value === mainMode;
         });
         this.hideResults();
     }
@@ -348,10 +358,10 @@ export class PortfolioView {
         usdGroup?.classList.toggle('hidden', !isUsdMode);
 
         currencyRadios?.forEach((radio) => {
-            if (radio instanceof HTMLInputElement) radio.checked = radio.value === currencyMode;
+            if (isInputElement(radio)) radio.checked = radio.value === currencyMode;
         });
 
-        if (!isUsdMode && usdInput instanceof HTMLInputElement) usdInput.value = '';
+        if (!isUsdMode && isInputElement(usdInput)) usdInput.value = '';
     }
 
     /**
@@ -379,11 +389,11 @@ export class PortfolioView {
     updateExchangeRateInputs(rate: number): void {
         const { exchangeRateInput, portfolioExchangeRateInput } = this.dom;
 
-        if (exchangeRateInput instanceof HTMLInputElement) {
+        if (isInputElement(exchangeRateInput)) {
             exchangeRateInput.value = rate.toFixed(2);
         }
 
-        if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+        if (isInputElement(portfolioExchangeRateInput)) {
             portfolioExchangeRateInput.value = rate.toFixed(2);
         }
     }
@@ -406,28 +416,28 @@ export class PortfolioView {
         } = this.dom;
 
         // Exchange rate
-        if (exchangeRateInput instanceof HTMLInputElement) {
+        if (isInputElement(exchangeRateInput)) {
             exchangeRateInput.value = settings.exchangeRate.toString();
         }
-        if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+        if (isInputElement(portfolioExchangeRateInput)) {
             portfolioExchangeRateInput.value = settings.exchangeRate.toString();
         }
 
         // Rebalancing tolerance
         if (
-            rebalancingToleranceInput instanceof HTMLInputElement &&
+            isInputElement(rebalancingToleranceInput) &&
             settings.rebalancingTolerance !== undefined
         ) {
             rebalancingToleranceInput.value = settings.rebalancingTolerance.toString();
         }
 
         // Trading fee rate
-        if (tradingFeeRateInput instanceof HTMLInputElement && settings.tradingFeeRate !== undefined) {
+        if (isInputElement(tradingFeeRateInput) && settings.tradingFeeRate !== undefined) {
             tradingFeeRateInput.value = settings.tradingFeeRate.toString();
         }
 
         // Tax rate
-        if (taxRateInput instanceof HTMLInputElement && settings.taxRate !== undefined) {
+        if (isInputElement(taxRateInput) && settings.taxRate !== undefined) {
             taxRateInput.value = settings.taxRate.toString();
         }
     }

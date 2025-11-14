@@ -4,6 +4,7 @@ import { PortfolioView } from '../view';
 import { Calculator } from '../calculator';
 import { ErrorService } from '../errorService';
 import { t } from '../i18n';
+import { isInputElement } from '../utils';
 // 대형 서비스를 동적 임포트로 변경
 import type { EmailConfig } from '../services';
 // ExcelExportService, PDFReportService, EmailService는 동적 임포트 사용
@@ -40,10 +41,10 @@ export class DataManager {
                 this.view.updateMainModeUI(activePortfolio.settings.mainMode);
 
                 const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
-                if (exchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(exchangeRateInput)) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
-                if (portfolioExchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(portfolioExchangeRateInput)) {
                     portfolioExchangeRateInput.value =
                         activePortfolio.settings.exchangeRate.toString();
                 }
@@ -226,7 +227,7 @@ export class DataManager {
      */
     handleImportData(): void {
         const fileInput = this.view.dom.importFileInput;
-        if (fileInput instanceof HTMLInputElement) fileInput.click();
+        if (isInputElement(fileInput)) fileInput.click();
     }
 
     /**

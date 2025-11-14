@@ -12,8 +12,7 @@ import { logger } from './services/Logger';
 function handleUnhandledRejection(event: PromiseRejectionEvent): void {
     event.preventDefault(); // 기본 에러 출력 방지
 
-    const error =
-        event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+    const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
 
     logger.error('Unhandled Promise Rejection', 'ErrorHandlers', error);
     ErrorService.handle(error, 'UnhandledPromiseRejection');

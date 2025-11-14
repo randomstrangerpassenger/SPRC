@@ -1,9 +1,10 @@
 // src/view/ModalManager.ts
-import { formatCurrency, escapeHTML } from '../utils';
+import { formatCurrency, escapeHTML, isInputElement } from '../utils';
 import { t } from '../i18n';
 import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
+import { logger } from '../services/Logger';
 
 // UI 렌더링용 헬퍼 함수
 /**
@@ -100,7 +101,7 @@ export class ModalManager {
             if (titleEl) titleEl.textContent = title;
             if (messageEl) messageEl.textContent = message;
 
-            if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
+            if (type === 'prompt' && isInputElement(inputEl)) {
                 inputEl.value = defaultValue ?? '';
                 inputEl.classList.remove('hidden');
             } else if (inputEl) {
@@ -114,7 +115,7 @@ export class ModalManager {
                 this.focusTrapCleanup = createFocusTrap(modalEl);
             }
 
-            if (type === 'prompt' && inputEl instanceof HTMLInputElement) {
+            if (type === 'prompt' && isInputElement(inputEl)) {
                 inputEl.focus();
             } else if (confirmBtnEl instanceof HTMLButtonElement) {
                 confirmBtnEl.focus();
@@ -131,8 +132,7 @@ export class ModalManager {
 
         const inputEl = this.dom.customModalInput;
         const modalEl = this.dom.customModal;
-        const isPrompt =
-            inputEl instanceof HTMLInputElement && !inputEl.classList.contains('hidden');
+        const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains('hidden');
         const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
 
         this.activeModalResolver(value);
@@ -163,7 +163,7 @@ export class ModalManager {
 
         this.renderTransactionList(transactions || [], currency);
 
-        if (dateInput instanceof HTMLInputElement) {
+        if (isInputElement(dateInput)) {
             dateInput.valueAsDate = new Date();
         }
 
@@ -201,7 +201,7 @@ export class ModalManager {
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
         const listBody = this.dom.transactionListBody;
         if (!listBody) {
-            console.error('ModalManager: renderTransactionList - listBody not found!');
+            logger.error('renderTransactionList - listBody not found', 'ModalManager');
             return;
         }
 

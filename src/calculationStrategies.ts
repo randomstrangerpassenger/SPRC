@@ -2,6 +2,7 @@
 import Decimal from 'decimal.js';
 import type { CalculatedStock } from './types.ts';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';
+import { logger } from './services/Logger';
 
 // ==================== 공통 유틸리티 함수 ====================
 
@@ -179,8 +180,9 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
 
         if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
-            console.log(
-                `[Perf] AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            logger.debug(
+                `AddRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`,
+                'AddRebalanceStrategy'
             );
         }
 
@@ -222,8 +224,9 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
         if (totalInvestment.isZero()) {
             if (import.meta.env.DEV && startTime !== undefined) {
                 const endTime = performance.now();
-                console.log(
-                    `[Perf] SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
+                logger.debug(
+                    `SimpleRatioStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`,
+                    'SimpleRatioStrategy'
                 );
             }
             return { results: [] };
@@ -281,8 +284,9 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
 
         if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
-            console.log(
-                `[Perf] SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            logger.debug(
+                `SimpleRatioStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`,
+                'SimpleRatioStrategy'
             );
         }
 
@@ -315,8 +319,9 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
         if (currentTotal.isZero() || totalRatio.isZero()) {
             if (import.meta.env.DEV) {
                 const endTime = performance.now();
-                console.log(
-                    `[Perf] SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`
+                logger.debug(
+                    `SellRebalanceStrategy (Aborted: Zero total) took ${(endTime - startTime).toFixed(2)} ms`,
+                    'SellRebalanceStrategy'
                 );
             }
             return { results: [] };
@@ -344,8 +349,9 @@ export class SellRebalanceStrategy implements IRebalanceStrategy {
 
         if (import.meta.env.DEV) {
             const endTime = performance.now();
-            console.log(
-                `[Perf] SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            logger.debug(
+                `SellRebalanceStrategy for ${this.#portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`,
+                'SellRebalanceStrategy'
             );
         }
 

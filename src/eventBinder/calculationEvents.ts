@@ -1,5 +1,5 @@
 // src/eventBinder/calculationEvents.ts
-import { debounce } from '../utils';
+import { debounce, isInputElement } from '../utils';
 import type { PortfolioView } from '../view';
 
 /**
@@ -56,10 +56,7 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
 
     // 추가 투자금액 관련 필드 Enter 키 처리
     const handleEnterKey = (e: KeyboardEvent): void => {
-        if (
-            e.key === 'Enter' &&
-            !(e.target instanceof HTMLInputElement && (e.target as any).isComposing)
-        ) {
+        if (e.key === 'Enter' && !(isInputElement(e.target) && (e.target as any).isComposing)) {
             e.preventDefault();
             view.emit('calculateClicked');
         }
@@ -76,7 +73,7 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
         view.toggleInputValidation(target, isValid);
         if (isValid) {
             // 두 환율 입력란 동기화
-            if (dom.exchangeRateInput instanceof HTMLInputElement) {
+            if (isInputElement(dom.exchangeRateInput)) {
                 dom.exchangeRateInput.value = target.value;
             }
             // 포트폴리오 설정 업데이트
@@ -105,7 +102,7 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
             const rate = parseFloat(target.value);
             if (!isNaN(rate) && rate > 0) {
                 // 포트폴리오 환율 입력란과 동기화
-                if (dom.portfolioExchangeRateInput instanceof HTMLInputElement) {
+                if (isInputElement(dom.portfolioExchangeRateInput)) {
                     dom.portfolioExchangeRateInput.value = target.value;
                 }
                 // 포트폴리오 설정 업데이트

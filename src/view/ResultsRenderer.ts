@@ -249,9 +249,13 @@ export class ResultsRenderer {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function (context: any) {
-                            const label = context.dataset.label || '';
-                            const value = context.parsed.y;
+                        label: function (context: unknown) {
+                            const ctx = context as {
+                                dataset: { label?: string };
+                                parsed: { y: number };
+                            };
+                            const label = ctx.dataset.label || '';
+                            const value = ctx.parsed.y;
                             const formatted = value.toLocaleString(undefined, {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -265,8 +269,11 @@ export class ResultsRenderer {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function (value: any) {
-                            return (currency === 'krw' ? '₩' : '$') + value.toLocaleString();
+                        callback: function (value: unknown) {
+                            return (
+                                (currency === 'krw' ? '₩' : '$') +
+                                (typeof value === 'number' ? value.toLocaleString() : String(value))
+                            );
                         },
                     },
                 },

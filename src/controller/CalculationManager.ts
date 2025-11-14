@@ -5,7 +5,7 @@ import { Calculator } from '../calculator';
 import { Validator } from '../validator';
 import { CONFIG } from '../constants';
 import { ErrorService, ValidationError } from '../errorService';
-import { getRatioSum } from '../utils';
+import { getRatioSum, isInputElement } from '../utils';
 import { t } from '../i18n';
 import { ChartLoaderService } from '../services/ChartLoaderService';
 import {
@@ -22,6 +22,7 @@ import { apiService, APIError, formatAPIError } from '../apiService';
 import { DataStore } from '../dataStore';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency } from '../types';
+import { logger } from '../services/Logger';
 
 /**
  * @class CalculationManager
@@ -87,7 +88,7 @@ export class CalculationManager {
                 activePortfolio.settings.currentCurrency
             );
             await DataStore.addSnapshot(snapshot);
-            console.log('[CalculationManager] Snapshot saved:', snapshot.date);
+            logger.info(`Snapshot saved: ${snapshot.date}`, 'CalculationManager');
         } catch (error) {
             // 스냅샷 저장 실패는 치명적이지 않으므로 계속 진행
             ErrorService.handle(error as Error, 'CalculationManager.saveSnapshot');
@@ -212,8 +213,9 @@ export class CalculationManager {
                 } else {
                     failureCount++;
                     failedTickers.push((result as any).ticker);
-                    console.error(
-                        `[API] Failed to fetch price for ${(result as any).ticker}:`,
+                    logger.error(
+                        `Failed to fetch price for ${(result as any).ticker}`,
+                        'CalculationManager',
                         (result as any).reason
                     );
                 }
@@ -233,7 +235,7 @@ export class CalculationManager {
             }
 
             if (failedTickers.length > 0) {
-                console.log('Failed tickers:', failedTickers.join(', '));
+                logger.warn(`Failed tickers: ${failedTickers.join(', ')}`, 'CalculationManager');
             }
 
             return { needsUIUpdate: true };
@@ -242,7 +244,7 @@ export class CalculationManager {
             if (error instanceof APIError) {
                 const userMessage = formatAPIError(error);
                 this.view.showToast(userMessage, 'error');
-                console.error(`[API] ${error.type}:`, error.message);
+                logger.error(`${error.type}: ${error.message}`, 'CalculationManager');
             } else {
                 ErrorService.handle(error as Error, 'handleFetchAllPrices');
                 this.view.showToast(
@@ -311,9 +313,9 @@ export class CalculationManager {
             this.view.dom;
 
         if (
-            !(additionalAmountInput instanceof HTMLInputElement) ||
-            !(additionalAmountUSDInput instanceof HTMLInputElement) ||
-            !(exchangeRateInput instanceof HTMLInputElement)
+            !isInputElement(additionalAmountInput) ||
+            !isInputElement(additionalAmountUSDInput) ||
+            !isInputElement(exchangeRateInput)
         )
             return;
 

@@ -102,7 +102,10 @@ export class DOMCache {
      * @param selector - data-attribute 셀렉터
      * @param context - 검색 컨텍스트 (기본값: document)
      */
-    queryAllByData(selector: string, context: Document | Element = document): NodeListOf<HTMLElement> {
+    queryAllByData(
+        selector: string,
+        context: Document | Element = document
+    ): NodeListOf<HTMLElement> {
         return context.querySelectorAll(selector);
     }
 

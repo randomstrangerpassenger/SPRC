@@ -44,11 +44,17 @@ export class PortfolioState {
                 !loadedPortfolios ||
                 Object.keys(loadedPortfolios).length === 0
             ) {
-                logger.info('IndexedDB empty. Attempting migration from LocalStorage...', 'PortfolioState');
+                logger.info(
+                    'IndexedDB empty. Attempting migration from LocalStorage...',
+                    'PortfolioState'
+                );
                 const migrated = await this._migrateFromLocalStorage();
 
                 if (migrated) {
-                    logger.info('Migration successful. Reloading from IndexedDB.', 'PortfolioState');
+                    logger.info(
+                        'Migration successful. Reloading from IndexedDB.',
+                        'PortfolioState'
+                    );
                     loadedMetaData = await this._loadMeta();
                     loadedPortfolios = await this._loadPortfolios();
                 }
@@ -65,16 +71,17 @@ export class PortfolioState {
                 Object.keys(this.#portfolios).length === 0 ||
                 !this.#portfolios[this.#activePortfolioId]
             ) {
-                console.warn(
-                    'No valid portfolios found or active ID invalid. Creating default portfolio.'
+                logger.warn(
+                    'No valid portfolios found or active ID invalid. Creating default portfolio.',
+                    'PortfolioState'
                 );
                 await this.resetData(false); // resetData를 async로 변경
             }
 
-            console.log('PortfolioState initialized (async).');
+            logger.info('PortfolioState initialized (async).', 'PortfolioState');
         } catch (error) {
             ErrorService.handle(/** @type {Error} */ error, '_initialize');
-            console.error('Initialization failed, resetting data.');
+            logger.error('Initialization failed, resetting data.', 'PortfolioState', error);
             await this.resetData(false); // resetData를 async로 변경
         }
     }
@@ -170,21 +177,30 @@ export class PortfolioState {
         value: PortfolioSettings[K]
     ): Promise<void> {
         const activePortfolio = this.getActivePortfolio();
-        console.log(`[DEBUG] updatePortfolioSettings called: key=${key}, value=${value}`);
+        logger.debug(
+            `updatePortfolioSettings called: key=${key}, value=${value}`,
+            'PortfolioState'
+        );
         if (activePortfolio) {
             if (key === 'exchangeRate' && (typeof value !== 'number' || value <= 0)) {
                 activePortfolio.settings[key] =
                     CONFIG.DEFAULT_EXCHANGE_RATE as PortfolioSettings[K];
             } else if (key === 'mainMode' && !['add', 'sell', 'simple'].includes(value as string)) {
-                console.log(`[DEBUG] Invalid mainMode detected: ${value}, resetting to 'add'`);
+                logger.debug(
+                    `Invalid mainMode detected: ${value}, resetting to 'add'`,
+                    'PortfolioState'
+                );
                 activePortfolio.settings[key] = 'add' as PortfolioSettings[K];
             } else if (key === 'currentCurrency' && !['krw', 'usd'].includes(value as string)) {
                 activePortfolio.settings[key] = 'krw' as PortfolioSettings[K];
             } else {
-                console.log(`[DEBUG] Setting ${key} = ${value}`);
+                logger.debug(`Setting ${key} = ${value}`, 'PortfolioState');
                 activePortfolio.settings[key] = value;
             }
-            console.log(`[DEBUG] After update, mainMode = ${activePortfolio.settings.mainMode}`);
+            logger.debug(
+                `After update, mainMode = ${activePortfolio.settings.mainMode}`,
+                'PortfolioState'
+            );
             await this.saveActivePortfolio(); // 비동기 저장
         }
     }
@@ -205,7 +221,7 @@ export class PortfolioState {
         const activePortfolio = this.getActivePortfolio();
         if (activePortfolio) {
             if (activePortfolio.portfolioData.length <= 1) {
-                console.warn('Cannot delete the last stock in the portfolio.');
+                logger.warn('Cannot delete the last stock in the portfolio.', 'PortfolioState');
                 return false;
             }
             const initialLength = activePortfolio.portfolioData.length;
@@ -217,7 +233,7 @@ export class PortfolioState {
                 await this.saveActivePortfolio(); // 비동기 저장
                 return true;
             } else {
-                console.warn(`Stock with ID ${stockId} not found for deletion.`);
+                logger.warn(`Stock with ID ${stockId} not found for deletion.`, 'PortfolioState');
                 return false;
             }
         }
@@ -241,7 +257,12 @@ export class PortfolioState {
                 const stock = activePortfolio.portfolioData[stockIndex];
 
                 // Type-safe property updates with type guards
-                if (field === 'targetRatio' || field === 'currentPrice' || field === 'fixedBuyAmount' || field === 'manualAmount') {
+                if (
+                    field === 'targetRatio' ||
+                    field === 'currentPrice' ||
+                    field === 'fixedBuyAmount' ||
+                    field === 'manualAmount'
+                ) {
                     try {
                         const decimalValue = new Decimal(value ?? 0);
                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
@@ -259,14 +280,23 @@ export class PortfolioState {
                     stock[field] = String(value);
                 } else if (field === 'id') {
                     // ID should not be changed, log warning
-                    console.warn(`Attempted to change immutable field 'id' on stock ${stockId}`);
+                    logger.warn(
+                        `Attempted to change immutable field 'id' on stock ${stockId}`,
+                        'PortfolioState'
+                    );
                 } else if (field === 'transactions') {
                     // Transactions should not be directly set, use addTransaction/deleteTransaction
-                    console.warn(`Attempted to directly set 'transactions' on stock ${stockId}. Use addTransaction/deleteTransaction instead.`);
+                    logger.warn(
+                        `Attempted to directly set 'transactions' on stock ${stockId}. Use addTransaction/deleteTransaction instead.`,
+                        'PortfolioState'
+                    );
                 } else {
                     // TypeScript will catch any fields not handled above
                     const _exhaustiveCheck: never = field;
-                    console.warn(`Unhandled field '${_exhaustiveCheck}' on stock ${stockId}`);
+                    logger.warn(
+                        `Unhandled field '${_exhaustiveCheck}' on stock ${stockId}`,
+                        'PortfolioState'
+                    );
                 }
             }
         }
@@ -323,13 +353,14 @@ export class PortfolioState {
                 await this.saveActivePortfolio(); // 비동기 저장
                 return true;
             } else {
-                console.warn(
-                    `State: Transaction ID ${transactionId} not found for stock ${stockId}.`
+                logger.warn(
+                    `Transaction ID ${transactionId} not found for stock ${stockId}.`,
+                    'PortfolioState'
                 );
                 return false;
             }
         }
-        console.error(`State: Stock with ID ${stockId} not found.`);
+        logger.error(`Stock with ID ${stockId} not found.`, 'PortfolioState');
         return false;
     }
 
@@ -353,7 +384,7 @@ export class PortfolioState {
         });
 
         if (totalRatio.isZero() || totalRatio.isNaN()) {
-            console.warn('Total target ratio is zero or NaN, cannot normalize.');
+            logger.warn('Total target ratio is zero or NaN, cannot normalize.', 'PortfolioState');
             return false;
         }
 
@@ -402,7 +433,7 @@ export class PortfolioState {
             await this.savePortfolios(); // 비동기 저장
             await this.saveMeta(); // 비동기 저장
         }
-        console.log('Data reset to default.');
+        logger.info('Data reset to default.', 'PortfolioState');
     }
 
     exportData(): { meta: MetaState; portfolios: Record<string, Portfolio> } {
@@ -415,10 +446,16 @@ export class PortfolioState {
                     targetRatio: stock.targetRatio.toNumber(),
                     currentPrice: stock.currentPrice.toNumber(),
                     fixedBuyAmount: stock.fixedBuyAmount.toNumber(),
-                    manualAmount: stock.manualAmount !== undefined ? (typeof stock.manualAmount === 'number' ? stock.manualAmount : stock.manualAmount.toNumber()) : undefined,
+                    manualAmount:
+                        stock.manualAmount !== undefined
+                            ? typeof stock.manualAmount === 'number'
+                                ? stock.manualAmount
+                                : stock.manualAmount.toNumber()
+                            : undefined,
                     transactions: stock.transactions.map((tx) => ({
                         ...tx,
-                        quantity: typeof tx.quantity === 'number' ? tx.quantity : tx.quantity.toNumber(),
+                        quantity:
+                            typeof tx.quantity === 'number' ? tx.quantity : tx.quantity.toNumber(),
                         price: typeof tx.price === 'number' ? tx.price : tx.price.toNumber(),
                     })),
                 })),
@@ -449,13 +486,16 @@ export class PortfolioState {
             Object.keys(this.#portfolios).length === 0 ||
             !this.#portfolios[this.#activePortfolioId]
         ) {
-            console.warn('Imported data resulted in no valid portfolios. Resetting to default.');
+            logger.warn(
+                'Imported data resulted in no valid portfolios. Resetting to default.',
+                'PortfolioState'
+            );
             await this.resetData(false); // 비동기 리셋
         }
 
         await this.savePortfolios(); // 비동기 저장
         await this.saveMeta(); // 비동기 저장
-        console.log('Data imported successfully.');
+        logger.info('Data imported successfully.', 'PortfolioState');
     }
 
     async saveMeta(): Promise<void> {
@@ -471,5 +511,4 @@ export class PortfolioState {
     }
 
     // --- Private Helper Methods ---
-
 }

@@ -4,6 +4,7 @@ import { generateId } from './utils.ts';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants.ts';
 import { ErrorService } from './errorService.ts';
 import { LRUCache } from './cache/LRUCache.ts';
+import { logger } from './services/Logger';
 import type {
     Stock,
     CalculatedStock,
@@ -254,8 +255,9 @@ export class Calculator {
 
         if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
-            console.log(
-                `[Perf] calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`
+            logger.debug(
+                `calculateSectorAnalysis for ${portfolioData.length} stocks took ${(endTime - startTime).toFixed(2)} ms`,
+                'Calculator'
             );
         }
 

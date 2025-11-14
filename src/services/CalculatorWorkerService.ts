@@ -10,6 +10,7 @@ import { Calculator } from '../calculator';
 import { CONFIG } from '../constants';
 import { ErrorService } from '../errorService';
 import Decimal from 'decimal.js';
+import { logger } from './Logger';
 
 // ==================== Worker Message Types ====================
 
@@ -123,20 +124,21 @@ export class CalculatorWorkerService {
                 };
 
                 this.worker.onerror = (error) => {
-                    console.error('Worker error:', error);
+                    logger.error('Worker error', 'CalculatorWorkerService', error);
                     this.isWorkerAvailable = false;
                 };
 
                 this.isWorkerAvailable = true;
-                console.log('[CalculatorWorkerService] Worker initialized successfully');
+                logger.info('Worker initialized successfully', 'CalculatorWorkerService');
             } else {
-                console.warn(
-                    '[CalculatorWorkerService] Web Workers not supported, using synchronous calculator'
+                logger.warn(
+                    'Web Workers not supported, using synchronous calculator',
+                    'CalculatorWorkerService'
                 );
                 this.isWorkerAvailable = false;
             }
         } catch (error) {
-            console.error('[CalculatorWorkerService] Failed to initialize worker:', error);
+            logger.error('Failed to initialize worker', 'CalculatorWorkerService', error);
             this.isWorkerAvailable = false;
         }
     }
@@ -158,7 +160,7 @@ export class CalculatorWorkerService {
         const { result, error, requestId } = event.data;
 
         if (error) {
-            console.error('[CalculatorWorkerService] Worker error:', error);
+            logger.error('Worker error', 'CalculatorWorkerService', error);
             const request = this.pendingRequests.get(requestId);
             if (request) {
                 clearTimeout(request.timeoutId);
@@ -287,16 +289,16 @@ export class CalculatorWorkerService {
         this.fallbackCount++;
         ErrorService.handle(error, `CalculatorWorkerService.${context}`);
 
-        console.warn(
-            `[CalculatorWorkerService] Worker failed (${this.fallbackCount} times), falling back to sync:`,
-            error.message
+        logger.warn(
+            `Worker failed (${this.fallbackCount} times), falling back to sync: ${error.message}`,
+            'CalculatorWorkerService'
         );
 
         this.isWorkerAvailable = false;
 
         // Attempt to reinitialize worker after 3 failures
         if (this.fallbackCount >= 3 && this.fallbackCount % 3 === 0) {
-            console.log('[CalculatorWorkerService] Attempting to reinitialize worker...');
+            logger.info('Attempting to reinitialize worker', 'CalculatorWorkerService');
             setTimeout(() => {
                 this.initializationPromise = this.initializeWorker();
             }, 1000);
@@ -306,7 +308,9 @@ export class CalculatorWorkerService {
     /**
      * @description Deserialize metrics from worker (string -> Decimal)
      */
-    private deserializeMetrics(metrics: SerializedMetrics): Record<string, Decimal | number | boolean> {
+    private deserializeMetrics(
+        metrics: SerializedMetrics
+    ): Record<string, Decimal | number | boolean> {
         const deserialized: Record<string, Decimal | number | boolean> = {};
         for (const key in metrics) {
             const value = metrics[key];
@@ -324,7 +328,7 @@ export class CalculatorWorkerService {
             this.worker.terminate();
             this.worker = null;
             this.isWorkerAvailable = false;
-            console.log('[CalculatorWorkerService] Worker terminated');
+            logger.info('Worker terminated', 'CalculatorWorkerService');
         }
     }
 }

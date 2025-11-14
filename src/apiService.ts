@@ -1,6 +1,7 @@
 // src/apiService.ts
 import type { FetchStockResult } from './types.ts';
 import { CONFIG } from './constants.ts';
+import { logger } from './services/Logger.ts';
 
 /**
  * @enum APIErrorType
@@ -93,18 +94,16 @@ async function fetchWithRetry(
             // 5xx 서버 오류는 재시도
             if (response.status >= 500 && attempt < maxRetries) {
                 const delay = calculateBackoffDelay(attempt);
-                console.warn(
-                    `[API] Server error ${response.status}, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+                logger.warn(
+                    `Server error ${response.status}, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
+                    'API'
                 );
                 await new Promise((resolve) => setTimeout(resolve, delay));
                 continue;
             }
 
             // 503 (Service Unavailable) 또는 502 (Bad Gateway)는 최종 실패로 처리
-            if (
-                (response.status === 503 || response.status === 502) &&
-                attempt === maxRetries
-            ) {
+            if ((response.status === 503 || response.status === 502) && attempt === maxRetries) {
                 throw new APIError(
                     `Server unavailable after ${maxRetries} retries`,
                     APIErrorType.SERVER_ERROR,
@@ -120,8 +119,9 @@ async function fetchWithRetry(
             if (error instanceof Error && error.name === 'TimeoutError') {
                 if (attempt < maxRetries) {
                     const delay = calculateBackoffDelay(attempt);
-                    console.warn(
-                        `[API] Timeout, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+                    logger.warn(
+                        `Timeout, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
+                        'API'
                     );
                     await new Promise((resolve) => setTimeout(resolve, delay));
                     continue;
@@ -136,8 +136,9 @@ async function fetchWithRetry(
             if (error instanceof TypeError && error.message.includes('fetch')) {
                 if (attempt < maxRetries) {
                     const delay = calculateBackoffDelay(attempt);
-                    console.warn(
-                        `[API] Network error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+                    logger.warn(
+                        `Network error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
+                        'API'
                     );
                     await new Promise((resolve) => setTimeout(resolve, delay));
                     continue;
@@ -210,7 +211,7 @@ async function fetchStockPrice(ticker: string): Promise<number> {
         const price = data.c;
 
         if (typeof price !== 'number' || price <= 0) {
-            console.warn(`[API] Received invalid price for ${ticker}: ${price}`);
+            logger.warn(`Received invalid price for ${ticker}: ${price}`, 'API');
             throw new APIError(
                 `Invalid or zero price received for ${ticker}: ${price}`,
                 APIErrorType.INVALID_TICKER,
@@ -312,9 +313,9 @@ async function fetchAllStockPrices(
         });
     } catch (error) {
         // 배치 API 실패 시 개별 fetch로 폴백
-        console.warn(
-            '[apiService] Batch API failed, falling back to individual fetches:',
-            error instanceof Error ? error.message : error
+        logger.warn(
+            `Batch API failed, falling back to individual fetches: ${error instanceof Error ? error.message : error}`,
+            'apiService'
         );
 
         // Promise.allSettled를 사용하여 모든 개별 요청 실행
@@ -332,7 +333,8 @@ async function fetchAllStockPrices(
                     id: tickersToFetch[index].id,
                     ticker: tickersToFetch[index].ticker,
                     status: 'rejected' as const,
-                    reason: result.reason instanceof Error ? result.reason.message : 'Unknown error',
+                    reason:
+                        result.reason instanceof Error ? result.reason.message : 'Unknown error',
                 };
             }
         });
@@ -381,7 +383,7 @@ async function fetchExchangeRate(): Promise<number | null> {
         );
 
         if (!response.ok) {
-            console.warn('[apiService] Exchange rate API failed');
+            logger.warn('Exchange rate API failed', 'apiService');
             return null;
         }
 
@@ -391,17 +393,16 @@ async function fetchExchangeRate(): Promise<number | null> {
         const krwRate = apiKey ? data.conversion_rates?.KRW : data.rates?.KRW;
 
         if (typeof krwRate === 'number' && krwRate > 0) {
-            console.log(
-                '[apiService] Exchange rate fetched:',
-                krwRate,
-                apiKey ? '(with API key)' : '(free tier)'
+            logger.info(
+                `Exchange rate fetched: ${krwRate} ${apiKey ? '(with API key)' : '(free tier)'}`,
+                'apiService'
             );
             return krwRate;
         }
 
         return null;
     } catch (error) {
-        console.warn('[apiService] Failed to fetch exchange rate:', error);
+        logger.warn('Failed to fetch exchange rate', 'apiService', error);
         return null;
     }
 }

@@ -5,6 +5,7 @@ import type { Portfolio, Stock, Transaction } from '../types';
 import Decimal from 'decimal.js';
 import { PortfolioMetricsService } from './PortfolioMetricsService';
 import { toNumber } from '../utils/converterUtil';
+import { logger } from './Logger';
 
 /**
  * @class ExcelExportService
@@ -35,7 +36,7 @@ export class ExcelExportService {
             // Excel 파일 생성 및 다운로드
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             });
 
             const url = URL.createObjectURL(blob);
@@ -49,7 +50,7 @@ export class ExcelExportService {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Excel export error:', error);
+            logger.error('Excel export error', 'ExcelExportService', error);
             throw new Error('Excel 파일 내보내기 실패');
         }
     }
@@ -59,7 +60,7 @@ export class ExcelExportService {
      */
     private static createSummarySheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Portfolio Summary', {
-            views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+            views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
         // 헤더 스타일
@@ -71,8 +72,8 @@ export class ExcelExportService {
                 top: { style: 'thin' },
                 left: { style: 'thin' },
                 bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            }
+                right: { style: 'thin' },
+            },
         };
 
         // 포트폴리오 정보
@@ -92,7 +93,7 @@ export class ExcelExportService {
             'Current Price (USD)',
             'Total Transactions',
             'Fixed Buy Enabled',
-            'Fixed Buy Amount'
+            'Fixed Buy Amount',
         ]);
 
         headerRow.eachCell((cell) => {
@@ -109,7 +110,7 @@ export class ExcelExportService {
                 toNumber(stock.currentPrice),
                 stock.transactions.length,
                 stock.isFixedBuyEnabled ? 'Yes' : 'No',
-                stock.isFixedBuyEnabled ? toNumber(stock.fixedBuyAmount) : 0
+                stock.isFixedBuyEnabled ? toNumber(stock.fixedBuyAmount) : 0,
             ]);
 
             // 데이터 행 스타일
@@ -118,7 +119,7 @@ export class ExcelExportService {
                     top: { style: 'thin' },
                     left: { style: 'thin' },
                     bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    right: { style: 'thin' },
                 };
 
                 // 숫자 포맷팅
@@ -142,7 +143,7 @@ export class ExcelExportService {
      */
     private static createTransactionsSheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Transactions', {
-            views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+            views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
         // 헤더 스타일
@@ -154,8 +155,8 @@ export class ExcelExportService {
                 top: { style: 'thin' },
                 left: { style: 'thin' },
                 bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            }
+                right: { style: 'thin' },
+            },
         };
 
         // 헤더
@@ -166,7 +167,7 @@ export class ExcelExportService {
             'Date',
             'Quantity',
             'Price (USD)',
-            'Total Amount (USD)'
+            'Total Amount (USD)',
         ]);
 
         headerRow.eachCell((cell) => {
@@ -186,8 +187,9 @@ export class ExcelExportService {
         });
 
         // 날짜순 정렬
-        allTransactions.sort((a, b) =>
-            new Date(b.transaction.date).getTime() - new Date(a.transaction.date).getTime()
+        allTransactions.sort(
+            (a, b) =>
+                new Date(b.transaction.date).getTime() - new Date(a.transaction.date).getTime()
         );
 
         // 거래 내역 데이터
@@ -203,7 +205,7 @@ export class ExcelExportService {
                 transaction.date,
                 quantity,
                 price,
-                totalAmount
+                totalAmount,
             ]);
 
             // 데이터 행 스타일
@@ -212,7 +214,7 @@ export class ExcelExportService {
                     top: { style: 'thin' },
                     left: { style: 'thin' },
                     bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    right: { style: 'thin' },
                 };
 
                 // 숫자 포맷팅
@@ -226,19 +228,19 @@ export class ExcelExportService {
                         cell.fill = {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FFE2EFDA' }
+                            fgColor: { argb: 'FFE2EFDA' },
                         };
                     } else if (transaction.type === 'sell') {
                         cell.fill = {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FFFCE4D6' }
+                            fgColor: { argb: 'FFFCE4D6' },
                         };
                     } else if (transaction.type === 'dividend') {
                         cell.fill = {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FFE7E6E6' }
+                            fgColor: { argb: 'FFE7E6E6' },
                         };
                     }
                 }
@@ -259,7 +261,7 @@ export class ExcelExportService {
      */
     private static createStocksDetailSheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Stock Details', {
-            views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+            views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
         // 헤더 스타일
@@ -271,8 +273,8 @@ export class ExcelExportService {
                 top: { style: 'thin' },
                 left: { style: 'thin' },
                 bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            }
+                right: { style: 'thin' },
+            },
         };
 
         // 헤더
@@ -289,7 +291,7 @@ export class ExcelExportService {
             'Total Invested',
             'Current Value',
             'Unrealized P/L',
-            'Unrealized P/L %'
+            'Unrealized P/L %',
         ]);
 
         headerRow.eachCell((cell) => {
@@ -314,7 +316,7 @@ export class ExcelExportService {
                 metrics.totalInvested,
                 metrics.currentValue,
                 metrics.unrealizedPL,
-                metrics.unrealizedPLPercent
+                metrics.unrealizedPLPercent,
             ]);
 
             // 데이터 행 스타일
@@ -323,7 +325,7 @@ export class ExcelExportService {
                     top: { style: 'thin' },
                     left: { style: 'thin' },
                     bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    right: { style: 'thin' },
                 };
 
                 // 숫자 포맷팅

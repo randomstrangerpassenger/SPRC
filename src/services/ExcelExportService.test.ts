@@ -168,9 +168,9 @@ describe('ExcelExportService', () => {
                 new Error('Write failed')
             );
 
-            await expect(
-                ExcelExportService.exportPortfolioToExcel(mockPortfolio)
-            ).rejects.toThrow('Excel 파일 내보내기 실패');
+            await expect(ExcelExportService.exportPortfolioToExcel(mockPortfolio)).rejects.toThrow(
+                'Excel 파일 내보내기 실패'
+            );
         });
     });
 

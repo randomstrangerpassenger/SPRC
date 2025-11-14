@@ -3,6 +3,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
+import vitestPlugin from 'eslint-plugin-vitest';
 
 export default [
     js.configs.recommended,
@@ -69,16 +70,7 @@ export default [
                 project: './tsconfig.json',
             },
             globals: {
-                // Vitest globals
-                describe: 'readonly',
-                it: 'readonly',
-                expect: 'readonly',
-                beforeEach: 'readonly',
-                afterEach: 'readonly',
-                beforeAll: 'readonly',
-                afterAll: 'readonly',
-                vi: 'readonly',
-                global: 'readonly',
+                ...vitestPlugin.environments.env.globals,
                 // Browser globals
                 console: 'readonly',
                 window: 'readonly',
@@ -92,9 +84,11 @@ export default [
         plugins: {
             '@typescript-eslint': tsPlugin,
             prettier: prettierPlugin,
+            vitest: vitestPlugin,
         },
         rules: {
             ...tsPlugin.configs['recommended'].rules,
+            ...vitestPlugin.configs.recommended.rules,
             ...prettierConfig.rules,
             'prettier/prettier': 'warn',
             '@typescript-eslint/no-explicit-any': 'warn', // More lenient for tests
