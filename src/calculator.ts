@@ -61,6 +61,12 @@ export class Calculator {
         CACHE.PORTFOLIO_CACHE_SIZE
     );
 
+    // 섹터 분석 결과 캐시
+    static #sectorAnalysisCache = new LRUCache<
+        string,
+        { sector: string; amount: Decimal; percentage: Decimal }[]
+    >(20);
+
     /**
      * @description 단일 주식의 매입 단가, 현재 가치, 손익 등을 계산합니다.
      * @important stock.currentPrice는 항상 USD로 저장되어 있어야 합니다.
@@ -219,11 +225,33 @@ export class Calculator {
 
     /**
      * @description 포트폴리오의 섹터별 금액 및 비율을 계산합니다.
+     * @memoized LRU 캐시 적용 (크기: 20)
      */
     static calculateSectorAnalysis(
         portfolioData: CalculatedStock[],
         currentCurrency: Currency = 'krw'
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
+        // Generate cache key based on stock IDs, sectors, amounts, and currency
+        const cacheKey =
+            portfolioData
+                .map((s) => {
+                    const amount =
+                        currentCurrency === 'krw'
+                            ? s.calculated?.currentAmountKRW || DECIMAL_ZERO
+                            : s.calculated?.currentAmountUSD || DECIMAL_ZERO;
+                    return `${s.id}:${s.sector}:${amount.toString()}`;
+                })
+                .join('|') + `:${currentCurrency}`;
+
+        // Check cache
+        const cached = Calculator.#sectorAnalysisCache.get(cacheKey);
+        if (cached) {
+            if (import.meta.env.DEV) {
+                logger.debug('calculateSectorAnalysis: cache hit', 'Calculator');
+            }
+            return cached;
+        }
+
         let startTime: number | undefined;
         if (import.meta.env.DEV) {
             startTime = performance.now();
@@ -255,6 +283,9 @@ export class Calculator {
         // 금액 내림차순 정렬
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
+        // Store in cache
+        Calculator.#sectorAnalysisCache.set(cacheKey, result);
+
         if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
             logger.debug(
@@ -271,6 +302,7 @@ export class Calculator {
      */
     static clearPortfolioStateCache(): void {
         Calculator.#portfolioCache.clear();
+        Calculator.#sectorAnalysisCache.clear();
     }
 
     /**
