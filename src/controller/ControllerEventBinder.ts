@@ -81,9 +81,11 @@ export function bindControllerEvents(controller: PortfolioController): void {
     // 계산 및 통화
     controller.view.on('calculateClicked', () => controller.calculationManager.handleCalculate());
     controller.view.on('showPerformanceHistoryClicked', () =>
-        controller.handleShowPerformanceHistory()
+        controller.snapshotManager.handleShowPerformanceHistory()
     );
-    controller.view.on('showSnapshotListClicked', () => controller.handleShowSnapshotList());
+    controller.view.on('showSnapshotListClicked', () =>
+        controller.snapshotManager.handleShowSnapshotList()
+    );
     controller.view.on('mainModeChanged', async (data) => {
         const result = await controller.calculationManager.handleMainModeChange(data.mode);
         if (result.needsFullRender) controller.fullRender();
