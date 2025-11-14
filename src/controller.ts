@@ -2,7 +2,6 @@
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { Calculator } from './calculator';
-import { DataStore } from './dataStore';
 import { debounce, getRatioSum, isInputElement } from './utils';
 import { CONFIG, DECIMAL_ZERO, THRESHOLDS } from './constants';
 import { ErrorService } from './errorService';
@@ -11,6 +10,7 @@ import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
 import type { PortfolioSnapshot } from './types';
+import { SnapshotRepository } from './state/SnapshotRepository';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
 import { ChartLoaderService } from './services/ChartLoaderService';
@@ -42,6 +42,9 @@ export class PortfolioController {
     dataManager: DataManager;
     private appInitializer: AppInitializer;
 
+    // Repository 인스턴스
+    private snapshotRepo: SnapshotRepository;
+
     private calculatorWorker = getCalculatorWorkerService();
 
     #lastCalculationKey: string | null = null;
@@ -52,6 +55,9 @@ export class PortfolioController {
         this.view = view;
         this.debouncedSave = debounce(() => this.state.saveActivePortfolio(), 500);
 
+        // Repository 인스턴스 생성
+        this.snapshotRepo = new SnapshotRepository();
+
         // 매니저 인스턴스 생성
         this.portfolioManager = new PortfolioManager(this.state, this.view);
         this.stockManager = new StockManager(this.state, this.view, this.debouncedSave);
@@ -60,7 +66,8 @@ export class PortfolioController {
             this.state,
             this.view,
             this.debouncedSave,
-            this.getInvestmentAmountInKRW.bind(this)
+            this.getInvestmentAmountInKRW.bind(this),
+            this.snapshotRepo
         );
         this.dataManager = new DataManager(this.state, this.view);
         this.appInitializer = new AppInitializer(this.state, this.view);
@@ -318,7 +325,7 @@ export class PortfolioController {
         if (!activePortfolio) return;
 
         try {
-            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+            const snapshots = await this.snapshotRepo.getByPortfolioId(activePortfolio.id);
 
             if (snapshots.length === 0) {
                 this.view.showToast(
@@ -352,7 +359,7 @@ export class PortfolioController {
         if (!activePortfolio) return;
 
         try {
-            const snapshots = await DataStore.getSnapshotsForPortfolio(activePortfolio.id);
+            const snapshots = await this.snapshotRepo.getByPortfolioId(activePortfolio.id);
 
             if (snapshots.length === 0) {
                 this.view.showToast(

@@ -19,7 +19,7 @@ import {
     SimpleRatioStrategy,
 } from '../calculationStrategies';
 import { apiService, APIError, formatAPIError } from '../apiService';
-import { DataStore } from '../dataStore';
+import { SnapshotRepository } from '../state/SnapshotRepository';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency } from '../types';
 import { logger } from '../services/Logger';
@@ -33,7 +33,8 @@ export class CalculationManager {
         private state: PortfolioState,
         private view: PortfolioView,
         private debouncedSave: () => void,
-        private getInvestmentAmountInKRW: () => Decimal
+        private getInvestmentAmountInKRW: () => Decimal,
+        private snapshotRepo: SnapshotRepository
     ) {}
 
     /**
@@ -87,7 +88,7 @@ export class CalculationManager {
                 activePortfolio.settings.exchangeRate,
                 activePortfolio.settings.currentCurrency
             );
-            await DataStore.addSnapshot(snapshot);
+            await this.snapshotRepo.add(snapshot);
             logger.info(`Snapshot saved: ${snapshot.date}`, 'CalculationManager');
         } catch (error) {
             // 스냅샷 저장 실패는 치명적이지 않으므로 계속 진행
