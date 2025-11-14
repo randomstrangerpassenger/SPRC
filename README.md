@@ -8,6 +8,65 @@
 
 전체 코드베이스에 대한 포괄적인 리팩토링을 완료했습니다. 이번 업데이트는 **안정성 확보 → 구조 개선 → 아키텍처 진화**의 3단계 접근 방식을 따랐습니다.
 
+#### Phase 1.2: 코드 품질 마무리 - 컨벤션 통일 및 함수 분해
+
+**목적**: Phase 1 리팩토링 로드맵의 남은 항목들을 완료하여 코드 품질 기초 정비 마무리
+
+**주요 변경사항:**
+
+1. **Phase 1-1: Constructor 파라미터의 `private`을 `#` 필드로 통일**
+   - 모든 Manager 클래스 (6개) 리팩토링
+     - StockManager, TransactionManager, PortfolioManager
+     - SnapshotManager, DataManager, CalculationManager
+   - 일관된 private 필드 선언 방식 적용
+   - TypeScript의 최신 private 필드 문법 사용
+
+**Before:**
+```typescript
+class StockManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView
+    ) {}
+}
+```
+
+**After:**
+```typescript
+class StockManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+
+    constructor(
+        state: PortfolioState,
+        view: PortfolioView
+    ) {
+        this.#state = state;
+        this.#view = view;
+    }
+}
+```
+
+2. **Phase 3-6: 불안전한 타입 단언 제거**
+   - `(result as any)` 패턴을 `FetchStockResult` 타입으로 교체
+   - CalculationManager의 `handleFetchAllPrices` 메서드 타입 안전성 강화
+   - 명시적 타입 어노테이션으로 런타임 오류 방지
+
+3. **Phase 1-3: Calculator.calculateStockMetrics() 함수 분해**
+   - 82줄 → 12줄로 대폭 간소화 (85% 감소)
+   - 헬퍼 함수 추출:
+     - `aggregateTransactions`: 거래 내역 집계 (매수/매도/배당)
+     - `calculateStockIndicators`: 지표 계산 (수량, 평균단가, 손익 등)
+   - 단일 책임 원칙 적용으로 테스트 용이성 향상
+
+**효과:**
+- ✅ 코딩 컨벤션 통일로 일관성 확보
+- ✅ 타입 안전성 강화로 런타임 오류 방지
+- ✅ 함수 분해로 가독성 및 유지보수성 향상
+- ✅ 테스트 가능한 작은 단위 함수로 분리
+
+---
+
 #### Phase 3.3: 데이터 영속성 추상화 (Repository 패턴)
 
 **목적**: 상태 관리 로직과 데이터 영속성 로직을 분리하여 관심사 분리(SoC)와 테스트 용이성 향상
