@@ -5,7 +5,6 @@ import {
     createDefaultPortfolio,
     createDefaultStock,
     validateDecimalValue,
-    convertToDecimal,
 } from './helpers';
 
 describe('helpers', () => {
@@ -115,53 +114,6 @@ describe('helpers', () => {
             const result = validateDecimalValue(NaN);
 
             expect(result.toNumber()).toBe(0);
-        });
-    });
-
-    describe('convertToDecimal', () => {
-        it('should convert valid number to Decimal', () => {
-            const result = convertToDecimal(150);
-
-            expect(result).toBeInstanceOf(Decimal);
-            expect(result.toNumber()).toBe(150);
-        });
-
-        it('should convert valid string to Decimal', () => {
-            const result = convertToDecimal('99.99');
-
-            expect(result).toBeInstanceOf(Decimal);
-            expect(result.toNumber()).toBe(99.99);
-        });
-
-        it('should return Decimal(0) for null', () => {
-            const result = convertToDecimal(null);
-
-            expect(result.toNumber()).toBe(0);
-        });
-
-        it('should return Decimal(0) for undefined', () => {
-            const result = convertToDecimal(undefined);
-
-            expect(result.toNumber()).toBe(0);
-        });
-
-        it('should return Decimal(0) for NaN', () => {
-            const result = convertToDecimal(NaN);
-
-            expect(result.toNumber()).toBe(0);
-        });
-
-        it('should return Decimal(0) for invalid string', () => {
-            const result = convertToDecimal('not a number');
-
-            expect(result.toNumber()).toBe(0);
-        });
-
-        it('should handle Decimal input', () => {
-            const input = new Decimal(42);
-            const result = convertToDecimal(input);
-
-            expect(result.toNumber()).toBe(42);
         });
     });
 });

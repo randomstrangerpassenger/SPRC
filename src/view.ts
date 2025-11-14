@@ -12,6 +12,9 @@ import { EventEmitter, type EventCallback } from './view/EventEmitter';
 import { ModalManager } from './view/ModalManager';
 import { VirtualScrollManager } from './view/VirtualScrollManager';
 import { ResultsRenderer } from './view/ResultsRenderer';
+import { ToastManager } from './view/ToastManager';
+import { AccessibilityAnnouncer } from './view/AccessibilityAnnouncer';
+import { DOMCache } from './view/DOMCache';
 
 /**
  * @class PortfolioView
@@ -25,6 +28,9 @@ export class PortfolioView {
     private modalManager: ModalManager;
     private virtualScrollManager: VirtualScrollManager;
     private resultsRenderer: ResultsRenderer;
+    private toastManager: ToastManager;
+    private accessibilityAnnouncer: AccessibilityAnnouncer;
+    private domCache: DOMCache;
 
     /**
      * @constructor
@@ -36,6 +42,9 @@ export class PortfolioView {
         this.modalManager = new ModalManager(this.dom);
         this.virtualScrollManager = new VirtualScrollManager(this.dom);
         this.resultsRenderer = new ResultsRenderer(this.dom);
+        this.toastManager = new ToastManager();
+        this.accessibilityAnnouncer = new AccessibilityAnnouncer();
+        this.domCache = new DOMCache();
     }
 
     /**
@@ -50,74 +59,16 @@ export class PortfolioView {
     }
 
     /**
-     * @description DOM 요소 캐싱
+     * @description DOM 요소 캐싱 (DOMCache 헬퍼 사용)
      */
     cacheDomElements(): void {
-        const D = document;
-        this.dom = {
-            ariaAnnouncer: D.getElementById('aria-announcer'),
-            resultsSection: D.getElementById('resultsSection'),
-            sectorAnalysisSection: D.getElementById('sectorAnalysisSection'),
-            chartSection: D.getElementById('chartSection'),
-            portfolioChart: D.getElementById('portfolioChart'),
-            additionalAmountInput: D.getElementById('additionalAmount'),
-            additionalAmountUSDInput: D.getElementById('additionalAmountUSD'),
-            exchangeRateInput: D.getElementById('exchangeRate'),
-            portfolioExchangeRateInput: D.getElementById('portfolioExchangeRate'),
-            rebalancingToleranceInput: D.getElementById('rebalancingTolerance'),
-            tradingFeeRateInput: D.getElementById('tradingFeeRate'),
-            taxRateInput: D.getElementById('taxRate'),
-            mainModeSelector: D.querySelectorAll('input[name="mainMode"]'),
-            currencyModeSelector: D.querySelectorAll('input[name="currencyMode"]'),
-            exchangeRateGroup: D.getElementById('exchangeRateGroup'),
-            usdInputGroup: D.getElementById('usdInputGroup'),
-            addInvestmentCard: D.getElementById('addInvestmentCard'),
-            calculateBtn: D.getElementById('calculateBtn'),
-            darkModeToggle: D.getElementById('darkModeToggle'),
-            addNewStockBtn: D.getElementById('addNewStockBtn'),
-            fetchAllPricesBtn: D.getElementById('fetchAllPricesBtn'),
-            allocationTemplateSelect: D.getElementById('allocationTemplate'),
-            applyTemplateBtn: D.getElementById('applyTemplateBtn'),
-            resetDataBtn: D.getElementById('resetDataBtn'),
-            normalizeRatiosBtn: D.getElementById('normalizeRatiosBtn'),
-            dataManagementBtn: D.getElementById('dataManagementBtn'),
-            dataDropdownContent: D.getElementById('dataDropdownContent'),
-            exportDataBtn: D.getElementById('exportDataBtn'),
-            importDataBtn: D.getElementById('importDataBtn'),
-            exportTransactionsCSVBtn: D.getElementById('exportTransactionsCSVBtn'),
-            importFileInput: D.getElementById('importFileInput'),
-            transactionModal: D.getElementById('transactionModal'),
-            modalStockName: D.getElementById('modalStockName'),
-            closeModalBtn: D.getElementById('closeModalBtn'),
-            transactionListBody: D.getElementById('transactionListBody'),
-            newTransactionForm: D.getElementById('newTransactionForm'),
-            txDate: D.getElementById('txDate'),
-            txQuantity: D.getElementById('txQuantity'),
-            txPrice: D.getElementById('txPrice'),
-            portfolioSelector: D.getElementById('portfolioSelector'),
-            newPortfolioBtn: D.getElementById('newPortfolioBtn'),
-            renamePortfolioBtn: D.getElementById('renamePortfolioBtn'),
-            deletePortfolioBtn: D.getElementById('deletePortfolioBtn'),
-            virtualTableHeader: D.getElementById('virtual-table-header'),
-            virtualScrollWrapper: D.getElementById('virtual-scroll-wrapper'),
-            virtualScrollSpacer: D.getElementById('virtual-scroll-spacer'),
-            virtualScrollContent: D.getElementById('virtual-scroll-content'),
-            ratioValidator: D.getElementById('ratioValidator'),
-            ratioSum: D.getElementById('ratioSum'),
-            customModal: D.getElementById('customModal'),
-            customModalTitle: D.getElementById('customModalTitle'),
-            customModalMessage: D.getElementById('customModalMessage'),
-            customModalInput: D.getElementById('customModalInput'),
-            customModalConfirm: D.getElementById('customModalConfirm'),
-            customModalCancel: D.getElementById('customModalCancel'),
-            performanceHistorySection: D.getElementById('performanceHistorySection'),
-            showPerformanceHistoryBtn: D.getElementById('showPerformanceHistoryBtn'),
-            showSnapshotListBtn: D.getElementById('showSnapshotListBtn'),
-            performanceChartContainer: D.getElementById('performanceChartContainer'),
-            performanceChart: D.getElementById('performanceChart'),
-            snapshotListContainer: D.getElementById('snapshotListContainer'),
-            snapshotList: D.getElementById('snapshotList'),
-        };
+        // DOMCache를 사용하여 모든 DOM 요소 캐싱
+        this.dom = this.domCache.cacheAll();
+
+        // AccessibilityAnnouncer 엘리먼트 설정
+        if (this.dom.ariaAnnouncer) {
+            this.accessibilityAnnouncer.setElement(this.dom.ariaAnnouncer as HTMLElement);
+        }
 
         this.eventEmitter.clear();
 
@@ -130,41 +81,51 @@ export class PortfolioView {
         this.modalManager.bindModalEvents();
     }
 
+    /**
+     * @description data-attribute 기반 요소 조회 (동적)
+     * @param selector - data-attribute 셀렉터
+     * @param context - 검색 컨텍스트
+     */
+    queryByData(selector: string, context?: Document | Element): HTMLElement | null {
+        return this.domCache.queryByData(selector, context);
+    }
+
+    /**
+     * @description data-attribute 기반 다중 요소 조회 (동적)
+     * @param selector - data-attribute 셀렉터
+     * @param context - 검색 컨텍스트
+     */
+    queryAllByData(selector: string, context?: Document | Element): NodeListOf<HTMLElement> {
+        return this.domCache.queryAllByData(selector, context);
+    }
+
+    /**
+     * @description 가장 가까운 부모 요소 중 data-attribute를 가진 요소 찾기
+     * @param element - 시작 요소
+     * @param dataAttr - data 속성 이름
+     */
+    closestWithData(element: HTMLElement, dataAttr: string): HTMLElement | null {
+        return this.domCache.closest(element, dataAttr);
+    }
+
     // ===== ARIA & Accessibility =====
 
     /**
-     * @description ARIA 알림 발표
+     * @description ARIA 알림 발표 (AccessibilityAnnouncer로 위임)
      * @param message - 알림 메시지
      * @param politeness - 우선순위
      */
     announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
-        const announcer = this.dom.ariaAnnouncer;
-        if (announcer) {
-            announcer.textContent = '';
-            announcer.setAttribute('aria-live', politeness);
-            setTimeout(() => {
-                announcer.textContent = message;
-            }, 100);
-        }
+        this.accessibilityAnnouncer.announce(message, politeness);
     }
 
     /**
-     * @description Toast 메시지 표시
+     * @description Toast 메시지 표시 (ToastManager로 위임)
      * @param message - 메시지
      * @param type - 메시지 타입
      */
     showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
-        const existingToast = document.querySelector('.toast');
-        if (existingToast) existingToast.remove();
-
-        const toast = document.createElement('div');
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.className = `toast toast--${type}`;
-        // XSS 방어: escapeHTML 적용
-        toast.innerHTML = escapeHTML(message).replace(/\n/g, '<br>');
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        this.toastManager.show(message, type);
     }
 
     /**

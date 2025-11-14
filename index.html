@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>포트폴리오 리밸런싱 계산기</title>
     <meta name="description" content="포트폴리오 리밸런싱 계산기를 통해 목표 비율에 맞춰 투자 전략을 최적화하세요.">
-    
+
+    <!-- Content Security Policy: Strict CSP with no unsafe directives -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self';
+        img-src 'self' data: https:;
+        font-src 'self' data:;
+        connect-src 'self' https://finnhub.io https://api.exchangerate-api.com;
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+        object-src 'none';
+    ">
+
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -45,36 +59,36 @@
                 <h2 id="portfolioSettingsHeading">💼 현재 포트폴리오 설정</h2>
                  <div class="btn-controls">
                     <button id="addNewStockBtn" class="btn" data-variant="green">➕ 새 종목 추가</button>
-                    <button id="fetchAllPricesBtn" class="btn" data-variant="blue" style="width: 100%;">📈 현재가 모두 불러오기</button>
+                    <button id="fetchAllPricesBtn" class="btn w-full" data-variant="blue">📈 현재가 모두 불러오기</button>
 
-                    <div id="allocationTemplateGroup" class="input-group" style="margin-top: 10px;">
+                    <div id="allocationTemplateGroup" class="input-group mt-3">
                         <label for="allocationTemplate">📋 자산 배분 템플릿:</label>
-                        <select id="allocationTemplate" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <select id="allocationTemplate" class="input-select-custom">
                             <option value="">-- 템플릿 선택 --</option>
                             <option value="60-40">60/40 포트폴리오 (주식 60%, 채권 40%)</option>
                             <option value="all-weather">All-Weather (Ray Dalio)</option>
                             <option value="50-30-20">50/30/20 (주식 50%, 채권 30%, 기타 20%)</option>
                             <option value="equal">동일 비중</option>
                         </select>
-                        <button id="applyTemplateBtn" class="btn" data-variant="blue" style="margin-top: 5px;">✨ 템플릿 적용</button>
+                        <button id="applyTemplateBtn" class="btn mt-2" data-variant="blue">✨ 템플릿 적용</button>
                     </div>
 
-                    <div id="portfolioExchangeRateGroup" class="input-group" style="margin-top: 10px;">
+                    <div id="portfolioExchangeRateGroup" class="input-group mt-3">
                         <label for="portfolioExchangeRate">💱 환율 (1 USD = ? KRW):</label>
                         <input type="number" id="portfolioExchangeRate" placeholder="예: 1300" min="0.01" step="0.01" value="1300">
                     </div>
 
-                    <div id="rebalancingToleranceGroup" class="input-group" style="margin-top: 10px;">
+                    <div id="rebalancingToleranceGroup" class="input-group mt-3">
                         <label for="rebalancingTolerance">🔔 리밸런싱 알림 허용 오차 (%):</label>
                         <input type="number" id="rebalancingTolerance" placeholder="예: 5" min="0" step="0.1" value="5">
                     </div>
 
-                    <div id="tradingCostsGroup" class="input-group" style="margin-top: 10px;">
+                    <div id="tradingCostsGroup" class="input-group mt-3">
                         <label for="tradingFeeRate">💸 거래 수수료율 (%):</label>
                         <input type="number" id="tradingFeeRate" placeholder="예: 0.3" min="0" step="0.01" value="0.3">
                     </div>
 
-                    <div id="taxRateGroup" class="input-group" style="margin-top: 10px;">
+                    <div id="taxRateGroup" class="input-group mt-3">
                         <label for="taxRate">💰 세율 (%):</label>
                         <input type="number" id="taxRate" placeholder="예: 15" min="0" step="0.1" value="15">
                     </div>
@@ -98,7 +112,7 @@
                         </div>
                     </div>
 
-                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                    <input type="file" id="importFileInput" accept=".json" class="d-none">
                 </div>
                 
                 <div id="virtual-table-header" class="virtual-table-header" role="row">
@@ -127,8 +141,8 @@
                 <div class="input-group">
                     <label for="additionalAmount">추가 투자 금액:</label>
                     <input type="number" id="additionalAmount" placeholder="예: 1000000" min="0">
-                    <span id="usdInputGroup" class="hidden" style="display: contents;">
-                        <span style="margin: 0 10px;">또는</span>
+                    <span id="usdInputGroup" class="hidden d-contents">
+                        <span class="mx-2">또는</span>
                         <label for="additionalAmountUSD" class="hidden">USD</label>
                         <input type="number" id="additionalAmountUSD" placeholder="예: 1000" min="0" step="0.01">
                         <span>USD</span>
@@ -136,7 +150,7 @@
                 </div>
             </section>
             
-            <button id="calculateBtn" class="btn" style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 25px;">계산하기</button>
+            <button id="calculateBtn" class="btn w-full p-4 text-lg mb-6">계산하기</button>
             
             <section id="resultsSection" class="hidden" aria-live="polite" role="region" aria-label="계산 결과"></section>
             <section id="sectorAnalysisSection" class="hidden" role="region" aria-label="섹터별 분석 결과"></section>
@@ -148,16 +162,16 @@
             </section>
             <section id="performanceHistorySection" class="card hidden" role="region" aria-label="포트폴리오 성과 히스토리">
                 <h2>📈 포트폴리오 성과 히스토리</h2>
-                <div class="btn-controls" style="margin-bottom: 15px;">
+                <div class="btn-controls mb-4">
                     <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">📊 차트 보기</button>
                     <button id="showSnapshotListBtn" class="btn" data-variant="green">📋 스냅샷 목록</button>
                 </div>
                 <div id="performanceChartContainer" class="hidden">
                     <canvas id="performanceChart"></canvas>
                 </div>
-                <div id="snapshotListContainer" class="hidden" style="margin-top: 20px;">
+                <div id="snapshotListContainer" class="hidden mb-4">
                     <h3>💾 저장된 스냅샷</h3>
-                    <div id="snapshotList" style="max-height: 400px; overflow-y: auto;"></div>
+                    <div id="snapshotList" class="snapshot-list-container"></div>
                 </div>
             </section>
         </main>
@@ -170,7 +184,7 @@
                 <button id="closeModalBtn" class="modal-close-btn" aria-label="닫기">&times;</button>
             </div>
             
-            <div class="table-responsive" style="margin-bottom: 20px;">
+            <div class="table-responsive mb-4">
                 <table id="transactionTable">
                     <caption>거래 내역 목록</caption>
                     <thead>
@@ -183,12 +197,12 @@
 
             <form id="newTransactionForm">
                 <h3>새 거래 추가</h3>
-                <div class="mode-selector" style="margin-bottom: 15px;">
+                <div class="mode-selector mb-4">
                     <label><input type="radio" name="txType" value="buy" checked> 매수</label>
                     <label><input type="radio" name="txType" value="sell"> 매도</label>
                     <label><input type="radio" name="txType" value="dividend"> 배당</label>
                 </div>
-                <div class="mode-selector" style="margin-bottom: 15px;">
+                <div class="mode-selector mb-4">
                     <label><input type="radio" name="inputMode" value="quantity" id="inputModeQuantity" checked> 수량 입력</label>
                     <label><input type="radio" name="inputMode" value="amount" id="inputModeAmount"> 금액 입력</label>
                 </div>
@@ -201,7 +215,7 @@
                         <label for="txQuantity">수량</label>
                         <input type="number" id="txQuantity" placeholder="예: 10" min="0" step="any">
                     </div>
-                    <div class="input-group-vertical" id="totalAmountInputGroup" style="display: none;">
+                    <div class="input-group-vertical d-none" id="totalAmountInputGroup">
                         <label for="txTotalAmount">총 금액</label>
                         <input type="number" id="txTotalAmount" placeholder="예: 1500000" min="0" step="any">
                     </div>
@@ -210,10 +224,10 @@
                         <input type="number" id="txPrice" placeholder="예: 150000" min="0" step="any" required>
                     </div>
                 </div>
-                <div id="calculatedQuantityDisplay" style="margin-top: 10px; padding: 10px; background-color: rgba(0, 123, 255, 0.1); border-radius: 5px; display: none;">
+                <div id="calculatedQuantityDisplay" class="calculated-display d-none">
                     <strong>계산된 수량:</strong> <span id="calculatedQuantityValue">0</span>
                 </div>
-                <button type="submit" class="btn" data-variant="blue" style="width: 100%; margin-top: 15px;">💾 거래 추가</button>
+                <button type="submit" class="btn w-full mt-4" data-variant="blue">💾 거래 추가</button>
             </form>
         </div>
     </div>
@@ -222,8 +236,8 @@
         <div class="modal-content card">
             <h2 id="customModalTitle"></h2>
             <p id="customModalMessage"></p>
-            <input type="text" id="customModalInput" class="hidden" style="width: 100%; margin: 15px 0;">
-            <div class="btn-controls" style="justify-content: flex-end; margin-top: 20px;">
+            <input type="text" id="customModalInput" class="hidden w-full mt-4 mb-4">
+            <div class="btn-controls btn-controls-end mt-4">
                 <button id="customModalCancel" class="btn" data-variant="grey">취소</button>
                 <button id="customModalConfirm" class="btn" data-variant="blue">확인</button>
             </div>

@@ -22,7 +22,9 @@ export function memoize<T, R>(fn: (arg: T) => R, cacheSize: number = 10): (arg: 
         // LRU 캐시 크기 제한
         if (cache.size >= cacheSize) {
             const firstKey = cache.keys().next().value;
-            cache.delete(firstKey);
+            if (firstKey !== undefined) {
+                cache.delete(firstKey);
+            }
         }
 
         cache.set(arg, result);
@@ -56,7 +58,9 @@ export function memoizeWithKey<Args extends any[], R>(
         // LRU 캐시 크기 제한
         if (cache.size >= cacheSize) {
             const firstKey = cache.keys().next().value;
-            cache.delete(firstKey);
+            if (firstKey !== undefined) {
+                cache.delete(firstKey);
+            }
         }
 
         cache.set(key, result);

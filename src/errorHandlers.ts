@@ -4,6 +4,7 @@
  */
 
 import { ErrorService } from './errorService';
+import { logger } from './services/Logger';
 
 /**
  * @description 처리되지 않은 Promise rejection을 처리합니다.
@@ -14,7 +15,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
     const error =
         event.reason instanceof Error ? event.reason : new Error(String(event.reason));
 
-    console.error('[Unhandled Promise Rejection]', error);
+    logger.error('Unhandled Promise Rejection', 'ErrorHandlers', error);
     ErrorService.handle(error, 'UnhandledPromiseRejection');
 }
 
@@ -26,7 +27,7 @@ function handleError(event: ErrorEvent): void {
 
     const error = event.error instanceof Error ? event.error : new Error(event.message);
 
-    console.error('[Global Error]', error);
+    logger.error('Global Error', 'ErrorHandlers', error);
     ErrorService.handle(error, 'GlobalError');
 }
 
@@ -40,7 +41,7 @@ export function setupGlobalErrorHandlers(): void {
     // 일반 에러 핸들러
     window.addEventListener('error', handleError);
 
-    console.log('[ErrorHandlers] Global error handlers registered');
+    logger.debug('Global error handlers registered', 'ErrorHandlers');
 }
 
 /**
@@ -50,5 +51,5 @@ export function teardownGlobalErrorHandlers(): void {
     window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     window.removeEventListener('error', handleError);
 
-    console.log('[ErrorHandlers] Global error handlers removed');
+    logger.debug('Global error handlers removed', 'ErrorHandlers');
 }

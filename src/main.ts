@@ -6,6 +6,7 @@ import { ErrorService } from './errorService.ts';
 import { setupGlobalErrorHandlers } from './errorHandlers.ts';
 import { initPerformancePanel } from './performance/PerformancePanel.ts';
 import { perfMonitor } from './performance/PerformanceMonitor.ts';
+import { logger } from './services/Logger.ts';
 
 // Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
 // (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
@@ -15,7 +16,7 @@ const isDevelopment = import.meta.env.DEV || window.location.hostname === 'local
 if (isDevelopment) {
     perfMonitor.setEnabled(true);
     initPerformancePanel();
-    console.log('[Performance] Monitoring enabled. Press Ctrl+Shift+P to view metrics.');
+    logger.info('Monitoring enabled. Press Ctrl+Shift+P to view metrics.', 'Performance');
 } else {
     perfMonitor.setEnabled(false);
 }
@@ -34,9 +35,9 @@ try {
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     const app = new PortfolioController(state, view);
 
-    console.log('Application setup complete.');
+    logger.info('Application setup complete.');
 } catch (error) {
-    console.error('애플리케이션 초기화 중 치명적인 오류 발생:', error);
+    logger.error('애플리케이션 초기화 중 치명적인 오류 발생:', 'Main', error as Error);
     // 사용자에게 오류 메시지를 표시하는 UI 로직 추가 가능
     const bodyElement = document.body;
     if (bodyElement) {
