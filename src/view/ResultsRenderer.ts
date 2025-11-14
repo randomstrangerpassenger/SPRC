@@ -9,13 +9,13 @@ import { CSS_CLASSES } from '../constants';
  * @description 계산 결과, 섹터 분석, 차트 렌더링 관리
  */
 export class ResultsRenderer {
-    private dom: DOMElements;
+    #dom: DOMElements;
     #chartInstance: Chart | null = null;
     #performanceChartInstance: Chart | null = null;
     #currentObserver: IntersectionObserver | null = null;
 
     constructor(dom: DOMElements) {
-        this.dom = dom;
+        this.#dom = dom;
     }
 
     /**
@@ -23,7 +23,7 @@ export class ResultsRenderer {
      * @param dom - 새로운 DOM 참조
      */
     setDom(dom: DOMElements): void {
-        this.dom = dom;
+        this.#dom = dom;
         // Chart 인스턴스는 유지 (상태 보존)
     }
 
@@ -38,7 +38,7 @@ export class ResultsRenderer {
                 <div class="skeleton-row"></div>
             </div>
         `;
-        const resultsEl = this.dom.resultsSection;
+        const resultsEl = this.#dom.resultsSection;
         if (!resultsEl) return;
 
         resultsEl.innerHTML = skeletonHTML;
@@ -52,7 +52,7 @@ export class ResultsRenderer {
      */
     displayResults(html: string): void {
         requestAnimationFrame(() => {
-            const resultsEl = this.dom.resultsSection;
+            const resultsEl = this.#dom.resultsSection;
             if (!resultsEl) return;
 
             resultsEl.innerHTML = html;
@@ -87,7 +87,7 @@ export class ResultsRenderer {
      */
     displaySectorAnalysis(html: string): void {
         requestAnimationFrame(() => {
-            const sectorEl = this.dom.sectorAnalysisSection;
+            const sectorEl = this.#dom.sectorAnalysisSection;
             if (!sectorEl) return;
 
             sectorEl.innerHTML = html;
@@ -103,8 +103,8 @@ export class ResultsRenderer {
      * @param title - 차트 제목
      */
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
-        const chartEl = this.dom.chartSection;
-        const canvas = this.dom.portfolioChart;
+        const chartEl = this.#dom.chartSection;
+        const canvas = this.#dom.portfolioChart;
 
         if (!chartEl || !(canvas instanceof HTMLCanvasElement)) return;
 
@@ -167,9 +167,9 @@ export class ResultsRenderer {
      * @description 결과 화면을 숨깁니다.
      */
     hideResults(): void {
-        const resultsEl = this.dom.resultsSection;
-        const sectorEl = this.dom.sectorAnalysisSection;
-        const chartEl = this.dom.chartSection;
+        const resultsEl = this.#dom.resultsSection;
+        const sectorEl = this.#dom.sectorAnalysisSection;
+        const chartEl = this.#dom.chartSection;
 
         if (resultsEl) {
             resultsEl.innerHTML = '';
@@ -197,9 +197,9 @@ export class ResultsRenderer {
         snapshots: PortfolioSnapshot[],
         currency: 'krw' | 'usd'
     ): Promise<void> {
-        const section = this.dom.performanceHistorySection;
-        const container = this.dom.performanceChartContainer;
-        const canvas = this.dom.performanceChart;
+        const section = this.#dom.performanceHistorySection;
+        const container = this.#dom.performanceChartContainer;
+        const canvas = this.#dom.performanceChart;
 
         if (!section || !container || !(canvas instanceof HTMLCanvasElement)) return;
 
@@ -347,7 +347,7 @@ export class ResultsRenderer {
      * @param currency - 통화 ('krw' | 'usd')
      */
     displaySnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
-        const listEl = this.dom.snapshotList;
+        const listEl = this.#dom.snapshotList;
         if (!listEl) return;
 
         const currencySymbol = currency === 'krw' ? '₩' : '$';
@@ -417,9 +417,9 @@ export class ResultsRenderer {
      * @param show - 표시 여부
      */
     showPerformanceHistoryView(show: boolean): void {
-        const section = this.dom.performanceHistorySection;
-        const chartContainer = this.dom.performanceChartContainer;
-        const listContainer = this.dom.snapshotListContainer;
+        const section = this.#dom.performanceHistorySection;
+        const chartContainer = this.#dom.performanceChartContainer;
+        const listContainer = this.#dom.snapshotListContainer;
 
         if (show) {
             section?.classList.remove(CSS_CLASSES.HIDDEN);
@@ -435,9 +435,9 @@ export class ResultsRenderer {
      * @param show - 표시 여부
      */
     showSnapshotListView(show: boolean): void {
-        const section = this.dom.performanceHistorySection;
-        const chartContainer = this.dom.performanceChartContainer;
-        const listContainer = this.dom.snapshotListContainer;
+        const section = this.#dom.performanceHistorySection;
+        const chartContainer = this.#dom.performanceChartContainer;
+        const listContainer = this.#dom.snapshotListContainer;
 
         if (show) {
             section?.classList.remove(CSS_CLASSES.HIDDEN);

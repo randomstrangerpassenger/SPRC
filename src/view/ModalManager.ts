@@ -13,13 +13,13 @@ import { CSS_CLASSES } from '../constants';
  * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
  */
 export class ModalManager {
-    private dom: DOMElements;
+    #dom: DOMElements;
     #activeModalResolver: ((value: boolean | string | null) => void) | null = null;
     #focusManager: FocusManager;
     #focusTrapCleanup: (() => void) | null = null;
 
     constructor(dom: DOMElements) {
-        this.dom = dom;
+        this.#dom = dom;
         this.#focusManager = new FocusManager();
     }
 
@@ -28,7 +28,7 @@ export class ModalManager {
      * @param dom - 새로운 DOM 참조
      */
     setDom(dom: DOMElements): void {
-        this.dom = dom;
+        this.#dom = dom;
     }
 
     /**
@@ -92,11 +92,11 @@ export class ModalManager {
             this.saveFocusContext();
             this.#activeModalResolver = resolve;
             const { title, message, defaultValue, type } = options;
-            const titleEl = this.dom.customModalTitle;
-            const messageEl = this.dom.customModalMessage;
-            const inputEl = this.dom.customModalInput;
-            const modalEl = this.dom.customModal;
-            const confirmBtnEl = this.dom.customModalConfirm;
+            const titleEl = this.#dom.customModalTitle;
+            const messageEl = this.#dom.customModalMessage;
+            const inputEl = this.#dom.customModalInput;
+            const modalEl = this.#dom.customModal;
+            const confirmBtnEl = this.#dom.customModalConfirm;
 
             if (titleEl) titleEl.textContent = title;
             if (messageEl) messageEl.textContent = message;
@@ -130,8 +130,8 @@ export class ModalManager {
     handleCustomModal(confirmed: boolean): void {
         if (!this.#activeModalResolver) return;
 
-        const inputEl = this.dom.customModalInput;
-        const modalEl = this.dom.customModal;
+        const inputEl = this.#dom.customModalInput;
+        const modalEl = this.#dom.customModal;
         const isPrompt = isInputElement(inputEl) && !inputEl.classList.contains(CSS_CLASSES.HIDDEN);
         const value = isPrompt ? (confirmed ? inputEl.value : null) : confirmed;
 
@@ -150,9 +150,9 @@ export class ModalManager {
      */
     openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
         this.saveFocusContext();
-        const modal = this.dom.transactionModal;
-        const modalTitle = this.dom.modalStockName;
-        const dateInput = this.dom.txDate;
+        const modal = this.#dom.transactionModal;
+        const modalTitle = this.#dom.modalStockName;
+        const dateInput = this.#dom.txDate;
 
         if (!modal) return;
 
@@ -171,7 +171,7 @@ export class ModalManager {
         modal.setAttribute('aria-modal', 'true');
         this.#focusTrapCleanup = createFocusTrap(modal);
 
-        const closeBtn = this.dom.closeModalBtn;
+        const closeBtn = this.#dom.closeModalBtn;
         if (closeBtn instanceof HTMLButtonElement) {
             closeBtn.focus();
         }
@@ -181,8 +181,8 @@ export class ModalManager {
      * @description 거래 내역 모달을 닫습니다.
      */
     closeTransactionModal(): void {
-        const modal = this.dom.transactionModal;
-        const form = this.dom.newTransactionForm;
+        const modal = this.#dom.transactionModal;
+        const form = this.#dom.newTransactionForm;
 
         if (!modal) return;
 
@@ -199,7 +199,7 @@ export class ModalManager {
      * @param currency - 통화 모드
      */
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
-        const listBody = this.dom.transactionListBody;
+        const listBody = this.#dom.transactionListBody;
         if (!listBody) {
             logger.error('renderTransactionList - listBody not found', 'ModalManager');
             return;
@@ -298,9 +298,9 @@ export class ModalManager {
      * @description 커스텀 모달 이벤트 리스너를 바인딩합니다.
      */
     bindModalEvents(): void {
-        const cancelBtn = this.dom.customModalCancel;
-        const confirmBtn = this.dom.customModalConfirm;
-        const customModalEl = this.dom.customModal;
+        const cancelBtn = this.#dom.customModalCancel;
+        const confirmBtn = this.#dom.customModalConfirm;
+        const customModalEl = this.#dom.customModal;
 
         cancelBtn?.addEventListener('click', () => this.handleCustomModal(false));
         confirmBtn?.addEventListener('click', () => this.handleCustomModal(true));

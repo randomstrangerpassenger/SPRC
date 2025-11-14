@@ -21,7 +21,7 @@ const VISIBLE_ROWS_BUFFER = UI.VISIBLE_ROWS_BUFFER;
  * @description 가상 스크롤 관리 - 대량 데이터를 효율적으로 렌더링
  */
 export class VirtualScrollManager {
-    private dom: DOMElements;
+    #dom: DOMElements;
     #virtualData: CalculatedStock[] = [];
     #scrollWrapper: HTMLElement | null = null;
     #scrollSpacer: HTMLElement | null = null;
@@ -38,7 +38,7 @@ export class VirtualScrollManager {
         new LRUCache(UI.ROW_CACHE_SIZE);
 
     constructor(dom: DOMElements) {
-        this.dom = dom;
+        this.#dom = dom;
         this.initializeScrollElements();
     }
 
@@ -47,7 +47,7 @@ export class VirtualScrollManager {
      * @param dom - 새로운 DOM 참조
      */
     setDom(dom: DOMElements): void {
-        this.dom = dom;
+        this.#dom = dom;
         this.initializeScrollElements();
         // 캐시는 유지 (스크롤 위치 및 상태 보존)
     }
@@ -56,9 +56,9 @@ export class VirtualScrollManager {
      * @description 스크롤 요소들을 초기화합니다.
      */
     private initializeScrollElements(): void {
-        this.#scrollWrapper = this.dom.virtualScrollWrapper;
-        this.#scrollSpacer = this.dom.virtualScrollSpacer;
-        this.#scrollContent = this.dom.virtualScrollContent;
+        this.#scrollWrapper = this.#dom.virtualScrollWrapper;
+        this.#scrollSpacer = this.#dom.virtualScrollSpacer;
+        this.#scrollContent = this.#dom.virtualScrollContent;
         this.#viewportHeight = this.#scrollWrapper
             ? this.#scrollWrapper.clientHeight
             : UI.DEFAULT_VIEWPORT_HEIGHT;
@@ -72,7 +72,7 @@ export class VirtualScrollManager {
     updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
         this.#currentMainMode = mainMode;
         this.#currentCurrency = currency;
-        const header = this.dom.virtualTableHeader;
+        const header = this.#dom.virtualTableHeader;
         if (!header) return;
 
         header.style.gridTemplateColumns = getGridTemplate(mainMode);
@@ -140,8 +140,8 @@ export class VirtualScrollManager {
         this.updateTableHeader(currency, mainMode);
 
         this.#virtualData = calculatedPortfolioData;
-        if (this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute(
+        if (this.#dom.virtualScrollWrapper) {
+            this.#dom.virtualScrollWrapper.setAttribute(
                 'aria-rowcount',
                 String(this.#virtualData.length)
             );
@@ -170,8 +170,8 @@ export class VirtualScrollManager {
         this.#virtualData = calculatedPortfolioData;
         const totalHeight = this.#virtualData.length * ROW_PAIR_HEIGHT;
         if (this.#scrollSpacer) this.#scrollSpacer.style.height = `${totalHeight}px`;
-        if (this.dom.virtualScrollWrapper) {
-            this.dom.virtualScrollWrapper.setAttribute(
+        if (this.#dom.virtualScrollWrapper) {
+            this.#dom.virtualScrollWrapper.setAttribute(
                 'aria-rowcount',
                 String(this.#virtualData.length)
             );
