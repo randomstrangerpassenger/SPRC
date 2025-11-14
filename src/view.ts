@@ -12,6 +12,8 @@ import { EventEmitter, type EventCallback } from './view/EventEmitter';
 import { ModalManager } from './view/ModalManager';
 import { VirtualScrollManager } from './view/VirtualScrollManager';
 import { ResultsRenderer } from './view/ResultsRenderer';
+import { ToastManager } from './view/ToastManager';
+import { AccessibilityAnnouncer } from './view/AccessibilityAnnouncer';
 
 /**
  * @class PortfolioView
@@ -25,6 +27,8 @@ export class PortfolioView {
     private modalManager: ModalManager;
     private virtualScrollManager: VirtualScrollManager;
     private resultsRenderer: ResultsRenderer;
+    private toastManager: ToastManager;
+    private accessibilityAnnouncer: AccessibilityAnnouncer;
 
     /**
      * @constructor
@@ -36,6 +40,8 @@ export class PortfolioView {
         this.modalManager = new ModalManager(this.dom);
         this.virtualScrollManager = new VirtualScrollManager(this.dom);
         this.resultsRenderer = new ResultsRenderer(this.dom);
+        this.toastManager = new ToastManager();
+        this.accessibilityAnnouncer = new AccessibilityAnnouncer();
     }
 
     /**
@@ -119,6 +125,11 @@ export class PortfolioView {
             snapshotList: D.getElementById('snapshotList'),
         };
 
+        // AccessibilityAnnouncer 엘리먼트 설정
+        if (this.dom.ariaAnnouncer) {
+            this.accessibilityAnnouncer.setElement(this.dom.ariaAnnouncer as HTMLElement);
+        }
+
         this.eventEmitter.clear();
 
         // 모듈 재초기화 (DOM 참조 업데이트)
@@ -133,38 +144,21 @@ export class PortfolioView {
     // ===== ARIA & Accessibility =====
 
     /**
-     * @description ARIA 알림 발표
+     * @description ARIA 알림 발표 (AccessibilityAnnouncer로 위임)
      * @param message - 알림 메시지
      * @param politeness - 우선순위
      */
     announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
-        const announcer = this.dom.ariaAnnouncer;
-        if (announcer) {
-            announcer.textContent = '';
-            announcer.setAttribute('aria-live', politeness);
-            setTimeout(() => {
-                announcer.textContent = message;
-            }, 100);
-        }
+        this.accessibilityAnnouncer.announce(message, politeness);
     }
 
     /**
-     * @description Toast 메시지 표시
+     * @description Toast 메시지 표시 (ToastManager로 위임)
      * @param message - 메시지
      * @param type - 메시지 타입
      */
     showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
-        const existingToast = document.querySelector('.toast');
-        if (existingToast) existingToast.remove();
-
-        const toast = document.createElement('div');
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.className = `toast toast--${type}`;
-        // XSS 방어: escapeHTML 적용
-        toast.innerHTML = escapeHTML(message).replace(/\n/g, '<br>');
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        this.toastManager.show(message, type);
     }
 
     /**
