@@ -21,6 +21,7 @@ import { ResultsRenderer } from './view/ResultsRenderer';
 import { ToastManager } from './view/ToastManager';
 import { AccessibilityAnnouncer } from './view/AccessibilityAnnouncer';
 import { DOMCache } from './view/DOMCache';
+import { LoadingOverlayManager } from './view/LoadingOverlayManager';
 
 /**
  * @class PortfolioView
@@ -37,6 +38,7 @@ export class PortfolioView {
     #toastManager: ToastManager;
     #accessibilityAnnouncer: AccessibilityAnnouncer;
     #domCache: DOMCache;
+    #loadingOverlayManager: LoadingOverlayManager;
 
     /**
      * @constructor
@@ -51,6 +53,7 @@ export class PortfolioView {
         this.#toastManager = new ToastManager();
         this.#accessibilityAnnouncer = new AccessibilityAnnouncer();
         this.#domCache = new DOMCache();
+        this.#loadingOverlayManager = new LoadingOverlayManager();
     }
 
     /**
@@ -189,29 +192,17 @@ export class PortfolioView {
     }
 
     /**
-     * @description Show calculation loading indicator
+     * @description Show calculation loading indicator (delegated to LoadingOverlayManager)
      */
     showCalculationLoading(): void {
-        const existingLoader = document.querySelector('.calculation-loader');
-        if (existingLoader) return;
-
-        const loader = document.createElement('div');
-        loader.className = 'calculation-loader';
-        loader.setAttribute('role', 'status');
-        loader.setAttribute('aria-live', 'polite');
-        loader.innerHTML = `
-            <div class="spinner"></div>
-            <span class="sr-only">계산 중...</span>
-        `;
-        document.body.appendChild(loader);
+        this.#loadingOverlayManager.show();
     }
 
     /**
-     * @description Hide calculation loading indicator
+     * @description Hide calculation loading indicator (delegated to LoadingOverlayManager)
      */
     hideCalculationLoading(): void {
-        const loader = document.querySelector('.calculation-loader');
-        if (loader) loader.remove();
+        this.#loadingOverlayManager.hide();
     }
 
     /**
