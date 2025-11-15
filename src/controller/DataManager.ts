@@ -6,6 +6,7 @@ import { t } from '../i18n';
 import { isInputElement } from '../utils';
 import { logger } from '../services/Logger';
 import { PortfolioViewModelMapper } from '../viewModels';
+import { CacheInvalidationService } from '../cache';
 // 대형 서비스를 동적 임포트로 변경
 import type { EmailConfig } from '../services';
 // ExcelExportService, PDFReportService, EmailService는 동적 임포트 사용
@@ -36,7 +37,7 @@ export class DataManager {
         );
         if (confirmReset) {
             await this.#state.resetData();
-            Calculator.clearPortfolioStateCache();
+            CacheInvalidationService.onPortfolioReset();
 
             const activePortfolio = this.#state.getActivePortfolio();
             if (activePortfolio) {
@@ -263,7 +264,7 @@ export class DataManager {
                         if (typeof jsonString === 'string') {
                             const loadedData = JSON.parse(jsonString);
                             await this.#state.importData(loadedData);
-                            Calculator.clearPortfolioStateCache();
+                            CacheInvalidationService.onPortfolioLoaded();
                             this.#view.showToast(t('toast.importSuccess'), 'success');
                             resolve({ needsUISetup: true });
                         } else {

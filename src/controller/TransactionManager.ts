@@ -8,6 +8,7 @@ import Decimal from 'decimal.js';
 import { logger } from '../services/Logger';
 import { isInputElement } from '../utils';
 import { TransactionViewModelMapper } from '../viewModels';
+import { CacheInvalidationService } from '../cache';
 
 /**
  * @class TransactionManager
@@ -147,7 +148,7 @@ export class TransactionManager {
             }
 
             this.#view.showToast(t('toast.transactionAdded'), 'success');
-            Calculator.clearPortfolioStateCache();
+            CacheInvalidationService.onTransactionAdded();
             return { needsFullRender: true };
         } else {
             this.#view.showToast(t('toast.transactionAddFailed'), 'error');
@@ -181,7 +182,7 @@ export class TransactionManager {
                         this.#view.renderTransactionListViewModel(viewModel);
                     }
                     this.#view.showToast(t('toast.transactionDeleted'), 'success');
-                    Calculator.clearPortfolioStateCache();
+                    CacheInvalidationService.onTransactionDeleted();
                     return { needsUIUpdate: true };
                 } else {
                     this.#view.showToast(t('toast.transactionDeleteFailed'), 'error');
