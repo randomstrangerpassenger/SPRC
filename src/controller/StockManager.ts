@@ -39,7 +39,7 @@ type FieldHandler = (
 
 /**
  * @class StockManager
- * @description 주식 추가, 삭제, 수정 관리
+ * @description Manages stock addition, deletion, and modification
  */
 export class StockManager {
     #state: PortfolioState;
@@ -67,7 +67,7 @@ export class StockManager {
     }
 
     /**
-     * @description 새 주식 추가
+     * @description Add new stock
      */
     async handleAddNewStock(): Promise<{ needsFullRender: boolean; stockId?: string }> {
         const newStock = await this.#state.addNewStock();
@@ -75,8 +75,8 @@ export class StockManager {
     }
 
     /**
-     * @description 주식 삭제
-     * @param stockId - 주식 ID
+     * @description Delete stock
+     * @param stockId - Stock ID
      */
     async handleDeleteStock(stockId: string): Promise<{ needsFullRender: boolean }> {
         const stockName = this.#state.getStockById(stockId)?.name || t('defaults.unknownStock');
@@ -98,8 +98,8 @@ export class StockManager {
     }
 
     /**
-     * @description 포트폴리오 테이블 변경 핸들러 (Strategy Pattern 적용)
-     * @param e - 이벤트
+     * @description Portfolio table change handler (Strategy Pattern applied)
+     * @param e - Event
      */
     handlePortfolioBodyChange(e: Event): FieldChangeResult {
         const target = e.target as HTMLInputElement | HTMLSelectElement;
@@ -149,7 +149,7 @@ export class StockManager {
     }
 
     /**
-     * @description 필드 값 유효성 검사 (Validator 모듈로 위임)
+     * @description Validate field value (delegated to Validator module)
      */
     private validateFieldValue(
         field: string,
@@ -172,7 +172,7 @@ export class StockManager {
     }
 
     /**
-     * @description manualAmount 변경 처리 (Strategy Pattern)
+     * @description Handle manualAmount change (Strategy Pattern)
      */
     private handleManualAmountChangeStrategy(
         stockId: string,
@@ -185,7 +185,7 @@ export class StockManager {
     }
 
     /**
-     * @description 메타데이터 필드 변경 처리 (name, ticker) (Strategy Pattern)
+     * @description Handle metadata field change (name, ticker) (Strategy Pattern)
      */
     private handleMetadataFieldChangeStrategy(
         stockId: string,
@@ -198,7 +198,7 @@ export class StockManager {
     }
 
     /**
-     * @description 섹터 변경 처리 (Strategy Pattern)
+     * @description Handle sector change (Strategy Pattern)
      */
     private handleSectorChangeStrategy(
         stockId: string,
@@ -213,7 +213,7 @@ export class StockManager {
     }
 
     /**
-     * @description 현재가 변경 처리 (Strategy Pattern)
+     * @description Handle current price change (Strategy Pattern)
      */
     private handleCurrentPriceChangeStrategy(
         stockId: string,
@@ -253,7 +253,7 @@ export class StockManager {
     }
 
     /**
-     * @description 기타 필드 변경 처리 (전체 재계산 필요)
+     * @description Handle other field changes (requires full recalculation)
      */
     private handleOtherFieldChange(
         stockId: string,
@@ -297,9 +297,9 @@ export class StockManager {
     }
 
     /**
-     * @description 섹터 분석 업데이트
-     * @param activePortfolio - 활성 포트폴리오
-     * @param useExistingState - 기존 계산 상태 재사용 여부
+     * @description Update sector analysis
+     * @param activePortfolio - Active portfolio
+     * @param useExistingState - Whether to reuse existing calculation state
      */
     private updateSectorAnalysis(activePortfolio: Portfolio, useExistingState: boolean) {
         let portfolioData = activePortfolio.portfolioData;
@@ -323,8 +323,8 @@ export class StockManager {
     }
 
     /**
-     * @description 포트폴리오 테이블 클릭 핸들러
-     * @param e - 이벤트
+     * @description Portfolio table click handler
+     * @param e - Event
      */
     handlePortfolioBodyClick(e: Event): { action: string | null; stockId: string | null } {
         const target = e.target as HTMLElement;

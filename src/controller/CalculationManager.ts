@@ -26,7 +26,7 @@ import { logger } from '../services/Logger';
 
 /**
  * @class CalculationManager
- * @description 계산, API, 통화 변환 관리
+ * @description Manages calculations, API calls, and currency conversions
  */
 export class CalculationManager {
     #state: PortfolioState;
@@ -252,7 +252,7 @@ export class CalculationManager {
     }
 
     /**
-     * @description 모든 주식 가격 가져오기
+     * @description Fetch all stock prices
      */
     async handleFetchAllPrices(): Promise<{ needsUIUpdate: boolean }> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -345,8 +345,8 @@ export class CalculationManager {
     }
 
     /**
-     * @description 메인 모드 변경
-     * @param newMode - 새 메인 모드
+     * @description Change main mode
+     * @param newMode - New main mode
      */
     async handleMainModeChange(newMode: MainMode): Promise<{ needsFullRender: boolean }> {
         if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple')
@@ -368,8 +368,8 @@ export class CalculationManager {
     }
 
     /**
-     * @description 통화 모드 변경
-     * @param newCurrency - 새 통화 모드
+     * @description Change currency mode
+     * @param newCurrency - New currency mode
      */
     async handleCurrencyModeChange(newCurrency: Currency): Promise<{ needsFullRender: boolean }> {
         if (newCurrency !== 'krw' && newCurrency !== 'usd') return { needsFullRender: false };
@@ -388,8 +388,8 @@ export class CalculationManager {
     }
 
     /**
-     * @description 통화 변환
-     * @param source - 변환 소스 ('krw' 또는 'usd')
+     * @description Convert currency
+     * @param source - Conversion source ('krw' or 'usd')
      */
     async handleCurrencyConversion(source: 'krw' | 'usd'): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -452,8 +452,8 @@ export class CalculationManager {
     }
 
     /**
-     * @description 포트폴리오 환율 변경
-     * @param rate - 환율
+     * @description Change portfolio exchange rate
+     * @param rate - Exchange rate
      */
     async handlePortfolioExchangeRateChange(rate: number): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -472,7 +472,7 @@ export class CalculationManager {
     }
 
     /**
-     * @description 비율 정규화
+     * @description Normalize ratios
      */
     handleNormalizeRatios(): void {
         try {

@@ -7,7 +7,7 @@ import { isInputElement } from '../utils';
 
 /**
  * @class PortfolioManager
- * @description 포트폴리오 CRUD 작업 관리
+ * @description Manages portfolio CRUD operations
  */
 export class PortfolioManager {
     #state: PortfolioState;
@@ -22,7 +22,7 @@ export class PortfolioManager {
     }
 
     /**
-     * @description 새 포트폴리오 생성
+     * @description Create new portfolio
      */
     async handleNewPortfolio(): Promise<void> {
         let name = await this.#view.showPrompt(
@@ -43,7 +43,7 @@ export class PortfolioManager {
     }
 
     /**
-     * @description 포트폴리오 이름 변경
+     * @description Rename portfolio
      */
     async handleRenamePortfolio(): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -64,7 +64,7 @@ export class PortfolioManager {
     }
 
     /**
-     * @description 포트폴리오 삭제
+     * @description Delete portfolio
      */
     async handleDeletePortfolio(): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -97,8 +97,8 @@ export class PortfolioManager {
     }
 
     /**
-     * @description 포트폴리오 전환
-     * @param newId - 새 포트폴리오 ID
+     * @description Switch portfolio
+     * @param newId - New portfolio ID
      */
     async handleSwitchPortfolio(newId: string): Promise<void> {
         let targetId = newId;

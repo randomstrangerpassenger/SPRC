@@ -65,6 +65,40 @@ class StockManager {
 - ✅ 함수 분해로 가독성 및 유지보수성 향상
 - ✅ 테스트 가능한 작은 단위 함수로 분리
 
+#### Phase 1.3: JSDoc 및 주석 국제화
+
+**목적**: 모든 JSDoc과 inline 주석을 영어로 통일하여 국제 협업 환경 지원 및 코드 문서화 표준 준수
+
+**주요 변경사항:**
+
+1. **calculator.ts 완전 영어화**
+   - 모든 JSDoc 주석 영어 변환
+   - Inline 주석 영어 변환 (알고리즘 설명, 최적화 노트 등)
+   - 예시:
+     - "모든 거래 ID를 조합하여 중간 거래 수정/삭제도 감지" → "Combine all transaction IDs to detect modifications/deletions of intermediate transactions"
+     - "@description 포트폴리오 상태를 계산하고 캐싱합니다." → "@description Calculates and caches portfolio state"
+
+2. **모든 Manager 클래스 JSDoc 영어화 (6개 파일)**
+   - **CalculationManager.ts**: "계산, API, 통화 변환 관리" → "Manages calculations, API calls, and currency conversions"
+   - **DataManager.ts**: "데이터 가져오기/내보내기, 초기화 관리" → "Manages data import/export and initialization"
+   - **SnapshotManager.ts**: "포트폴리오 스냅샷 관리" → "Manages portfolio snapshots (performance history, snapshot lists, etc.)"
+   - **PortfolioManager.ts**: "포트폴리오 CRUD 작업 관리" → "Manages portfolio CRUD operations"
+   - **TransactionManager.ts**: "거래 내역 추가, 삭제 관리" → "Manages transaction addition and deletion"
+   - **StockManager.ts**: "주식 추가, 삭제, 수정 관리" → "Manages stock addition, deletion, and modification"
+
+3. **일관된 번역 패턴 적용**
+   - "관리" → "Manages"
+   - "변경" → "Change"
+   - "추가" → "Add"
+   - "삭제" → "Delete"
+   - "가져오기" → "Get/Fetch"
+
+**효과:**
+- ✅ 국제 협업 환경 대비 (영어권 개발자 접근성 향상)
+- ✅ IDE 자동완성 및 호버 힌트의 일관성 확보
+- ✅ 코드 문서화 표준 준수 (JSDoc 영어 권장사항)
+- ✅ 오픈소스 프로젝트 전환 시 준비 완료
+
 ---
 
 #### Phase 3.3: 데이터 영속성 추상화 (Repository 패턴)

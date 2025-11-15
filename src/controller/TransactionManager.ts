@@ -10,7 +10,7 @@ import { isInputElement } from '../utils';
 
 /**
  * @class TransactionManager
- * @description 거래 내역 추가, 삭제 관리
+ * @description Manages transaction addition and deletion
  */
 export class TransactionManager {
     #state: PortfolioState;
@@ -25,8 +25,8 @@ export class TransactionManager {
     }
 
     /**
-     * @description 주식 ID로 거래 내역 모달 열기
-     * @param stockId - 주식 ID
+     * @description Open transaction modal by stock ID
+     * @param stockId - Stock ID
      */
     openTransactionModalByStockId(stockId: string): void {
         const stock = this.#state.getStockById(stockId);
@@ -37,8 +37,8 @@ export class TransactionManager {
     }
 
     /**
-     * @description 새 거래 내역 추가
-     * @param e - 폼 제출 이벤트
+     * @description Add new transaction
+     * @param e - Form submit event
      */
     async handleAddNewTransaction(e: Event): Promise<{ needsFullRender: boolean }> {
         e.preventDefault();
@@ -151,9 +151,9 @@ export class TransactionManager {
     }
 
     /**
-     * @description 거래 내역 삭제
-     * @param stockId - 주식 ID
-     * @param txId - 거래 내역 ID
+     * @description Delete transaction
+     * @param stockId - Stock ID
+     * @param txId - Transaction ID
      */
     async handleTransactionListClick(
         stockId: string,

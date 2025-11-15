@@ -8,8 +8,8 @@ import type { PortfolioSnapshot } from '../types';
 
 /**
  * @class SnapshotManager
- * @description 포트폴리오 스냅샷 관리 (성과 히스토리, 스냅샷 목록 등)
- * Controller에서 분리된 스냅샷 관련 로직을 담당
+ * @description Manages portfolio snapshots (performance history, snapshot lists, etc.)
+ * Handles snapshot-related logic separated from Controller
  */
 export class SnapshotManager {
     #state: PortfolioState;
@@ -27,7 +27,7 @@ export class SnapshotManager {
     }
 
     /**
-     * @description 성과 히스토리 표시
+     * @description Display performance history
      */
     async handleShowPerformanceHistory(): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -61,7 +61,7 @@ export class SnapshotManager {
     }
 
     /**
-     * @description 스냅샷 목록 표시
+     * @description Display snapshot list
      */
     async handleShowSnapshotList(): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
@@ -89,14 +89,14 @@ export class SnapshotManager {
     }
 
     /**
-     * @description 스냅샷 목록 렌더링
+     * @description Render snapshot list
      */
     private renderSnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
         this.#view.resultsRenderer.displaySnapshotList(snapshots, currency);
     }
 
     /**
-     * @description 특정 포트폴리오의 스냅샷 개수 가져오기
+     * @description Get snapshot count for specific portfolio
      */
     async getSnapshotCount(portfolioId: string): Promise<number> {
         try {
@@ -109,7 +109,7 @@ export class SnapshotManager {
     }
 
     /**
-     * @description 특정 포트폴리오의 최신 스냅샷 가져오기
+     * @description Get latest snapshot for specific portfolio
      */
     async getLatestSnapshot(portfolioId: string): Promise<PortfolioSnapshot | null> {
         try {
@@ -121,7 +121,7 @@ export class SnapshotManager {
     }
 
     /**
-     * @description 특정 포트폴리오의 스냅샷 삭제
+     * @description Delete snapshots for specific portfolio
      */
     async deleteSnapshots(portfolioId: string): Promise<boolean> {
         try {

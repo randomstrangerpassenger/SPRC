@@ -11,7 +11,7 @@ import type { EmailConfig } from '../services';
 
 /**
  * @class DataManager
- * @description 데이터 가져오기/내보내기, 초기화 관리
+ * @description Manages data import/export and initialization
  */
 export class DataManager {
     #state: PortfolioState;
@@ -26,7 +26,7 @@ export class DataManager {
     }
 
     /**
-     * @description 데이터 초기화
+     * @description Reset data
      */
     async handleResetData(): Promise<{ needsFullRender: boolean; needsUISetup: boolean }> {
         const confirmReset = await this.#view.showConfirm(
@@ -63,7 +63,7 @@ export class DataManager {
     }
 
     /**
-     * @description 데이터 내보내기
+     * @description Export data
      */
     handleExportData(): void {
         try {
@@ -90,7 +90,7 @@ export class DataManager {
     }
 
     /**
-     * @description 거래 내역 CSV 내보내기
+     * @description Export transaction history to CSV
      */
     handleExportTransactionsCSV(): void {
         try {
@@ -135,8 +135,8 @@ export class DataManager {
     }
 
     /**
-     * @description Excel 파일 내보내기 (exceljs 사용)
-     * 동적 임포트로 변경
+     * @description Export Excel file (using exceljs)
+     * Changed to dynamic import
      */
     async handleExportExcel(): Promise<void> {
         try {
@@ -157,8 +157,8 @@ export class DataManager {
     }
 
     /**
-     * @description PDF 리포트 생성 (jspdf, html2canvas 사용)
-     * 동적 임포트로 변경
+     * @description Generate PDF report (using jspdf, html2canvas)
+     * Changed to dynamic import
      */
     async handleGeneratePDFReport(): Promise<void> {
         try {
@@ -179,8 +179,8 @@ export class DataManager {
     }
 
     /**
-     * @description 이메일로 리포트 전송 (nodemailer 사용)
-     * 동적 임포트로 변경
+     * @description Send report via email (using nodemailer)
+     * Changed to dynamic import
      */
     async handleSendEmailReport(
         toEmail: string,
@@ -229,15 +229,15 @@ export class DataManager {
     }
 
     /**
-     * @description 데이터 가져오기 트리거
+     * @description Trigger data import
      */
     handleImportData(): void {
         this.#view.triggerFileImport();
     }
 
     /**
-     * @description 파일 선택 핸들러
-     * @param e - 파일 입력 이벤트
+     * @description File selection handler
+     * @param e - File input event
      */
     handleFileSelected(e: Event): Promise<{ needsUISetup: boolean }> {
         return new Promise((resolve) => {
