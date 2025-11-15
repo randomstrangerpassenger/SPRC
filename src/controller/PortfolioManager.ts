@@ -3,7 +3,6 @@ import { PortfolioState } from '../state';
 import { PortfolioView } from '../view';
 import { t } from '../i18n';
 import DOMPurify from 'dompurify';
-import { isInputElement } from '../utils';
 
 /**
  * @class PortfolioManager
@@ -111,17 +110,8 @@ export class PortfolioManager {
             await this.#state.setActivePortfolioId(targetId);
             const activePortfolio = this.#state.getActivePortfolio();
             if (activePortfolio) {
-                this.#view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-                this.#view.updateMainModeUI(activePortfolio.settings.mainMode);
-
-                const { exchangeRateInput, portfolioExchangeRateInput } = this.#view.dom;
-                if (isInputElement(exchangeRateInput)) {
-                    exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
-                }
-                if (isInputElement(portfolioExchangeRateInput)) {
-                    portfolioExchangeRateInput.value =
-                        activePortfolio.settings.exchangeRate.toString();
-                }
+                // 포트폴리오 설정에 맞춰 모든 UI 동기화
+                this.#view.syncSettingsUI(activePortfolio.settings);
             }
             return; // 신호: fullRender 필요
         }

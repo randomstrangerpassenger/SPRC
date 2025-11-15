@@ -453,6 +453,32 @@ export class PortfolioView {
     }
 
     /**
+     * @description Synchronize all settings UI with portfolio settings
+     * @param settings - Portfolio settings to sync
+     * @description 포트폴리오 전환 시 모든 설정 UI를 동기화합니다
+     */
+    syncSettingsUI(settings: {
+        mainMode: MainMode;
+        currentCurrency: Currency;
+        exchangeRate: number;
+        rebalancingTolerance?: number;
+        tradingFeeRate?: number;
+        taxRate?: number;
+    }): void {
+        // Update mode UIs
+        this.updateMainModeUI(settings.mainMode);
+        this.updateCurrencyModeUI(settings.currentCurrency);
+
+        // Update all settings inputs
+        this.updatePortfolioSettingsInputs({
+            exchangeRate: settings.exchangeRate,
+            rebalancingTolerance: settings.rebalancingTolerance,
+            tradingFeeRate: settings.tradingFeeRate,
+            taxRate: settings.taxRate,
+        });
+    }
+
+    /**
      * @description Update portfolio settings input fields
      */
     updatePortfolioSettingsInputs(settings: {
