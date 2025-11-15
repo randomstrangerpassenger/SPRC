@@ -6,6 +6,7 @@
  */
 
 import { perfMonitor, type PerformanceMetric } from './PerformanceMonitor';
+import { logger } from '../services/Logger';
 
 export class PerformancePanel {
     #panelElement: HTMLDivElement | null = null;
