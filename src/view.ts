@@ -10,6 +10,7 @@ import type {
     DOMElements,
     CalculatedStockMetrics,
 } from './types';
+import type { PortfolioListViewModel, TransactionListViewModel } from './viewModels';
 import Decimal from 'decimal.js';
 import type { Chart } from 'chart.js';
 
@@ -314,22 +315,44 @@ export class PortfolioView {
      * @param portfolios - Portfolio list
      * @param activeId - Active portfolio ID
      */
-    renderPortfolioSelector(portfolios: Record<string, { name: string }>, activeId: string): void {
+    /**
+     * @description Render portfolio selector with ViewModel
+     * @param viewModel - PortfolioListViewModel
+     */
+    renderPortfolioSelectorViewModel(viewModel: PortfolioListViewModel): void {
         const selector = this.dom.portfolioSelector;
         if (!(selector instanceof HTMLSelectElement)) return;
 
         // DocumentFragment로 DOM 조작 최소화
         const fragment = document.createDocumentFragment();
-        Object.entries(portfolios).forEach(([id, portfolio]) => {
+        viewModel.items.forEach((item) => {
             const option = document.createElement('option');
-            option.value = id;
-            option.textContent = portfolio.name;
-            option.selected = id === activeId;
+            option.value = item.id;
+            option.textContent = item.name;
+            option.selected = item.isActive;
             fragment.appendChild(option);
         });
 
         selector.innerHTML = '';
         selector.appendChild(fragment);
+    }
+
+    /**
+     * @description Render portfolio selector (legacy - delegates to ViewModel version)
+     * @deprecated Use renderPortfolioSelectorViewModel instead
+     */
+    renderPortfolioSelector(portfolios: Record<string, { name: string }>, activeId: string): void {
+        // Convert to ViewModel format for backward compatibility
+        const viewModel: PortfolioListViewModel = {
+            items: Object.entries(portfolios).map(([id, portfolio]) => ({
+                id,
+                name: portfolio.name,
+                isActive: id === activeId,
+            })),
+            activeId,
+        };
+
+        this.renderPortfolioSelectorViewModel(viewModel);
     }
 
     /**
