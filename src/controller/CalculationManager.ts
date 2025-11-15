@@ -23,6 +23,8 @@ import { SnapshotRepository } from '../state/SnapshotRepository';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency, FetchStockResult } from '../types';
 import { logger } from '../services/Logger';
+import type { IErrorHandler } from '../services/IErrorHandler';
+import { globalErrorHandler } from '../services/ErrorHandler';
 
 /**
  * @class CalculationManager
@@ -34,19 +36,22 @@ export class CalculationManager {
     #debouncedSave: () => void;
     #getInvestmentAmountInKRW: () => Decimal;
     #snapshotRepo: SnapshotRepository;
+    #errorHandler: IErrorHandler;
 
     constructor(
         state: PortfolioState,
         view: PortfolioView,
         debouncedSave: () => void,
         getInvestmentAmountInKRW: () => Decimal,
-        snapshotRepo: SnapshotRepository
+        snapshotRepo: SnapshotRepository,
+        errorHandler: IErrorHandler = globalErrorHandler
     ) {
         this.#state = state;
         this.#view = view;
         this.#debouncedSave = debouncedSave;
         this.#getInvestmentAmountInKRW = getInvestmentAmountInKRW;
         this.#snapshotRepo = snapshotRepo;
+        this.#errorHandler = errorHandler;
     }
 
     /**
@@ -63,7 +68,7 @@ export class CalculationManager {
 
         if (validationErrors.length > 0) {
             const errorMessages = validationErrors.map((err) => err.message).join('\n');
-            ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
+            this.#errorHandler.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
             this.#view.hideResults();
             return false;
         }
@@ -103,7 +108,7 @@ export class CalculationManager {
             logger.info(`Snapshot saved: ${snapshot.date}`, 'CalculationManager');
         } catch (error) {
             // Snapshot failure is non-critical, continue execution
-            ErrorService.handle(error as Error, 'CalculationManager.saveSnapshot');
+            this.#errorHandler.handle(error as Error, 'CalculationManager.saveSnapshot');
         }
     }
 
@@ -332,7 +337,7 @@ export class CalculationManager {
                 this.#view.showToast(userMessage, 'error');
                 logger.error(`${error.type}: ${error.message}`, 'CalculationManager');
             } else {
-                ErrorService.handle(error as Error, 'handleFetchAllPrices');
+                this.#errorHandler.handle(error as Error, 'handleFetchAllPrices');
                 this.#view.showToast(
                     t('api.fetchErrorGlobal', { message: (error as Error).message }),
                     'error'
@@ -444,7 +449,7 @@ export class CalculationManager {
 
             this.#debouncedSave();
         } catch (error) {
-            ErrorService.handle(error as Error, 'CalculationManager.convertCurrency');
+            this.#errorHandler.handle(error as Error, 'CalculationManager.convertCurrency');
             this.#view.showToast(t('toast.amountInputError'), 'error');
             if (source === 'krw') additionalAmountUSDInput.value = '';
             else additionalAmountInput.value = '';
@@ -491,7 +496,7 @@ export class CalculationManager {
             this.#debouncedSave();
             this.#view.showToast(t('toast.ratiosNormalized'), 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleNormalizeRatios');
+            this.#errorHandler.handle(error as Error, 'handleNormalizeRatios');
             this.#view.showToast(t('toast.normalizeRatiosError'), 'error');
         }
     }

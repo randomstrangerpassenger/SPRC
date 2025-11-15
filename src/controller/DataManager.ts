@@ -7,6 +7,8 @@ import { t } from '../i18n';
 import { isInputElement } from '../utils';
 // 대형 서비스를 동적 임포트로 변경
 import type { EmailConfig } from '../services';
+import type { IErrorHandler } from '../services/IErrorHandler';
+import { globalErrorHandler } from '../services/ErrorHandler';
 // ExcelExportService, PDFReportService, EmailService는 동적 임포트 사용
 
 /**
@@ -16,13 +18,16 @@ import type { EmailConfig } from '../services';
 export class DataManager {
     #state: PortfolioState;
     #view: PortfolioView;
+    #errorHandler: IErrorHandler;
 
     constructor(
         state: PortfolioState,
-        view: PortfolioView
+        view: PortfolioView,
+        errorHandler: IErrorHandler = globalErrorHandler
     ) {
         this.#state = state;
         this.#view = view;
+        this.#errorHandler = errorHandler;
     }
 
     /**
@@ -84,7 +89,7 @@ export class DataManager {
 
             this.#view.showToast(t('toast.exportSuccess'), 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleExportData');
+            this.#errorHandler.handle(error as Error, 'handleExportData');
             this.#view.showToast(t('toast.exportError'), 'error');
         }
     }
@@ -129,7 +134,7 @@ export class DataManager {
 
             this.#view.showToast('거래 내역 CSV 내보내기 완료', 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleExportTransactionsCSV');
+            this.#errorHandler.handle(error as Error, 'handleExportTransactionsCSV');
             this.#view.showToast('CSV 내보내기 실패', 'error');
         }
     }
@@ -151,7 +156,7 @@ export class DataManager {
             await ExcelExportService.exportPortfolioToExcel(activePortfolio);
             this.#view.showToast('Excel 파일 내보내기 완료', 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleExportExcel');
+            this.#errorHandler.handle(error as Error, 'handleExportExcel');
             this.#view.showToast('Excel 내보내기 실패', 'error');
         }
     }
@@ -173,7 +178,7 @@ export class DataManager {
             await PDFReportService.generatePortfolioReport(activePortfolio);
             this.#view.showToast('PDF 리포트 생성 완료', 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleGeneratePDFReport');
+            this.#errorHandler.handle(error as Error, 'handleGeneratePDFReport');
             this.#view.showToast('PDF 생성 실패', 'error');
         }
     }
@@ -220,7 +225,7 @@ export class DataManager {
             await EmailService.sendPortfolioReport(activePortfolio, toEmail, emailConfig, options);
             this.#view.showToast('이메일 전송 완료', 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleSendEmailReport');
+            this.#errorHandler.handle(error as Error, 'handleSendEmailReport');
             this.#view.showToast(
                 '이메일 전송 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'),
                 'error'
@@ -266,7 +271,7 @@ export class DataManager {
                             throw new Error('Failed to read file content.');
                         }
                     } catch (error) {
-                        ErrorService.handle(error as Error, 'handleFileSelected');
+                        this.#errorHandler.handle(error as Error, 'handleFileSelected');
                         this.#view.showToast(t('toast.importError'), 'error');
                         resolve({ needsUISetup: false });
                     } finally {
@@ -275,7 +280,7 @@ export class DataManager {
                 };
 
                 reader.onerror = () => {
-                    ErrorService.handle(
+                    this.#errorHandler.handle(
                         new Error('File reading error'),
                         'handleFileSelected - Reader Error'
                     );
