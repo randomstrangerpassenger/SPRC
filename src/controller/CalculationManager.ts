@@ -17,12 +17,15 @@ import {
     AddRebalanceStrategy,
     SellRebalanceStrategy,
     SimpleRatioStrategy,
+    type RebalancingResult,
 } from '../calculationStrategies';
 import { apiService, APIError, formatAPIError } from '../apiService';
 import { SnapshotRepository } from '../state/SnapshotRepository';
 import Decimal from 'decimal.js';
 import type { MainMode, Currency, FetchStockResult } from '../types';
 import { logger } from '../services/Logger';
+import { getRebalanceWorkerService } from '../services/RebalanceWorkerService';
+import { ProgressIndicatorService } from '../services/ProgressIndicatorService';
 
 /**
  * @class CalculationManager
@@ -34,6 +37,8 @@ export class CalculationManager {
     #debouncedSave: () => void;
     #getInvestmentAmountInKRW: () => Decimal;
     #snapshotRepo: SnapshotRepository;
+    #rebalanceWorker: ReturnType<typeof getRebalanceWorkerService>;
+    #progressIndicator: ProgressIndicatorService;
 
     constructor(
         state: PortfolioState,
@@ -47,6 +52,8 @@ export class CalculationManager {
         this.#debouncedSave = debouncedSave;
         this.#getInvestmentAmountInKRW = getInvestmentAmountInKRW;
         this.#snapshotRepo = snapshotRepo;
+        this.#rebalanceWorker = getRebalanceWorkerService();
+        this.#progressIndicator = new ProgressIndicatorService(view);
     }
 
     /**
@@ -112,19 +119,25 @@ export class CalculationManager {
     }
 
     /**
-     * @description Select rebalancing strategy based on mode
+     * @description Execute rebalancing strategy with Worker (async)
      */
-    private selectRebalancingStrategy(
+    private async executeRebalancingStrategy(
         mainMode: 'add' | 'sell' | 'simple',
         portfolioData: CalculatedStock[],
         additionalInvestment: Decimal
-    ): RebalanceStrategy {
+    ): Promise<{ results: RebalancingResult[] }> {
         if (mainMode === 'add') {
-            return new AddRebalanceStrategy(portfolioData, additionalInvestment);
+            return await this.#rebalanceWorker.calculateAddRebalance(
+                portfolioData,
+                additionalInvestment
+            );
         } else if (mainMode === 'simple') {
-            return new SimpleRatioStrategy(portfolioData, additionalInvestment);
+            return await this.#rebalanceWorker.calculateSimpleRebalance(
+                portfolioData,
+                additionalInvestment
+            );
         } else {
-            return new SellRebalanceStrategy(portfolioData);
+            return await this.#rebalanceWorker.calculateSellRebalance(portfolioData);
         }
     }
 
@@ -230,13 +243,14 @@ export class CalculationManager {
             return [results[0].value];
         });
 
-        // Select and execute rebalancing strategy
-        const strategy = this.selectRebalancingStrategy(
-            activePortfolio.settings.mainMode,
-            calculatedState.portfolioData,
-            additionalInvestment
-        );
-        const rebalancingResults = Calculator.calculateRebalancing(strategy);
+        // Execute rebalancing calculation with Worker (with progress indicator)
+        const rebalancingResults = await this.#progressIndicator.withProgress(async () => {
+            return await this.executeRebalancingStrategy(
+                activePortfolio.settings.mainMode,
+                calculatedState.portfolioData,
+                additionalInvestment
+            );
+        });
 
         // Generate and display results
         const resultsHTML = this.generateResultsHTML(
