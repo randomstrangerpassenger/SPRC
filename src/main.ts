@@ -7,6 +7,7 @@ import { initPerformancePanel } from './performance/PerformancePanel';
 import { perfMonitor } from './performance/PerformanceMonitor';
 import { logger } from './services/Logger';
 import { displayBootstrapError } from './BootstrapError';
+import { errorHandler } from './errors';
 
 // Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
 // (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
@@ -28,6 +29,9 @@ try {
     const state = new PortfolioState();
     // PortfolioView는 클래스이므로 new 키워드로 인스턴스화
     const view = new PortfolioView();
+
+    // ErrorHandler에 view 인스턴스 설정
+    errorHandler.setView(view);
 
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     void new PortfolioController(state, view);
