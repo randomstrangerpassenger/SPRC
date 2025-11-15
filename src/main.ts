@@ -3,6 +3,7 @@ import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { PortfolioController } from './controller';
 import { ErrorService } from './errorService';
+import { globalErrorHandler } from './services/ErrorHandler';
 import { setupGlobalErrorHandlers } from './errorHandlers';
 import { initPerformancePanel } from './performance/PerformancePanel';
 import { perfMonitor } from './performance/PerformanceMonitor';
@@ -30,8 +31,9 @@ try {
     // PortfolioView는 클래스이므로 new 키워드로 인스턴스화
     const view = new PortfolioView();
 
-    // ErrorService에 view 인스턴스 설정 (에러 토스트 메시지 표시를 위해)
+    // ErrorService와 globalErrorHandler에 view 인스턴스 설정 (에러 토스트 메시지 표시를 위해)
     ErrorService.setViewInstance(view);
+    globalErrorHandler.setViewInstance(view);
 
     // Controller 생성 (initialize는 생성자에서 자동 호출됨)
     void new PortfolioController(state, view);
