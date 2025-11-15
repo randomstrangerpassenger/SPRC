@@ -48,7 +48,7 @@ export function withPerformanceAsync<T extends (...args: any[]) => Promise<any>>
  */
 export function measurePerformance(category: PerformanceMetric['category'] = 'other') {
     return function (
-        target: any,
+        target: object,
         propertyKey: string,
         descriptor: PropertyDescriptor
     ): PropertyDescriptor {
@@ -74,7 +74,7 @@ export function measurePerformance(category: PerformanceMetric['category'] = 'ot
  */
 export function measurePerformanceAsync(category: PerformanceMetric['category'] = 'other') {
     return function (
-        target: any,
+        target: object,
         propertyKey: string,
         descriptor: PropertyDescriptor
     ): PropertyDescriptor {

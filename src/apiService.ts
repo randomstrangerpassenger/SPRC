@@ -4,6 +4,15 @@ import { CONFIG } from './constants';
 import { logger } from './services/Logger';
 
 /**
+ * @constant API_CONSTANTS
+ * @description API 관련 상수
+ */
+const API_CONSTANTS = {
+    /** 429 응답 시 기본 Retry-After 시간 (초) */
+    DEFAULT_RETRY_AFTER_SECONDS: 60,
+} as const;
+
+/**
  * @enum APIErrorType
  * @description API 오류 유형 분류
  */
@@ -83,7 +92,11 @@ async function fetchWithRetry(
 
             // 429 (Too Many Requests) 처리
             if (response.status === 429) {
-                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                const retryAfter = parseInt(
+                    response.headers.get('Retry-After') ||
+                    String(API_CONSTANTS.DEFAULT_RETRY_AFTER_SECONDS),
+                    10
+                );
                 throw new APIError(
                     `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
                     APIErrorType.RATE_LIMIT,
@@ -353,7 +366,7 @@ export function formatAPIError(error: APIError): string {
         case APIErrorType.TIMEOUT:
             return 'API 요청 시간이 초과되었습니다. 다시 시도해주세요.';
         case APIErrorType.RATE_LIMIT:
-            return `요청 한도를 초과했습니다. ${error.retryAfter || 60}초 후에 다시 시도해주세요.`;
+            return `요청 한도를 초과했습니다. ${error.retryAfter || API_CONSTANTS.DEFAULT_RETRY_AFTER_SECONDS}초 후에 다시 시도해주세요.`;
         case APIErrorType.INVALID_TICKER:
             return `유효하지 않은 티커: ${error.ticker}. 티커를 확인해주세요.`;
         case APIErrorType.SERVER_ERROR:

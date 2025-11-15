@@ -56,7 +56,8 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
 
     // 추가 투자금액 관련 필드 Enter 키 처리
     const handleEnterKey = (e: KeyboardEvent): void => {
-        if (e.key === 'Enter' && !(isInputElement(e.target) && (e.target as any).isComposing)) {
+        const target = e.target;
+        if (e.key === 'Enter' && !(isInputElement(target) && target.isComposing)) {
             e.preventDefault();
             view.emit('calculateClicked');
         }

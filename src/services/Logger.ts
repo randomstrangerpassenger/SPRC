@@ -83,7 +83,7 @@ export class Logger {
      * @param context - Context (optional)
      * @param data - Additional data (optional)
      */
-    debug(message: string, context?: string, ...data: any[]): void {
+    debug(message: string, context?: string, ...data: unknown[]): void {
         if (this.shouldLog(LogLevel.DEBUG)) {
             console.debug(`${this.formatContext(context)} ${message}`, ...data);
         }
@@ -95,7 +95,7 @@ export class Logger {
      * @param context - Context (optional)
      * @param data - Additional data (optional)
      */
-    info(message: string, context?: string, ...data: any[]): void {
+    info(message: string, context?: string, ...data: unknown[]): void {
         if (this.shouldLog(LogLevel.INFO)) {
             console.log(`${this.formatContext(context)} ${message}`, ...data);
         }
@@ -107,7 +107,7 @@ export class Logger {
      * @param context - Context (optional)
      * @param data - Additional data (optional)
      */
-    warn(message: string, context?: string, ...data: any[]): void {
+    warn(message: string, context?: string, ...data: unknown[]): void {
         if (this.shouldLog(LogLevel.WARN)) {
             console.warn(`${this.formatContext(context)} ${message}`, ...data);
         }
@@ -120,7 +120,7 @@ export class Logger {
      * @param error - Error object (optional)
      * @param data - Additional data (optional)
      */
-    error(message: string, context?: string, error?: Error | any, ...data: any[]): void {
+    error(message: string, context?: string, error?: Error | unknown, ...data: unknown[]): void {
         if (this.shouldLog(LogLevel.ERROR)) {
             if (error) {
                 console.error(`${this.formatContext(context)} ${message}`, error, ...data);
@@ -153,7 +153,7 @@ export class Logger {
      * @description Log in table format
      * @param data - Table data
      */
-    table(data: any): void {
+    table(data: unknown): void {
         if (this.#isDevelopment && this.shouldLog(LogLevel.DEBUG)) {
             console.table(data);
         }

@@ -2,12 +2,14 @@
 import { t } from './i18n';
 import Decimal from 'decimal.js';
 import { logger } from './services/Logger';
-import type {
-    Transaction,
-    ValidationResult,
-    ValidationErrorDetail,
-    CalculatedStock,
+import {
+    TransactionType,
     MainMode,
+    Currency,
+    type Transaction,
+    type ValidationResult,
+    type ValidationErrorDetail,
+    type CalculatedStock,
 } from './types';
 
 export const Validator = {
@@ -150,7 +152,7 @@ export const Validator = {
      * @returns 오류 배열 (유효하면 빈 배열)
      */
     validateForCalculation(inputs: {
-        mainMode: MainMode | 'simple';
+        mainMode: MainMode;
         portfolioData: CalculatedStock[];
         additionalInvestment: Decimal;
     }): ValidationErrorDetail[] {
@@ -158,7 +160,7 @@ export const Validator = {
         const { mainMode, portfolioData, additionalInvestment } = inputs;
 
         // 추가 매수 모드 또는 간단 계산 모드일 때 추가 투자금액 검증
-        if (mainMode === 'add' || mainMode === 'simple') {
+        if (mainMode === MainMode.Add || mainMode === MainMode.Simple) {
             // Use Decimal's comparison methods
             if (
                 !additionalInvestment ||
@@ -212,7 +214,7 @@ export const Validator = {
             }
 
             // 고정 매수 관련 검증 (추가 매수 모드 및 간단 계산 모드에서)
-            if ((mainMode === 'add' || mainMode === 'simple') && stock.isFixedBuyEnabled) {
+            if ((mainMode === MainMode.Add || mainMode === MainMode.Simple) && stock.isFixedBuyEnabled) {
                 const fixedAmount = new Decimal(stock.fixedBuyAmount || 0);
 
                 if (fixedAmount.isNaN() || fixedAmount.isNegative() || fixedAmount.isZero()) {
@@ -239,7 +241,7 @@ export const Validator = {
 
         // 추가 매수 모드 및 간단 계산 모드에서 총 고정 매수 금액이 추가 투자금을 초과하는지 검증
         if (
-            (mainMode === 'add' || mainMode === 'simple') &&
+            (mainMode === MainMode.Add || mainMode === MainMode.Simple) &&
             !additionalInvestment.isNaN() &&
             totalFixedBuyAmount.greaterThan(additionalInvestment)
         ) {
@@ -293,7 +295,7 @@ export const Validator = {
      * @param data - JSON.parse로 읽어온 데이터
      * @returns 구조 유효 여부
      */
-    isDataStructureValid(data: any): boolean {
+    isDataStructureValid(data: unknown): boolean {
         if (!data || typeof data !== 'object') return false;
         if (
             !data.meta ||
@@ -311,8 +313,8 @@ export const Validator = {
                 return false;
             // Check settings object structure (basic)
             if (!portfolio.settings || typeof portfolio.settings !== 'object') return false;
-            if (!['add', 'sell', 'simple'].includes(portfolio.settings.mainMode)) return false;
-            if (!['krw', 'usd'].includes(portfolio.settings.currentCurrency)) return false;
+            if (!Object.values(MainMode).includes(portfolio.settings.mainMode)) return false;
+            if (!Object.values(Currency).includes(portfolio.settings.currentCurrency)) return false;
             if (
                 typeof portfolio.settings.exchangeRate !== 'number' ||
                 portfolio.settings.exchangeRate <= 0
@@ -354,7 +356,7 @@ export const Validator = {
                 for (const tx of stock.transactions) {
                     if (!tx || typeof tx !== 'object' || !tx.id || typeof tx.id !== 'string')
                         return false;
-                    if (!['buy', 'sell'].includes(tx.type)) return false;
+                    if (!Object.values(TransactionType).includes(tx.type)) return false;
                     if (typeof tx.date !== 'string' || isNaN(new Date(tx.date).getTime()))
                         return false;
                     // Allow quantity/price to be potentially stored as strings if parsed later

@@ -5,12 +5,12 @@ import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED, CACHE } from './constants';
 import { ErrorService } from './errorService';
 import { LRUCache } from './cache/LRUCache';
 import { logger } from './services/Logger';
-import type {
-    Stock,
-    CalculatedStock,
-    CalculatedStockMetrics,
+import {
     Currency,
-    PortfolioSnapshot,
+    type Stock,
+    type CalculatedStock,
+    type CalculatedStockMetrics,
+    type PortfolioSnapshot,
 } from './types';
 import type { IRebalanceStrategy } from './calculationStrategies';
 
@@ -176,7 +176,7 @@ export class Calculator {
         const {
             portfolioData,
             exchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE,
-            currentCurrency = 'krw',
+            currentCurrency = Currency.KRW,
         } = options;
 
         const cacheKey = _generatePortfolioKey(portfolioData, exchangeRate, currentCurrency);
@@ -202,7 +202,7 @@ export class Calculator {
             };
 
             // Calculate total based on the selected currency
-            if (currentCurrency === 'krw') {
+            if (currentCurrency === Currency.KRW) {
                 currentTotal = currentTotal.plus(metricsWithCurrency.currentAmountKRW);
             } else {
                 currentTotal = currentTotal.plus(metricsWithCurrency.currentAmountUSD);
@@ -238,14 +238,14 @@ export class Calculator {
      */
     static calculateSectorAnalysis(
         portfolioData: CalculatedStock[],
-        currentCurrency: Currency = 'krw'
+        currentCurrency: Currency = Currency.KRW
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
         // Generate cache key based on stock IDs, sectors, amounts, and currency
         const cacheKey =
             portfolioData
                 .map((s) => {
                     const amount =
-                        currentCurrency === 'krw'
+                        currentCurrency === Currency.KRW
                             ? s.calculated?.currentAmountKRW || DECIMAL_ZERO
                             : s.calculated?.currentAmountUSD || DECIMAL_ZERO;
                     return `${s.id}:${s.sector}:${amount.toString()}`;
@@ -272,7 +272,7 @@ export class Calculator {
         for (const s of portfolioData) {
             const sector = s.sector || 'Unclassified';
             const amount =
-                currentCurrency === 'krw'
+                currentCurrency === Currency.KRW
                     ? s.calculated?.currentAmountKRW || DECIMAL_ZERO
                     : s.calculated?.currentAmountUSD || DECIMAL_ZERO;
             currentTotal = currentTotal.plus(amount);
@@ -321,7 +321,7 @@ export class Calculator {
         portfolioId: string,
         portfolioData: CalculatedStock[],
         exchangeRate: number,
-        currentCurrency: Currency = 'krw'
+        currentCurrency: Currency = Currency.KRW
     ): PortfolioSnapshot {
         try {
             const now = new Date();

@@ -7,7 +7,7 @@
 
 import Decimal from 'decimal.js';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from '../constants';
-import type { Stock, CalculatedStock, Currency, Transaction } from '../types';
+import { Currency, TransactionType, type Stock, type CalculatedStock, type Transaction } from '../types';
 
 // Serialized types for worker communication (Decimal -> string)
 interface SerializedCalculatedMetrics {
@@ -86,13 +86,13 @@ function calculateStockMetrics(stock: Stock): SerializedCalculatedMetrics {
             const txQuantity = new Decimal(tx.quantity || 0);
             const txPrice = new Decimal(tx.price || 0);
 
-            if (tx.type === 'buy') {
+            if (tx.type === TransactionType.Buy) {
                 result.totalBuyQuantity = result.totalBuyQuantity.plus(txQuantity);
                 result.totalBuyAmount = result.totalBuyAmount.plus(txQuantity.times(txPrice));
-            } else if (tx.type === 'sell') {
+            } else if (tx.type === TransactionType.Sell) {
                 result.totalSellQuantity = result.totalSellQuantity.plus(txQuantity);
                 result.totalSellAmount = result.totalSellAmount.plus(txQuantity.times(txPrice));
-            } else if (tx.type === 'dividend') {
+            } else if (tx.type === TransactionType.Dividend) {
                 // 배당금: quantity 필드에 배당금액 저장, price는 1로 가정
                 result.totalDividends = result.totalDividends.plus(txQuantity.times(txPrice));
             }
@@ -164,7 +164,7 @@ function calculatePortfolioState(options: {
     exchangeRate?: number;
     currentCurrency?: Currency;
 }): { portfolioData: CalculatedStock[]; currentTotal: string } {
-    const { portfolioData, exchangeRate = 1300, currentCurrency = 'krw' } = options;
+    const { portfolioData, exchangeRate = 1300, currentCurrency = Currency.KRW } = options;
 
     const exchangeRateDec = new Decimal(exchangeRate);
     let currentTotal = DECIMAL_ZERO;
@@ -181,7 +181,7 @@ function calculatePortfolioState(options: {
             currentAmountKRW: currentAmount.times(exchangeRateDec).toString(),
         };
 
-        if (currentCurrency === 'krw') {
+        if (currentCurrency === Currency.KRW) {
             currentTotal = currentTotal.plus(new Decimal(metricsWithCurrency.currentAmountKRW));
         } else {
             currentTotal = currentTotal.plus(new Decimal(metricsWithCurrency.currentAmountUSD));
@@ -209,7 +209,7 @@ function calculateSectorAnalysis(
     for (const s of portfolioData) {
         const sector = s.sector || 'Unclassified';
         const amount =
-            currentCurrency === 'krw'
+            currentCurrency === Currency.KRW
                 ? new Decimal(s.calculated?.currentAmountKRW || 0)
                 : new Decimal(s.calculated?.currentAmountUSD || 0);
         currentTotal = currentTotal.plus(amount);

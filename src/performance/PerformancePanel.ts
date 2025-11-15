@@ -219,7 +219,7 @@ export class PerformancePanel {
     /**
      * @description 통계 렌더링
      */
-    private renderStats(stats: any[]): void {
+    private renderStats(stats: unknown[]): void {
         const container = this.#panelElement?.querySelector('#perf-stats-container');
         if (!container) return;
 

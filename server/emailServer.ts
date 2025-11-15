@@ -2,6 +2,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
+import { logger } from '../src/services/Logger';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -108,7 +109,7 @@ app.post('/api/send-email', async (req: Request, res: Response) => {
             attachments: processedAttachments
         });
 
-        console.log('Email sent:', info.messageId);
+        logger.info(`Email sent: ${info.messageId}`, 'EmailServer');
 
         res.json({
             success: true,
@@ -116,7 +117,7 @@ app.post('/api/send-email', async (req: Request, res: Response) => {
             messageId: info.messageId
         });
     } catch (error) {
-        console.error('Email sending error:', error);
+        logger.error('Email sending error', 'EmailServer', error);
         res.status(500).json({
             success: false,
             message: 'Failed to send email',
@@ -169,7 +170,7 @@ app.post('/api/test-email-config', async (req: Request, res: Response) => {
             message: 'Email configuration is valid'
         });
     } catch (error) {
-        console.error('Email config test error:', error);
+        logger.error('Email config test error', 'EmailServer', error);
         res.status(500).json({
             success: false,
             message: 'Email configuration is invalid',
@@ -180,8 +181,8 @@ app.post('/api/test-email-config', async (req: Request, res: Response) => {
 
 // 서버 시작
 app.listen(PORT, () => {
-    console.log(`Email server is running on port ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    logger.info(`Email server is running on port ${PORT}`, 'EmailServer');
+    logger.info(`Health check: http://localhost:${PORT}/api/health`, 'EmailServer');
 });
 
 export default app;

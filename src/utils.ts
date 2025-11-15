@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import type { Stock, Currency } from './types';
+import { Currency, type Stock } from './types';
 // Import enhanced i18n formatters
 import { formatCurrencyEnhanced, formatNumber } from './i18nEnhancements';
 import { DECIMAL_ZERO } from './constants';
@@ -60,12 +60,12 @@ export const getRatioSum = memoizeWithKey(
 /**
  * @description 숫자를 통화 형식의 문자열로 변환합니다. (Enhanced with i18n)
  * @param amount - 변환할 금액
- * @param currency - 통화 코드 ('krw', 'usd')
+ * @param currency - 통화 코드
  * @returns 포맷팅된 통화 문자열
  */
 export function formatCurrency(
     amount: number | Decimal | string | null | undefined,
-    currency: Currency = 'krw'
+    currency: Currency = Currency.KRW
 ): string {
     // Use enhanced i18n formatter
     return formatCurrencyEnhanced(amount, currency);

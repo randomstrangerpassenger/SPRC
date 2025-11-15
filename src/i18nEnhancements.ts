@@ -4,7 +4,7 @@
  */
 
 import Decimal from 'decimal.js';
-import type { Currency } from './types';
+import { Currency } from './types';
 import { logger } from './services/Logger';
 
 // Intl.NumberFormat 캐싱
@@ -134,12 +134,12 @@ export function formatPercent(
 /**
  * @description 통화를 로케일에 맞게 포맷팅 (기존 formatCurrency 개선 버전)
  * @param amount - 금액
- * @param currency - 통화 ('krw', 'usd')
+ * @param currency - 통화
  * @returns 포맷팅된 문자열
  */
 export function formatCurrencyEnhanced(
     amount: number | Decimal | string | null | undefined,
-    currency: Currency = 'krw'
+    currency: Currency = Currency.KRW
 ): string {
     const lang = getCurrentLanguage();
 
@@ -160,7 +160,7 @@ export function formatCurrencyEnhanced(
             currency: currency.toUpperCase(),
         };
 
-        if (currency.toLowerCase() === 'krw') {
+        if (currency === Currency.KRW) {
             options.minimumFractionDigits = 0;
             options.maximumFractionDigits = 0;
         } else {

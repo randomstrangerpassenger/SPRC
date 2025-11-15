@@ -2,7 +2,15 @@
 
 import type { Decimal } from 'decimal.js';
 
-export type TransactionType = 'buy' | 'sell' | 'dividend';
+/**
+ * @enum TransactionType
+ * @description 거래 유형
+ */
+export enum TransactionType {
+    Buy = 'buy',
+    Sell = 'sell',
+    Dividend = 'dividend',
+}
 
 export interface Transaction {
     id: string; // 거래 고유 ID
@@ -46,8 +54,24 @@ export interface CalculatedStock extends Stock {
     calculated: CalculatedStockMetrics;
 }
 
-export type MainMode = 'add' | 'sell' | 'simple';
-export type Currency = 'krw' | 'usd';
+/**
+ * @enum MainMode
+ * @description 계산 모드 (추가 매수, 매도, 간단 계산)
+ */
+export enum MainMode {
+    Add = 'add',
+    Sell = 'sell',
+    Simple = 'simple',
+}
+
+/**
+ * @enum Currency
+ * @description 통화 유형
+ */
+export enum Currency {
+    KRW = 'krw',
+    USD = 'usd',
+}
 
 export interface PortfolioSettings {
     mainMode: MainMode;

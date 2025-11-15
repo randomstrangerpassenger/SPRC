@@ -9,7 +9,7 @@ export interface EventResult {
     needsFullRender?: boolean;
     needsUIUpdate?: boolean;
     needsUISetup?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
@@ -22,7 +22,7 @@ export type PostAction = 'fullRender' | 'updateUI' | 'setupUI' | 'none';
  * @interface EventBindingConfig
  * @description 이벤트 바인딩 설정
  */
-export interface EventBindingConfig<T = any> {
+export interface EventBindingConfig<T = unknown> {
     /** 이벤트 이름 */
     event: string;
     /** 이벤트 핸들러 함수 */
@@ -41,7 +41,7 @@ export function bindEvent(
     controller: PortfolioController,
     config: EventBindingConfig
 ): void {
-    controller.view.on(config.event, async (data?: any) => {
+    controller.view.on(config.event, async (data?: unknown) => {
         const result = await config.handler(data);
 
         // result가 객체이고 autoPostAction이 활성화된 경우 자동 처리
