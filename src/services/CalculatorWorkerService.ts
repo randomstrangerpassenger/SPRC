@@ -8,7 +8,6 @@
 import type { Stock, CalculatedStock, Currency } from '../types';
 import { Calculator } from '../calculator';
 import { CONFIG } from '../constants';
-import { ErrorService } from '../errorService';
 import Decimal from 'decimal.js';
 import { logger } from './Logger';
 
@@ -287,7 +286,11 @@ export class CalculatorWorkerService {
      */
     private handleWorkerFailure(error: Error, context: string): void {
         this.#fallbackCount++;
-        ErrorService.handle(error, `CalculatorWorkerService.${context}`);
+        logger.error(
+            `Worker failed, falling back to synchronous calculation`,
+            `CalculatorWorkerService.${context}`,
+            error
+        );
 
         logger.warn(
             `Worker failed (${this.#fallbackCount} times), falling back to sync: ${error.message}`,

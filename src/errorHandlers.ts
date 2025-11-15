@@ -3,7 +3,6 @@
  * @description 전역 에러 핸들러 등록
  */
 
-import { ErrorService } from './errorService';
 import { logger } from './services/Logger';
 
 /**
@@ -15,7 +14,6 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
     const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
 
     logger.error('Unhandled Promise Rejection', 'ErrorHandlers', error);
-    ErrorService.handle(error, 'UnhandledPromiseRejection');
 }
 
 /**
@@ -27,7 +25,6 @@ function handleError(event: ErrorEvent): void {
     const error = event.error instanceof Error ? event.error : new Error(event.message);
 
     logger.error('Global Error', 'ErrorHandlers', error);
-    ErrorService.handle(error, 'GlobalError');
 }
 
 /**

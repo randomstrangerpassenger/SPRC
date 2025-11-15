@@ -1,7 +1,6 @@
 // src/controller/AppInitializer.ts
 import type { PortfolioState } from '../state';
 import type { PortfolioView } from '../view';
-import { ErrorService } from '../errorService';
 import { DarkModeManager } from '../DarkModeManager';
 import { logger } from '../services/Logger';
 
@@ -33,7 +32,6 @@ export class AppInitializer {
     ): Promise<AbortController> {
         await this.#state.ensureInitialized();
         this.#view.cacheDomElements();
-        ErrorService.setViewInstance(this.#view);
         this.setupInitialUI();
         bindControllerEvents();
         return bindEventListeners(this.#view);

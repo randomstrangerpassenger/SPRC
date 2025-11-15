@@ -4,7 +4,7 @@ import { PortfolioView } from '../view';
 import { Calculator } from '../calculator';
 import { Validator } from '../validator';
 import { CONFIG } from '../constants';
-import { ErrorService, ValidationError } from '../errorService';
+import { ValidationError } from '../errorService';
 import { getRatioSum, isInputElement } from '../utils';
 import { t } from '../i18n';
 import { ChartLoaderService } from '../services/ChartLoaderService';
@@ -63,7 +63,11 @@ export class CalculationManager {
 
         if (validationErrors.length > 0) {
             const errorMessages = validationErrors.map((err) => err.message).join('\n');
-            ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
+            logger.error(
+                'Portfolio validation failed',
+                'CalculationManager.handleCalculate',
+                new ValidationError(errorMessages)
+            );
             this.#view.hideResults();
             return false;
         }
@@ -103,7 +107,7 @@ export class CalculationManager {
             logger.info(`Snapshot saved: ${snapshot.date}`, 'CalculationManager');
         } catch (error) {
             // Snapshot failure is non-critical, continue execution
-            ErrorService.handle(error as Error, 'CalculationManager.saveSnapshot');
+            logger.error('Failed to save snapshot', 'CalculationManager.saveSnapshot', error);
         }
     }
 
@@ -332,7 +336,7 @@ export class CalculationManager {
                 this.#view.showToast(userMessage, 'error');
                 logger.error(`${error.type}: ${error.message}`, 'CalculationManager');
             } else {
-                ErrorService.handle(error as Error, 'handleFetchAllPrices');
+                logger.error('Failed to fetch all prices', 'CalculationManager.handleFetchAllPrices', error);
                 this.#view.showToast(
                     t('api.fetchErrorGlobal', { message: (error as Error).message }),
                     'error'
@@ -444,7 +448,7 @@ export class CalculationManager {
 
             this.#debouncedSave();
         } catch (error) {
-            ErrorService.handle(error as Error, 'CalculationManager.convertCurrency');
+            logger.error('Currency conversion failed', 'CalculationManager.convertCurrency', error);
             this.#view.showToast(t('toast.amountInputError'), 'error');
             if (source === 'krw') additionalAmountUSDInput.value = '';
             else additionalAmountInput.value = '';
@@ -491,7 +495,7 @@ export class CalculationManager {
             this.#debouncedSave();
             this.#view.showToast(t('toast.ratiosNormalized'), 'success');
         } catch (error) {
-            ErrorService.handle(error as Error, 'handleNormalizeRatios');
+            logger.error('Failed to normalize ratios', 'CalculationManager.handleNormalizeRatios', error);
             this.#view.showToast(t('toast.normalizeRatiosError'), 'error');
         }
     }
