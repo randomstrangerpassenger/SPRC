@@ -1,6 +1,5 @@
 // src/services/ExcelExportService.ts
-import { Workbook } from 'exceljs';
-import type { Style } from 'exceljs';
+import type { Workbook, Style, Worksheet, Row } from 'exceljs';
 import type { Portfolio, Stock, Transaction } from '../types';
 import { PortfolioMetricsService } from './PortfolioMetricsService';
 import { toNumber } from '../utils/converterUtil';
@@ -9,6 +8,7 @@ import { logger } from './Logger';
 /**
  * @class ExcelExportService
  * @description Excel file export service (using exceljs)
+ * ExcelJS는 동적 import로 로딩하여 초기 번들 크기 감소
  */
 export class ExcelExportService {
     /**
@@ -16,6 +16,8 @@ export class ExcelExportService {
      */
     static async exportPortfolioToExcel(portfolio: Portfolio): Promise<void> {
         try {
+            // 동적 import: ExcelJS는 사용 시점에만 로드 (938KB 청크)
+            const { Workbook } = await import('exceljs');
             const workbook = new Workbook();
 
             // Set metadata

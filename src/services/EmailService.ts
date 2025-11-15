@@ -1,7 +1,5 @@
 // src/services/EmailService.ts
 import type { Portfolio } from '../types';
-import jsPDF from 'jspdf';
-import { Workbook } from 'exceljs';
 import { logger } from './Logger';
 
 /**
@@ -142,6 +140,8 @@ export class EmailService {
      * Generate Excel buffer
      */
     private static async generateExcelBuffer(portfolio: Portfolio): Promise<ArrayBuffer> {
+        // 동적 import: ExcelJS는 사용 시점에만 로드
+        const { Workbook } = await import('exceljs');
         const workbook = new Workbook();
         workbook.creator = 'Portfolio Rebalancer';
         workbook.created = new Date();
@@ -182,6 +182,8 @@ export class EmailService {
      * Generate PDF buffer
      */
     private static async generatePDFBuffer(portfolio: Portfolio): Promise<ArrayBuffer> {
+        // 동적 import: jsPDF는 사용 시점에만 로드
+        const { default: jsPDF } = await import('jspdf');
         const pdf = new jsPDF('p', 'mm', 'a4');
         let yPos = 20;
 
