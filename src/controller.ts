@@ -6,6 +6,7 @@ import { CONFIG, DECIMAL_ZERO, TIMING } from './constants';
 import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
+import { Currency } from './types';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
 import { SnapshotRepository } from './state/SnapshotRepository';
@@ -280,7 +281,7 @@ export class PortfolioController {
     }
 
     /**
-     * @description KRW로 투자 금액 가져오기
+     * @description KRW로 투자 금액 가져오기 (View의 DOM 캡슐화 메서드 사용)
      * @returns Decimal
      */
     getInvestmentAmountInKRW(): Decimal {
@@ -288,27 +289,15 @@ export class PortfolioController {
         if (!activePortfolio) return DECIMAL_ZERO;
 
         const { currentCurrency } = activePortfolio.settings;
-        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } =
-            this.view.dom;
-
-        if (
-            !isInputElement(additionalAmountInput) ||
-            !isInputElement(additionalAmountUSDInput) ||
-            !isInputElement(exchangeRateInput)
-        ) {
-            return DECIMAL_ZERO;
-        }
-
-        const amountKRWStr = additionalAmountInput.value || '0';
-        const amountUSDStr = additionalAmountUSDInput.value || '0';
-        const exchangeRateStr = exchangeRateInput.value || String(CONFIG.DEFAULT_EXCHANGE_RATE);
+        const { amountKRW: amountKRWStr, amountUSD: amountUSDStr, exchangeRate: exchangeRateStr } =
+            this.view.getInvestmentInputValues();
 
         try {
             const amountKRW = new Decimal(amountKRWStr);
             const amountUSD = new Decimal(amountUSDStr);
             const exchangeRate = new Decimal(exchangeRateStr);
 
-            if (currentCurrency === 'krw') {
+            if (currentCurrency === Currency.KRW) {
                 return amountKRW.isNegative() ? DECIMAL_ZERO : amountKRW;
             } else {
                 if (exchangeRate.isZero() || exchangeRate.isNegative()) return DECIMAL_ZERO;

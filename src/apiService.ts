@@ -73,6 +73,110 @@ function calculateBackoffDelay(attempt: number): number {
 }
 
 /**
+ * @description 백오프 지연 대기 헬퍼 함수
+ * @param attempt - 현재 시도 횟수
+ */
+async function waitWithBackoff(attempt: number): Promise<void> {
+    const delay = calculateBackoffDelay(attempt);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+/**
+ * @description Rate Limit 응답 처리
+ * @param response - HTTP 응답 객체
+ * @throws {APIError} Rate limit 에러
+ */
+function handleRateLimitResponse(response: Response): never {
+    const retryAfter = parseInt(
+        response.headers.get('Retry-After') || String(API_CONSTANTS.DEFAULT_RETRY_AFTER_SECONDS),
+        10
+    );
+    throw new APIError(
+        `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
+        APIErrorType.RATE_LIMIT,
+        { statusCode: 429, retryAfter }
+    );
+}
+
+/**
+ * @description 서버 에러 응답 처리 (재시도 가능)
+ * @param response - HTTP 응답 객체
+ * @param attempt - 현재 시도 횟수
+ * @param maxRetries - 최대 재시도 횟수
+ * @returns 재시도 여부
+ */
+async function handleServerErrorResponse(
+    response: Response,
+    attempt: number,
+    maxRetries: number
+): Promise<boolean> {
+    // 5xx 서버 오류는 재시도
+    if (response.status >= 500 && attempt < maxRetries) {
+        const delay = calculateBackoffDelay(attempt);
+        logger.warn(
+            `Server error ${response.status}, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
+            'API'
+        );
+        await waitWithBackoff(attempt);
+        return true; // 재시도 필요
+    }
+
+    // 503 (Service Unavailable) 또는 502 (Bad Gateway)는 최종 실패로 처리
+    if ((response.status === 503 || response.status === 502) && attempt === maxRetries) {
+        throw new APIError(
+            `Server unavailable after ${maxRetries} retries`,
+            APIErrorType.SERVER_ERROR,
+            { statusCode: response.status }
+        );
+    }
+
+    return false; // 재시도 불필요
+}
+
+/**
+ * @description Timeout 에러 처리 (재시도 가능)
+ * @param attempt - 현재 시도 횟수
+ * @param maxRetries - 최대 재시도 횟수
+ * @returns 재시도 여부
+ */
+async function handleTimeoutError(attempt: number, maxRetries: number): Promise<boolean> {
+    if (attempt < maxRetries) {
+        const delay = calculateBackoffDelay(attempt);
+        logger.warn(
+            `Timeout, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
+            'API'
+        );
+        await waitWithBackoff(attempt);
+        return true; // 재시도 필요
+    }
+
+    throw new APIError('Request timed out after multiple attempts', APIErrorType.TIMEOUT);
+}
+
+/**
+ * @description 네트워크 에러 처리 (재시도 가능)
+ * @param attempt - 현재 시도 횟수
+ * @param maxRetries - 최대 재시도 횟수
+ * @returns 재시도 여부
+ */
+async function handleNetworkError(attempt: number, maxRetries: number): Promise<boolean> {
+    if (attempt < maxRetries) {
+        const delay = calculateBackoffDelay(attempt);
+        logger.warn(
+            `Network error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
+            'API'
+        );
+        await waitWithBackoff(attempt);
+        return true; // 재시도 필요
+    }
+
+    throw new APIError(
+        'Network error after multiple retry attempts',
+        APIErrorType.NETWORK_ERROR
+    );
+}
+
+/**
  * @description Retry 로직을 포함한 fetch 래퍼 (향상된 지수 백오프 with jitter)
  * @param url - API URL
  * @param options - Fetch 옵션
@@ -92,36 +196,17 @@ async function fetchWithRetry(
 
             // 429 (Too Many Requests) 처리
             if (response.status === 429) {
-                const retryAfter = parseInt(
-                    response.headers.get('Retry-After') ||
-                    String(API_CONSTANTS.DEFAULT_RETRY_AFTER_SECONDS),
-                    10
-                );
-                throw new APIError(
-                    `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
-                    APIErrorType.RATE_LIMIT,
-                    { statusCode: 429, retryAfter }
-                );
+                handleRateLimitResponse(response);
             }
 
-            // 5xx 서버 오류는 재시도
-            if (response.status >= 500 && attempt < maxRetries) {
-                const delay = calculateBackoffDelay(attempt);
-                logger.warn(
-                    `Server error ${response.status}, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
-                    'API'
-                );
-                await new Promise((resolve) => setTimeout(resolve, delay));
+            // 5xx 서버 오류 처리
+            const shouldRetryServer = await handleServerErrorResponse(
+                response,
+                attempt,
+                maxRetries
+            );
+            if (shouldRetryServer) {
                 continue;
-            }
-
-            // 503 (Service Unavailable) 또는 502 (Bad Gateway)는 최종 실패로 처리
-            if ((response.status === 503 || response.status === 502) && attempt === maxRetries) {
-                throw new APIError(
-                    `Server unavailable after ${maxRetries} retries`,
-                    APIErrorType.SERVER_ERROR,
-                    { statusCode: response.status }
-                );
             }
 
             return response;
@@ -130,36 +215,18 @@ async function fetchWithRetry(
 
             // Timeout 오류 (재시도 가능)
             if (error instanceof Error && error.name === 'TimeoutError') {
-                if (attempt < maxRetries) {
-                    const delay = calculateBackoffDelay(attempt);
-                    logger.warn(
-                        `Timeout, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
-                        'API'
-                    );
-                    await new Promise((resolve) => setTimeout(resolve, delay));
+                const shouldRetry = await handleTimeoutError(attempt, maxRetries);
+                if (shouldRetry) {
                     continue;
                 }
-                throw new APIError(
-                    'Request timed out after multiple attempts',
-                    APIErrorType.TIMEOUT
-                );
             }
 
             // 네트워크 오류 (재시도 가능)
             if (error instanceof TypeError && error.message.includes('fetch')) {
-                if (attempt < maxRetries) {
-                    const delay = calculateBackoffDelay(attempt);
-                    logger.warn(
-                        `Network error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`,
-                        'API'
-                    );
-                    await new Promise((resolve) => setTimeout(resolve, delay));
+                const shouldRetry = await handleNetworkError(attempt, maxRetries);
+                if (shouldRetry) {
                     continue;
                 }
-                throw new APIError(
-                    'Network error after multiple retry attempts',
-                    APIErrorType.NETWORK_ERROR
-                );
             }
 
             // Rate limit 오류는 재시도하지 않음 (즉시 throw)

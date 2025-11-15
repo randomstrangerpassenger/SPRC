@@ -138,6 +138,36 @@ export class PortfolioView {
         return null;
     }
 
+    /**
+     * @description Get investment input values (DOM encapsulation)
+     * @returns Object containing amount in KRW, USD, and exchange rate as strings
+     */
+    getInvestmentInputValues(): {
+        amountKRW: string;
+        amountUSD: string;
+        exchangeRate: string;
+    } {
+        const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } = this.dom;
+
+        let amountKRW = '0';
+        let amountUSD = '0';
+        let exchangeRate = String(CONFIG.DEFAULT_EXCHANGE_RATE);
+
+        if (isInputElement(additionalAmountInput)) {
+            amountKRW = additionalAmountInput.value || '0';
+        }
+
+        if (isInputElement(additionalAmountUSDInput)) {
+            amountUSD = additionalAmountUSDInput.value || '0';
+        }
+
+        if (isInputElement(exchangeRateInput)) {
+            exchangeRate = exchangeRateInput.value || String(CONFIG.DEFAULT_EXCHANGE_RATE);
+        }
+
+        return { amountKRW, amountUSD, exchangeRate };
+    }
+
     // ===== ARIA & Accessibility =====
 
     /**
