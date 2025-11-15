@@ -1,9 +1,9 @@
 // src/state/PersistenceRepository.ts
 import Decimal from 'decimal.js';
 import { CONFIG } from '../constants';
-import { ErrorService } from '../errorService';
 import { DataStore } from '../dataStore';
 import type { Portfolio, MetaState } from '../types';
+import { logger } from '../services/Logger';
 
 /**
  * @class PersistenceRepository
@@ -43,7 +43,7 @@ export class PersistenceRepository {
             };
             await DataStore.saveMeta(metaData);
         } catch (error) {
-            ErrorService.handle(error as Error, 'PersistenceRepository.saveMeta');
+            logger.error('Failed to save meta data', 'PersistenceRepository.saveMeta', error);
         }
     }
 
@@ -97,9 +97,13 @@ export class PersistenceRepository {
             await DataStore.savePortfolios(saveablePortfolios);
         } catch (error) {
             if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-                ErrorService.handle(error, 'PersistenceRepository.savePortfolios - Quota Exceeded');
+                logger.error(
+                    'Storage quota exceeded',
+                    'PersistenceRepository.savePortfolios',
+                    error
+                );
             } else {
-                ErrorService.handle(error as Error, 'PersistenceRepository.savePortfolios');
+                logger.error('Failed to save portfolios', 'PersistenceRepository.savePortfolios', error);
             }
         }
     }

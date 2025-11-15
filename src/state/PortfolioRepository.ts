@@ -1,7 +1,6 @@
 // src/state/PortfolioRepository.ts
 import Decimal from 'decimal.js';
 import { CONFIG } from '../constants';
-import { ErrorService } from '../errorService';
 import { DataStore } from '../dataStore';
 import type { Portfolio, MetaState } from '../types';
 import { logger } from '../services/Logger';
@@ -22,7 +21,11 @@ export class PortfolioRepository {
         try {
             return await DataStore.migrateFromLocalStorage();
         } catch (error) {
-            ErrorService.handle(error as Error, 'PortfolioRepository.migrateFromLocalStorage');
+            logger.error(
+                'Failed to migrate from localStorage',
+                'PortfolioRepository.migrateFromLocalStorage',
+                error
+            );
             return false;
         }
     }
@@ -34,7 +37,7 @@ export class PortfolioRepository {
         try {
             return await DataStore.loadMeta();
         } catch (error) {
-            ErrorService.handle(error as Error, 'PortfolioRepository.loadMeta');
+            logger.error('Failed to load meta data', 'PortfolioRepository.loadMeta', error);
             return null;
         }
     }
@@ -46,7 +49,7 @@ export class PortfolioRepository {
         try {
             return await DataStore.loadPortfolios();
         } catch (error) {
-            ErrorService.handle(error as Error, 'PortfolioRepository.loadPortfolios');
+            logger.error('Failed to load portfolios', 'PortfolioRepository.loadPortfolios', error);
             return null;
         }
     }
@@ -64,7 +67,7 @@ export class PortfolioRepository {
             await DataStore.saveMeta(metaData);
             logger.debug('Meta data saved successfully', 'PortfolioRepository');
         } catch (error) {
-            ErrorService.handle(error as Error, 'PortfolioRepository.saveMeta');
+            logger.error('Failed to save meta data', 'PortfolioRepository.saveMeta', error);
             throw error; // 메타 저장 실패는 상위로 전파
         }
     }
@@ -86,12 +89,13 @@ export class PortfolioRepository {
             );
         } catch (error) {
             if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-                ErrorService.handle(
-                    error,
-                    'PortfolioRepository.savePortfolios - Quota Exceeded'
+                logger.error(
+                    'Storage quota exceeded',
+                    'PortfolioRepository.savePortfolios',
+                    error
                 );
             } else {
-                ErrorService.handle(error as Error, 'PortfolioRepository.savePortfolios');
+                logger.error('Failed to save portfolios', 'PortfolioRepository.savePortfolios', error);
             }
             throw error; // 저장 실패는 상위로 전파
         }
@@ -128,7 +132,7 @@ export class PortfolioRepository {
                 'PortfolioRepository'
             );
         } catch (error) {
-            ErrorService.handle(error as Error, 'PortfolioRepository.deletePortfolio');
+            logger.error('Failed to delete portfolio', 'PortfolioRepository.deletePortfolio', error);
             throw error;
         }
     }
@@ -141,7 +145,7 @@ export class PortfolioRepository {
             await DataStore.clearAll();
             logger.info('All portfolio data cleared', 'PortfolioRepository');
         } catch (error) {
-            ErrorService.handle(error as Error, 'PortfolioRepository.clearAll');
+            logger.error('Failed to clear all data', 'PortfolioRepository.clearAll', error);
             throw error;
         }
     }

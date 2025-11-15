@@ -2,7 +2,6 @@
 import Decimal from 'decimal.js';
 import { generateId } from './utils';
 import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED, CACHE } from './constants';
-import { ErrorService } from './errorService';
 import { LRUCache } from './cache/LRUCache';
 import { logger } from './services/Logger';
 import type {
@@ -158,7 +157,7 @@ export class Calculator {
             const result = Calculator.calculateStockIndicators(aggregated, currentPrice);
             return result;
         } catch (error) {
-            ErrorService.handle(error as Error, 'calculateStockMetrics');
+            logger.error('Failed to calculate stock metrics', 'Calculator.calculateStockMetrics', error);
             throw new Error(
                 `Failed to calculate metrics for stock: ${error instanceof Error ? error.message : 'Unknown error'}`
             );
@@ -381,7 +380,7 @@ export class Calculator {
 
             return snapshot;
         } catch (error) {
-            ErrorService.handle(error as Error, 'Calculator.createSnapshot');
+            logger.error('Failed to create portfolio snapshot', 'Calculator.createSnapshot', error);
             // Propagate error to caller (do not save empty snapshot)
             throw new Error(
                 `Failed to create snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`

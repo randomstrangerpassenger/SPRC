@@ -2,7 +2,6 @@
 import Decimal from 'decimal.js';
 import { CONFIG } from './constants';
 import { t } from './i18n';
-import { ErrorService } from './errorService';
 import { Validator } from './validator';
 import { generateId } from './utils';
 import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from './types';
@@ -80,8 +79,7 @@ export class PortfolioState {
 
             logger.info('PortfolioState initialized (async).', 'PortfolioState');
         } catch (error) {
-            ErrorService.handle(/** @type {Error} */ error, '_initialize');
-            logger.error('Initialization failed, resetting data.', 'PortfolioState', error);
+            logger.error('Initialization failed, resetting data.', 'PortfolioState._initialize', error);
             await this.resetData(false); // resetData를 async로 변경
         }
     }
@@ -122,9 +120,10 @@ export class PortfolioState {
             this.#activePortfolioId = id;
             await this.saveMeta(); // 비동기 저장
         } else {
-            ErrorService.handle(
-                new Error(`Portfolio with ID ${id} not found.`),
-                'setActivePortfolioId'
+            logger.error(
+                `Portfolio with ID ${id} not found`,
+                'PortfolioState.setActivePortfolioId',
+                new Error(`Portfolio not found: ${id}`)
             );
         }
     }
@@ -165,9 +164,10 @@ export class PortfolioState {
             this.#portfolios[id].name = newName.trim();
             await this.savePortfolios(); // 비동기 저장
         } else {
-            ErrorService.handle(
-                new Error(`Portfolio with ID ${id} not found for renaming.`),
-                'renamePortfolio'
+            logger.error(
+                `Portfolio with ID ${id} not found for renaming`,
+                'PortfolioState.renamePortfolio',
+                new Error(`Portfolio not found: ${id}`)
             );
         }
     }
@@ -268,9 +268,10 @@ export class PortfolioState {
                         if (decimalValue.isNaN()) throw new Error('Invalid number for Decimal');
                         stock[field] = decimalValue;
                     } catch (error) {
-                        ErrorService.handle(
-                            new Error(`Invalid numeric value for ${field}: ${value}`),
-                            'updateStockProperty'
+                        logger.error(
+                            `Invalid numeric value for ${field}: ${value}`,
+                            'PortfolioState.updateStockProperty',
+                            error
                         );
                         stock[field] = new Decimal(0);
                     }
@@ -311,9 +312,10 @@ export class PortfolioState {
                 price: transactionData.price,
             });
             if (!validation.isValid) {
-                ErrorService.handle(
-                    new Error(`Invalid transaction data: ${validation.message}`),
-                    'addTransaction'
+                logger.error(
+                    `Invalid transaction data: ${validation.message}`,
+                    'PortfolioState.addTransaction',
+                    new Error(validation.message)
                 );
                 return false;
             }
@@ -334,9 +336,10 @@ export class PortfolioState {
                 await this.saveActivePortfolio(); // 비동기 저장
                 return true;
             } catch (error) {
-                ErrorService.handle(
-                    new Error(`Error converting transaction data to Decimal: ${error instanceof Error ? error.message : String(error)}`),
-                    'addTransaction'
+                logger.error(
+                    'Error converting transaction data to Decimal',
+                    'PortfolioState.addTransaction',
+                    error
                 );
                 return false;
             }

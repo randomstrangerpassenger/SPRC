@@ -7,6 +7,7 @@ import { t } from '../i18n';
 import Decimal from 'decimal.js';
 import { logger } from '../services/Logger';
 import { isInputElement } from '../utils';
+import { TransactionViewModelMapper } from '../viewModels';
 
 /**
  * @class TransactionManager
@@ -118,8 +119,12 @@ export class TransactionManager {
 
         if (success) {
             const currency = this.#state.getActivePortfolio()?.settings.currentCurrency;
-            if (currency) {
-                this.#view.renderTransactionList(this.#state.getTransactions(stockId), currency);
+            const stock = this.#state.getStockById(stockId);
+
+            if (currency && stock) {
+                // Use ViewModel mapper
+                const viewModel = TransactionViewModelMapper.toListViewModel(stock, currency);
+                this.#view.renderTransactionListViewModel(viewModel);
             }
             form.reset();
             dateInput.valueAsDate = new Date();
@@ -168,9 +173,12 @@ export class TransactionManager {
                 const success = await this.#state.deleteTransaction(stockId, txId);
                 if (success) {
                     const currency = this.#state.getActivePortfolio()?.settings.currentCurrency;
-                    if (currency) {
-                        const transactionsBeforeRender = this.#state.getTransactions(stockId);
-                        this.#view.renderTransactionList(transactionsBeforeRender, currency);
+                    const stock = this.#state.getStockById(stockId);
+
+                    if (currency && stock) {
+                        // Use ViewModel mapper
+                        const viewModel = TransactionViewModelMapper.toListViewModel(stock, currency);
+                        this.#view.renderTransactionListViewModel(viewModel);
                     }
                     this.#view.showToast(t('toast.transactionDeleted'), 'success');
                     Calculator.clearPortfolioStateCache();

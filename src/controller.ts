@@ -3,7 +3,6 @@ import { PortfolioState } from './state';
 import { PortfolioView } from './view';
 import { debounce, getRatioSum, isInputElement } from './utils';
 import { CONFIG, DECIMAL_ZERO, TIMING } from './constants';
-import { ErrorService } from './errorService';
 import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
@@ -77,7 +76,7 @@ export class PortfolioController {
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
-            ErrorService.handle(error as Error, 'Controller initialization failed');
+            logger.error('Controller initialization failed', 'Controller.constructor', error);
             this.view.showToast('앱 초기화 실패. 페이지를 새로고침해주세요.', 'error');
         });
     }
@@ -128,7 +127,7 @@ export class PortfolioController {
         try {
             await this.applyCalculatedState('full');
         } catch (error) {
-            ErrorService.handle(error as Error, 'Controller.fullRender');
+            logger.error('Full render failed', 'Controller.fullRender', error);
             this.view.showToast('계산 중 오류가 발생했습니다.', 'error');
         } finally {
             // 로딩 UI 숨김

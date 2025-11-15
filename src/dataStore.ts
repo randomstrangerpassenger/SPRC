@@ -1,9 +1,7 @@
 // src/dataStore.ts
 import { get, set, del } from 'idb-keyval';
 import { CONFIG } from './constants';
-import { ErrorService } from './errorService';
 import type { Portfolio, MetaState, PortfolioSnapshot } from './types';
-
 import { logger } from './services/Logger';
 /**
  * @description 에러 처리를 위한 헬퍼 함수
@@ -19,7 +17,7 @@ async function executeWithErrorHandling<T>(
     try {
         return await fn();
     } catch (error) {
-        ErrorService.handle(error as Error, label);
+        logger.error(`Operation failed: ${label}`, 'DataStore', error);
         if (throwOnError) {
             throw error;
         }
@@ -153,12 +151,10 @@ export class DataStore {
         } catch (error) {
             // 세분화된 에러 메시지와 함께 로깅
             logger.error(
-                'Migration failed',
-                'DataStore',
-                '[DataStore] Migration failed:',
-                error instanceof Error ? error.message : error
+                'Migration from LocalStorage to IndexedDB failed',
+                'DataStore.migrateFromLocalStorage',
+                error
             );
-            ErrorService.handle(error as Error, 'DataStore.migrateFromLocalStorage');
             return false;
         }
     }

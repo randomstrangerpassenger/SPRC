@@ -4,6 +4,7 @@ import { PortfolioView } from '../view';
 import { t } from '../i18n';
 import DOMPurify from 'dompurify';
 import { isInputElement } from '../utils';
+import { PortfolioViewModelMapper } from '../viewModels';
 
 /**
  * @class PortfolioManager
@@ -33,10 +34,14 @@ export class PortfolioManager {
         if (name) {
             name = DOMPurify.sanitize(name);
             await this.#state.createNewPortfolio(name);
-            this.#view.renderPortfolioSelector(
+
+            // Use ViewModel mapper
+            const viewModel = PortfolioViewModelMapper.toListViewModel(
                 this.#state.getAllPortfolios(),
                 this.#state.getActivePortfolio()?.id || ''
             );
+            this.#view.renderPortfolioSelectorViewModel(viewModel);
+
             this.#view.showToast(t('toast.portfolioCreated', { name }), 'success');
             return; // 신호: fullRender 필요
         }
@@ -58,7 +63,14 @@ export class PortfolioManager {
         if (newName && newName.trim()) {
             newName = DOMPurify.sanitize(newName.trim());
             await this.#state.renamePortfolio(activePortfolio.id, newName);
-            this.#view.renderPortfolioSelector(this.#state.getAllPortfolios(), activePortfolio.id);
+
+            // Use ViewModel mapper
+            const viewModel = PortfolioViewModelMapper.toListViewModel(
+                this.#state.getAllPortfolios(),
+                activePortfolio.id
+            );
+            this.#view.renderPortfolioSelectorViewModel(viewModel);
+
             this.#view.showToast(t('toast.portfolioRenamed'), 'success');
         }
     }
@@ -85,10 +97,13 @@ export class PortfolioManager {
             if (await this.#state.deletePortfolio(deletedId)) {
                 const newActivePortfolio = this.#state.getActivePortfolio();
                 if (newActivePortfolio) {
-                    this.#view.renderPortfolioSelector(
+                    // Use ViewModel mapper
+                    const viewModel = PortfolioViewModelMapper.toListViewModel(
                         this.#state.getAllPortfolios(),
                         newActivePortfolio.id
                     );
+                    this.#view.renderPortfolioSelectorViewModel(viewModel);
+
                     this.#view.showToast(t('toast.portfolioDeleted'), 'success');
                     return; // 신호: fullRender 필요
                 }

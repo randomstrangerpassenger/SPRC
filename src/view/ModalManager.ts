@@ -5,6 +5,7 @@ import { t } from '../i18n';
 import { createFocusTrap, FocusManager } from '../a11yHelpers';
 import Decimal from 'decimal.js';
 import type { Stock, Transaction, DOMElements } from '../types';
+import type { TransactionListViewModel } from '../viewModels';
 import { logger } from '../services/Logger';
 import { CSS_CLASSES } from '../constants';
 
@@ -194,9 +195,93 @@ export class ModalManager {
     }
 
     /**
-     * @description Render transaction list
+     * @description Render transaction list with ViewModel
+     * @param viewModel - TransactionListViewModel
+     */
+    renderTransactionListViewModel(viewModel: TransactionListViewModel): void {
+        const listBody = this.#dom.transactionListBody;
+        if (!listBody) {
+            logger.error('renderTransactionListViewModel - listBody not found', 'ModalManager');
+            return;
+        }
+
+        (listBody as HTMLTableSectionElement).innerHTML = '';
+
+        if (viewModel.transactions.length === 0) {
+            const tr = (listBody as HTMLTableSectionElement).insertRow();
+            const td = tr.insertCell();
+            td.colSpan = 6;
+            td.style.textAlign = 'center';
+            td.textContent = t('view.noTransactions');
+            return;
+        }
+
+        // Minimize DOM manipulation using DocumentFragment
+        const fragment = document.createDocumentFragment();
+        viewModel.transactions.forEach((tx) => {
+            const tr = document.createElement('tr');
+            tr.dataset.txId = tx.id;
+
+            // Date cell
+            const dateTd = document.createElement('td');
+            dateTd.textContent = tx.dateFormatted;
+            tr.appendChild(dateTd);
+
+            // Type cell
+            const typeTd = document.createElement('td');
+            const typeSpan = document.createElement('span');
+            if (tx.type === 'buy') {
+                typeSpan.className = 'text-buy';
+            } else if (tx.type === 'sell') {
+                typeSpan.className = 'text-sell';
+            } else if (tx.type === 'dividend') {
+                typeSpan.className = 'text-buy';
+            }
+            typeSpan.textContent = tx.typeLabel;
+            typeTd.appendChild(typeSpan);
+            tr.appendChild(typeTd);
+
+            // Quantity cell
+            const qtyTd = document.createElement('td');
+            qtyTd.textContent = tx.quantity;
+            qtyTd.style.textAlign = 'right';
+            tr.appendChild(qtyTd);
+
+            // Price cell
+            const priceTd = document.createElement('td');
+            priceTd.textContent = tx.price;
+            priceTd.style.textAlign = 'right';
+            tr.appendChild(priceTd);
+
+            // Total cell
+            const totalTd = document.createElement('td');
+            totalTd.textContent = tx.totalAmount;
+            totalTd.style.textAlign = 'right';
+            tr.appendChild(totalTd);
+
+            // Action cell
+            const actionTd = document.createElement('td');
+            actionTd.style.textAlign = 'center';
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn btn--small';
+            btnDelete.dataset.variant = 'delete';
+            btnDelete.dataset.action = 'delete-tx';
+            btnDelete.textContent = t('ui.delete');
+            btnDelete.setAttribute('aria-label', t('aria.deleteTransaction', { date: tx.dateFormatted }));
+            actionTd.appendChild(btnDelete);
+            tr.appendChild(actionTd);
+
+            fragment.appendChild(tr);
+        });
+
+        listBody.appendChild(fragment);
+    }
+
+    /**
+     * @description Render transaction list (legacy - delegates to domain model conversion)
      * @param transactions - Array of transactions
      * @param currency - Currency mode
+     * @deprecated Use renderTransactionListViewModel instead
      */
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
         const listBody = this.#dom.transactionListBody;

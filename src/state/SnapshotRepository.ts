@@ -1,6 +1,5 @@
 // src/state/SnapshotRepository.ts
 import { DataStore } from '../dataStore';
-import { ErrorService } from '../errorService';
 import type { PortfolioSnapshot } from '../types';
 import { logger } from '../services/Logger';
 
@@ -18,7 +17,7 @@ export class SnapshotRepository {
             const snapshots = await DataStore.loadSnapshots();
             return snapshots || {};
         } catch (error) {
-            ErrorService.handle(error as Error, 'SnapshotRepository.loadAll');
+            logger.error('Failed to load all snapshots', 'SnapshotRepository.loadAll', error);
             return {};
         }
     }
@@ -30,9 +29,10 @@ export class SnapshotRepository {
         try {
             return await DataStore.getSnapshotsForPortfolio(portfolioId);
         } catch (error) {
-            ErrorService.handle(
-                error as Error,
-                'SnapshotRepository.getByPortfolioId'
+            logger.error(
+                `Failed to get snapshots for portfolio ${portfolioId}`,
+                'SnapshotRepository.getByPortfolioId',
+                error
             );
             return [];
         }
@@ -50,7 +50,7 @@ export class SnapshotRepository {
                 'SnapshotRepository'
             );
         } catch (error) {
-            ErrorService.handle(error as Error, 'SnapshotRepository.add');
+            logger.error('Failed to add snapshot', 'SnapshotRepository.add', error);
             throw error; // 스냅샷 저장 실패는 상위로 전파
         }
     }
@@ -67,9 +67,10 @@ export class SnapshotRepository {
                 'SnapshotRepository'
             );
         } catch (error) {
-            ErrorService.handle(
-                error as Error,
-                'SnapshotRepository.deleteByPortfolioId'
+            logger.error(
+                `Failed to delete snapshots for portfolio ${portfolioId}`,
+                'SnapshotRepository.deleteByPortfolioId',
+                error
             );
             throw error;
         }
@@ -89,7 +90,11 @@ export class SnapshotRepository {
             // 스냅샷은 이미 날짜 기준 내림차순으로 정렬되어 있음 (최신이 첫 번째)
             return snapshots[0];
         } catch (error) {
-            ErrorService.handle(error as Error, 'SnapshotRepository.getLatest');
+            logger.error(
+                `Failed to get latest snapshot for portfolio ${portfolioId}`,
+                'SnapshotRepository.getLatest',
+                error
+            );
             return null;
         }
     }
@@ -112,7 +117,11 @@ export class SnapshotRepository {
                 (snapshot) => snapshot.date >= startDate && snapshot.date <= endDate
             );
         } catch (error) {
-            ErrorService.handle(error as Error, 'SnapshotRepository.getByDateRange');
+            logger.error(
+                `Failed to get snapshots by date range for portfolio ${portfolioId}`,
+                'SnapshotRepository.getByDateRange',
+                error
+            );
             return [];
         }
     }
