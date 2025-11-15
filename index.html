@@ -9,14 +9,13 @@
     <!-- Content Security Policy: Strict CSP with no unsafe directives -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self';
+        script-src 'self' blob:;
         style-src 'self';
         img-src 'self' data: https:;
         font-src 'self' data:;
         connect-src 'self' https://finnhub.io https://api.exchangerate-api.com;
         base-uri 'self';
         form-action 'self';
-        frame-ancestors 'none';
         object-src 'none';
     ">
 
