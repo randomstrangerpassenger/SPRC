@@ -296,10 +296,25 @@ export class VirtualScrollManager {
     #onScroll(forceRedraw: boolean = false): void {
         if (!this.#scrollWrapper || !this.#scrollContent) return;
 
-        const currency = this.#currentCurrency;
-        const mainMode = this.#currentMainMode;
+        const { startIndex, endIndex } = this.calculateVisibleIndices();
 
-        const scrollTop = this.#scrollWrapper.scrollTop;
+        if (!forceRedraw && startIndex === this.#renderedStartIndex && endIndex === this.#renderedEndIndex) {
+            return;
+        }
+
+        this.saveCurrentInputValues();
+        this.#renderedStartIndex = startIndex;
+        this.#renderedEndIndex = endIndex;
+
+        this.renderVisibleRows(startIndex, endIndex);
+        this.fillRowCache(startIndex, endIndex);
+    }
+
+    /**
+     * Calculate visible row indices based on scroll position
+     */
+    private calculateVisibleIndices(): { startIndex: number; endIndex: number } {
+        const scrollTop = this.#scrollWrapper!.scrollTop;
 
         const startIndex = Math.max(
             0,
@@ -310,16 +325,14 @@ export class VirtualScrollManager {
             Math.ceil((scrollTop + this.#viewportHeight) / ROW_PAIR_HEIGHT) + VISIBLE_ROWS_BUFFER
         );
 
-        if (
-            !forceRedraw &&
-            startIndex === this.#renderedStartIndex &&
-            endIndex === this.#renderedEndIndex
-        ) {
-            return;
-        }
+        return { startIndex, endIndex };
+    }
 
-        // Save input values before re-rendering (IME safe)
-        const currentInputRows = this.#scrollContent.querySelectorAll(
+    /**
+     * Save current input values before re-rendering (IME safe)
+     */
+    private saveCurrentInputValues(): void {
+        const currentInputRows = this.#scrollContent!.querySelectorAll(
             '.virtual-row-inputs[data-id]'
         );
         const activeElement = document.activeElement;
@@ -335,7 +348,7 @@ export class VirtualScrollManager {
             inputs.forEach((input) => {
                 if (!isInputElement(input)) return;
 
-                // Phase 2-5: Check IME composition
+                // Check IME composition
                 const isComposing =
                     'isComposing' in input &&
                     (input as HTMLInputElement & { isComposing?: boolean }).isComposing;
@@ -357,11 +370,15 @@ export class VirtualScrollManager {
                 }
             });
         });
+    }
 
-        this.#renderedStartIndex = startIndex;
-        this.#renderedEndIndex = endIndex;
+    /**
+     * Render visible rows using document fragment
+     */
+    private renderVisibleRows(startIndex: number, endIndex: number): void {
+        const currency = this.#currentCurrency;
+        const mainMode = this.#currentMainMode;
 
-        // Clear cache and rebuild
         this.#rowCache.clear();
 
         const fragment = document.createDocumentFragment();
@@ -370,16 +387,20 @@ export class VirtualScrollManager {
             fragment.appendChild(createStockRowFragment(stock, currency, mainMode));
         }
 
-        this.#scrollContent.replaceChildren(fragment);
-        this.#scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+        this.#scrollContent!.replaceChildren(fragment);
+        this.#scrollContent!.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
+    }
 
-        // Fill cache after rendering
+    /**
+     * Fill row cache after rendering
+     */
+    private fillRowCache(startIndex: number, endIndex: number): void {
         for (let i = startIndex; i < endIndex; i++) {
             const stock = this.#virtualData[i];
-            const inputRow = this.#scrollContent.querySelector(
+            const inputRow = this.#scrollContent!.querySelector(
                 `.virtual-row-inputs[data-id="${stock.id}"]`
             );
-            const outputRow = this.#scrollContent.querySelector(
+            const outputRow = this.#scrollContent!.querySelector(
                 `.virtual-row-outputs[data-id="${stock.id}"]`
             );
             if (inputRow || outputRow) {

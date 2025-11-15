@@ -145,7 +145,16 @@ export class ExcelExportService {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
-        // Header style
+        this.addTransactionHeader(sheet);
+        const transactions = this.collectAndSortTransactions(portfolio);
+        this.addTransactionRows(sheet, transactions);
+        this.adjustTransactionColumnWidths(sheet);
+    }
+
+    /**
+     * Add header row to transactions sheet
+     */
+    private static addTransactionHeader(sheet: Worksheet): void {
         const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } },
@@ -158,7 +167,6 @@ export class ExcelExportService {
             },
         };
 
-        // Header
         const headerRow = sheet.addRow([
             'Stock Name',
             'Ticker',
@@ -172,12 +180,15 @@ export class ExcelExportService {
         headerRow.eachCell((cell) => {
             cell.style = headerStyle;
         });
+    }
 
-        // Collect and sort all transactions
-        const allTransactions: Array<{
-            stock: Stock;
-            transaction: Transaction;
-        }> = [];
+    /**
+     * Collect and sort all transactions by date
+     */
+    private static collectAndSortTransactions(
+        portfolio: Portfolio
+    ): Array<{ stock: Stock; transaction: Transaction }> {
+        const allTransactions: Array<{ stock: Stock; transaction: Transaction }> = [];
 
         portfolio.portfolioData.forEach((stock) => {
             stock.transactions.forEach((tx) => {
@@ -185,14 +196,22 @@ export class ExcelExportService {
             });
         });
 
-        // Sort by date
         allTransactions.sort(
             (a, b) =>
                 new Date(b.transaction.date).getTime() - new Date(a.transaction.date).getTime()
         );
 
-        // Transaction data
-        allTransactions.forEach(({ stock, transaction }) => {
+        return allTransactions;
+    }
+
+    /**
+     * Add transaction data rows with styling
+     */
+    private static addTransactionRows(
+        sheet: Worksheet,
+        transactions: Array<{ stock: Stock; transaction: Transaction }>
+    ): void {
+        transactions.forEach(({ stock, transaction }) => {
             const quantity = toNumber(transaction.quantity);
             const price = toNumber(transaction.price);
             const totalAmount = quantity * price;
@@ -207,46 +226,56 @@ export class ExcelExportService {
                 totalAmount,
             ]);
 
-            // Data row style
-            row.eachCell((cell, colNumber) => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' },
-                };
-
-                // Number formatting
-                if (colNumber >= 5 && colNumber <= 7) {
-                    cell.numFmt = '#,##0.00';
-                }
-
-                // Color by transaction type
-                if (colNumber === 3) {
-                    if (transaction.type === 'buy') {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFE2EFDA' },
-                        };
-                    } else if (transaction.type === 'sell') {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFFCE4D6' },
-                        };
-                    } else if (transaction.type === 'dividend') {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFE7E6E6' },
-                        };
-                    }
-                }
-            });
+            this.styleTransactionRow(row, transaction);
         });
+    }
 
-        // Auto-adjust column width
+    /**
+     * Apply styling to transaction row
+     */
+    private static styleTransactionRow(row: Row, transaction: Transaction): void {
+        row.eachCell((cell, colNumber) => {
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+
+            // Number formatting
+            if (colNumber >= 5 && colNumber <= 7) {
+                cell.numFmt = '#,##0.00';
+            }
+
+            // Color by transaction type
+            if (colNumber === 3) {
+                if (transaction.type === 'buy') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE2EFDA' },
+                    };
+                } else if (transaction.type === 'sell') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFFCE4D6' },
+                    };
+                } else if (transaction.type === 'dividend') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE7E6E6' },
+                    };
+                }
+            }
+        });
+    }
+
+    /**
+     * Adjust column widths for transactions sheet
+     */
+    private static adjustTransactionColumnWidths(sheet: Worksheet): void {
         sheet.columns.forEach((column, idx) => {
             if (idx === 0) column.width = 25;
             else if (idx === 1) column.width = 12;
