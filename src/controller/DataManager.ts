@@ -202,8 +202,15 @@ export class DataManager {
             // 동적 임포트: EmailService는 사용자가 이메일 전송을 요청할 때만 로드됨
             const { EmailService } = await import('../services/EmailService');
 
-            // 이메일 서버 상태 확인
-            const isServerRunning = await EmailService.checkServerHealth();
+            // 병렬 처리: 서버 상태 확인 + 이메일 설정 검증
+            const [serverResult, configResult] = await Promise.allSettled([
+                EmailService.checkServerHealth(),
+                emailConfig ? EmailService.testEmailConfig(emailConfig) : Promise.resolve(true),
+            ]);
+
+            const isServerRunning = serverResult.status === 'fulfilled' ? serverResult.value : false;
+            const isConfigValid = configResult.status === 'fulfilled' ? configResult.value : true;
+
             if (!isServerRunning) {
                 this.#view.showToast(
                     '이메일 서버가 실행 중이지 않습니다. 서버를 시작해주세요. (npm run server)',
@@ -212,13 +219,9 @@ export class DataManager {
                 return;
             }
 
-            // 이메일 설정 검증
-            if (emailConfig) {
-                const isConfigValid = await EmailService.testEmailConfig(emailConfig);
-                if (!isConfigValid) {
-                    this.#view.showToast('이메일 설정이 올바르지 않습니다.', 'error');
-                    return;
-                }
+            if (emailConfig && !isConfigValid) {
+                this.#view.showToast('이메일 설정이 올바르지 않습니다.', 'error');
+                return;
             }
 
             // 이메일 전송

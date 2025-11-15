@@ -211,13 +211,24 @@ export class CalculationManager {
         });
         activePortfolio.portfolioData = calculatedState.portfolioData;
 
-        // Save portfolio snapshot (non-critical)
-        await this.savePortfolioSnapshot(
-            activePortfolio.id,
-            calculatedState.portfolioData,
-            activePortfolio.settings.exchangeRate,
-            activePortfolio.settings.currentCurrency
-        );
+        // 병렬 처리: Snapshot 저장(non-critical) + Chart 로드(critical)
+        // Chart는 필수이므로 결과 확인, Snapshot 실패는 무시
+        const [ChartClass] = await Promise.allSettled([
+            ChartLoaderService.getChart(),
+            this.savePortfolioSnapshot(
+                activePortfolio.id,
+                calculatedState.portfolioData,
+                activePortfolio.settings.exchangeRate,
+                activePortfolio.settings.currentCurrency
+            ),
+        ]).then((results) => {
+            // Chart 로드 실패는 throw (필수 리소스)
+            if (results[0].status === 'rejected') {
+                throw results[0].reason;
+            }
+            // Snapshot 저장 실패는 무시 (non-critical)
+            return [results[0].value];
+        });
 
         // Select and execute rebalancing strategy
         const strategy = this.selectRebalancingStrategy(
@@ -239,17 +250,12 @@ export class CalculationManager {
         );
         this.#view.displayResults(resultsHTML);
 
-        // Prepare and display chart
+        // Prepare and display chart (Chart 이미 로드됨)
         const chartData = this.prepareChartData(
             rebalancingResults,
             activePortfolio.settings.mainMode
         );
-        this.#view.displayChart(
-            await ChartLoaderService.getChart(),
-            chartData.labels,
-            chartData.data,
-            chartData.title
-        );
+        this.#view.displayChart(ChartClass, chartData.labels, chartData.data, chartData.title);
 
         this.#debouncedSave();
         this.#view.showToast(t('toast.calculateSuccess'), 'success');
