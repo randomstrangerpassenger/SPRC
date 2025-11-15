@@ -1,6 +1,5 @@
 // src/services/PDFReportService.ts
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import type jsPDF from 'jspdf';
 import type { Portfolio, Stock } from '../types';
 import Decimal from 'decimal.js';
 import { PortfolioMetricsService } from './PortfolioMetricsService';
@@ -9,6 +8,7 @@ import { logger } from './Logger';
 /**
  * @class PDFReportService
  * @description PDF report generation service (using jspdf, html2canvas)
+ * jsPDF와 html2canvas는 동적 import로 로딩하여 초기 번들 크기 감소
  */
 export class PDFReportService {
     /**
@@ -16,6 +16,8 @@ export class PDFReportService {
      */
     static async generatePortfolioReport(portfolio: Portfolio): Promise<void> {
         try {
+            // 동적 import: jsPDF는 사용 시점에만 로드 (387KB 청크)
+            const { default: jsPDF } = await import('jspdf');
             const pdf = new jsPDF('p', 'mm', 'a4');
             let yPosition = 20;
 
@@ -282,6 +284,9 @@ export class PDFReportService {
             const chartCanvas = document.querySelector('#myChart') as HTMLCanvasElement;
 
             if (chartCanvas) {
+                // 동적 import: html2canvas는 사용 시점에만 로드 (202KB 청크)
+                const { default: html2canvas } = await import('html2canvas');
+
                 // Add new page
                 pdf.addPage();
 
@@ -314,6 +319,12 @@ export class PDFReportService {
      */
     static async generateReportFromHTML(elementId: string, filename: string): Promise<void> {
         try {
+            // 동적 import: jsPDF와 html2canvas는 사용 시점에만 로드
+            const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+                import('jspdf'),
+                import('html2canvas'),
+            ]);
+
             const element = document.getElementById(elementId);
             if (!element) {
                 throw new Error(`Element with id "${elementId}" not found`);

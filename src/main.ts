@@ -8,6 +8,7 @@ import { perfMonitor } from './performance/PerformanceMonitor';
 import { logger } from './services/Logger';
 import { displayBootstrapError } from './BootstrapError';
 import { errorHandler } from './errors';
+import { webVitalsMonitor } from './services/WebVitalsMonitor';
 
 // Chart.js는 이미 CalculationManager에서 동적으로 임포트되므로 여기서 임포트 제거
 // (await import('chart.js/auto')).default를 사용하여 필요할 때만 로드
@@ -24,6 +25,9 @@ if (isDevelopment) {
 
 // 전역 에러 핸들러 등록
 setupGlobalErrorHandlers();
+
+// Web Vitals 모니터링 초기화 (production only)
+webVitalsMonitor.initialize();
 
 try {
     const state = new PortfolioState();

@@ -1,8 +1,9 @@
 // src/calculator.ts
 import Decimal from 'decimal.js';
 import { generateId } from './utils';
-import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED, CACHE } from './constants';
-import { LRUCache } from './cache/LRUCache';
+import { CONFIG, DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';
+import { cacheManager } from './cache/CacheManager';
+import { CacheKeyGenerator } from './cache/CacheKeyGenerator';
 import { logger } from './services/Logger';
 import type {
     Stock,
@@ -13,41 +14,6 @@ import type {
 } from './types';
 import type { IRebalanceStrategy } from './calculationStrategies';
 
-/**
- * @description Generates cache key based on stock ID and current price combination
- */
-function _generateStockKey(stock: Stock): string {
-    // Combine all transaction IDs to detect modifications/deletions of intermediate transactions
-    const txIds = stock.transactions.map((tx) => tx.id).join(',');
-
-    // Exclude sector information as it does not affect calculations
-    return `${stock.id}:${stock.currentPrice}:${txIds}`;
-}
-
-/**
- * @description Generates cache key for entire portfolio
- * Optimization: Sort IDs only instead of full objects, reducing O(n log n) to O(n + k log k) (k=number of stocks)
- */
-function _generatePortfolioKey(
-    portfolioData: Stock[],
-    exchangeRate: number,
-    currentCurrency: Currency
-): string {
-    // Create ID -> stock key mapping using Map (O(n))
-    const stockKeyMap = new Map<string, string>();
-    for (const stock of portfolioData) {
-        stockKeyMap.set(stock.id, _generateStockKey(stock));
-    }
-
-    // Sort IDs only (O(k log k), k = number of stocks, faster than sorting objects)
-    const sortedIds = Array.from(stockKeyMap.keys()).sort();
-
-    // Combine keys in sorted ID order (O(k))
-    const stockKeys = sortedIds.map((id) => stockKeyMap.get(id)!).join('|');
-    const settingsKey = `${exchangeRate}:${currentCurrency}`;
-    return `${stockKeys}|${settingsKey}`;
-}
-
 export interface PortfolioCalculationResult {
     portfolioData: CalculatedStock[];
     currentTotal: Decimal;
@@ -55,16 +21,7 @@ export interface PortfolioCalculationResult {
 }
 
 export class Calculator {
-    // Store multiple calculation results using LRU cache
-    static #portfolioCache = new LRUCache<string, PortfolioCalculationResult>(
-        CACHE.PORTFOLIO_CACHE_SIZE
-    );
-
-    // Sector analysis result cache
-    static #sectorAnalysisCache = new LRUCache<
-        string,
-        { sector: string; amount: Decimal; percentage: Decimal }[]
-    >(20);
+    // 캐시는 이제 CacheManager가 관리 (src/cache/CacheManager.ts)
 
     /**
      * @description Calculates average purchase price, current value, profit/loss for a single stock
@@ -178,10 +135,17 @@ export class Calculator {
             currentCurrency = 'krw',
         } = options;
 
-        const cacheKey = _generatePortfolioKey(portfolioData, exchangeRate, currentCurrency);
+        const cacheKey = CacheKeyGenerator.forPortfolioCalculation(
+            portfolioData,
+            exchangeRate,
+            currentCurrency
+        );
 
-        // LRU 캐시에서 결과 조회
-        const cachedResult = Calculator.#portfolioCache.get(cacheKey);
+        // CacheManager에서 결과 조회
+        const cachedResult = cacheManager.get<PortfolioCalculationResult>(
+            'portfolio-calculation',
+            cacheKey
+        );
         if (cachedResult) {
             return cachedResult;
         }
@@ -216,8 +180,8 @@ export class Calculator {
             cacheKey: cacheKey,
         };
 
-        // LRU 캐시에 결과 저장
-        Calculator.#portfolioCache.set(cacheKey, result);
+        // CacheManager에 결과 저장
+        cacheManager.set('portfolio-calculation', cacheKey, result);
 
         return result;
     }
@@ -233,30 +197,23 @@ export class Calculator {
 
     /**
      * @description Calculates sector-wise amounts and percentages for portfolio
-     * @memoized LRU cache applied (size: 20)
+     * @memoized CacheManager를 통한 캐싱 적용
      */
     static calculateSectorAnalysis(
         portfolioData: CalculatedStock[],
         currentCurrency: Currency = 'krw'
     ): { sector: string; amount: Decimal; percentage: Decimal }[] {
-        // Generate cache key based on stock IDs, sectors, amounts, and currency
-        const cacheKey =
-            portfolioData
-                .map((s) => {
-                    const amount =
-                        currentCurrency === 'krw'
-                            ? s.calculated?.currentAmountKRW || DECIMAL_ZERO
-                            : s.calculated?.currentAmountUSD || DECIMAL_ZERO;
-                    return `${s.id}:${s.sector}:${amount.toString()}`;
-                })
-                .join('|') + `:${currentCurrency}`;
+        // CacheKeyGenerator를 사용한 캐시 키 생성
+        const cacheKey = CacheKeyGenerator.forSectorAnalysis(
+            portfolioData,
+            currentCurrency
+        );
 
-        // Check cache
-        const cached = Calculator.#sectorAnalysisCache.get(cacheKey);
+        // CacheManager에서 캐시 조회
+        const cached = cacheManager.get<
+            { sector: string; amount: Decimal; percentage: Decimal }[]
+        >('sector-analysis', cacheKey);
         if (cached) {
-            if (import.meta.env.DEV) {
-                logger.debug('calculateSectorAnalysis: cache hit', 'Calculator');
-            }
             return cached;
         }
 
@@ -291,8 +248,8 @@ export class Calculator {
         // Sort by amount in descending order
         result.sort((a, b) => b.amount.comparedTo(a.amount));
 
-        // Store in cache
-        Calculator.#sectorAnalysisCache.set(cacheKey, result);
+        // CacheManager에 저장
+        cacheManager.set('sector-analysis', cacheKey, result);
 
         if (import.meta.env.DEV && startTime !== undefined) {
             const endTime = performance.now();
@@ -307,10 +264,11 @@ export class Calculator {
 
     /**
      * @description Clears portfolio calculation cache
+     * CacheManager를 통한 중앙화된 캐시 무효화
      */
     static clearPortfolioStateCache(): void {
-        Calculator.#portfolioCache.clear();
-        Calculator.#sectorAnalysisCache.clear();
+        cacheManager.invalidate('portfolio-calculation');
+        cacheManager.invalidate('sector-analysis');
     }
 
     /**

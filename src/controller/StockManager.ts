@@ -6,6 +6,7 @@ import { Validator } from '../validator';
 import { getRatioSum, isInputElement } from '../utils';
 import { t } from '../i18n';
 import { generateSectorAnalysisHTML } from '../templates';
+import { CacheInvalidationService } from '../cache';
 import type { Portfolio, Stock } from '../types';
 import Decimal from 'decimal.js';
 import DOMPurify from 'dompurify';
@@ -87,7 +88,7 @@ export class StockManager {
 
         if (confirmDelete) {
             if (await this.#state.deleteStock(stockId)) {
-                Calculator.clearPortfolioStateCache();
+                CacheInvalidationService.onStockDeleted();
                 this.#view.showToast(t('toast.transactionDeleted'), 'success');
                 return { needsFullRender: true };
             } else {
@@ -262,7 +263,7 @@ export class StockManager {
         row: Element,
         activePortfolio: Portfolio
     ) {
-        Calculator.clearPortfolioStateCache();
+        CacheInvalidationService.onStockUpdated();
 
         const calculatedState = Calculator.calculatePortfolioState({
             portfolioData: activePortfolio.portfolioData,

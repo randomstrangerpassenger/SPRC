@@ -82,11 +82,63 @@ export default defineConfig(({ mode }) => {
       ] : [])
     ],
 
-    // 백엔드 의존성 분리
+    // 백엔드 의존성 분리 및 Production 최적화
     build: {
+      // Production optimizations
+      target: 'es2020',
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: mode === 'production',
+          drop_debugger: mode === 'production',
+          pure_funcs: mode === 'production' ? ['console.log', 'console.debug'] : [],
+        },
+      },
+      // Source maps (production에서는 hidden)
+      sourcemap: mode === 'production' ? 'hidden' : true,
+      // Chunk size warnings
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
-        external: ['express', 'nodemailer', 'cors']
-      }
+        external: ['express', 'nodemailer', 'cors'],
+        output: {
+          // Manual chunking for better code splitting
+          manualChunks: (id) => {
+            // Vendor chunks
+            if (id.includes('node_modules')) {
+              // Chart.js
+              if (id.includes('chart.js')) {
+                return 'chart';
+              }
+              // ExcelJS (already dynamic import, but create chunk)
+              if (id.includes('exceljs')) {
+                return 'exceljs';
+              }
+              // jsPDF
+              if (id.includes('jspdf')) {
+                return 'jspdf';
+              }
+              // html2canvas
+              if (id.includes('html2canvas')) {
+                return 'html2canvas';
+              }
+              // Decimal.js
+              if (id.includes('decimal.js')) {
+                return 'decimal';
+              }
+              // Other vendor code
+              return 'vendor';
+            }
+            // Workers
+            if (id.includes('worker')) {
+              return 'workers';
+            }
+          },
+          // Optimize chunk naming for caching
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+        },
+      },
     },
 
     esbuild: {
