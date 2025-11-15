@@ -3,7 +3,7 @@ import type { Stock } from '../types';
 import { toNumber } from '../utils/converterUtil';
 
 /**
- * @description 포트폴리오 메트릭 계산 결과 타입
+ * @description Portfolio metrics calculation result type
  */
 export interface StockMetrics {
     totalBuyQty: number;
@@ -19,14 +19,14 @@ export interface StockMetrics {
 
 /**
  * @class PortfolioMetricsService
- * @description 포트폴리오 및 종목 메트릭 계산 서비스
- * - PDF, Excel, Email 서비스에서 공통으로 사용하는 계산 로직 통합
+ * @description Portfolio and stock metrics calculation service
+ * - Integrates calculation logic commonly used by PDF, Excel, and Email services
  */
 export class PortfolioMetricsService {
     /**
-     * @description 종목별 메트릭 계산
-     * @param stock - 종목 데이터
-     * @returns 계산된 메트릭 (보유량, 평균단가, 수익률 등)
+     * @description Calculate stock-specific metrics
+     * @param stock - Stock data
+     * @returns Calculated metrics (holdings, average price, return rate, etc.)
      */
     static calculateStockMetrics(stock: Stock): StockMetrics {
         let totalBuyQty = 0;

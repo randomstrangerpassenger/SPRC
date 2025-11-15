@@ -4,16 +4,16 @@ import { logger } from './Logger';
 
 /**
  * @class ChartLoaderService
- * @description Chart.js 모듈 로딩 및 캐싱 서비스 (싱글톤)
- * - 여러 곳에서 Chart.js를 중복 로드하는 것을 방지
- * - Promise를 캐시하여 한 번만 로드되도록 보장
+ * @description Chart.js module loading and caching service (singleton)
+ * - Prevents duplicate loading of Chart.js from multiple locations
+ * - Caches Promise to ensure loading only once
  */
 export class ChartLoaderService {
     private static chartJsPromise: Promise<typeof import('chart.js/auto')> | null = null;
 
     /**
-     * @description Chart.js 모듈 로드 (캐시된 Promise 반환)
-     * @returns Chart.js 모듈 Promise
+     * @description Load Chart.js module (returns cached Promise)
+     * @returns Chart.js module Promise
      */
     static async loadChartJs(): Promise<typeof import('chart.js/auto')> {
         if (!this.chartJsPromise) {
@@ -24,8 +24,8 @@ export class ChartLoaderService {
     }
 
     /**
-     * @description Chart.js의 Chart 생성자 가져오기
-     * @returns Chart 생성자
+     * @description Get Chart constructor from Chart.js
+     * @returns Chart constructor
      */
     static async getChart() {
         const chartJs = await this.loadChartJs();
@@ -33,7 +33,7 @@ export class ChartLoaderService {
     }
 
     /**
-     * @description 캐시 초기화 (테스트용)
+     * @description Clear cache (for testing)
      */
     static clearCache(): void {
         this.chartJsPromise = null;

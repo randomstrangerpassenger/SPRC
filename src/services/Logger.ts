@@ -2,7 +2,7 @@
 
 /**
  * @enum LogLevel
- * @description 로그 레벨 정의
+ * @description Log level definition
  */
 export enum LogLevel {
     DEBUG = 0,
@@ -14,10 +14,10 @@ export enum LogLevel {
 
 /**
  * @class Logger
- * @description 환경 변수 기반 로깅 서비스
- * - 프로덕션 환경에서 불필요한 로그 억제
- * - 컨텍스트 기반 로깅 지원
- * - 타임스탬프 자동 추가
+ * @description Environment variable-based logging service
+ * - Suppress unnecessary logs in production environment
+ * - Support context-based logging
+ * - Automatically add timestamp
  */
 export class Logger {
     static #instance: Logger;
@@ -25,18 +25,18 @@ export class Logger {
     #isDevelopment: boolean;
 
     private constructor() {
-        // NODE_ENV가 설정되지 않았거나 'production'이 아니면 development로 간주
+        // Consider as development if NODE_ENV is not set or not 'production'
         this.#isDevelopment =
             typeof process !== 'undefined'
                 ? process.env.NODE_ENV !== 'production'
                 : import.meta.env?.MODE !== 'production';
 
-        // 개발 환경: INFO 레벨, 프로덕션: WARN 레벨
+        // Development: INFO level, Production: WARN level
         this.#currentLevel = this.#isDevelopment ? LogLevel.INFO : LogLevel.WARN;
     }
 
     /**
-     * @description Singleton 인스턴스 반환
+     * @description Return Singleton instance
      */
     static getInstance(): Logger {
         if (!Logger.#instance) {
@@ -46,31 +46,31 @@ export class Logger {
     }
 
     /**
-     * @description 로그 레벨 설정
-     * @param level - 설정할 로그 레벨
+     * @description Set log level
+     * @param level - Log level to set
      */
     setLevel(level: LogLevel): void {
         this.#currentLevel = level;
     }
 
     /**
-     * @description 현재 로그 레벨 반환
+     * @description Return current log level
      */
     getLevel(): LogLevel {
         return this.#currentLevel;
     }
 
     /**
-     * @description 로그 출력 여부 확인
-     * @param level - 확인할 로그 레벨
+     * @description Check whether to output log
+     * @param level - Log level to check
      */
     private shouldLog(level: LogLevel): boolean {
         return level >= this.#currentLevel;
     }
 
     /**
-     * @description 컨텍스트 포맷팅
-     * @param context - 컨텍스트 문자열
+     * @description Format context
+     * @param context - Context string
      */
     private formatContext(context?: string): string {
         if (!context) return '';
@@ -78,10 +78,10 @@ export class Logger {
     }
 
     /**
-     * @description DEBUG 레벨 로그
-     * @param message - 로그 메시지
-     * @param context - 컨텍스트 (optional)
-     * @param data - 추가 데이터 (optional)
+     * @description DEBUG level log
+     * @param message - Log message
+     * @param context - Context (optional)
+     * @param data - Additional data (optional)
      */
     debug(message: string, context?: string, ...data: any[]): void {
         if (this.shouldLog(LogLevel.DEBUG)) {
@@ -90,10 +90,10 @@ export class Logger {
     }
 
     /**
-     * @description INFO 레벨 로그
-     * @param message - 로그 메시지
-     * @param context - 컨텍스트 (optional)
-     * @param data - 추가 데이터 (optional)
+     * @description INFO level log
+     * @param message - Log message
+     * @param context - Context (optional)
+     * @param data - Additional data (optional)
      */
     info(message: string, context?: string, ...data: any[]): void {
         if (this.shouldLog(LogLevel.INFO)) {
@@ -102,10 +102,10 @@ export class Logger {
     }
 
     /**
-     * @description WARN 레벨 로그
-     * @param message - 로그 메시지
-     * @param context - 컨텍스트 (optional)
-     * @param data - 추가 데이터 (optional)
+     * @description WARN level log
+     * @param message - Log message
+     * @param context - Context (optional)
+     * @param data - Additional data (optional)
      */
     warn(message: string, context?: string, ...data: any[]): void {
         if (this.shouldLog(LogLevel.WARN)) {
@@ -114,11 +114,11 @@ export class Logger {
     }
 
     /**
-     * @description ERROR 레벨 로그
-     * @param message - 로그 메시지
-     * @param context - 컨텍스트 (optional)
-     * @param error - 에러 객체 (optional)
-     * @param data - 추가 데이터 (optional)
+     * @description ERROR level log
+     * @param message - Log message
+     * @param context - Context (optional)
+     * @param error - Error object (optional)
+     * @param data - Additional data (optional)
      */
     error(message: string, context?: string, error?: Error | any, ...data: any[]): void {
         if (this.shouldLog(LogLevel.ERROR)) {
@@ -131,8 +131,8 @@ export class Logger {
     }
 
     /**
-     * @description 그룹 시작
-     * @param label - 그룹 레이블
+     * @description Start group
+     * @param label - Group label
      */
     group(label: string): void {
         if (this.#isDevelopment && this.shouldLog(LogLevel.INFO)) {
@@ -141,7 +141,7 @@ export class Logger {
     }
 
     /**
-     * @description 그룹 종료
+     * @description End group
      */
     groupEnd(): void {
         if (this.#isDevelopment && this.shouldLog(LogLevel.INFO)) {
@@ -150,8 +150,8 @@ export class Logger {
     }
 
     /**
-     * @description 테이블 형식 로그
-     * @param data - 테이블 데이터
+     * @description Log in table format
+     * @param data - Table data
      */
     table(data: any): void {
         if (this.#isDevelopment && this.shouldLog(LogLevel.DEBUG)) {
@@ -160,5 +160,5 @@ export class Logger {
     }
 }
 
-// 전역 Logger 인스턴스 export
+// Export global Logger instance
 export const logger = Logger.getInstance();

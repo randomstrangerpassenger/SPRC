@@ -1,5 +1,5 @@
 // src/view/VirtualScrollManager.ts
-// 모듈 분리
+// Module separation
 import { formatCurrency, escapeHTML, isInputElement } from '../utils';
 import { toNumber } from '../utils/converterUtil';
 import { t } from '../i18n';
@@ -10,7 +10,7 @@ import { getGridTemplate } from './DOMHelpers';
 import { createStockRowFragment } from './RowRenderer';
 import { LRUCache } from '../cache/LRUCache';
 
-// 가상 스크롤 상수 (constants.ts에서 import)
+// Virtual scroll constants (imported from constants.ts)
 const ROW_INPUT_HEIGHT = UI.ROW_INPUT_HEIGHT;
 const ROW_OUTPUT_HEIGHT = UI.ROW_OUTPUT_HEIGHT;
 const ROW_PAIR_HEIGHT = ROW_INPUT_HEIGHT + ROW_OUTPUT_HEIGHT;
@@ -18,7 +18,7 @@ const VISIBLE_ROWS_BUFFER = UI.VISIBLE_ROWS_BUFFER;
 
 /**
  * @class VirtualScrollManager
- * @description 가상 스크롤 관리 - 대량 데이터를 효율적으로 렌더링
+ * @description Manages virtual scrolling - efficiently renders large datasets
  */
 export class VirtualScrollManager {
     #dom: DOMElements;
@@ -33,7 +33,7 @@ export class VirtualScrollManager {
     #currentMainMode: 'add' | 'sell' | 'simple' = 'add';
     #currentCurrency: 'krw' | 'usd' = 'krw';
 
-    // DOM 참조 캐싱 (LRU 캐시 사용)
+    // DOM reference caching (using LRU cache)
     #rowCache: LRUCache<string, { inputRow: HTMLElement | null; outputRow: HTMLElement | null }> =
         new LRUCache(UI.ROW_CACHE_SIZE);
 
@@ -43,17 +43,17 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description DOM 참조 업데이트 (재생성 방지)
-     * @param dom - 새로운 DOM 참조
+     * @description Update DOM reference (prevent recreation)
+     * @param dom - New DOM reference
      */
     setDom(dom: DOMElements): void {
         this.#dom = dom;
         this.initializeScrollElements();
-        // 캐시는 유지 (스크롤 위치 및 상태 보존)
+        // Cache is retained (preserve scroll position and state)
     }
 
     /**
-     * @description 스크롤 요소들을 초기화합니다.
+     * @description Initialize scroll elements
      */
     private initializeScrollElements(): void {
         this.#scrollWrapper = this.#dom.virtualScrollWrapper;
@@ -65,9 +65,9 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 테이블 헤더를 업데이트합니다.
-     * @param currency - 통화 모드
-     * @param mainMode - 메인 모드
+     * @description Update table header
+     * @param currency - Currency mode
+     * @param mainMode - Main mode
      */
     updateTableHeader(currency: 'krw' | 'usd', mainMode: 'add' | 'sell' | 'simple'): void {
         this.#currentMainMode = mainMode;
@@ -125,10 +125,10 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 가상 테이블을 렌더링합니다 (초기화).
-     * @param calculatedPortfolioData - 계산된 포트폴리오 데이터
-     * @param currency - 통화 모드
-     * @param mainMode - 메인 모드
+     * @description Render virtual table (initialization)
+     * @param calculatedPortfolioData - Calculated portfolio data
+     * @param currency - Currency mode
+     * @param mainMode - Main mode
      */
     renderTable(
         calculatedPortfolioData: CalculatedStock[],
@@ -163,8 +163,8 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 가상 테이블 데이터를 업데이트합니다.
-     * @param calculatedPortfolioData - 계산된 포트폴리오 데이터
+     * @description Update virtual table data
+     * @param calculatedPortfolioData - Calculated portfolio data
      */
     updateVirtualTableData(calculatedPortfolioData: CalculatedStock[]): void {
         this.#virtualData = calculatedPortfolioData;
@@ -181,10 +181,10 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 특정 주식의 virtual data를 업데이트합니다.
-     * @param stockId - 주식 ID
-     * @param field - 필드명
-     * @param value - 값
+     * @description Update virtual data for a specific stock
+     * @param stockId - Stock ID
+     * @param field - Field name
+     * @param value - Value
      */
     updateStockInVirtualData(
         stockId: string,
@@ -199,9 +199,9 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 특정 주식 행의 출력 부분만 업데이트합니다.
-     * @param stockId - 주식 ID
-     * @param calculatedData - 재계산된 데이터
+     * @description Update only the output portion of a specific stock row
+     * @param stockId - Stock ID
+     * @param calculatedData - Recalculated data
      */
     updateSingleStockRow(stockId: string, calculatedData: CalculatedStock['calculated']): void {
         const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);
@@ -216,10 +216,10 @@ export class VirtualScrollManager {
             return;
         }
 
-        // 캐시된 DOM 참조 사용
+        // Use cached DOM reference
         let outputRow = this.#rowCache.get(stockId)?.outputRow;
         if (!outputRow) {
-            // 캐시 미스 시 querySelector 사용하고 캐시에 저장
+            // Cache miss: use querySelector and store in cache
             outputRow = this.#scrollContent?.querySelector(
                 `.virtual-row-outputs[data-id="${stockId}"]`
             ) as HTMLElement | null;
@@ -233,7 +233,7 @@ export class VirtualScrollManager {
         if (!outputRow || this.#currentMainMode === 'simple') return;
 
         const currency = this.#currentCurrency;
-        // UI 렌더링에서 Decimal 대신 number 사용
+        // Use number instead of Decimal for UI rendering
         const metrics = calculatedData ?? {
             quantity: 0,
             avgBuyPrice: 0,
@@ -242,7 +242,7 @@ export class VirtualScrollManager {
             profitLossRate: 0,
         };
 
-        // Decimal을 네이티브 number로 변환 (UI 렌더링용)
+        // Convert Decimal to native number (for UI rendering)
         const quantity = toNumber(metrics.quantity);
         const avgBuyPrice = toNumber(metrics.avgBuyPrice);
         const currentAmount = toNumber(metrics.currentAmount);
@@ -290,8 +290,8 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 스크롤 이벤트 핸들러 (실제 가상 스크롤 로직).
-     * @param forceRedraw - 강제 재렌더링 여부
+     * @description Scroll event handler (actual virtual scroll logic)
+     * @param forceRedraw - Whether to force redraw
      */
     #onScroll(forceRedraw: boolean = false): void {
         if (!this.#scrollWrapper || !this.#scrollContent) return;
@@ -318,7 +318,7 @@ export class VirtualScrollManager {
             return;
         }
 
-        // 재렌더링 전 입력값 저장 (IME 안전)
+        // Save input values before re-rendering (IME safe)
         const currentInputRows = this.#scrollContent.querySelectorAll(
             '.virtual-row-inputs[data-id]'
         );
@@ -335,7 +335,7 @@ export class VirtualScrollManager {
             inputs.forEach((input) => {
                 if (!isInputElement(input)) return;
 
-                // Phase 2-5: IME composition 체크
+                // Phase 2-5: Check IME composition
                 const isComposing =
                     'isComposing' in input &&
                     (input as HTMLInputElement & { isComposing?: boolean }).isComposing;
@@ -361,7 +361,7 @@ export class VirtualScrollManager {
         this.#renderedStartIndex = startIndex;
         this.#renderedEndIndex = endIndex;
 
-        // 캐시 클리어 및 재구성
+        // Clear cache and rebuild
         this.#rowCache.clear();
 
         const fragment = document.createDocumentFragment();
@@ -373,7 +373,7 @@ export class VirtualScrollManager {
         this.#scrollContent.replaceChildren(fragment);
         this.#scrollContent.style.transform = `translateY(${startIndex * ROW_PAIR_HEIGHT}px)`;
 
-        // 렌더링 후 캐시 채우기
+        // Fill cache after rendering
         for (let i = startIndex; i < endIndex; i++) {
             const stock = this.#virtualData[i];
             const inputRow = this.#scrollContent.querySelector(
@@ -389,12 +389,12 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 모든 목표 비율 입력 필드를 업데이트합니다.
-     * @param portfolioData - 포트폴리오 데이터
+     * @description Update all target ratio input fields
+     * @param portfolioData - Portfolio data
      */
     updateAllTargetRatioInputs(portfolioData: CalculatedStock[]): void {
         portfolioData.forEach((stock) => {
-            // 캐시된 DOM 참조 사용
+            // Use cached DOM reference
             let inputRow = this.#rowCache.get(stock.id)?.inputRow;
             if (!inputRow) {
                 inputRow = this.#scrollContent?.querySelector(
@@ -411,7 +411,7 @@ export class VirtualScrollManager {
 
             const targetRatioInput = inputRow.querySelector('input[data-field="targetRatio"]');
             if (isInputElement(targetRatioInput)) {
-                // Decimal 대신 number 사용
+                // Use number instead of Decimal
                 const ratio = toNumber(stock.targetRatio);
                 targetRatioInput.value = ratio.toFixed(2);
             }
@@ -419,12 +419,12 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 특정 주식의 현재가 입력 필드를 업데이트합니다.
-     * @param id - 주식 ID
-     * @param price - 가격
+     * @description Update current price input field for a specific stock
+     * @param id - Stock ID
+     * @param price - Price
      */
     updateCurrentPriceInput(id: string, price: string): void {
-        // 캐시된 DOM 참조 사용
+        // Use cached DOM reference
         let inputRow = this.#rowCache.get(id)?.inputRow;
         if (!inputRow) {
             inputRow = this.#scrollContent?.querySelector(
@@ -446,8 +446,8 @@ export class VirtualScrollManager {
     }
 
     /**
-     * @description 새로 추가된 주식으로 포커스를 이동합니다.
-     * @param stockId - 주식 ID
+     * @description Focus on newly added stock
+     * @param stockId - Stock ID
      */
     focusOnNewStock(stockId: string): void {
         const stockIndex = this.#virtualData.findIndex((s) => s.id === stockId);

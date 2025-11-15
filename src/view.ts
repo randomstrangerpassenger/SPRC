@@ -24,7 +24,7 @@ import { DOMCache } from './view/DOMCache';
 
 /**
  * @class PortfolioView
- * @description 포트폴리오 UI를 담당하는 View 클래스
+ * @description View class responsible for portfolio UI
  */
 export class PortfolioView {
     dom: DOMElements = {} as DOMElements;
@@ -40,7 +40,7 @@ export class PortfolioView {
 
     /**
      * @constructor
-     * @description View 초기화
+     * @description Initialize View
      */
     constructor() {
         // 모듈 인스턴스 생성 (DOM 캐싱 후 초기화됨)
@@ -54,7 +54,7 @@ export class PortfolioView {
     }
 
     /**
-     * @description EventEmitter 메서드 위임
+     * @description Delegate EventEmitter methods
      */
     on(event: string, callback: EventCallback): void {
         this.#eventEmitter.on(event, callback);
@@ -65,7 +65,7 @@ export class PortfolioView {
     }
 
     /**
-     * @description DOM 요소 캐싱 (DOMCache 헬퍼 사용)
+     * @description Cache DOM elements (using DOMCache helper)
      */
     cacheDomElements(): void {
         // DOMCache를 사용하여 모든 DOM 요소 캐싱
@@ -88,27 +88,27 @@ export class PortfolioView {
     }
 
     /**
-     * @description data-attribute 기반 요소 조회 (동적)
-     * @param selector - data-attribute 셀렉터
-     * @param context - 검색 컨텍스트
+     * @description Query element by data-attribute (dynamic)
+     * @param selector - data-attribute selector
+     * @param context - Search context
      */
     queryByData(selector: string, context?: Document | Element): HTMLElement | null {
         return this.#domCache.queryByData(selector, context);
     }
 
     /**
-     * @description data-attribute 기반 다중 요소 조회 (동적)
-     * @param selector - data-attribute 셀렉터
-     * @param context - 검색 컨텍스트
+     * @description Query all elements by data-attribute (dynamic)
+     * @param selector - data-attribute selector
+     * @param context - Search context
      */
     queryAllByData(selector: string, context?: Document | Element): NodeListOf<HTMLElement> {
         return this.#domCache.queryAllByData(selector, context);
     }
 
     /**
-     * @description 가장 가까운 부모 요소 중 data-attribute를 가진 요소 찾기
-     * @param element - 시작 요소
-     * @param dataAttr - data 속성 이름
+     * @description Find closest parent element with data-attribute
+     * @param element - Starting element
+     * @param dataAttr - data attribute name
      */
     closestWithData(element: HTMLElement, dataAttr: string): HTMLElement | null {
         return this.#domCache.closest(element, dataAttr);
@@ -117,7 +117,7 @@ export class PortfolioView {
     // ===== DOM Encapsulation =====
 
     /**
-     * @description 파일 import input 클릭 트리거 (DOM 캡슐화)
+     * @description Trigger file import input click (DOM encapsulation)
      */
     triggerFileImport(): void {
         const fileInput = this.dom.importFileInput;
@@ -127,8 +127,8 @@ export class PortfolioView {
     }
 
     /**
-     * @description 포트폴리오 선택기 값 가져오기 (DOM 캡슐화)
-     * @returns 선택된 포트폴리오 ID 또는 null
+     * @description Get portfolio selector value (DOM encapsulation)
+     * @returns Selected portfolio ID or null
      */
     getPortfolioSelectorValue(): string | null {
         const selector = this.dom.portfolioSelector;
@@ -141,25 +141,25 @@ export class PortfolioView {
     // ===== ARIA & Accessibility =====
 
     /**
-     * @description ARIA 알림 발표 (AccessibilityAnnouncer로 위임)
-     * @param message - 알림 메시지
-     * @param politeness - 우선순위
+     * @description Announce ARIA message (delegated to AccessibilityAnnouncer)
+     * @param message - Announcement message
+     * @param politeness - Politeness level
      */
     announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
         this.#accessibilityAnnouncer.announce(message, politeness);
     }
 
     /**
-     * @description Toast 메시지 표시 (ToastManager로 위임)
-     * @param message - 메시지
-     * @param type - 메시지 타입
+     * @description Show toast message (delegated to ToastManager)
+     * @param message - Message content
+     * @param type - Message type
      */
     showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
         this.#toastManager.show(message, type);
     }
 
     /**
-     * @description 계산 로딩 표시
+     * @description Show calculation loading indicator
      */
     showCalculationLoading(): void {
         const existingLoader = document.querySelector('.calculation-loader');
@@ -177,7 +177,7 @@ export class PortfolioView {
     }
 
     /**
-     * @description 계산 로딩 숨김
+     * @description Hide calculation loading indicator
      */
     hideCalculationLoading(): void {
         const loader = document.querySelector('.calculation-loader');
@@ -185,10 +185,10 @@ export class PortfolioView {
     }
 
     /**
-     * @description 입력 필드 유효성 검사 시각적 표시
-     * @param inputElement - 입력 요소
-     * @param isValid - 유효 여부
-     * @param errorMessage - 에러 메시지
+     * @description Toggle input field validation visual feedback
+     * @param inputElement - Input element
+     * @param isValid - Validity status
+     * @param errorMessage - Error message
      */
     toggleInputValidation(
         inputElement: HTMLInputElement,
@@ -310,9 +310,9 @@ export class PortfolioView {
     // ===== 포트폴리오 UI =====
 
     /**
-     * @description 포트폴리오 선택기 렌더링
-     * @param portfolios - 포트폴리오 목록
-     * @param activeId - 활성 포트폴리오 ID
+     * @description Render portfolio selector
+     * @param portfolios - Portfolio list
+     * @param activeId - Active portfolio ID
      */
     renderPortfolioSelector(portfolios: Record<string, { name: string }>, activeId: string): void {
         const selector = this.dom.portfolioSelector;
@@ -333,8 +333,8 @@ export class PortfolioView {
     }
 
     /**
-     * @description 목표 비율 합계 업데이트
-     * @param totalRatio - 총 비율
+     * @description Update target ratio sum
+     * @param totalRatio - Total ratio
      */
     updateRatioSum(totalRatio: number): void {
         const ratioSumEl = this.dom.ratioSum;
@@ -352,8 +352,8 @@ export class PortfolioView {
     }
 
     /**
-     * @description 메인 모드 UI 업데이트
-     * @param mainMode - 메인 모드
+     * @description Update main mode UI
+     * @param mainMode - Main mode
      */
     updateMainModeUI(mainMode: 'add' | 'sell' | 'simple'): void {
         const addCard = this.dom.addInvestmentCard;
@@ -368,8 +368,8 @@ export class PortfolioView {
     }
 
     /**
-     * @description 통화 모드 UI 업데이트
-     * @param currencyMode - 통화 모드
+     * @description Update currency mode UI
+     * @param currencyMode - Currency mode
      */
     updateCurrencyModeUI(currencyMode: 'krw' | 'usd'): void {
         const isUsdMode = currencyMode === 'usd';
@@ -389,8 +389,8 @@ export class PortfolioView {
     }
 
     /**
-     * @description 가격 가져오기 버튼 상태 토글
-     * @param loading - 로딩 상태
+     * @description Toggle fetch prices button state
+     * @param loading - Loading state
      */
     toggleFetchButton(loading: boolean): void {
         const btn = this.dom.fetchAllPricesBtn;

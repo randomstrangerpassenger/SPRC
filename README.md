@@ -99,6 +99,51 @@ class StockManager {
 - ✅ 코드 문서화 표준 준수 (JSDoc 영어 권장사항)
 - ✅ 오픈소스 프로젝트 전환 시 준비 완료
 
+#### Phase 1.4: View 및 Service 클래스 JSDoc 국제화
+
+**목적**: 모든 View 및 Service 클래스의 JSDoc을 영어로 통일하여 코드베이스 전체 문서화 표준 완성
+
+**주요 변경사항:**
+
+1. **View 클래스 JSDoc 영어화 (10개 파일)**
+   - **view.ts**: 메인 PortfolioView 클래스 - "포트폴리오 UI를 담당하는 View 클래스" → "View class responsible for portfolio UI"
+   - **AccessibilityAnnouncer.ts**: "스크린 리더를 위한 ARIA Live 영역 관리" → "Manages ARIA Live region for screen readers"
+   - **DOMCache.ts**: "DOM 요소 캐싱 및 동적 조회" → "DOM element caching and dynamic queries"
+   - **DOMHelpers.ts**: "DOM 요소 생성을 위한 헬퍼 함수들" → "Helper functions for creating DOM elements"
+   - **EventEmitter.ts**: "Pub/Sub 패턴을 구현하는 이벤트 시스템" → "Event system implementing Pub/Sub pattern"
+   - **ModalManager.ts**: "모달 창 관리" → "Manages modal windows"
+   - **ResultsRenderer.ts**: "계산 결과, 섹터 분석, 차트 렌더링 관리" → "Manages rendering of calculation results, sector analysis, and charts"
+   - **RowRenderer.ts**: "가상 스크롤 행 렌더링 로직" → "Virtual scroll row rendering logic"
+   - **ToastManager.ts**: "Toast 메시지 표시" → "Manages toast message display"
+   - **VirtualScrollManager.ts**: "가상 스크롤 관리 - 대량 데이터 효율적 렌더링" → "Manages virtual scrolling - efficiently renders large datasets"
+
+2. **Service 클래스 JSDoc 영어화 (7개 파일)**
+   - **ChartLoaderService.ts**: "Chart.js 모듈 로딩 및 캐싱 서비스" → "Chart.js module loading and caching service"
+   - **EmailService.ts**: "이메일 전송 서비스" → "Email sending service"
+   - **ExcelExportService.ts**: "Excel 파일 내보내기 서비스" → "Excel file export service"
+   - **Logger.ts**: "환경 변수 기반 로깅 서비스" → "Environment variable-based logging service"
+   - **PDFReportService.ts**: "PDF 리포트 생성 서비스" → "PDF report generation service"
+   - **PortfolioMetricsService.ts**: "포트폴리오 및 종목 메트릭 계산 서비스" → "Portfolio and stock metrics calculation service"
+   - **RiskAnalyzerService.ts**: "포트폴리오 리스크 및 리밸런싱 분석 서비스" → "Portfolio risk and rebalancing analysis service"
+
+3. **일관된 번역 패턴 적용 (전체 23개 파일)**
+   - "관리" → "Manages" / "Manage"
+   - "표시" → "Show" / "Display"
+   - "업데이트" → "Update"
+   - "렌더링" → "Render"
+   - "생성" → "Create" / "Generate"
+   - "로딩" → "Load" / "Loading"
+   - "분석" → "Analyze" / "Analysis"
+   - "전송" → "Send"
+   - "내보내기" → "Export"
+
+**효과:**
+- ✅ 전체 코드베이스 JSDoc 영어 통일 완료 (Manager + View + Service 클래스)
+- ✅ 499줄 변경 (Manager 163줄 + View 336줄)
+- ✅ 모든 클래스, 메서드, 파라미터 설명 영어화
+- ✅ 인라인 주석까지 영어 변환으로 완전한 국제화
+- ✅ IDE 지원 향상 - 영어 환경 개발자를 위한 최적화
+
 ---
 
 #### Phase 3.3: 데이터 영속성 추상화 (Repository 패턴)

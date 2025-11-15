@@ -8,25 +8,25 @@ import { logger } from './Logger';
 
 /**
  * @class PDFReportService
- * @description PDF 리포트 생성 서비스 (jspdf, html2canvas 사용)
+ * @description PDF report generation service (using jspdf, html2canvas)
  */
 export class PDFReportService {
     /**
-     * 포트폴리오 리포트를 PDF로 생성
+     * Generate portfolio report as PDF
      */
     static async generatePortfolioReport(portfolio: Portfolio): Promise<void> {
         try {
             const pdf = new jsPDF('p', 'mm', 'a4');
             let yPosition = 20;
 
-            // 제목
+            // Title
             pdf.setFontSize(20);
             pdf.setFont('helvetica', 'bold');
             pdf.text('Portfolio Report', 105, yPosition, { align: 'center' });
 
             yPosition += 15;
 
-            // 포트폴리오 정보
+            // Portfolio information
             pdf.setFontSize(12);
             pdf.setFont('helvetica', 'bold');
             pdf.text('Portfolio Information', 20, yPosition);
@@ -62,7 +62,7 @@ export class PDFReportService {
 
             yPosition += 12;
 
-            // 포트폴리오 요약 통계
+            // Portfolio summary statistics
             const summary = this.calculatePortfolioSummary(portfolio);
 
             pdf.setFontSize(12);
@@ -96,14 +96,14 @@ export class PDFReportService {
 
             yPosition += 12;
 
-            // 종목 목록 테이블
+            // Stock list table
             pdf.setFont('helvetica', 'bold');
             pdf.setFontSize(12);
             pdf.text('Stock Holdings', 20, yPosition);
 
             yPosition += 8;
 
-            // 테이블 헤더
+            // Table header
             pdf.setFontSize(9);
             const tableHeaders = [
                 'Stock',
@@ -129,18 +129,18 @@ export class PDFReportService {
             yPosition += 7;
             pdf.setTextColor(0, 0, 0);
 
-            // 테이블 데이터
+            // Table data
             pdf.setFont('helvetica', 'normal');
             portfolio.portfolioData.forEach((stock, index) => {
                 const stockData = PortfolioMetricsService.calculateStockMetrics(stock);
 
-                // 새 페이지가 필요한지 확인
+                // Check if new page is needed
                 if (yPosition > 270) {
                     pdf.addPage();
                     yPosition = 20;
                 }
 
-                // 행 배경색 (교대로)
+                // Row background color (alternating)
                 if (index % 2 === 0) {
                     pdf.setFillColor(242, 242, 242);
                     pdf.rect(20, yPosition - 5, 170, 7, 'F');
@@ -186,20 +186,20 @@ export class PDFReportService {
                 yPosition += 7;
             });
 
-            // 차트 캡처 및 추가 (차트가 있는 경우)
+            // Capture and add charts (if charts exist)
             await this.addChartsIfAvailable(pdf, yPosition);
 
-            // PDF 다운로드
+            // Download PDF
             const filename = `portfolio_report_${portfolio.name}_${Date.now()}.pdf`;
             pdf.save(filename.replace(/\s+/g, '_'));
         } catch (error) {
             logger.error('PDF generation error', 'PDFReportService', error);
-            throw new Error('PDF 리포트 생성 실패');
+            throw new Error('PDF report generation failed');
         }
     }
 
     /**
-     * 포트폴리오 요약 통계 계산
+     * Calculate portfolio summary statistics
      */
     private static calculatePortfolioSummary(portfolio: Portfolio): {
         totalInvested: number;
@@ -228,23 +228,23 @@ export class PDFReportService {
     }
 
     /**
-     * 차트를 PDF에 추가 (차트가 있는 경우)
+     * Add charts to PDF (if charts exist)
      */
     private static async addChartsIfAvailable(pdf: jsPDF, startY: number): Promise<void> {
         try {
-            // 메인 차트 찾기
+            // Find main chart
             const chartCanvas = document.querySelector('#myChart') as HTMLCanvasElement;
 
             if (chartCanvas) {
-                // 새 페이지 추가
+                // Add new page
                 pdf.addPage();
 
-                // 제목
+                // Title
                 pdf.setFontSize(14);
                 pdf.setFont('helvetica', 'bold');
                 pdf.text('Portfolio Visualization', 105, 20, { align: 'center' });
 
-                // 차트 캡처
+                // Capture chart
                 const canvas = await html2canvas(chartCanvas, {
                     scale: 2,
                     backgroundColor: '#ffffff',
@@ -254,17 +254,17 @@ export class PDFReportService {
                 const imgWidth = 170;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-                // 차트 이미지 추가
+                // Add chart image
                 pdf.addImage(imgData, 'PNG', 20, 30, imgWidth, imgHeight);
             }
         } catch (error) {
-            logger.warn('차트 추가 실패 (차트가 없거나 오류 발생)', 'PDFReportService', error);
-            // 차트 추가 실패는 치명적 오류가 아니므로 계속 진행
+            logger.warn('Failed to add charts (no charts or error occurred)', 'PDFReportService', error);
+            // Chart addition failure is not critical, so continue
         }
     }
 
     /**
-     * HTML 요소를 PDF에 추가 (고급 기능)
+     * Add HTML element to PDF (advanced feature)
      */
     static async generateReportFromHTML(elementId: string, filename: string): Promise<void> {
         try {
@@ -288,11 +288,11 @@ export class PDFReportService {
             let heightLeft = imgHeight;
             let position = 0;
 
-            // 첫 페이지 추가
+            // Add first page
             pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
 
-            // 추가 페이지가 필요한 경우
+            // If additional pages are needed
             while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
@@ -303,7 +303,7 @@ export class PDFReportService {
             pdf.save(filename.replace(/\s+/g, '_'));
         } catch (error) {
             logger.error('HTML to PDF conversion error', 'PDFReportService', error);
-            throw new Error('HTML to PDF 변환 실패');
+            throw new Error('HTML to PDF conversion failed');
         }
     }
 }

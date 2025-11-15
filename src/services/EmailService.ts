@@ -5,7 +5,7 @@ import { Workbook } from 'exceljs';
 import { logger } from './Logger';
 
 /**
- * 이메일 설정 인터페이스
+ * Email configuration interface
  */
 export interface EmailConfig {
     host: string;
@@ -18,7 +18,7 @@ export interface EmailConfig {
 }
 
 /**
- * 이메일 첨부파일 인터페이스
+ * Email attachment interface
  */
 interface EmailAttachment {
     filename: string;
@@ -28,13 +28,13 @@ interface EmailAttachment {
 
 /**
  * @class EmailService
- * @description 이메일 전송 서비스 (백엔드 서버와 통신)
+ * @description Email sending service (communicates with backend server)
  */
 export class EmailService {
     private static readonly API_BASE_URL = 'http://localhost:3001/api';
 
     /**
-     * 포트폴리오 리포트를 이메일로 전송
+     * Send portfolio report via email
      */
     static async sendPortfolioReport(
         portfolio: Portfolio,
@@ -46,10 +46,10 @@ export class EmailService {
         } = { includeExcel: true, includePDF: true }
     ): Promise<void> {
         try {
-            // 첨부파일 생성
+            // Create attachments
             const attachments: EmailAttachment[] = [];
 
-            // Excel 첨부파일
+            // Excel attachment
             if (options.includeExcel) {
                 const excelBuffer = await this.generateExcelBuffer(portfolio);
                 const excelBase64 = this.arrayBufferToBase64(excelBuffer);
@@ -60,7 +60,7 @@ export class EmailService {
                 });
             }
 
-            // PDF 첨부파일
+            // PDF attachment
             if (options.includePDF) {
                 const pdfBuffer = await this.generatePDFBuffer(portfolio);
                 const pdfBase64 = this.arrayBufferToBase64(pdfBuffer);
@@ -71,10 +71,10 @@ export class EmailService {
                 });
             }
 
-            // 이메일 HTML 본문
+            // Email HTML body
             const html = this.generateEmailHTML(portfolio);
 
-            // 이메일 전송 요청
+            // Email sending request
             const response = await fetch(`${this.API_BASE_URL}/send-email`, {
                 method: 'POST',
                 headers: {
@@ -98,13 +98,13 @@ export class EmailService {
         } catch (error) {
             logger.error('Email sending error', 'EmailService', error);
             throw new Error(
-                '이메일 전송 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류')
+                'Email sending failed: ' + (error instanceof Error ? error.message : 'Unknown error')
             );
         }
     }
 
     /**
-     * 이메일 설정 테스트
+     * Test email configuration
      */
     static async testEmailConfig(emailConfig: EmailConfig): Promise<boolean> {
         try {
@@ -125,7 +125,7 @@ export class EmailService {
     }
 
     /**
-     * 서버 상태 확인
+     * Check server health
      */
     static async checkServerHealth(): Promise<boolean> {
         try {
@@ -139,7 +139,7 @@ export class EmailService {
     }
 
     /**
-     * Excel 버퍼 생성
+     * Generate Excel buffer
      */
     private static async generateExcelBuffer(portfolio: Portfolio): Promise<ArrayBuffer> {
         const workbook = new Workbook();
@@ -179,7 +179,7 @@ export class EmailService {
     }
 
     /**
-     * PDF 버퍼 생성
+     * Generate PDF buffer
      */
     private static async generatePDFBuffer(portfolio: Portfolio): Promise<ArrayBuffer> {
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -227,7 +227,7 @@ export class EmailService {
     }
 
     /**
-     * 이메일 HTML 본문 생성
+     * Generate email HTML body
      */
     private static generateEmailHTML(portfolio: Portfolio): string {
         const totalStocks = portfolio.portfolioData.length;
@@ -368,7 +368,7 @@ export class EmailService {
     }
 
     /**
-     * ArrayBuffer를 Base64로 변환
+     * Convert ArrayBuffer to Base64
      */
     private static arrayBufferToBase64(buffer: ArrayBuffer): string {
         const bytes = new Uint8Array(buffer);
