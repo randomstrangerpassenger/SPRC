@@ -5,6 +5,7 @@ import { Calculator } from '../calculator';
 import { t } from '../i18n';
 import { isInputElement } from '../utils';
 import { logger } from '../services/Logger';
+import { PortfolioViewModelMapper } from '../viewModels';
 // 대형 서비스를 동적 임포트로 변경
 import type { EmailConfig } from '../services';
 // ExcelExportService, PDFReportService, EmailService는 동적 임포트 사용
@@ -39,10 +40,13 @@ export class DataManager {
 
             const activePortfolio = this.#state.getActivePortfolio();
             if (activePortfolio) {
-                this.#view.renderPortfolioSelector(
+                // Use ViewModel mapper
+                const viewModel = PortfolioViewModelMapper.toListViewModel(
                     this.#state.getAllPortfolios(),
                     activePortfolio.id
                 );
+                this.#view.renderPortfolioSelectorViewModel(viewModel);
+
                 this.#view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
                 this.#view.updateMainModeUI(activePortfolio.settings.mainMode);
 

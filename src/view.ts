@@ -223,6 +223,18 @@ export class PortfolioView {
         this.#modalManager.closeTransactionModal();
     }
 
+    /**
+     * @description Render transaction list with ViewModel
+     * @param viewModel - TransactionListViewModel
+     */
+    renderTransactionListViewModel(viewModel: TransactionListViewModel): void {
+        this.#modalManager.renderTransactionListViewModel(viewModel);
+    }
+
+    /**
+     * @description Render transaction list (legacy - delegates to ViewModel version)
+     * @deprecated Use renderTransactionListViewModel instead
+     */
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
         this.#modalManager.renderTransactionList(transactions, currency);
     }

@@ -3,6 +3,7 @@ import type { PortfolioState } from '../state';
 import type { PortfolioView } from '../view';
 import { DarkModeManager } from '../DarkModeManager';
 import { logger } from '../services/Logger';
+import { PortfolioViewModelMapper } from '../viewModels';
 
 /**
  * @class AppInitializer
@@ -45,7 +46,13 @@ export class AppInitializer {
 
         const activePortfolio = this.#state.getActivePortfolio();
         if (activePortfolio) {
-            this.#view.renderPortfolioSelector(this.#state.getAllPortfolios(), activePortfolio.id);
+            // Use ViewModel mapper
+            const viewModel = PortfolioViewModelMapper.toListViewModel(
+                this.#state.getAllPortfolios(),
+                activePortfolio.id
+            );
+            this.#view.renderPortfolioSelectorViewModel(viewModel);
+
             this.#view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
             this.#view.updateMainModeUI(activePortfolio.settings.mainMode);
 
