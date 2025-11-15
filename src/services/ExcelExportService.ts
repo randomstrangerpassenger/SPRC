@@ -8,31 +8,31 @@ import { logger } from './Logger';
 
 /**
  * @class ExcelExportService
- * @description Excel 파일 내보내기 서비스 (exceljs 사용)
+ * @description Excel file export service (using exceljs)
  */
 export class ExcelExportService {
     /**
-     * 포트폴리오 데이터를 Excel 파일로 내보내기
+     * Export portfolio data to Excel file
      */
     static async exportPortfolioToExcel(portfolio: Portfolio): Promise<void> {
         try {
             const workbook = new Workbook();
 
-            // 메타데이터 설정
+            // Set metadata
             workbook.creator = 'Portfolio Rebalancer';
             workbook.created = new Date();
             workbook.modified = new Date();
 
-            // 포트폴리오 요약 시트
+            // Portfolio summary sheet
             this.createSummarySheet(workbook, portfolio);
 
-            // 거래 내역 시트
+            // Transactions sheet
             this.createTransactionsSheet(workbook, portfolio);
 
-            // 종목별 상세 시트
+            // Stock details sheet
             this.createStocksDetailSheet(workbook, portfolio);
 
-            // Excel 파일 생성 및 다운로드
+            // Generate and download Excel file
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], {
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -50,19 +50,19 @@ export class ExcelExportService {
             URL.revokeObjectURL(url);
         } catch (error) {
             logger.error('Excel export error', 'ExcelExportService', error);
-            throw new Error('Excel 파일 내보내기 실패');
+            throw new Error('Excel file export failed');
         }
     }
 
     /**
-     * 포트폴리오 요약 시트 생성
+     * Create portfolio summary sheet
      */
     private static createSummarySheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Portfolio Summary', {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
-        // 헤더 스타일
+        // Header style
         const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } },
@@ -75,7 +75,7 @@ export class ExcelExportService {
             },
         };
 
-        // 포트폴리오 정보
+        // Portfolio information
         sheet.addRow(['Portfolio Information']);
         sheet.addRow(['Name', portfolio.name]);
         sheet.addRow(['Exchange Rate', portfolio.settings.exchangeRate]);
@@ -83,7 +83,7 @@ export class ExcelExportService {
         sheet.addRow(['Mode', portfolio.settings.mainMode]);
         sheet.addRow([]);
 
-        // 종목 요약 헤더
+        // Stock summary header
         const headerRow = sheet.addRow([
             'Stock Name',
             'Ticker',
@@ -99,7 +99,7 @@ export class ExcelExportService {
             cell.style = headerStyle;
         });
 
-        // 종목 데이터
+        // Stock data
         portfolio.portfolioData.forEach((stock) => {
             const row = sheet.addRow([
                 stock.name,
@@ -112,7 +112,7 @@ export class ExcelExportService {
                 stock.isFixedBuyEnabled ? toNumber(stock.fixedBuyAmount) : 0,
             ]);
 
-            // 데이터 행 스타일
+            // Data row style
             row.eachCell((cell, colNumber) => {
                 cell.border = {
                     top: { style: 'thin' },
@@ -121,14 +121,14 @@ export class ExcelExportService {
                     right: { style: 'thin' },
                 };
 
-                // 숫자 포맷팅
+                // Number formatting
                 if (colNumber >= 4 && colNumber <= 8) {
                     cell.numFmt = '#,##0.00';
                 }
             });
         });
 
-        // 열 너비 자동 조정
+        // Auto-adjust column width
         sheet.columns.forEach((column, idx) => {
             if (idx === 0) column.width = 25;
             else if (idx === 1) column.width = 12;
@@ -138,14 +138,23 @@ export class ExcelExportService {
     }
 
     /**
-     * 거래 내역 시트 생성
+     * Create transactions sheet
      */
     private static createTransactionsSheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Transactions', {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
-        // 헤더 스타일
+        this.addTransactionHeader(sheet);
+        const transactions = this.collectAndSortTransactions(portfolio);
+        this.addTransactionRows(sheet, transactions);
+        this.adjustTransactionColumnWidths(sheet);
+    }
+
+    /**
+     * Add header row to transactions sheet
+     */
+    private static addTransactionHeader(sheet: Worksheet): void {
         const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } },
@@ -158,7 +167,6 @@ export class ExcelExportService {
             },
         };
 
-        // 헤더
         const headerRow = sheet.addRow([
             'Stock Name',
             'Ticker',
@@ -172,12 +180,15 @@ export class ExcelExportService {
         headerRow.eachCell((cell) => {
             cell.style = headerStyle;
         });
+    }
 
-        // 모든 거래 내역 수집 및 정렬
-        const allTransactions: Array<{
-            stock: Stock;
-            transaction: Transaction;
-        }> = [];
+    /**
+     * Collect and sort all transactions by date
+     */
+    private static collectAndSortTransactions(
+        portfolio: Portfolio
+    ): Array<{ stock: Stock; transaction: Transaction }> {
+        const allTransactions: Array<{ stock: Stock; transaction: Transaction }> = [];
 
         portfolio.portfolioData.forEach((stock) => {
             stock.transactions.forEach((tx) => {
@@ -185,14 +196,22 @@ export class ExcelExportService {
             });
         });
 
-        // 날짜순 정렬
         allTransactions.sort(
             (a, b) =>
                 new Date(b.transaction.date).getTime() - new Date(a.transaction.date).getTime()
         );
 
-        // 거래 내역 데이터
-        allTransactions.forEach(({ stock, transaction }) => {
+        return allTransactions;
+    }
+
+    /**
+     * Add transaction data rows with styling
+     */
+    private static addTransactionRows(
+        sheet: Worksheet,
+        transactions: Array<{ stock: Stock; transaction: Transaction }>
+    ): void {
+        transactions.forEach(({ stock, transaction }) => {
             const quantity = toNumber(transaction.quantity);
             const price = toNumber(transaction.price);
             const totalAmount = quantity * price;
@@ -207,46 +226,56 @@ export class ExcelExportService {
                 totalAmount,
             ]);
 
-            // 데이터 행 스타일
-            row.eachCell((cell, colNumber) => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' },
-                };
-
-                // 숫자 포맷팅
-                if (colNumber >= 5 && colNumber <= 7) {
-                    cell.numFmt = '#,##0.00';
-                }
-
-                // 거래 유형별 색상
-                if (colNumber === 3) {
-                    if (transaction.type === 'buy') {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFE2EFDA' },
-                        };
-                    } else if (transaction.type === 'sell') {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFFCE4D6' },
-                        };
-                    } else if (transaction.type === 'dividend') {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFE7E6E6' },
-                        };
-                    }
-                }
-            });
+            this.styleTransactionRow(row, transaction);
         });
+    }
 
-        // 열 너비 자동 조정
+    /**
+     * Apply styling to transaction row
+     */
+    private static styleTransactionRow(row: Row, transaction: Transaction): void {
+        row.eachCell((cell, colNumber) => {
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+
+            // Number formatting
+            if (colNumber >= 5 && colNumber <= 7) {
+                cell.numFmt = '#,##0.00';
+            }
+
+            // Color by transaction type
+            if (colNumber === 3) {
+                if (transaction.type === 'buy') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE2EFDA' },
+                    };
+                } else if (transaction.type === 'sell') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFFCE4D6' },
+                    };
+                } else if (transaction.type === 'dividend') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE7E6E6' },
+                    };
+                }
+            }
+        });
+    }
+
+    /**
+     * Adjust column widths for transactions sheet
+     */
+    private static adjustTransactionColumnWidths(sheet: Worksheet): void {
         sheet.columns.forEach((column, idx) => {
             if (idx === 0) column.width = 25;
             else if (idx === 1) column.width = 12;
@@ -256,14 +285,14 @@ export class ExcelExportService {
     }
 
     /**
-     * 종목별 상세 시트 생성
+     * Create stock details sheet
      */
     private static createStocksDetailSheet(workbook: Workbook, portfolio: Portfolio): void {
         const sheet = workbook.addWorksheet('Stock Details', {
             views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
         });
 
-        // 헤더 스타일
+        // Header style
         const headerStyle: Partial<Style> = {
             font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC000' } },
@@ -276,7 +305,7 @@ export class ExcelExportService {
             },
         };
 
-        // 헤더
+        // Header
         const headerRow = sheet.addRow([
             'Stock Name',
             'Ticker',
@@ -297,9 +326,9 @@ export class ExcelExportService {
             cell.style = headerStyle;
         });
 
-        // 종목별 상세 데이터
+        // Stock detail data
         portfolio.portfolioData.forEach((stock) => {
-            // PortfolioMetricsService를 사용하여 메트릭 계산
+            // Calculate metrics using PortfolioMetricsService
             const metrics = PortfolioMetricsService.calculateStockMetrics(stock);
 
             const row = sheet.addRow([
@@ -318,7 +347,7 @@ export class ExcelExportService {
                 metrics.unrealizedPLPercent,
             ]);
 
-            // 데이터 행 스타일
+            // Data row style
             row.eachCell((cell, colNumber) => {
                 cell.border = {
                     top: { style: 'thin' },
@@ -327,12 +356,12 @@ export class ExcelExportService {
                     right: { style: 'thin' },
                 };
 
-                // 숫자 포맷팅
+                // Number formatting
                 if (colNumber >= 4) {
                     cell.numFmt = '#,##0.00';
                 }
 
-                // P/L 색상
+                // P/L color
                 if (colNumber === 12 || colNumber === 13) {
                     if (unrealizedPL > 0) {
                         cell.font = { color: { argb: 'FF00B050' }, bold: true };
@@ -343,7 +372,7 @@ export class ExcelExportService {
             });
         });
 
-        // 열 너비 자동 조정
+        // Auto-adjust column width
         sheet.columns.forEach((column, idx) => {
             if (idx === 0) column.width = 25;
             else if (idx === 1) column.width = 12;

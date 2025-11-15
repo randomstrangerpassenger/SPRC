@@ -10,7 +10,7 @@ import { CSS_CLASSES } from '../constants';
 
 /**
  * @class ModalManager
- * @description 모달 창 관리 (custom modal, transaction modal) with accessibility enhancements
+ * @description Manages modal windows (custom modal, transaction modal) with accessibility enhancements
  */
 export class ModalManager {
     #dom: DOMElements;
@@ -24,22 +24,22 @@ export class ModalManager {
     }
 
     /**
-     * @description DOM 참조 업데이트 (재생성 방지)
-     * @param dom - 새로운 DOM 참조
+     * @description Update DOM reference (prevent recreation)
+     * @param dom - New DOM reference
      */
     setDom(dom: DOMElements): void {
         this.#dom = dom;
     }
 
     /**
-     * @description 현재 포커스 요소를 저장합니다.
+     * @description Save the currently focused element
      */
     private saveFocusContext(): void {
         this.#focusManager.saveFocus();
     }
 
     /**
-     * @description 저장된 포커스 요소로 복원합니다.
+     * @description Restore the saved focused element
      */
     private restoreFocus(): void {
         this.#focusManager.restoreFocus();
@@ -51,21 +51,21 @@ export class ModalManager {
     }
 
     /**
-     * @description 확인 대화상자를 표시합니다.
-     * @param title - 모달 제목
-     * @param message - 모달 메시지
-     * @returns 사용자의 선택 (true/false)
+     * @description Show confirmation dialog
+     * @param title - Modal title
+     * @param message - Modal message
+     * @returns User's choice (true/false)
      */
     async showConfirm(title: string, message: string): Promise<boolean> {
         return this.#showModal({ title, message, type: 'confirm' }) as Promise<boolean>;
     }
 
     /**
-     * @description 입력 프롬프트를 표시합니다.
-     * @param title - 모달 제목
-     * @param message - 모달 메시지
-     * @param defaultValue - 기본값
-     * @returns 사용자 입력 문자열 또는 null
+     * @description Show input prompt
+     * @param title - Modal title
+     * @param message - Modal message
+     * @param defaultValue - Default value
+     * @returns User input string or null
      */
     async showPrompt(
         title: string,
@@ -78,8 +78,8 @@ export class ModalManager {
     }
 
     /**
-     * @description 커스텀 모달을 표시합니다 (내부 헬퍼).
-     * @param options - 모달 옵션
+     * @description Show custom modal (internal helper)
+     * @param options - Modal options
      * @returns Promise<boolean | string | null>
      */
     #showModal(options: {
@@ -124,8 +124,8 @@ export class ModalManager {
     }
 
     /**
-     * @description 커스텀 모달의 응답을 처리합니다.
-     * @param confirmed - 확인 여부
+     * @description Handle custom modal response
+     * @param confirmed - Whether confirmed
      */
     handleCustomModal(confirmed: boolean): void {
         if (!this.#activeModalResolver) return;
@@ -143,10 +143,10 @@ export class ModalManager {
     }
 
     /**
-     * @description 거래 내역 모달을 엽니다.
-     * @param stock - 주식 정보
-     * @param currency - 통화 모드
-     * @param transactions - 거래 내역 배열
+     * @description Open transaction modal
+     * @param stock - Stock information
+     * @param currency - Currency mode
+     * @param transactions - Array of transactions
      */
     openTransactionModal(stock: Stock, currency: 'krw' | 'usd', transactions: Transaction[]): void {
         this.saveFocusContext();
@@ -178,7 +178,7 @@ export class ModalManager {
     }
 
     /**
-     * @description 거래 내역 모달을 닫습니다.
+     * @description Close transaction modal
      */
     closeTransactionModal(): void {
         const modal = this.#dom.transactionModal;
@@ -194,9 +194,9 @@ export class ModalManager {
     }
 
     /**
-     * @description 거래 내역 목록을 렌더링합니다.
-     * @param transactions - 거래 내역 배열
-     * @param currency - 통화 모드
+     * @description Render transaction list
+     * @param transactions - Array of transactions
+     * @param currency - Currency mode
      */
     renderTransactionList(transactions: Transaction[], currency: 'krw' | 'usd'): void {
         const listBody = this.#dom.transactionListBody;
@@ -224,13 +224,13 @@ export class ModalManager {
             return idB.localeCompare(idA);
         });
 
-        // DocumentFragment로 DOM 조작 최소화
+        // Minimize DOM manipulation using DocumentFragment
         const fragment = document.createDocumentFragment();
         sorted.forEach((tx) => {
             const tr = document.createElement('tr');
             tr.dataset.txId = tx.id;
 
-            // Decimal을 네이티브 number로 변환
+            // Convert Decimal to native number
             const quantity = toNumber(tx.quantity);
             const price = toNumber(tx.price);
             const total = quantity * price;
@@ -295,7 +295,7 @@ export class ModalManager {
     }
 
     /**
-     * @description 커스텀 모달 이벤트 리스너를 바인딩합니다.
+     * @description Bind custom modal event listeners
      */
     bindModalEvents(): void {
         const cancelBtn = this.#dom.customModalCancel;

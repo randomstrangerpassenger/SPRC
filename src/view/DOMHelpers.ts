@@ -1,6 +1,6 @@
 // src/view/DOMHelpers.ts
 /**
- * @description DOM 요소 생성을 위한 헬퍼 함수들
+ * @description Helper functions for creating DOM elements
  */
 
 import { t } from '../i18n';
@@ -9,7 +9,7 @@ import Decimal from 'decimal.js';
 import { memoizeWithKey } from '../cache/memoization';
 
 /**
- * @description Input 요소를 생성합니다.
+ * @description Create an input element
  */
 export function createInput(
     type: string,
@@ -55,7 +55,7 @@ export function createInput(
 }
 
 /**
- * @description Checkbox 요소를 생성합니다.
+ * @description Create a checkbox element
  */
 export function createCheckbox(
     field: string,
@@ -71,7 +71,7 @@ export function createCheckbox(
 }
 
 /**
- * @description Button 요소를 생성합니다.
+ * @description Create a button element
  */
 export function createButton(
     action: string,
@@ -89,7 +89,7 @@ export function createButton(
 }
 
 /**
- * @description Cell 요소를 생성합니다.
+ * @description Create a cell element
  */
 export function createCell(className: string = '', align: string = 'left'): HTMLDivElement {
     const cell = document.createElement('div');
@@ -98,7 +98,7 @@ export function createCell(className: string = '', align: string = 'left'): HTML
 }
 
 /**
- * @description Output Cell 요소를 생성합니다.
+ * @description Create an output cell element
  */
 export function createOutputCell(
     label: string,
@@ -106,14 +106,14 @@ export function createOutputCell(
     valueClass: string = ''
 ): HTMLDivElement {
     const cell = createCell('output-cell align-right');
-    // XSS 방어: escapeHTML 적용
+    // XSS protection: apply escapeHTML
     cell.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value ${escapeHTML(valueClass)}">${escapeHTML(value)}</span>`;
     return cell;
 }
 
 /**
- * @description 그리드 템플릿을 반환합니다 (반응형).
- * 메모이제이션 적용
+ * @description Return grid template (responsive)
+ * Memoization applied
  */
 const _getGridTemplateImpl = (mainMode: 'add' | 'sell' | 'simple'): string => {
     const isMobile = window.innerWidth <= 768;
@@ -134,9 +134,9 @@ const _getGridTemplateImpl = (mainMode: 'add' | 'sell' | 'simple'): string => {
     }
 };
 
-// 메모이제이션 적용: 동일한 mainMode와 화면 크기에 대해 캐시된 결과 반환
+// Memoization applied: return cached result for same mainMode and screen size
 export const getGridTemplate = memoizeWithKey(
     _getGridTemplateImpl,
     (mainMode) => `${mainMode}:${window.innerWidth <= 768}`,
-    6 // 캐시 크기: add/sell/simple × mobile/desktop = 6가지 조합
+    6 // Cache size: add/sell/simple × mobile/desktop = 6 combinations
 );

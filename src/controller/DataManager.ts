@@ -11,36 +11,42 @@ import type { EmailConfig } from '../services';
 
 /**
  * @class DataManager
- * @description 데이터 가져오기/내보내기, 초기화 관리
+ * @description Manages data import/export and initialization
  */
 export class DataManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+
     constructor(
-        private state: PortfolioState,
-        private view: PortfolioView
-    ) {}
+        state: PortfolioState,
+        view: PortfolioView
+    ) {
+        this.#state = state;
+        this.#view = view;
+    }
 
     /**
-     * @description 데이터 초기화
+     * @description Reset data
      */
     async handleResetData(): Promise<{ needsFullRender: boolean; needsUISetup: boolean }> {
-        const confirmReset = await this.view.showConfirm(
+        const confirmReset = await this.#view.showConfirm(
             t('modal.confirmResetTitle'),
             t('modal.confirmResetMsg')
         );
         if (confirmReset) {
-            await this.state.resetData();
+            await this.#state.resetData();
             Calculator.clearPortfolioStateCache();
 
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             if (activePortfolio) {
-                this.view.renderPortfolioSelector(
-                    this.state.getAllPortfolios(),
+                this.#view.renderPortfolioSelector(
+                    this.#state.getAllPortfolios(),
                     activePortfolio.id
                 );
-                this.view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
-                this.view.updateMainModeUI(activePortfolio.settings.mainMode);
+                this.#view.updateCurrencyModeUI(activePortfolio.settings.currentCurrency);
+                this.#view.updateMainModeUI(activePortfolio.settings.mainMode);
 
-                const { exchangeRateInput, portfolioExchangeRateInput } = this.view.dom;
+                const { exchangeRateInput, portfolioExchangeRateInput } = this.#view.dom;
                 if (isInputElement(exchangeRateInput)) {
                     exchangeRateInput.value = activePortfolio.settings.exchangeRate.toString();
                 }
@@ -50,22 +56,22 @@ export class DataManager {
                 }
             }
 
-            this.view.showToast(t('toast.dataReset'), 'success');
+            this.#view.showToast(t('toast.dataReset'), 'success');
             return { needsFullRender: true, needsUISetup: true };
         }
         return { needsFullRender: false, needsUISetup: false };
     }
 
     /**
-     * @description 데이터 내보내기
+     * @description Export data
      */
     handleExportData(): void {
         try {
-            const dataToExport = this.state.exportData();
+            const dataToExport = this.#state.exportData();
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             const filename = `portfolio_data_${activePortfolio?.name || 'export'}_${Date.now()}.json`;
 
             const a = document.createElement('a');
@@ -76,21 +82,21 @@ export class DataManager {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            this.view.showToast(t('toast.exportSuccess'), 'success');
+            this.#view.showToast(t('toast.exportSuccess'), 'success');
         } catch (error) {
             ErrorService.handle(error as Error, 'handleExportData');
-            this.view.showToast(t('toast.exportError'), 'error');
+            this.#view.showToast(t('toast.exportError'), 'error');
         }
     }
 
     /**
-     * @description 거래 내역 CSV 내보내기
+     * @description Export transaction history to CSV
      */
     handleExportTransactionsCSV(): void {
         try {
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
-                this.view.showToast('내보낼 거래 내역이 없습니다.', 'info');
+                this.#view.showToast('내보낼 거래 내역이 없습니다.', 'info');
                 return;
             }
 
@@ -121,60 +127,60 @@ export class DataManager {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            this.view.showToast('거래 내역 CSV 내보내기 완료', 'success');
+            this.#view.showToast('거래 내역 CSV 내보내기 완료', 'success');
         } catch (error) {
             ErrorService.handle(error as Error, 'handleExportTransactionsCSV');
-            this.view.showToast('CSV 내보내기 실패', 'error');
+            this.#view.showToast('CSV 내보내기 실패', 'error');
         }
     }
 
     /**
-     * @description Excel 파일 내보내기 (exceljs 사용)
-     * 동적 임포트로 변경
+     * @description Export Excel file (using exceljs)
+     * Changed to dynamic import
      */
     async handleExportExcel(): Promise<void> {
         try {
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
-                this.view.showToast('내보낼 포트폴리오 데이터가 없습니다.', 'info');
+                this.#view.showToast('내보낼 포트폴리오 데이터가 없습니다.', 'info');
                 return;
             }
 
             // 동적 임포트: exceljs는 사용자가 Export 버튼을 클릭할 때만 로드됨
             const { ExcelExportService } = await import('../services/ExcelExportService');
             await ExcelExportService.exportPortfolioToExcel(activePortfolio);
-            this.view.showToast('Excel 파일 내보내기 완료', 'success');
+            this.#view.showToast('Excel 파일 내보내기 완료', 'success');
         } catch (error) {
             ErrorService.handle(error as Error, 'handleExportExcel');
-            this.view.showToast('Excel 내보내기 실패', 'error');
+            this.#view.showToast('Excel 내보내기 실패', 'error');
         }
     }
 
     /**
-     * @description PDF 리포트 생성 (jspdf, html2canvas 사용)
-     * 동적 임포트로 변경
+     * @description Generate PDF report (using jspdf, html2canvas)
+     * Changed to dynamic import
      */
     async handleGeneratePDFReport(): Promise<void> {
         try {
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
-                this.view.showToast('생성할 포트폴리오 데이터가 없습니다.', 'info');
+                this.#view.showToast('생성할 포트폴리오 데이터가 없습니다.', 'info');
                 return;
             }
 
             // 동적 임포트: jspdf, html2canvas는 사용자가 PDF 생성을 요청할 때만 로드됨
             const { PDFReportService } = await import('../services/PDFReportService');
             await PDFReportService.generatePortfolioReport(activePortfolio);
-            this.view.showToast('PDF 리포트 생성 완료', 'success');
+            this.#view.showToast('PDF 리포트 생성 완료', 'success');
         } catch (error) {
             ErrorService.handle(error as Error, 'handleGeneratePDFReport');
-            this.view.showToast('PDF 생성 실패', 'error');
+            this.#view.showToast('PDF 생성 실패', 'error');
         }
     }
 
     /**
-     * @description 이메일로 리포트 전송 (nodemailer 사용)
-     * 동적 임포트로 변경
+     * @description Send report via email (using nodemailer)
+     * Changed to dynamic import
      */
     async handleSendEmailReport(
         toEmail: string,
@@ -182,9 +188,9 @@ export class DataManager {
         options?: { includeExcel?: boolean; includePDF?: boolean }
     ): Promise<void> {
         try {
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
-                this.view.showToast('전송할 포트폴리오 데이터가 없습니다.', 'info');
+                this.#view.showToast('전송할 포트폴리오 데이터가 없습니다.', 'info');
                 return;
             }
 
@@ -194,7 +200,7 @@ export class DataManager {
             // 이메일 서버 상태 확인
             const isServerRunning = await EmailService.checkServerHealth();
             if (!isServerRunning) {
-                this.view.showToast(
+                this.#view.showToast(
                     '이메일 서버가 실행 중이지 않습니다. 서버를 시작해주세요. (npm run server)',
                     'error'
                 );
@@ -205,17 +211,17 @@ export class DataManager {
             if (emailConfig) {
                 const isConfigValid = await EmailService.testEmailConfig(emailConfig);
                 if (!isConfigValid) {
-                    this.view.showToast('이메일 설정이 올바르지 않습니다.', 'error');
+                    this.#view.showToast('이메일 설정이 올바르지 않습니다.', 'error');
                     return;
                 }
             }
 
             // 이메일 전송
             await EmailService.sendPortfolioReport(activePortfolio, toEmail, emailConfig, options);
-            this.view.showToast('이메일 전송 완료', 'success');
+            this.#view.showToast('이메일 전송 완료', 'success');
         } catch (error) {
             ErrorService.handle(error as Error, 'handleSendEmailReport');
-            this.view.showToast(
+            this.#view.showToast(
                 '이메일 전송 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'),
                 'error'
             );
@@ -223,15 +229,15 @@ export class DataManager {
     }
 
     /**
-     * @description 데이터 가져오기 트리거
+     * @description Trigger data import
      */
     handleImportData(): void {
-        this.view.triggerFileImport();
+        this.#view.triggerFileImport();
     }
 
     /**
-     * @description 파일 선택 핸들러
-     * @param e - 파일 입력 이벤트
+     * @description File selection handler
+     * @param e - File input event
      */
     handleFileSelected(e: Event): Promise<{ needsUISetup: boolean }> {
         return new Promise((resolve) => {
@@ -240,7 +246,7 @@ export class DataManager {
 
             if (file) {
                 if (file.type !== 'application/json') {
-                    this.view.showToast(t('toast.invalidFileType'), 'error');
+                    this.#view.showToast(t('toast.invalidFileType'), 'error');
                     fileInput.value = '';
                     resolve({ needsUISetup: false });
                     return;
@@ -252,16 +258,16 @@ export class DataManager {
                         const jsonString = event.target?.result;
                         if (typeof jsonString === 'string') {
                             const loadedData = JSON.parse(jsonString);
-                            await this.state.importData(loadedData);
+                            await this.#state.importData(loadedData);
                             Calculator.clearPortfolioStateCache();
-                            this.view.showToast(t('toast.importSuccess'), 'success');
+                            this.#view.showToast(t('toast.importSuccess'), 'success');
                             resolve({ needsUISetup: true });
                         } else {
                             throw new Error('Failed to read file content.');
                         }
                     } catch (error) {
                         ErrorService.handle(error as Error, 'handleFileSelected');
-                        this.view.showToast(t('toast.importError'), 'error');
+                        this.#view.showToast(t('toast.importError'), 'error');
                         resolve({ needsUISetup: false });
                     } finally {
                         fileInput.value = '';
@@ -273,7 +279,7 @@ export class DataManager {
                         new Error('File reading error'),
                         'handleFileSelected - Reader Error'
                     );
-                    this.view.showToast(t('toast.importError'), 'error');
+                    this.#view.showToast(t('toast.importError'), 'error');
                     fileInput.value = '';
                     resolve({ needsUISetup: false });
                 };

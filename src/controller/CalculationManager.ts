@@ -21,21 +21,33 @@ import {
 import { apiService, APIError, formatAPIError } from '../apiService';
 import { SnapshotRepository } from '../state/SnapshotRepository';
 import Decimal from 'decimal.js';
-import type { MainMode, Currency } from '../types';
+import type { MainMode, Currency, FetchStockResult } from '../types';
 import { logger } from '../services/Logger';
 
 /**
  * @class CalculationManager
- * @description 계산, API, 통화 변환 관리
+ * @description Manages calculations, API calls, and currency conversions
  */
 export class CalculationManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+    #debouncedSave: () => void;
+    #getInvestmentAmountInKRW: () => Decimal;
+    #snapshotRepo: SnapshotRepository;
+
     constructor(
-        private state: PortfolioState,
-        private view: PortfolioView,
-        private debouncedSave: () => void,
-        private getInvestmentAmountInKRW: () => Decimal,
-        private snapshotRepo: SnapshotRepository
-    ) {}
+        state: PortfolioState,
+        view: PortfolioView,
+        debouncedSave: () => void,
+        getInvestmentAmountInKRW: () => Decimal,
+        snapshotRepo: SnapshotRepository
+    ) {
+        this.#state = state;
+        this.#view = view;
+        this.#debouncedSave = debouncedSave;
+        this.#getInvestmentAmountInKRW = getInvestmentAmountInKRW;
+        this.#snapshotRepo = snapshotRepo;
+    }
 
     /**
      * @description Validate calculation inputs and ratio sum
@@ -52,18 +64,18 @@ export class CalculationManager {
         if (validationErrors.length > 0) {
             const errorMessages = validationErrors.map((err) => err.message).join('\n');
             ErrorService.handle(new ValidationError(errorMessages), 'handleCalculate - Validation');
-            this.view.hideResults();
+            this.#view.hideResults();
             return false;
         }
 
         const totalRatio = getRatioSum(portfolioData);
         if (Math.abs(totalRatio.toNumber() - 100) > CONFIG.RATIO_TOLERANCE) {
-            const proceed = await this.view.showConfirm(
+            const proceed = await this.#view.showConfirm(
                 t('modal.confirmRatioSumWarnTitle'),
                 t('modal.confirmRatioSumWarnMsg', { totalRatio: totalRatio.toFixed(1) })
             );
             if (!proceed) {
-                this.view.hideResults();
+                this.#view.hideResults();
                 return false;
             }
         }
@@ -87,7 +99,7 @@ export class CalculationManager {
                 exchangeRate,
                 currency
             );
-            await this.snapshotRepo.add(snapshot);
+            await this.#snapshotRepo.add(snapshot);
             logger.info(`Snapshot saved: ${snapshot.date}`, 'CalculationManager');
         } catch (error) {
             // Snapshot failure is non-critical, continue execution
@@ -174,10 +186,10 @@ export class CalculationManager {
      * @description Execute rebalancing calculation
      */
     async handleCalculate(): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        const additionalInvestment = this.getInvestmentAmountInKRW();
+        const additionalInvestment = this.#getInvestmentAmountInKRW();
 
         // Validate inputs
         const isValid = await this.validateCalculationInputs(
@@ -221,31 +233,31 @@ export class CalculationManager {
             activePortfolio.settings.tradingFeeRate,
             activePortfolio.settings.taxRate
         );
-        this.view.displayResults(resultsHTML);
+        this.#view.displayResults(resultsHTML);
 
         // Prepare and display chart
         const chartData = this.prepareChartData(
             rebalancingResults,
             activePortfolio.settings.mainMode
         );
-        this.view.displayChart(
+        this.#view.displayChart(
             await ChartLoaderService.getChart(),
             chartData.labels,
             chartData.data,
             chartData.title
         );
 
-        this.debouncedSave();
-        this.view.showToast(t('toast.calculateSuccess'), 'success');
+        this.#debouncedSave();
+        this.#view.showToast(t('toast.calculateSuccess'), 'success');
     }
 
     /**
-     * @description 모든 주식 가격 가져오기
+     * @description Fetch all stock prices
      */
     async handleFetchAllPrices(): Promise<{ needsUIUpdate: boolean }> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio || activePortfolio.portfolioData.length === 0) {
-            this.view.showToast(t('api.noUpdates'), 'info');
+            this.#view.showToast(t('api.noUpdates'), 'info');
             return { needsUIUpdate: false };
         }
 
@@ -254,11 +266,11 @@ export class CalculationManager {
             .map((s) => ({ id: s.id, ticker: s.ticker.trim() }));
 
         if (tickersToFetch.length === 0) {
-            this.view.showToast(t('toast.noTickersToFetch'), 'info');
+            this.#view.showToast(t('toast.noTickersToFetch'), 'info');
             return { needsUIUpdate: false };
         }
 
-        this.view.toggleFetchButton(true);
+        this.#view.toggleFetchButton(true);
 
         try {
             let successCount = 0;
@@ -271,7 +283,7 @@ export class CalculationManager {
                 activePortfolio.settings.exchangeRate || CONFIG.DEFAULT_EXCHANGE_RATE;
             const currentCurrency = activePortfolio.settings.currentCurrency || 'krw';
 
-            results.forEach((result) => {
+            results.forEach((result: FetchStockResult) => {
                 if (result.status === 'fulfilled' && result.value) {
                     let price = result.value;
 
@@ -281,16 +293,16 @@ export class CalculationManager {
                         price = priceDec.times(exchangeRateDec).toNumber();
                     }
 
-                    this.state.updateStockProperty((result as any).id, 'currentPrice', price);
-                    this.view.updateCurrentPriceInput((result as any).id, price.toFixed(2));
+                    this.#state.updateStockProperty(result.id, 'currentPrice', price);
+                    this.#view.updateCurrentPriceInput(result.id, price.toFixed(2));
                     successCount++;
                 } else {
                     failureCount++;
-                    failedTickers.push((result as any).ticker);
+                    failedTickers.push(result.ticker);
                     logger.error(
-                        `Failed to fetch price for ${(result as any).ticker}`,
+                        `Failed to fetch price for ${result.ticker}`,
                         'CalculationManager',
-                        (result as any).reason
+                        result.reason
                     );
                 }
             });
@@ -298,14 +310,14 @@ export class CalculationManager {
             Calculator.clearPortfolioStateCache();
 
             if (successCount === tickersToFetch.length) {
-                this.view.showToast(t('api.fetchSuccessAll', { count: successCount }), 'success');
+                this.#view.showToast(t('api.fetchSuccessAll', { count: successCount }), 'success');
             } else if (successCount > 0) {
-                this.view.showToast(
+                this.#view.showToast(
                     t('api.fetchSuccessPartial', { count: successCount, failed: failureCount }),
                     'warning'
                 );
             } else {
-                this.view.showToast(t('api.fetchFailedAll', { failed: failureCount }), 'error');
+                this.#view.showToast(t('api.fetchFailedAll', { failed: failureCount }), 'error');
             }
 
             if (failedTickers.length > 0) {
@@ -317,30 +329,30 @@ export class CalculationManager {
             // Enhanced error handling with APIError
             if (error instanceof APIError) {
                 const userMessage = formatAPIError(error);
-                this.view.showToast(userMessage, 'error');
+                this.#view.showToast(userMessage, 'error');
                 logger.error(`${error.type}: ${error.message}`, 'CalculationManager');
             } else {
                 ErrorService.handle(error as Error, 'handleFetchAllPrices');
-                this.view.showToast(
+                this.#view.showToast(
                     t('api.fetchErrorGlobal', { message: (error as Error).message }),
                     'error'
                 );
             }
             return { needsUIUpdate: false };
         } finally {
-            this.view.toggleFetchButton(false);
+            this.#view.toggleFetchButton(false);
         }
     }
 
     /**
-     * @description 메인 모드 변경
-     * @param newMode - 새 메인 모드
+     * @description Change main mode
+     * @param newMode - New main mode
      */
     async handleMainModeChange(newMode: MainMode): Promise<{ needsFullRender: boolean }> {
         if (newMode !== 'add' && newMode !== 'sell' && newMode !== 'simple')
             return { needsFullRender: false };
 
-        await this.state.updatePortfolioSettings('mainMode', newMode);
+        await this.#state.updatePortfolioSettings('mainMode', newMode);
 
         requestAnimationFrame(() => {
             const modeName =
@@ -349,25 +361,25 @@ export class CalculationManager {
                     : newMode === 'simple'
                       ? '간단 계산 모드'
                       : t('ui.sellMode');
-            this.view.showToast(t('toast.modeChanged', { mode: modeName }), 'info');
+            this.#view.showToast(t('toast.modeChanged', { mode: modeName }), 'info');
         });
 
         return { needsFullRender: true };
     }
 
     /**
-     * @description 통화 모드 변경
-     * @param newCurrency - 새 통화 모드
+     * @description Change currency mode
+     * @param newCurrency - New currency mode
      */
     async handleCurrencyModeChange(newCurrency: Currency): Promise<{ needsFullRender: boolean }> {
         if (newCurrency !== 'krw' && newCurrency !== 'usd') return { needsFullRender: false };
 
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return { needsFullRender: false };
 
-        await this.state.updatePortfolioSettings('currentCurrency', newCurrency);
+        await this.#state.updatePortfolioSettings('currentCurrency', newCurrency);
         Calculator.clearPortfolioStateCache();
-        this.view.showToast(
+        this.#view.showToast(
             t('toast.currencyChanged', { currency: newCurrency.toUpperCase() }),
             'info'
         );
@@ -376,15 +388,15 @@ export class CalculationManager {
     }
 
     /**
-     * @description 통화 변환
-     * @param source - 변환 소스 ('krw' 또는 'usd')
+     * @description Convert currency
+     * @param source - Conversion source ('krw' or 'usd')
      */
     async handleCurrencyConversion(source: 'krw' | 'usd'): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
         const { additionalAmountInput, additionalAmountUSDInput, exchangeRateInput } =
-            this.view.dom;
+            this.#view.dom;
 
         if (
             !isInputElement(additionalAmountInput) ||
@@ -398,12 +410,12 @@ export class CalculationManager {
         let currentExchangeRate = CONFIG.DEFAULT_EXCHANGE_RATE;
 
         if (isValidRate) {
-            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            await this.#state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
             currentExchangeRate = exchangeRateNum;
         } else {
-            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+            await this.#state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
             exchangeRateInput.value = CONFIG.DEFAULT_EXCHANGE_RATE.toString();
-            this.view.showToast(t('toast.invalidExchangeRate'), 'error');
+            this.#view.showToast(t('toast.invalidExchangeRate'), 'error');
         }
 
         const currentExchangeRateDec = new Decimal(currentExchangeRate);
@@ -430,57 +442,57 @@ export class CalculationManager {
                 additionalAmountInput.value = krwAmountDec.toFixed(0);
             }
 
-            this.debouncedSave();
+            this.#debouncedSave();
         } catch (error) {
             ErrorService.handle(error as Error, 'CalculationManager.convertCurrency');
-            this.view.showToast(t('toast.amountInputError'), 'error');
+            this.#view.showToast(t('toast.amountInputError'), 'error');
             if (source === 'krw') additionalAmountUSDInput.value = '';
             else additionalAmountInput.value = '';
         }
     }
 
     /**
-     * @description 포트폴리오 환율 변경
-     * @param rate - 환율
+     * @description Change portfolio exchange rate
+     * @param rate - Exchange rate
      */
     async handlePortfolioExchangeRateChange(rate: number): Promise<void> {
-        const activePortfolio = this.state.getActivePortfolio();
+        const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
         const exchangeRateNum = Number(rate);
         const isValidRate = !isNaN(exchangeRateNum) && exchangeRateNum > 0;
 
         if (isValidRate) {
-            await this.state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
-            this.debouncedSave();
+            await this.#state.updatePortfolioSettings('exchangeRate', exchangeRateNum);
+            this.#debouncedSave();
         } else {
-            await this.state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
-            this.view.showToast(t('toast.invalidExchangeRate'), 'error');
+            await this.#state.updatePortfolioSettings('exchangeRate', CONFIG.DEFAULT_EXCHANGE_RATE);
+            this.#view.showToast(t('toast.invalidExchangeRate'), 'error');
         }
     }
 
     /**
-     * @description 비율 정규화
+     * @description Normalize ratios
      */
     handleNormalizeRatios(): void {
         try {
-            const success = this.state.normalizeRatios();
+            const success = this.#state.normalizeRatios();
             if (!success) {
-                this.view.showToast(t('toast.noRatiosToNormalize'), 'info');
+                this.#view.showToast(t('toast.noRatiosToNormalize'), 'info');
                 return;
             }
 
-            const activePortfolio = this.state.getActivePortfolio();
+            const activePortfolio = this.#state.getActivePortfolio();
             if (!activePortfolio) return;
 
-            this.view.updateAllTargetRatioInputs(activePortfolio.portfolioData);
+            this.#view.updateAllTargetRatioInputs(activePortfolio.portfolioData);
             const sum = getRatioSum(activePortfolio.portfolioData);
-            this.view.updateRatioSum(sum.toNumber());
-            this.debouncedSave();
-            this.view.showToast(t('toast.ratiosNormalized'), 'success');
+            this.#view.updateRatioSum(sum.toNumber());
+            this.#debouncedSave();
+            this.#view.showToast(t('toast.ratiosNormalized'), 'success');
         } catch (error) {
             ErrorService.handle(error as Error, 'handleNormalizeRatios');
-            this.view.showToast(t('toast.normalizeRatiosError'), 'error');
+            this.#view.showToast(t('toast.normalizeRatiosError'), 'error');
         }
     }
 }

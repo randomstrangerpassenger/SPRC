@@ -1,7 +1,7 @@
 // src/view/EventEmitter.ts
 /**
  * @class EventEmitter
- * @description Pub/Sub 패턴을 구현하는 이벤트 시스템
+ * @description Event system implementing Pub/Sub pattern
  */
 
 export type EventCallback = (data?: unknown) => void;
@@ -10,9 +10,9 @@ export class EventEmitter {
     #events: Record<string, EventCallback[]> = {};
 
     /**
-     * @description 추상 이벤트를 구독합니다.
-     * @param event - 이벤트 이름 (예: 'calculateClicked')
-     * @param callback - 실행할 콜백 함수
+     * @description Subscribe to an abstract event
+     * @param event - Event name (e.g., 'calculateClicked')
+     * @param callback - Callback function to execute
      */
     on(event: string, callback: EventCallback): void {
         if (!this.#events[event]) {
@@ -22,9 +22,9 @@ export class EventEmitter {
     }
 
     /**
-     * @description 추상 이벤트를 발행합니다.
-     * @param event - 이벤트 이름
-     * @param data - 전달할 데이터
+     * @description Publish an abstract event
+     * @param event - Event name
+     * @param data - Data to pass
      */
     emit(event: string, data?: unknown): void {
         if (this.#events[event]) {
@@ -33,15 +33,15 @@ export class EventEmitter {
     }
 
     /**
-     * @description 모든 이벤트 리스너를 초기화합니다.
+     * @description Clear all event listeners
      */
     clear(): void {
         this.#events = {};
     }
 
     /**
-     * @description 특정 이벤트의 모든 리스너를 제거합니다.
-     * @param event - 이벤트 이름
+     * @description Remove all listeners for a specific event
+     * @param event - Event name
      */
     off(event: string): void {
         delete this.#events[event];

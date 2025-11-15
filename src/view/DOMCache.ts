@@ -3,13 +3,13 @@ import type { DOMElements } from '../types';
 
 /**
  * @class DOMCache
- * @description DOM 요소 캐싱 및 동적 조회를 위한 헬퍼 클래스
+ * @description Helper class for DOM element caching and dynamic queries
  */
 export class DOMCache {
     #cache: DOMElements = {} as DOMElements;
 
     /**
-     * @description 모든 DOM 요소를 캐싱
+     * @description Cache all DOM elements
      */
     cacheAll(): DOMElements {
         const D = document;
@@ -82,25 +82,25 @@ export class DOMCache {
     }
 
     /**
-     * @description 캐시된 DOM 요소 반환
+     * @description Return cached DOM elements
      */
     getCache(): DOMElements {
         return this.#cache;
     }
 
     /**
-     * @description data-attribute 기반 동적 요소 조회
-     * @param selector - data-attribute 셀렉터 (예: '[data-action="submit"]')
-     * @param context - 검색 컨텍스트 (기본값: document)
+     * @description Query element dynamically based on data-attribute
+     * @param selector - data-attribute selector (e.g., '[data-action="submit"]')
+     * @param context - Search context (default: document)
      */
     queryByData(selector: string, context: Document | Element = document): HTMLElement | null {
         return context.querySelector(selector);
     }
 
     /**
-     * @description data-attribute 기반 다중 요소 조회
-     * @param selector - data-attribute 셀렉터
-     * @param context - 검색 컨텍스트 (기본값: document)
+     * @description Query multiple elements based on data-attribute
+     * @param selector - data-attribute selector
+     * @param context - Search context (default: document)
      */
     queryAllByData(
         selector: string,
@@ -110,25 +110,25 @@ export class DOMCache {
     }
 
     /**
-     * @description 가장 가까운 부모 요소 중 data-attribute를 가진 요소 찾기
-     * @param element - 시작 요소
-     * @param dataAttr - data 속성 이름 (예: 'data-id')
+     * @description Find the closest parent element with data-attribute
+     * @param element - Starting element
+     * @param dataAttr - data attribute name (e.g., 'data-id')
      */
     closest(element: HTMLElement, dataAttr: string): HTMLElement | null {
         return element.closest(`[${dataAttr}]`);
     }
 
     /**
-     * @description 특정 ID의 요소 조회 (캐시 우선, 없으면 동적 조회)
-     * @param id - 요소 ID
+     * @description Query element by ID (cache first, fallback to dynamic query)
+     * @param id - Element ID
      */
     getById(id: string): HTMLElement | null {
-        // 먼저 document.getElementById로 조회 (가장 빠름)
+        // Query using document.getElementById first (fastest)
         return document.getElementById(id);
     }
 
     /**
-     * @description 캐시 무효화
+     * @description Invalidate cache
      */
     clearCache(): void {
         this.#cache = {} as DOMElements;

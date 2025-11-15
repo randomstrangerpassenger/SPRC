@@ -1,6 +1,6 @@
 // src/view/RowRenderer.ts
 /**
- * @description 가상 스크롤 행 렌더링 로직
+ * @description Virtual scroll row rendering logic
  */
 
 import { formatCurrency, escapeHTML } from '../utils';
@@ -17,10 +17,10 @@ import {
 } from './DOMHelpers';
 
 /**
- * @description 주식 행 Fragment를 생성합니다.
- * @param stock - 계산된 주식 데이터
- * @param currency - 통화 모드
- * @param mainMode - 메인 모드
+ * @description Create stock row fragment
+ * @param stock - Calculated stock data
+ * @param currency - Currency mode
+ * @param mainMode - Main mode
  * @returns DocumentFragment
  */
 export function createStockRowFragment(
@@ -30,7 +30,7 @@ export function createStockRowFragment(
 ): DocumentFragment {
     const fragment = document.createDocumentFragment();
 
-    // 1. 입력 행 (Inputs Row)
+    // 1. Inputs Row
     const divInputs = document.createElement('div');
     divInputs.className = 'virtual-row-inputs';
     divInputs.dataset.id = stock.id;
@@ -39,7 +39,7 @@ export function createStockRowFragment(
 
     const isMobile = window.innerWidth <= 768;
 
-    // 컬럼 구성
+    // Column configuration
     divInputs
         .appendChild(createCell())
         .appendChild(createInput('text', 'name', stock.name, t('ui.stockName')));
@@ -184,7 +184,7 @@ export function createStockRowFragment(
         divInputs.appendChild(actionCell);
     }
 
-    // 2. 출력 행 (Outputs Row)
+    // 2. Outputs Row
     const divOutputs = document.createElement('div');
     divOutputs.className = 'virtual-row-outputs';
     divOutputs.dataset.id = stock.id;
@@ -199,7 +199,7 @@ export function createStockRowFragment(
         profitLossRate: 0,
     };
 
-    // Decimal을 네이티브 number로 변환
+    // Convert Decimal to native number
     const quantity = toNumber(metrics.quantity);
     const avgBuyPrice = toNumber(metrics.avgBuyPrice);
     const currentAmount = toNumber(metrics.currentAmount);

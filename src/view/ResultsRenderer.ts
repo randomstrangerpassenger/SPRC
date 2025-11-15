@@ -6,7 +6,7 @@ import { CSS_CLASSES } from '../constants';
 
 /**
  * @class ResultsRenderer
- * @description 계산 결과, 섹터 분석, 차트 렌더링 관리
+ * @description Manages rendering of calculation results, sector analysis, and charts
  */
 export class ResultsRenderer {
     #dom: DOMElements;
@@ -19,16 +19,16 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description DOM 참조 업데이트 (재생성 방지)
-     * @param dom - 새로운 DOM 참조
+     * @description Update DOM reference (prevent recreation)
+     * @param dom - New DOM reference
      */
     setDom(dom: DOMElements): void {
         this.#dom = dom;
-        // Chart 인스턴스는 유지 (상태 보존)
+        // Chart instances are retained (preserve state)
     }
 
     /**
-     * @description 스켈레톤 로딩 화면을 표시합니다.
+     * @description Display skeleton loading screen
      */
     displaySkeleton(): void {
         const skeletonHTML = `
@@ -47,8 +47,8 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 계산 결과를 표시합니다.
-     * @param html - 결과 HTML
+     * @description Display calculation results
+     * @param html - Results HTML
      */
     displayResults(html: string): void {
         requestAnimationFrame(() => {
@@ -82,8 +82,8 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 섹터 분석을 표시합니다.
-     * @param html - 섹터 분석 HTML
+     * @description Display sector analysis
+     * @param html - Sector analysis HTML
      */
     displaySectorAnalysis(html: string): void {
         requestAnimationFrame(() => {
@@ -96,11 +96,11 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 포트폴리오 차트를 표시합니다.
-     * @param ChartClass - Chart.js 클래스
-     * @param labels - 차트 레이블
-     * @param data - 차트 데이터
-     * @param title - 차트 제목
+     * @description Display portfolio chart
+     * @param ChartClass - Chart.js class
+     * @param labels - Chart labels
+     * @param data - Chart data
+     * @param title - Chart title
      */
     displayChart(ChartClass: typeof Chart, labels: string[], data: number[], title: string): void {
         const chartEl = this.#dom.chartSection;
@@ -164,7 +164,7 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 결과 화면을 숨깁니다.
+     * @description Hide results screen
      */
     hideResults(): void {
         const resultsEl = this.#dom.resultsSection;
@@ -187,10 +187,10 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 포트폴리오 성과 히스토리 차트를 표시합니다.
-     * @param ChartClass - Chart.js 클래스
-     * @param snapshots - 포트폴리오 스냅샷 배열
-     * @param currency - 통화 모드
+     * @description Display portfolio performance history chart
+     * @param ChartClass - Chart.js class
+     * @param snapshots - Array of portfolio snapshots
+     * @param currency - Currency mode
      */
     async displayPerformanceHistory(
         ChartClass: typeof Chart,
@@ -310,7 +310,7 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description Intersection Observer를 정리합니다.
+     * @description Clean up Intersection Observer
      */
     cleanupObserver(): void {
         if (this.#currentObserver) {
@@ -320,7 +320,7 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 차트 인스턴스를 제거합니다.
+     * @description Destroy chart instances
      */
     destroyChart(): void {
         if (this.#chartInstance) {
@@ -334,7 +334,7 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 모든 리소스를 정리합니다.
+     * @description Clean up all resources
      */
     cleanup(): void {
         this.cleanupObserver();
@@ -342,9 +342,9 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 스냅샷 목록을 렌더링합니다.
-     * @param snapshots - 스냅샷 배열
-     * @param currency - 통화 ('krw' | 'usd')
+     * @description Render snapshot list
+     * @param snapshots - Array of snapshots
+     * @param currency - Currency ('krw' | 'usd')
      */
     displaySnapshotList(snapshots: PortfolioSnapshot[], currency: 'krw' | 'usd'): void {
         const listEl = this.#dom.snapshotList;
@@ -413,8 +413,8 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 성과 히스토리 차트를 표시/숨김합니다.
-     * @param show - 표시 여부
+     * @description Show/hide performance history chart
+     * @param show - Whether to show
      */
     showPerformanceHistoryView(show: boolean): void {
         const section = this.#dom.performanceHistorySection;
@@ -431,8 +431,8 @@ export class ResultsRenderer {
     }
 
     /**
-     * @description 스냅샷 목록을 표시/숨김합니다.
-     * @param show - 표시 여부
+     * @description Show/hide snapshot list
+     * @param show - Whether to show
      */
     showSnapshotListView(show: boolean): void {
         const section = this.#dom.performanceHistorySection;

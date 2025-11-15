@@ -8,6 +8,190 @@
 
 전체 코드베이스에 대한 포괄적인 리팩토링을 완료했습니다. 이번 업데이트는 **안정성 확보 → 구조 개선 → 아키텍처 진화**의 3단계 접근 방식을 따랐습니다.
 
+#### Phase 1.2: 코드 품질 마무리 - 컨벤션 통일 및 함수 분해
+
+**목적**: Phase 1 리팩토링 로드맵의 남은 항목들을 완료하여 코드 품질 기초 정비 마무리
+
+**주요 변경사항:**
+
+1. **Phase 1-1: Constructor 파라미터의 `private`을 `#` 필드로 통일**
+   - 모든 Manager 클래스 (6개) 리팩토링
+     - StockManager, TransactionManager, PortfolioManager
+     - SnapshotManager, DataManager, CalculationManager
+   - 일관된 private 필드 선언 방식 적용
+   - TypeScript의 최신 private 필드 문법 사용
+
+**Before:**
+```typescript
+class StockManager {
+    constructor(
+        private state: PortfolioState,
+        private view: PortfolioView
+    ) {}
+}
+```
+
+**After:**
+```typescript
+class StockManager {
+    #state: PortfolioState;
+    #view: PortfolioView;
+
+    constructor(
+        state: PortfolioState,
+        view: PortfolioView
+    ) {
+        this.#state = state;
+        this.#view = view;
+    }
+}
+```
+
+2. **Phase 3-6: 불안전한 타입 단언 제거**
+   - `(result as any)` 패턴을 `FetchStockResult` 타입으로 교체
+   - CalculationManager의 `handleFetchAllPrices` 메서드 타입 안전성 강화
+   - 명시적 타입 어노테이션으로 런타임 오류 방지
+
+3. **Phase 1-3: Calculator.calculateStockMetrics() 함수 분해**
+   - 82줄 → 12줄로 대폭 간소화 (85% 감소)
+   - 헬퍼 함수 추출:
+     - `aggregateTransactions`: 거래 내역 집계 (매수/매도/배당)
+     - `calculateStockIndicators`: 지표 계산 (수량, 평균단가, 손익 등)
+   - 단일 책임 원칙 적용으로 테스트 용이성 향상
+
+**효과:**
+- ✅ 코딩 컨벤션 통일로 일관성 확보
+- ✅ 타입 안전성 강화로 런타임 오류 방지
+- ✅ 함수 분해로 가독성 및 유지보수성 향상
+- ✅ 테스트 가능한 작은 단위 함수로 분리
+
+#### Phase 1.3: JSDoc 및 주석 국제화
+
+**목적**: 모든 JSDoc과 inline 주석을 영어로 통일하여 국제 협업 환경 지원 및 코드 문서화 표준 준수
+
+**주요 변경사항:**
+
+1. **calculator.ts 완전 영어화**
+   - 모든 JSDoc 주석 영어 변환
+   - Inline 주석 영어 변환 (알고리즘 설명, 최적화 노트 등)
+   - 예시:
+     - "모든 거래 ID를 조합하여 중간 거래 수정/삭제도 감지" → "Combine all transaction IDs to detect modifications/deletions of intermediate transactions"
+     - "@description 포트폴리오 상태를 계산하고 캐싱합니다." → "@description Calculates and caches portfolio state"
+
+2. **모든 Manager 클래스 JSDoc 영어화 (6개 파일)**
+   - **CalculationManager.ts**: "계산, API, 통화 변환 관리" → "Manages calculations, API calls, and currency conversions"
+   - **DataManager.ts**: "데이터 가져오기/내보내기, 초기화 관리" → "Manages data import/export and initialization"
+   - **SnapshotManager.ts**: "포트폴리오 스냅샷 관리" → "Manages portfolio snapshots (performance history, snapshot lists, etc.)"
+   - **PortfolioManager.ts**: "포트폴리오 CRUD 작업 관리" → "Manages portfolio CRUD operations"
+   - **TransactionManager.ts**: "거래 내역 추가, 삭제 관리" → "Manages transaction addition and deletion"
+   - **StockManager.ts**: "주식 추가, 삭제, 수정 관리" → "Manages stock addition, deletion, and modification"
+
+3. **일관된 번역 패턴 적용**
+   - "관리" → "Manages"
+   - "변경" → "Change"
+   - "추가" → "Add"
+   - "삭제" → "Delete"
+   - "가져오기" → "Get/Fetch"
+
+**효과:**
+- ✅ 국제 협업 환경 대비 (영어권 개발자 접근성 향상)
+- ✅ IDE 자동완성 및 호버 힌트의 일관성 확보
+- ✅ 코드 문서화 표준 준수 (JSDoc 영어 권장사항)
+- ✅ 오픈소스 프로젝트 전환 시 준비 완료
+
+#### Phase 1.4: View 및 Service 클래스 JSDoc 국제화
+
+**목적**: 모든 View 및 Service 클래스의 JSDoc을 영어로 통일하여 코드베이스 전체 문서화 표준 완성
+
+**주요 변경사항:**
+
+1. **View 클래스 JSDoc 영어화 (10개 파일)**
+   - **view.ts**: 메인 PortfolioView 클래스 - "포트폴리오 UI를 담당하는 View 클래스" → "View class responsible for portfolio UI"
+   - **AccessibilityAnnouncer.ts**: "스크린 리더를 위한 ARIA Live 영역 관리" → "Manages ARIA Live region for screen readers"
+   - **DOMCache.ts**: "DOM 요소 캐싱 및 동적 조회" → "DOM element caching and dynamic queries"
+   - **DOMHelpers.ts**: "DOM 요소 생성을 위한 헬퍼 함수들" → "Helper functions for creating DOM elements"
+   - **EventEmitter.ts**: "Pub/Sub 패턴을 구현하는 이벤트 시스템" → "Event system implementing Pub/Sub pattern"
+   - **ModalManager.ts**: "모달 창 관리" → "Manages modal windows"
+   - **ResultsRenderer.ts**: "계산 결과, 섹터 분석, 차트 렌더링 관리" → "Manages rendering of calculation results, sector analysis, and charts"
+   - **RowRenderer.ts**: "가상 스크롤 행 렌더링 로직" → "Virtual scroll row rendering logic"
+   - **ToastManager.ts**: "Toast 메시지 표시" → "Manages toast message display"
+   - **VirtualScrollManager.ts**: "가상 스크롤 관리 - 대량 데이터 효율적 렌더링" → "Manages virtual scrolling - efficiently renders large datasets"
+
+2. **Service 클래스 JSDoc 영어화 (7개 파일)**
+   - **ChartLoaderService.ts**: "Chart.js 모듈 로딩 및 캐싱 서비스" → "Chart.js module loading and caching service"
+   - **EmailService.ts**: "이메일 전송 서비스" → "Email sending service"
+   - **ExcelExportService.ts**: "Excel 파일 내보내기 서비스" → "Excel file export service"
+   - **Logger.ts**: "환경 변수 기반 로깅 서비스" → "Environment variable-based logging service"
+   - **PDFReportService.ts**: "PDF 리포트 생성 서비스" → "PDF report generation service"
+   - **PortfolioMetricsService.ts**: "포트폴리오 및 종목 메트릭 계산 서비스" → "Portfolio and stock metrics calculation service"
+   - **RiskAnalyzerService.ts**: "포트폴리오 리스크 및 리밸런싱 분석 서비스" → "Portfolio risk and rebalancing analysis service"
+
+3. **일관된 번역 패턴 적용 (전체 23개 파일)**
+   - "관리" → "Manages" / "Manage"
+   - "표시" → "Show" / "Display"
+   - "업데이트" → "Update"
+   - "렌더링" → "Render"
+   - "생성" → "Create" / "Generate"
+   - "로딩" → "Load" / "Loading"
+   - "분석" → "Analyze" / "Analysis"
+   - "전송" → "Send"
+   - "내보내기" → "Export"
+
+**효과:**
+- ✅ 전체 코드베이스 JSDoc 영어 통일 완료 (Manager + View + Service 클래스)
+- ✅ 499줄 변경 (Manager 163줄 + View 336줄)
+- ✅ 모든 클래스, 메서드, 파라미터 설명 영어화
+- ✅ 인라인 주석까지 영어 변환으로 완전한 국제화
+- ✅ IDE 지원 향상 - 영어 환경 개발자를 위한 최적화
+
+#### Phase 2.1: 긴 함수 분해 (Long Function Decomposition)
+
+**목적**: 복잡한 긴 함수들을 작은 단위로 분해하여 가독성, 유지보수성, 테스트 용이성 향상
+
+**주요 변경사항:**
+
+1. **PDFReportService.generatePortfolioReport() 분해**
+   - **변경 전**: 183줄의 단일 함수 (초기화 → 제목 → 정보 → 요약 → 테이블 → 차트 → 저장)
+   - **변경 후**: 19줄 메인 함수 + 6개 헬퍼 함수
+   - **분해된 함수**:
+     - `addTitleSection()` - 제목 섹션 추가
+     - `addPortfolioInfoSection()` - 포트폴리오 정보 섹션
+     - `addSummarySection()` - 요약 통계 섹션
+     - `addStockTableSection()` - 종목 테이블 섹션
+     - `addTableHeader()` - 테이블 헤더
+     - `addTableRows()` - 테이블 데이터 행
+   - **효과**: 183줄 → 19줄 (90% 감소)
+
+2. **ExcelExportService.createTransactionsSheet() 분해**
+   - **변경 전**: 114줄의 단일 함수 (헤더 스타일 → 데이터 수집 → 정렬 → 행 추가 → 스타일 적용 → 열 조정)
+   - **변경 후**: 10줄 메인 함수 + 5개 헬퍼 함수
+   - **분해된 함수**:
+     - `addTransactionHeader()` - 헤더 행 추가
+     - `collectAndSortTransactions()` - 거래 수집 및 정렬
+     - `addTransactionRows()` - 거래 데이터 행 추가
+     - `styleTransactionRow()` - 행 스타일 적용
+     - `adjustTransactionColumnWidths()` - 열 너비 조정
+   - **효과**: 114줄 → 10줄 (91% 감소)
+
+3. **VirtualScrollManager.#onScroll() 분해**
+   - **변경 전**: 94줄의 복잡한 가상 스크롤 로직 (인덱스 계산 → 입력값 저장 → DOM 재구성 → 캐시 채우기)
+   - **변경 후**: 16줄 메인 함수 + 4개 헬퍼 함수
+   - **분해된 함수**:
+     - `calculateVisibleIndices()` - 표시할 행 인덱스 계산
+     - `saveCurrentInputValues()` - 현재 입력값 저장 (IME 안전)
+     - `renderVisibleRows()` - 보이는 행 렌더링
+     - `fillRowCache()` - 행 캐시 채우기
+   - **효과**: 94줄 → 16줄 (83% 감소)
+
+**전체 효과:**
+- ✅ **391줄의 복잡한 로직을 45줄로 간소화** (88% 감소)
+- ✅ 단일 책임 원칙(SRP) 적용으로 각 함수가 명확한 역할 수행
+- ✅ 테스트 가능한 작은 단위 함수로 분리
+- ✅ 코드 재사용성 향상
+- ✅ 디버깅 및 유지보수 용이성 대폭 개선
+
+---
+
 #### Phase 3.3: 데이터 영속성 추상화 (Repository 패턴)
 
 **목적**: 상태 관리 로직과 데이터 영속성 로직을 분리하여 관심사 분리(SoC)와 테스트 용이성 향상

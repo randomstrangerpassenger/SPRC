@@ -4,47 +4,47 @@ import { TIMING } from '../constants';
 
 /**
  * @class ToastManager
- * @description Toast 메시지 표시를 담당하는 클래스
+ * @description Manages toast message display
  */
 export class ToastManager {
     private readonly DEFAULT_DURATION = TIMING.TOAST_DEFAULT_DURATION;
 
     /**
-     * @description Toast 메시지 표시
-     * @param message - 메시지
-     * @param type - 메시지 타입 (info, success, warning, error)
-     * @param duration - 표시 시간 (밀리초, 기본값: 3000ms)
+     * @description Show toast message
+     * @param message - Message
+     * @param type - Message type (info, success, warning, error)
+     * @param duration - Display duration (milliseconds, default: 3000ms)
      */
     show(
         message: string,
         type: 'info' | 'success' | 'warning' | 'error' = 'info',
         duration: number = this.DEFAULT_DURATION
     ): void {
-        // 기존 toast 제거
+        // Remove existing toast
         const existingToast = document.querySelector('.toast');
         if (existingToast) {
             existingToast.remove();
         }
 
-        // 새 toast 생성
+        // Create new toast
         const toast = document.createElement('div');
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
         toast.className = `toast toast--${type}`;
 
-        // XSS 방어: escapeHTML 적용
+        // XSS protection: apply escapeHTML
         toast.innerHTML = escapeHTML(message).replace(/\n/g, '<br>');
 
         document.body.appendChild(toast);
 
-        // 자동 제거
+        // Auto remove
         setTimeout(() => {
             toast.remove();
         }, duration);
     }
 
     /**
-     * @description 현재 표시 중인 toast 즉시 제거
+     * @description Immediately dismiss currently displayed toast
      */
     dismiss(): void {
         const existingToast = document.querySelector('.toast');
