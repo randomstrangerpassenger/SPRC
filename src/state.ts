@@ -9,15 +9,16 @@ import type { Stock, Transaction, Portfolio, PortfolioSettings, MetaState } from
 import { createDefaultPortfolio, createDefaultStock } from './state/helpers';
 import { validateAndUpgradeData } from './state/validation';
 import { PortfolioRepository } from './state/PortfolioRepository';
+import { PortfolioCollection } from './state/PortfolioCollection';
 import { logger } from './services/Logger';
 
 export class PortfolioState {
-    #portfolios: Record<string, Portfolio> = {};
-    #activePortfolioId: string | null = null;
+    #portfolioCollection: PortfolioCollection;
     #initializationPromise: Promise<void> | null = null;
     #portfolioRepo: PortfolioRepository;
 
     constructor() {
+        this.#portfolioCollection = new PortfolioCollection();
         this.#portfolioRepo = new PortfolioRepository();
         this.#initializationPromise = this._initialize();
     }
@@ -63,13 +64,12 @@ export class PortfolioState {
             // 데이터 유효성 검사 (소독 포함) - validation 모듈 사용
             const { meta, portfolios } = validateAndUpgradeData(loadedMetaData, loadedPortfolios);
 
-            this.#portfolios = portfolios;
-            this.#activePortfolioId = meta.activePortfolioId;
+            this.#portfolioCollection.replaceAll(portfolios, meta.activePortfolioId);
 
             // 유효한 데이터가 전혀 없으면 기본값 생성 (비동기 저장)
             if (
-                Object.keys(this.#portfolios).length === 0 ||
-                !this.#portfolios[this.#activePortfolioId]
+                this.#portfolioCollection.isEmpty() ||
+                !this.#portfolioCollection.has(meta.activePortfolioId)
             ) {
                 logger.warn(
                     'No valid portfolios found or active ID invalid. Creating default portfolio.',
@@ -110,16 +110,15 @@ export class PortfolioState {
     // Phase 2-2: _validateAndUpgradeData 제거 (state/validation.ts로 이동)
 
     getActivePortfolio(): Portfolio | null {
-        return this.#activePortfolioId ? this.#portfolios[this.#activePortfolioId] : null;
+        return this.#portfolioCollection.getActive();
     }
 
     getAllPortfolios(): Record<string, Portfolio> {
-        return this.#portfolios;
+        return this.#portfolioCollection.getAll();
     }
 
     async setActivePortfolioId(id: string): Promise<void> {
-        if (this.#portfolios[id]) {
-            this.#activePortfolioId = id;
+        if (this.#portfolioCollection.setActive(id)) {
             await this.saveMeta(); // 비동기 저장
         } else {
             ErrorService.handle(
@@ -133,36 +132,23 @@ export class PortfolioState {
         const newId = `p-${generateId()}`;
         // helpers 모듈 사용
         const newPortfolio = createDefaultPortfolio(newId, name);
-        this.#portfolios[newId] = newPortfolio;
-        this.#activePortfolioId = newId;
+        this.#portfolioCollection.add(newPortfolio, true); // setAsActive = true
         await this.savePortfolios(); // 비동기 저장
         await this.saveMeta(); // 비동기 저장
         return newPortfolio;
     }
 
     async deletePortfolio(id: string): Promise<boolean> {
-        if (Object.keys(this.#portfolios).length <= 1) {
-            logger.warn('Cannot delete the last portfolio.', 'PortfolioState');
-            return false;
-        }
-        if (!this.#portfolios[id]) {
-            logger.warn(`Portfolio with ID ${id} not found for deletion.`, 'PortfolioState');
-            return false;
-        }
-
-        delete this.#portfolios[id];
-
-        if (this.#activePortfolioId === id) {
-            this.#activePortfolioId = Object.keys(this.#portfolios)[0] || null;
+        const deleted = this.#portfolioCollection.delete(id);
+        if (deleted) {
+            await this.savePortfolios(); // 비동기 저장
             await this.saveMeta(); // 비동기 저장
         }
-        await this.savePortfolios(); // 비동기 저장
-        return true;
+        return deleted;
     }
 
     async renamePortfolio(id: string, newName: string): Promise<void> {
-        if (this.#portfolios[id]) {
-            this.#portfolios[id].name = newName.trim();
+        if (this.#portfolioCollection.rename(id, newName)) {
             await this.savePortfolios(); // 비동기 저장
         } else {
             ErrorService.handle(
@@ -427,8 +413,10 @@ export class PortfolioState {
     async resetData(save: boolean = true): Promise<void> {
         // helpers 모듈 사용 (generateId는 helpers에서 사용)
         const defaultPortfolio = createDefaultPortfolio(`p-${Date.now()}`);
-        this.#portfolios = { [defaultPortfolio.id]: defaultPortfolio };
-        this.#activePortfolioId = defaultPortfolio.id;
+        this.#portfolioCollection.replaceAll(
+            { [defaultPortfolio.id]: defaultPortfolio },
+            defaultPortfolio.id
+        );
         if (save) {
             await this.savePortfolios(); // 비동기 저장
             await this.saveMeta(); // 비동기 저장
@@ -438,7 +426,7 @@ export class PortfolioState {
 
     exportData(): { meta: MetaState; portfolios: Record<string, Portfolio> } {
         const exportablePortfolios: Record<string, Portfolio> = {};
-        Object.entries(this.#portfolios).forEach(([id, portfolio]) => {
+        Object.entries(this.#portfolioCollection.getAll()).forEach(([id, portfolio]) => {
             exportablePortfolios[id] = {
                 ...portfolio,
                 portfolioData: portfolio.portfolioData.map((stock) => ({
@@ -463,7 +451,10 @@ export class PortfolioState {
         });
 
         return {
-            meta: { activePortfolioId: this.#activePortfolioId, version: CONFIG.DATA_VERSION },
+            meta: {
+                activePortfolioId: this.#portfolioCollection.getActiveId(),
+                version: CONFIG.DATA_VERSION,
+            },
             portfolios: exportablePortfolios,
         };
     }
@@ -479,12 +470,11 @@ export class PortfolioState {
             importedData.portfolios
         );
 
-        this.#portfolios = portfolios;
-        this.#activePortfolioId = meta.activePortfolioId;
+        this.#portfolioCollection.replaceAll(portfolios, meta.activePortfolioId);
 
         if (
-            Object.keys(this.#portfolios).length === 0 ||
-            !this.#portfolios[this.#activePortfolioId]
+            this.#portfolioCollection.isEmpty() ||
+            !this.#portfolioCollection.has(meta.activePortfolioId)
         ) {
             logger.warn(
                 'Imported data resulted in no valid portfolios. Resetting to default.',
@@ -499,11 +489,11 @@ export class PortfolioState {
     }
 
     async saveMeta(): Promise<void> {
-        await this.#portfolioRepo.saveMeta(this.#activePortfolioId);
+        await this.#portfolioRepo.saveMeta(this.#portfolioCollection.getActiveId());
     }
 
     async savePortfolios(): Promise<void> {
-        await this.#portfolioRepo.savePortfolios(this.#portfolios);
+        await this.#portfolioRepo.savePortfolios(this.#portfolioCollection.getAll());
     }
 
     async saveActivePortfolio(): Promise<void> {
