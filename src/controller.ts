@@ -1,9 +1,8 @@
 // src/controller.ts
 import { PortfolioState } from './state';
 import { PortfolioView } from './view';
-import { debounce, getRatioSum, isInputElement } from './utils';
+import { debounce, isInputElement } from './utils';
 import { CONFIG, DECIMAL_ZERO, TIMING } from './constants';
-import { generateSectorAnalysisHTML } from './templates';
 import { TemplateRegistry } from './templates/TemplateRegistry';
 import Decimal from 'decimal.js';
 import { bindEventListeners } from './eventBinder';
@@ -11,7 +10,16 @@ import { SnapshotRepository } from './state/SnapshotRepository';
 
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
 import { logger } from './services/Logger';
-import { RiskAnalyzerService } from './services/RiskAnalyzerService';
+import { ErrorHandler } from './errors/ErrorHandler';
+
+// Command Pattern
+import {
+    CommandPipeline,
+    CalculationCommand,
+    WarningAnalysisCommand,
+    PersistenceCommand,
+    type CommandContext,
+} from './controller/commands';
 
 // 분리된 매니저 모듈들
 import { PortfolioManager } from './controller/PortfolioManager';
@@ -48,6 +56,10 @@ export class PortfolioController {
 
     #eventAbortController: AbortController | null = null;
 
+    // Command Pipeline
+    #commandPipeline: CommandPipeline;
+    #errorHandler: ErrorHandler;
+
     constructor(state: PortfolioState, view: PortfolioView) {
         this.state = state;
         this.view = view;
@@ -73,6 +85,17 @@ export class PortfolioController {
         this.dataManager = new DataManager(this.state, this.view);
         this.snapshotManager = new SnapshotManager(this.state, this.view, this.#snapshotRepo);
         this.#appInitializer = new AppInitializer(this.state, this.view);
+
+        // ErrorHandler 및 Command Pipeline 초기화
+        this.#errorHandler = new ErrorHandler(logger);
+        this.#commandPipeline = new CommandPipeline(
+            [
+                new CalculationCommand(),
+                new WarningAnalysisCommand(),
+                new PersistenceCommand(this.debouncedSave),
+            ],
+            this.#errorHandler
+        );
 
         // 초기화 에러 처리
         void this.initialize().catch((error) => {
@@ -147,75 +170,26 @@ export class PortfolioController {
     }
 
     /**
-     * @description 계산된 상태를 적용하는 공통 로직 (DRY)
+     * @description 계산된 상태를 적용하는 공통 로직 (Command Pattern)
      * @param mode - 'full': 전체 렌더링, 'partial': 부분 업데이트
      */
     private async applyCalculatedState(mode: 'full' | 'partial'): Promise<void> {
         const activePortfolio = this.state.getActivePortfolio();
         if (!activePortfolio) return;
 
-        // 1. 포트폴리오 계산
-        const calculatedState = await this.#calculatorWorker.calculatePortfolioState({
-            portfolioData: activePortfolio.portfolioData,
-            exchangeRate: activePortfolio.settings.exchangeRate,
-            currentCurrency: activePortfolio.settings.currentCurrency,
-        });
+        // Command Context 생성
+        const context: CommandContext = {
+            mode,
+            activePortfolio,
+            view: this.view,
+            calculatorWorker: this.#calculatorWorker,
+        };
 
-        // 2. 테이블 렌더링 (모드에 따라 다름)
-        if (mode === 'full') {
-            this.view.renderTable(
-                calculatedState.portfolioData,
-                activePortfolio.settings.currentCurrency,
-                activePortfolio.settings.mainMode
-            );
-        } else {
-            this.view.updateVirtualTableData(calculatedState.portfolioData);
-        }
-
-        // 3. 비율 합계 업데이트
-        const ratioSum = getRatioSum(activePortfolio.portfolioData);
-        this.view.updateRatioSum(ratioSum.toNumber());
-
-        // 4. 섹터 분석
-        const sectorData = await this.#calculatorWorker.calculateSectorAnalysis(
-            calculatedState.portfolioData,
-            activePortfolio.settings.currentCurrency
-        );
-        this.view.displaySectorAnalysis(
-            generateSectorAnalysisHTML(sectorData, activePortfolio.settings.currentCurrency)
-        );
-
-        // 5. 전체 렌더링 시에만 경고 및 UI 업데이트
-        if (mode === 'full') {
-            // 리밸런싱 필요 여부 분석
-            const rebalancingAnalysis = RiskAnalyzerService.analyzeRebalancingNeeds(
-                calculatedState.portfolioData,
-                calculatedState.currentTotal,
-                activePortfolio.settings.rebalancingTolerance
-            );
-
-            if (rebalancingAnalysis.hasRebalancingNeeds && rebalancingAnalysis.message) {
-                this.view.showToast(rebalancingAnalysis.message, 'info');
-            }
-
-            // 리스크 경고 분석
-            const riskAnalysis = RiskAnalyzerService.analyzeRiskWarnings(
-                calculatedState.portfolioData,
-                calculatedState.currentTotal,
-                sectorData
-            );
-
-            const riskMessage = RiskAnalyzerService.formatRiskWarnings(riskAnalysis);
-            if (riskMessage) {
-                this.view.showToast(riskMessage, 'warning');
-            }
-
-            this.view.updateMainModeUI(activePortfolio.settings.mainMode);
-        }
-
-        // 6. 상태 저장
-        activePortfolio.portfolioData = calculatedState.portfolioData;
-        this.debouncedSave();
+        // Command Pipeline 실행
+        // - CalculationCommand: 계산 + 기본 렌더링 + 섹터 분석
+        // - WarningAnalysisCommand: 리밸런싱/리스크 경고 (full 모드만)
+        // - PersistenceCommand: 상태 저장
+        await this.#commandPipeline.execute(context);
     }
 
     // === 기타 핸들러 ===
