@@ -157,6 +157,8 @@ export interface DOMElements {
     exportDataBtn: HTMLElement | null;
     importDataBtn: HTMLElement | null;
     importFileInput: HTMLElement | null;
+    importTransactionsBtn: HTMLElement | null;
+    importTransactionFileInput: HTMLElement | null;
     transactionModal: HTMLElement | null;
     modalStockName: HTMLElement | null;
     closeModalBtn: HTMLElement | null;

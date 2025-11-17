@@ -45,6 +45,8 @@ export class DOMCache {
             importDataBtn: D.getElementById('importDataBtn'),
             exportTransactionsCSVBtn: D.getElementById('exportTransactionsCSVBtn'),
             importFileInput: D.getElementById('importFileInput'),
+            importTransactionsBtn: D.getElementById('importTransactionsBtn'),
+            importTransactionFileInput: D.getElementById('importTransactionFileInput'),
             transactionModal: D.getElementById('transactionModal'),
             modalStockName: D.getElementById('modalStockName'),
             closeModalBtn: D.getElementById('closeModalBtn'),

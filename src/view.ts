@@ -128,6 +128,16 @@ export class PortfolioView {
     }
 
     /**
+     * @description Trigger transaction file import input click (DOM encapsulation)
+     */
+    triggerTransactionFileImport(): void {
+        const fileInput = this.dom.importTransactionFileInput;
+        if (isInputElement(fileInput)) {
+            fileInput.click();
+        }
+    }
+
+    /**
      * @description Get portfolio selector value (DOM encapsulation)
      * @returns Selected portfolio ID or null
      */

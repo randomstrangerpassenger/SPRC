@@ -87,6 +87,11 @@ export function bindControllerEvents(controller: PortfolioController): void {
             handler: async (e: Event) => controller.dataManager.handleFileSelected(e),
             autoPostAction: true,
         },
+        {
+            event: 'importTransactionFileSelected',
+            handler: async (e: Event) => controller.dataManager.handleTransactionFileSelected(e),
+            autoPostAction: true,
+        },
 
         // 테이블 상호작용 (단순)
         {

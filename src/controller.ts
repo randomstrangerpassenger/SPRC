@@ -11,6 +11,8 @@ import { SnapshotRepository } from './state/SnapshotRepository';
 import { getCalculatorWorkerService } from './services/CalculatorWorkerService';
 import { logger } from './services/Logger';
 import { ErrorHandler } from './errors/ErrorHandler';
+import { getKeyboardShortcutService } from './services/KeyboardShortcutService';
+import { getCommandHistoryService } from './services/CommandHistoryService';
 
 // Command Pattern
 import {
@@ -53,6 +55,8 @@ export class PortfolioController {
     #snapshotRepo: SnapshotRepository;
 
     #calculatorWorker = getCalculatorWorkerService();
+    #keyboardShortcutService = getKeyboardShortcutService();
+    #commandHistoryService = getCommandHistoryService();
 
     #eventAbortController: AbortController | null = null;
 
@@ -112,6 +116,8 @@ export class PortfolioController {
             this.bindControllerEvents.bind(this),
             bindEventListeners
         );
+        // 키보드 단축키 설정
+        this.setupKeyboardShortcuts();
         // fullRender는 초기화 후 호출
         this.fullRender();
     }
@@ -125,6 +131,7 @@ export class PortfolioController {
             this.#eventAbortController = null;
             logger.debug('Event listeners cleaned up', 'Controller');
         }
+        this.#keyboardShortcutService.stop();
         this.#appInitializer.cleanup();
     }
 
@@ -292,6 +299,229 @@ export class PortfolioController {
             logger.error('Error parsing investment amount', 'Controller', error);
             return DECIMAL_ZERO;
         }
+    }
+
+    // ===== 키보드 단축키 설정 =====
+
+    /**
+     * @description 키보드 단축키 설정 및 등록
+     */
+    setupKeyboardShortcuts(): void {
+        this.#keyboardShortcutService.registerMany([
+            // Ctrl+Enter: 빠른 계산
+            {
+                shortcut: { key: 'Enter', ctrl: true },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: Ctrl+Enter (Calculate)', 'Controller');
+                    this.view.announce('계산 시작', 'polite');
+                    this.calculationManager.handleCalculate();
+                },
+                description: '빠른 계산',
+            },
+
+            // Ctrl+1~9: 포트폴리오 전환
+            {
+                shortcut: { key: '1', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(0),
+                description: '첫 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '2', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(1),
+                description: '두 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '3', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(2),
+                description: '세 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '4', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(3),
+                description: '네 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '5', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(4),
+                description: '다섯 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '6', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(5),
+                description: '여섯 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '7', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(6),
+                description: '일곱 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '8', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(7),
+                description: '여덟 번째 포트폴리오로 전환',
+            },
+            {
+                shortcut: { key: '9', ctrl: true },
+                handler: () => this.#switchToPortfolioByIndex(8),
+                description: '아홉 번째 포트폴리오로 전환',
+            },
+
+            // ESC: 모달 닫기
+            {
+                shortcut: { key: 'Escape' },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: ESC (Close Modal)', 'Controller');
+                    this.view.closeTransactionModal();
+                },
+                description: '모달 닫기',
+            },
+
+            // Ctrl+S: 데이터 저장 (브라우저 저장 방지 override)
+            {
+                shortcut: { key: 's', ctrl: true },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: Ctrl+S (Save)', 'Controller');
+                    this.view.announce('데이터 저장됨', 'polite');
+                    this.state.saveActivePortfolio();
+                },
+                description: '데이터 저장',
+            },
+
+            // Ctrl+N: 새 종목 추가
+            {
+                shortcut: { key: 'n', ctrl: true },
+                handler: async () => {
+                    logger.debug('Keyboard shortcut: Ctrl+N (New Stock)', 'Controller');
+                    const result = await this.stockManager.handleAddNewStock();
+                    if (result.needsFullRender) {
+                        await this.fullRender();
+                    }
+                    if (result.stockId) {
+                        this.view.focusOnNewStock(result.stockId);
+                    }
+                },
+                description: '새 종목 추가',
+            },
+
+            // Ctrl+E: 데이터 내보내기
+            {
+                shortcut: { key: 'e', ctrl: true },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: Ctrl+E (Export)', 'Controller');
+                    this.dataManager.handleExportData();
+                },
+                description: '데이터 내보내기',
+            },
+
+            // Ctrl+Z: 실행 취소 (Undo)
+            {
+                shortcut: { key: 'z', ctrl: true },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: Ctrl+Z (Undo)', 'Controller');
+                    this.handleUndo();
+                },
+                description: '실행 취소',
+            },
+
+            // Ctrl+Y or Ctrl+Shift+Z: 다시 실행 (Redo)
+            {
+                shortcut: { key: 'y', ctrl: true },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: Ctrl+Y (Redo)', 'Controller');
+                    this.handleRedo();
+                },
+                description: '다시 실행',
+            },
+            {
+                shortcut: { key: 'z', ctrl: true, shift: true },
+                handler: () => {
+                    logger.debug('Keyboard shortcut: Ctrl+Shift+Z (Redo)', 'Controller');
+                    this.handleRedo();
+                },
+                description: '다시 실행 (대체)',
+            },
+        ]);
+
+        // 키보드 단축키 서비스 시작
+        this.#keyboardShortcutService.start();
+
+        logger.info('Keyboard shortcuts initialized', 'Controller');
+    }
+
+    /**
+     * @description 인덱스로 포트폴리오 전환
+     */
+    #switchToPortfolioByIndex(index: number): void {
+        const portfolios = this.state.getAllPortfolios();
+        if (index < 0 || index >= portfolios.length) {
+            logger.debug(`Portfolio index ${index} out of range`, 'Controller');
+            return;
+        }
+
+        const targetPortfolio = portfolios[index];
+        logger.debug(`Keyboard shortcut: Ctrl+${index + 1} (Switch to ${targetPortfolio.name})`, 'Controller');
+        this.view.announce(`포트폴리오 전환: ${targetPortfolio.name}`, 'polite');
+
+        this.portfolioManager.handleSwitchPortfolio(targetPortfolio.id).then(() => {
+            this.fullRender();
+        });
+    }
+
+    // ===== Undo/Redo 기능 =====
+
+    /**
+     * @description 실행 취소 (Undo)
+     */
+    handleUndo(): void {
+        try {
+            const success = this.#commandHistoryService.undo();
+            if (success) {
+                const commandName = this.#commandHistoryService.getLastRedoCommandName();
+                this.view.announce(
+                    commandName ? `${commandName} 취소됨` : '작업이 취소되었습니다',
+                    'polite'
+                );
+                this.view.showToast('작업이 취소되었습니다', 'info');
+                this.fullRender();
+            } else {
+                this.view.announce('취소할 작업이 없습니다', 'polite');
+                this.view.showToast('취소할 작업이 없습니다', 'info');
+            }
+        } catch (error) {
+            logger.error('Undo failed', 'Controller.handleUndo', error);
+            this.view.showToast('실행 취소 실패', 'error');
+        }
+    }
+
+    /**
+     * @description 다시 실행 (Redo)
+     */
+    handleRedo(): void {
+        try {
+            const success = this.#commandHistoryService.redo();
+            if (success) {
+                const commandName = this.#commandHistoryService.getLastUndoCommandName();
+                this.view.announce(
+                    commandName ? `${commandName} 다시 실행됨` : '작업이 다시 실행되었습니다',
+                    'polite'
+                );
+                this.view.showToast('작업이 다시 실행되었습니다', 'info');
+                this.fullRender();
+            } else {
+                this.view.announce('다시 실행할 작업이 없습니다', 'polite');
+                this.view.showToast('다시 실행할 작업이 없습니다', 'info');
+            }
+        } catch (error) {
+            logger.error('Redo failed', 'Controller.handleRedo', error);
+            this.view.showToast('다시 실행 실패', 'error');
+        }
+    }
+
+    /**
+     * @description CommandHistoryService getter (매니저들이 접근할 수 있도록)
+     */
+    get commandHistoryService() {
+        return this.#commandHistoryService;
     }
 
     // ===== Proxy methods for testing compatibility =====

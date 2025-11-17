@@ -374,4 +374,160 @@ export const Validator = {
 
         return true;
     },
+
+    /**
+     * @description 중복 종목 검증 (티커 기준)
+     * @param portfolioData - 포트폴리오 데이터
+     * @returns 중복 티커 배열
+     */
+    findDuplicateTickers(portfolioData: { ticker: string; name: string }[]): string[] {
+        const tickerMap = new Map<string, number>();
+        const duplicates: string[] = [];
+
+        portfolioData.forEach((stock) => {
+            const ticker = stock.ticker.toUpperCase().trim();
+            if (!ticker) return;
+
+            const count = tickerMap.get(ticker) || 0;
+            tickerMap.set(ticker, count + 1);
+
+            if (count === 1) {
+                // 두 번째 등장 시 중복으로 추가
+                duplicates.push(ticker);
+            }
+        });
+
+        return duplicates;
+    },
+
+    /**
+     * @description 목표 비율 합계 검증
+     * @param portfolioData - 포트폴리오 데이터
+     * @param tolerance - 허용 오차 (%)
+     * @returns 검증 결과
+     */
+    validateRatioSum(
+        portfolioData: { targetRatio: Decimal | number }[],
+        tolerance: number = 0.01
+    ): ValidationResult {
+        const sum = portfolioData.reduce((total, stock) => {
+            const ratio = new Decimal(stock.targetRatio || 0);
+            return total.plus(ratio);
+        }, new Decimal(0));
+
+        const diff = sum.minus(100).abs();
+
+        if (diff.greaterThan(tolerance)) {
+            return {
+                isValid: false,
+                value: sum.toNumber(),
+                message: `목표 비율 합계가 100%가 아닙니다 (현재: ${sum.toFixed(2)}%)`,
+            };
+        }
+
+        return { isValid: true, value: sum.toNumber() };
+    },
+
+    /**
+     * @description 종목 이름 중복 검증
+     * @param portfolioData - 포트폴리오 데이터
+     * @returns 중복 이름 배열
+     */
+    findDuplicateNames(portfolioData: { name: string }[]): string[] {
+        const nameMap = new Map<string, number>();
+        const duplicates: string[] = [];
+
+        portfolioData.forEach((stock) => {
+            const name = stock.name.trim().toLowerCase();
+            if (!name) return;
+
+            const count = nameMap.get(name) || 0;
+            nameMap.set(name, count + 1);
+
+            if (count === 1) {
+                // 두 번째 등장 시 중복으로 추가
+                duplicates.push(stock.name);
+            }
+        });
+
+        return duplicates;
+    },
+
+    /**
+     * @description 비정상적인 목표 비율 검증 (너무 크거나 작은 값)
+     * @param portfolioData - 포트폴리오 데이터
+     * @returns 비정상적인 비율을 가진 종목 정보
+     */
+    validateRatioRanges(portfolioData: {
+        targetRatio: Decimal | number;
+        name: string;
+    }[]): { name: string; ratio: number; issue: string }[] {
+        const issues: { name: string; ratio: number; issue: string }[] = [];
+
+        portfolioData.forEach((stock) => {
+            const ratio = new Decimal(stock.targetRatio || 0);
+            const ratioNum = ratio.toNumber();
+
+            if (ratio.lessThan(0)) {
+                issues.push({
+                    name: stock.name,
+                    ratio: ratioNum,
+                    issue: '음수 비율',
+                });
+            } else if (ratio.greaterThan(100)) {
+                issues.push({
+                    name: stock.name,
+                    ratio: ratioNum,
+                    issue: '100% 초과',
+                });
+            } else if (ratio.greaterThan(0) && ratio.lessThan(0.01)) {
+                issues.push({
+                    name: stock.name,
+                    ratio: ratioNum,
+                    issue: '비율이 너무 작음 (0.01% 미만)',
+                });
+            }
+        });
+
+        return issues;
+    },
+
+    /**
+     * @description 거래 내역의 일관성 검증 (매도량이 매수량을 초과하는지 등)
+     * @param transactions - 거래 내역 배열
+     * @param stockName - 종목명 (오류 메시지용)
+     * @returns 검증 결과
+     */
+    validateTransactionConsistency(
+        transactions: Transaction[],
+        stockName: string
+    ): ValidationResult {
+        let totalBuy = new Decimal(0);
+        let totalSell = new Decimal(0);
+
+        // 날짜순 정렬 (오래된 것부터)
+        const sortedTx = [...transactions].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        for (const tx of sortedTx) {
+            const quantity = new Decimal(tx.quantity || 0);
+
+            if (tx.type === 'buy') {
+                totalBuy = totalBuy.plus(quantity);
+            } else if (tx.type === 'sell') {
+                totalSell = totalSell.plus(quantity);
+
+                // 현재 시점까지 매도량이 매수량을 초과하는지 확인
+                if (totalSell.greaterThan(totalBuy)) {
+                    return {
+                        isValid: false,
+                        message: `${stockName}: ${tx.date} 시점에 보유 수량보다 더 많이 매도했습니다`,
+                    };
+                }
+            }
+        }
+
+        return { isValid: true };
+    },
 };

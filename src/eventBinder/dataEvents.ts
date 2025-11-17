@@ -15,6 +15,8 @@ export function setupDataEvents(view: PortfolioView, signal: AbortSignal): void 
     const exportDataBtn = dom.exportDataBtn as HTMLAnchorElement | null;
     const importDataBtn = dom.importDataBtn as HTMLAnchorElement | null;
     const importFileInput = dom.importFileInput as HTMLInputElement | null;
+    const importTransactionsBtn = dom.importTransactionsBtn as HTMLAnchorElement | null;
+    const importTransactionFileInput = dom.importTransactionFileInput as HTMLInputElement | null;
     const dropdownItems = dataDropdownContent?.querySelectorAll('a[role="menuitem"]') ?? [];
 
     const toggleDropdown = (show: boolean): void => {
@@ -77,6 +79,17 @@ export function setupDataEvents(view: PortfolioView, signal: AbortSignal): void 
             view.emit('importDataFileSelected', { file });
             target.value = '';
         }
+        toggleDropdown(false);
+    });
+
+    importTransactionsBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        importTransactionFileInput?.click();
+        toggleDropdown(false);
+    });
+
+    importTransactionFileInput?.addEventListener('change', (e) => {
+        view.emit('importTransactionFileSelected', e);
         toggleDropdown(false);
     });
 
