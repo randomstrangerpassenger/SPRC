@@ -189,6 +189,7 @@ export interface DOMElements {
     showSectorChartBtn: HTMLElement | null;
     showAllocationChartBtn: HTMLElement | null;
     showDailyReturnChartBtn: HTMLElement | null;
+    showRiskMetricsBtn: HTMLElement | null;
     showSnapshotListBtn: HTMLElement | null;
     performanceChartContainer: HTMLElement | null;
     performanceChart: HTMLElement | null;
@@ -198,6 +199,8 @@ export interface DOMElements {
     allocationChart: HTMLElement | null;
     dailyReturnChartContainer: HTMLElement | null;
     dailyReturnChart: HTMLElement | null;
+    riskMetricsContainer: HTMLElement | null;
+    riskMetricsContent: HTMLElement | null;
     snapshotListContainer: HTMLElement | null;
     snapshotList: HTMLElement | null;
     rebalancingToleranceInput: HTMLElement | null;

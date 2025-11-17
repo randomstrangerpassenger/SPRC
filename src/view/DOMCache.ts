@@ -76,6 +76,7 @@ export class DOMCache {
             showSectorChartBtn: D.getElementById('showSectorChartBtn'),
             showAllocationChartBtn: D.getElementById('showAllocationChartBtn'),
             showDailyReturnChartBtn: D.getElementById('showDailyReturnChartBtn'),
+            showRiskMetricsBtn: D.getElementById('showRiskMetricsBtn'),
             showSnapshotListBtn: D.getElementById('showSnapshotListBtn'),
             performanceChartContainer: D.getElementById('performanceChartContainer'),
             performanceChart: D.getElementById('performanceChart'),
@@ -85,6 +86,8 @@ export class DOMCache {
             allocationChart: D.getElementById('allocationChart'),
             dailyReturnChartContainer: D.getElementById('dailyReturnChartContainer'),
             dailyReturnChart: D.getElementById('dailyReturnChart'),
+            riskMetricsContainer: D.getElementById('riskMetricsContainer'),
+            riskMetricsContent: D.getElementById('riskMetricsContent'),
             snapshotListContainer: D.getElementById('snapshotListContainer'),
             snapshotList: D.getElementById('snapshotList'),
         };

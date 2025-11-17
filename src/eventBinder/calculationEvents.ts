@@ -33,6 +33,7 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
     dom.showDailyReturnChartBtn?.addEventListener('click', () =>
         view.emit('showDailyReturnChartClicked')
     );
+    dom.showRiskMetricsBtn?.addEventListener('click', () => view.emit('showRiskMetricsClicked'));
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach((r) =>

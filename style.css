@@ -498,3 +498,115 @@ body.dark-mode .skeleton {
 .btn-controls-end {
     justify-content: flex-end;
 }
+/* ===== Risk Metrics Styles ===== */
+.risk-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.risk-metric-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: 0 2px 8px var(--card-shadow);
+}
+
+.risk-metric-card h4 {
+    margin: 0 0 15px 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 8px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+}
+
+.metric-row:last-child {
+    border-bottom: none;
+}
+
+.metric-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.metric-value {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.metric-value.positive {
+    color: #28a745;
+}
+
+.metric-value.negative {
+    color: #dc3545;
+}
+
+.metric-value.risk-grade-excellent {
+    color: #28a745;
+    font-weight: 700;
+}
+
+.metric-value.risk-grade-good {
+    color: #5cb85c;
+    font-weight: 700;
+}
+
+.metric-value.risk-grade-fair {
+    color: #f0ad4e;
+    font-weight: 700;
+}
+
+.metric-value.risk-grade-poor {
+    color: #d9534f;
+    font-weight: 700;
+}
+
+.metric-value.risk-grade-very-poor {
+    color: #c9302c;
+    font-weight: 700;
+}
+
+.risk-metrics-info {
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.risk-metrics-info p {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.risk-metrics-info ul {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+.risk-metrics-info li {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .risk-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}

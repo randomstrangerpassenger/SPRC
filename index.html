@@ -168,6 +168,7 @@
                     <button id="showSectorChartBtn" class="btn" data-variant="green">🎯 섹터 분포</button>
                     <button id="showAllocationChartBtn" class="btn" data-variant="purple">📊 배분 변화</button>
                     <button id="showDailyReturnChartBtn" class="btn" data-variant="orange">📉 일일 수익률</button>
+                    <button id="showRiskMetricsBtn" class="btn" data-variant="red">⚠️ 리스크 지표</button>
                     <button id="showSnapshotListBtn" class="btn" data-variant="grey">📋 스냅샷 목록</button>
                 </div>
                 <div id="performanceChartContainer" class="hidden">
@@ -181,6 +182,10 @@
                 </div>
                 <div id="dailyReturnChartContainer" class="hidden">
                     <canvas id="dailyReturnChart"></canvas>
+                </div>
+                <div id="riskMetricsContainer" class="hidden">
+                    <h3>⚠️ 리스크 분석 지표</h3>
+                    <div id="riskMetricsContent"></div>
                 </div>
                 <div id="snapshotListContainer" class="hidden mb-4">
                     <h3>💾 저장된 스냅샷</h3>
