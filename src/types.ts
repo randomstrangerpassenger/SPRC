@@ -153,6 +153,37 @@ export interface SectorData {
     percentage: Decimal;
 }
 
+// 배당금 분석 타입
+export interface MonthlyDividend {
+    year: number;
+    month: number; // 1-12
+    amount: Decimal; // USD
+    count: number; // 배당 거래 수
+}
+
+export interface YearlyDividend {
+    year: number;
+    totalAmount: Decimal; // USD
+    monthlyBreakdown: MonthlyDividend[];
+    averageMonthly: Decimal; // USD
+    stockCount: number; // 배당 지급 종목 수
+}
+
+export interface DividendGrowth {
+    year: number;
+    totalDividend: Decimal; // USD
+    growthRate: Decimal; // % (전년 대비)
+}
+
+export interface DividendAnalysisResult {
+    totalDividends: Decimal; // 총 배당금 (USD)
+    yearlyDividends: YearlyDividend[]; // 연도별 배당
+    monthlyDividends: MonthlyDividend[]; // 월별 배당 (최근 12개월)
+    dividendGrowth: DividendGrowth[]; // 배당 성장률
+    estimatedAnnualDividend: Decimal; // 예상 연간 배당 (최근 12개월 기준)
+    dividendYield: Decimal; // 배당 수익률 (%)
+}
+
 // View interface for error service (to avoid circular dependencies)
 export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
@@ -234,4 +265,17 @@ export interface DOMElements {
     loadPresetBtn: HTMLElement | null;
     savePresetBtn: HTMLElement | null;
     deletePresetBtn: HTMLElement | null;
+    dividendDashboardSection: HTMLElement | null;
+    totalDividendsAmount: HTMLElement | null;
+    estimatedAnnualDividend: HTMLElement | null;
+    dividendYield: HTMLElement | null;
+    showYearlyDividendsBtn: HTMLElement | null;
+    showMonthlyDividendsBtn: HTMLElement | null;
+    showDividendGrowthBtn: HTMLElement | null;
+    yearlyDividendsContainer: HTMLElement | null;
+    monthlyDividendsContainer: HTMLElement | null;
+    dividendGrowthContainer: HTMLElement | null;
+    yearlyDividendsTable: HTMLElement | null;
+    monthlyDividendsTable: HTMLElement | null;
+    dividendGrowthChart: HTMLElement | null;
 }

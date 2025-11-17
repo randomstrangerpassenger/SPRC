@@ -222,6 +222,45 @@
                     <div id="snapshotList" class="snapshot-list-container"></div>
                 </div>
             </section>
+
+            <section id="dividendDashboardSection" class="card hidden" role="region" aria-label="배당금 대시보드">
+                <h2>💰 배당금 대시보드</h2>
+
+                <div class="dividend-summary mb-4">
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h3>총 배당금</h3>
+                            <p id="totalDividendsAmount" class="amount-large">$0.00</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>예상 연간 배당</h3>
+                            <p id="estimatedAnnualDividend" class="amount-large">$0.00</p>
+                            <small id="dividendYield" class="text-muted">수익률: 0.00%</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-controls mb-4">
+                    <button id="showYearlyDividendsBtn" class="btn" data-variant="blue">📊 연도별 배당</button>
+                    <button id="showMonthlyDividendsBtn" class="btn" data-variant="green">📅 월별 배당</button>
+                    <button id="showDividendGrowthBtn" class="btn" data-variant="purple">📈 배당 성장률</button>
+                </div>
+
+                <div id="yearlyDividendsContainer" class="hidden mb-4">
+                    <h3>📊 연도별 배당 내역</h3>
+                    <div id="yearlyDividendsTable"></div>
+                </div>
+
+                <div id="monthlyDividendsContainer" class="hidden mb-4">
+                    <h3>📅 월별 배당 (최근 12개월)</h3>
+                    <div id="monthlyDividendsTable"></div>
+                </div>
+
+                <div id="dividendGrowthContainer" class="hidden mb-4">
+                    <h3>📈 배당 성장률 (연도별)</h3>
+                    <div id="dividendGrowthChart"></div>
+                </div>
+            </section>
         </main>
     </div>
 
