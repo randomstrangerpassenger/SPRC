@@ -220,6 +220,34 @@ export interface ScenarioAnalysisResult {
     rebalancingFrequencyComparison?: RebalancingFrequencyComparison[]; // 리밸런싱 주기별 비교
 }
 
+// 목표 달성 시뮬레이터 타입
+export interface GoalSimulationInput {
+    currentValue: Decimal; // 현재 포트폴리오 가치
+    targetAmount: Decimal; // 목표 금액
+    monthlyContribution: Decimal; // 월 적립금
+    expectedAnnualReturn: number; // 예상 연간 수익률 (%)
+    yearsToGoal?: number; // 목표 달성 기간 (년, 선택사항)
+}
+
+export interface MonthlyProjection {
+    month: number; // 경과 개월 수
+    portfolioValue: Decimal; // 포트폴리오 가치
+    totalContributions: Decimal; // 총 적립금
+    totalGains: Decimal; // 총 수익금
+}
+
+export interface GoalSimulationResult {
+    input: GoalSimulationInput;
+    monthsToGoal: number; // 목표 달성까지 개월 수
+    yearsToGoal: number; // 목표 달성까지 년 수
+    finalValue: Decimal; // 최종 포트폴리오 가치
+    totalContributions: Decimal; // 총 적립금
+    totalGains: Decimal; // 총 수익금
+    monthlyProjections: MonthlyProjection[]; // 월별 예상 추이 (선택적)
+    achievable: boolean; // 목표 달성 가능 여부
+    message?: string; // 메시지 (불가능한 경우 등)
+}
+
 // View interface for error service (to avoid circular dependencies)
 export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
@@ -324,4 +352,17 @@ export interface DOMElements {
     customMarketChange: HTMLElement | null;
     runCustomScenarioBtn: HTMLElement | null;
     customScenarioResult: HTMLElement | null;
+    goalSimulatorSection: HTMLElement | null;
+    goalCurrentValue: HTMLElement | null;
+    goalTargetAmount: HTMLElement | null;
+    goalMonthlyContribution: HTMLElement | null;
+    goalExpectedReturn: HTMLElement | null;
+    simulateGoalBtn: HTMLElement | null;
+    calculateRequiredContributionBtn: HTMLElement | null;
+    goalSimulationResult: HTMLElement | null;
+    goalSimulationSummary: HTMLElement | null;
+    goalSimulationChart: HTMLElement | null;
+    requiredContributionResult: HTMLElement | null;
+    goalYearsToGoal: HTMLElement | null;
+    requiredContributionSummary: HTMLElement | null;
 }
