@@ -157,6 +157,7 @@ export interface DOMElements {
     exportDataBtn: HTMLElement | null;
     importDataBtn: HTMLElement | null;
     importFileInput: HTMLElement | null;
+    exportTransactionsCSVBtn: HTMLElement | null;
     importTransactionsBtn: HTMLElement | null;
     importTransactionFileInput: HTMLElement | null;
     transactionModal: HTMLElement | null;
@@ -185,9 +186,18 @@ export interface DOMElements {
     customModalCancel: HTMLElement | null;
     performanceHistorySection: HTMLElement | null;
     showPerformanceHistoryBtn: HTMLElement | null;
+    showSectorChartBtn: HTMLElement | null;
+    showAllocationChartBtn: HTMLElement | null;
+    showDailyReturnChartBtn: HTMLElement | null;
     showSnapshotListBtn: HTMLElement | null;
     performanceChartContainer: HTMLElement | null;
     performanceChart: HTMLElement | null;
+    sectorChartContainer: HTMLElement | null;
+    sectorChart: HTMLElement | null;
+    allocationChartContainer: HTMLElement | null;
+    allocationChart: HTMLElement | null;
+    dailyReturnChartContainer: HTMLElement | null;
+    dailyReturnChart: HTMLElement | null;
     snapshotListContainer: HTMLElement | null;
     snapshotList: HTMLElement | null;
     rebalancingToleranceInput: HTMLElement | null;

@@ -164,11 +164,23 @@
             <section id="performanceHistorySection" class="card hidden" role="region" aria-label="포트폴리오 성과 히스토리">
                 <h2>📈 포트폴리오 성과 히스토리</h2>
                 <div class="btn-controls mb-4">
-                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">📊 차트 보기</button>
-                    <button id="showSnapshotListBtn" class="btn" data-variant="green">📋 스냅샷 목록</button>
+                    <button id="showPerformanceHistoryBtn" class="btn" data-variant="blue">📊 성과 추이</button>
+                    <button id="showSectorChartBtn" class="btn" data-variant="green">🎯 섹터 분포</button>
+                    <button id="showAllocationChartBtn" class="btn" data-variant="purple">📊 배분 변화</button>
+                    <button id="showDailyReturnChartBtn" class="btn" data-variant="orange">📉 일일 수익률</button>
+                    <button id="showSnapshotListBtn" class="btn" data-variant="grey">📋 스냅샷 목록</button>
                 </div>
                 <div id="performanceChartContainer" class="hidden">
                     <canvas id="performanceChart"></canvas>
+                </div>
+                <div id="sectorChartContainer" class="hidden">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+                <div id="allocationChartContainer" class="hidden">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+                <div id="dailyReturnChartContainer" class="hidden">
+                    <canvas id="dailyReturnChart"></canvas>
                 </div>
                 <div id="snapshotListContainer" class="hidden mb-4">
                     <h3>💾 저장된 스냅샷</h3>

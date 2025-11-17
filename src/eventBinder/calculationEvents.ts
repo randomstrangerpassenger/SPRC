@@ -25,6 +25,15 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
     );
     dom.showSnapshotListBtn?.addEventListener('click', () => view.emit('showSnapshotListClicked'));
 
+    // 차트 버튼들
+    dom.showSectorChartBtn?.addEventListener('click', () => view.emit('showSectorChartClicked'));
+    dom.showAllocationChartBtn?.addEventListener('click', () =>
+        view.emit('showAllocationChartClicked')
+    );
+    dom.showDailyReturnChartBtn?.addEventListener('click', () =>
+        view.emit('showDailyReturnChartClicked')
+    );
+
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach((r) =>
         r.addEventListener('change', (e) => {

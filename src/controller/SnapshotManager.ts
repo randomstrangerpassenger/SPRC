@@ -3,8 +3,10 @@ import { PortfolioState } from '../state';
 import { PortfolioView } from '../view';
 import { SnapshotRepository } from '../state/SnapshotRepository';
 import { ChartLoaderService } from '../services/ChartLoaderService';
+import { PerformanceChartService } from '../services/PerformanceChartService';
 import { logger } from '../services/Logger';
 import type { PortfolioSnapshot } from '../types';
+import type { Chart } from 'chart.js';
 
 /**
  * @class SnapshotManager
@@ -15,6 +17,9 @@ export class SnapshotManager {
     #state: PortfolioState;
     #view: PortfolioView;
     #snapshotRepo: SnapshotRepository;
+    #sectorChartInstance: Chart | null = null;
+    #allocationChartInstance: Chart | null = null;
+    #dailyReturnChartInstance: Chart | null = null;
 
     constructor(
         state: PortfolioState,
@@ -131,6 +136,192 @@ export class SnapshotManager {
         } catch (error) {
             logger.error('Failed to delete snapshots', 'SnapshotManager', error);
             return false;
+        }
+    }
+
+    /**
+     * @description Display sector pie chart
+     */
+    async handleShowSectorChart(): Promise<void> {
+        const activePortfolio = this.#state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const portfolioData = activePortfolio.portfolioData;
+
+            if (portfolioData.length === 0) {
+                this.#view.showToast('포트폴리오에 종목이 없습니다.', 'info');
+                return;
+            }
+
+            // Hide other charts
+            this.#hideAllChartContainers();
+
+            // Show sector chart container
+            const container = this.#view.dom.sectorChartContainer;
+            const canvas = this.#view.dom.sectorChart;
+
+            if (!container || !(canvas instanceof HTMLCanvasElement)) return;
+
+            container.classList.remove('hidden');
+
+            // Destroy previous chart
+            if (this.#sectorChartInstance) {
+                this.#sectorChartInstance.destroy();
+                this.#sectorChartInstance = null;
+            }
+
+            // Create new chart
+            this.#sectorChartInstance = await PerformanceChartService.createSectorPieChart(
+                canvas,
+                portfolioData as any,
+                'doughnut'
+            );
+
+            this.#view.showToast('섹터별 분포 차트를 표시했습니다.', 'success');
+        } catch (error) {
+            logger.error('Failed to display sector chart', 'SnapshotManager', error);
+            this.#view.showToast('섹터 차트를 표시하는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description Display allocation change chart
+     */
+    async handleShowAllocationChart(): Promise<void> {
+        const activePortfolio = this.#state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await this.#snapshotRepo.getByPortfolioId(activePortfolio.id);
+
+            if (snapshots.length === 0) {
+                this.#view.showToast(
+                    '성과 히스토리 데이터가 없습니다. 계산을 실행하여 데이터를 생성하세요.',
+                    'info'
+                );
+                return;
+            }
+
+            // Hide other charts
+            this.#hideAllChartContainers();
+
+            // Show allocation chart container
+            const container = this.#view.dom.allocationChartContainer;
+            const canvas = this.#view.dom.allocationChart;
+
+            if (!container || !(canvas instanceof HTMLCanvasElement)) return;
+
+            container.classList.remove('hidden');
+
+            // Destroy previous chart
+            if (this.#allocationChartInstance) {
+                this.#allocationChartInstance.destroy();
+                this.#allocationChartInstance = null;
+            }
+
+            // Create new chart
+            this.#allocationChartInstance =
+                await PerformanceChartService.createAllocationChangeChart(
+                    canvas,
+                    snapshots,
+                    activePortfolio.portfolioData as any
+                );
+
+            this.#view.showToast('자산 배분 변화 차트를 표시했습니다.', 'success');
+        } catch (error) {
+            logger.error('Failed to display allocation chart', 'SnapshotManager', error);
+            this.#view.showToast('배분 변화 차트를 표시하는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description Display daily return bar chart
+     */
+    async handleShowDailyReturnChart(): Promise<void> {
+        const activePortfolio = this.#state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const snapshots = await this.#snapshotRepo.getByPortfolioId(activePortfolio.id);
+
+            if (snapshots.length < 2) {
+                this.#view.showToast(
+                    '일일 수익률을 계산하려면 최소 2개 이상의 스냅샷이 필요합니다.',
+                    'info'
+                );
+                return;
+            }
+
+            // Hide other charts
+            this.#hideAllChartContainers();
+
+            // Show daily return chart container
+            const container = this.#view.dom.dailyReturnChartContainer;
+            const canvas = this.#view.dom.dailyReturnChart;
+
+            if (!container || !(canvas instanceof HTMLCanvasElement)) return;
+
+            container.classList.remove('hidden');
+
+            // Destroy previous chart
+            if (this.#dailyReturnChartInstance) {
+                this.#dailyReturnChartInstance.destroy();
+                this.#dailyReturnChartInstance = null;
+            }
+
+            // Create new chart
+            this.#dailyReturnChartInstance = await PerformanceChartService.createDailyReturnBarChart(
+                canvas,
+                snapshots
+            );
+
+            if (!this.#dailyReturnChartInstance) {
+                this.#view.showToast('일일 수익률 차트를 생성할 수 없습니다.', 'warning');
+                return;
+            }
+
+            this.#view.showToast('일일 수익률 차트를 표시했습니다.', 'success');
+        } catch (error) {
+            logger.error('Failed to display daily return chart', 'SnapshotManager', error);
+            this.#view.showToast('일일 수익률 차트를 표시하는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description Hide all chart containers
+     */
+    #hideAllChartContainers(): void {
+        const containers = [
+            this.#view.dom.performanceChartContainer,
+            this.#view.dom.sectorChartContainer,
+            this.#view.dom.allocationChartContainer,
+            this.#view.dom.dailyReturnChartContainer,
+            this.#view.dom.snapshotListContainer,
+        ];
+
+        containers.forEach((container) => {
+            if (container) {
+                container.classList.add('hidden');
+            }
+        });
+    }
+
+    /**
+     * @description Destroy all chart instances
+     */
+    destroyCharts(): void {
+        if (this.#sectorChartInstance) {
+            this.#sectorChartInstance.destroy();
+            this.#sectorChartInstance = null;
+        }
+        if (this.#allocationChartInstance) {
+            this.#allocationChartInstance.destroy();
+            this.#allocationChartInstance = null;
+        }
+        if (this.#dailyReturnChartInstance) {
+            this.#dailyReturnChartInstance.destroy();
+            this.#dailyReturnChartInstance = null;
         }
     }
 }

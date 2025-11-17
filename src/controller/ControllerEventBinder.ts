@@ -118,6 +118,18 @@ export function bindControllerEvents(controller: PortfolioController): void {
             handler: () => controller.snapshotManager.handleShowSnapshotList(),
         },
         {
+            event: 'showSectorChartClicked',
+            handler: () => controller.snapshotManager.handleShowSectorChart(),
+        },
+        {
+            event: 'showAllocationChartClicked',
+            handler: () => controller.snapshotManager.handleShowAllocationChart(),
+        },
+        {
+            event: 'showDailyReturnChartClicked',
+            handler: () => controller.snapshotManager.handleShowDailyReturnChart(),
+        },
+        {
             event: 'mainModeChanged',
             handler: async (data: { mode: any }) =>
                 controller.calculationManager.handleMainModeChange(data.mode),
