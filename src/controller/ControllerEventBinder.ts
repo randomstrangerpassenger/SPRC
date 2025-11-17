@@ -134,6 +134,10 @@ export function bindControllerEvents(controller: PortfolioController): void {
             handler: () => controller.snapshotManager.handleShowRiskMetrics(),
         },
         {
+            event: 'showTaxCalculationClicked',
+            handler: () => controller.snapshotManager.handleShowTaxCalculation(),
+        },
+        {
             event: 'mainModeChanged',
             handler: async (data: { mode: any }) =>
                 controller.calculationManager.handleMainModeChange(data.mode),

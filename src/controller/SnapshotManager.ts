@@ -5,8 +5,9 @@ import { SnapshotRepository } from '../state/SnapshotRepository';
 import { ChartLoaderService } from '../services/ChartLoaderService';
 import { PerformanceChartService } from '../services/PerformanceChartService';
 import { RiskMetricsService } from '../services/RiskMetricsService';
+import { TaxCalculatorService } from '../services/TaxCalculatorService';
 import { logger } from '../services/Logger';
-import type { PortfolioSnapshot } from '../types';
+import type { PortfolioSnapshot, CalculatedStock } from '../types';
 import type { Chart } from 'chart.js';
 
 /**
@@ -441,6 +442,175 @@ export class SnapshotManager {
     }
 
     /**
+     * @description Display tax calculation
+     */
+    async handleShowTaxCalculation(): Promise<void> {
+        const activePortfolio = this.#state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            const portfolioData = activePortfolio.portfolioData as CalculatedStock[];
+
+            if (portfolioData.length === 0) {
+                this.#view.showToast('포트폴리오에 종목이 없습니다.', 'info');
+                return;
+            }
+
+            // 세금 계산
+            const exchangeRate = activePortfolio.settings.exchangeRate;
+            const taxResult = TaxCalculatorService.calculateTax(portfolioData, exchangeRate);
+
+            // Hide other charts
+            this.#hideAllChartContainers();
+
+            // Show tax calculation panel
+            const container = this.#view.dom.taxCalculationContainer;
+            if (!container) return;
+
+            container.classList.remove('hidden');
+
+            // Render tax calculation
+            this.renderTaxCalculation(taxResult);
+
+            this.#view.showToast('세금 계산 결과를 표시했습니다.', 'success');
+        } catch (error) {
+            logger.error('Failed to display tax calculation', 'SnapshotManager', error);
+            this.#view.showToast('세금 계산을 표시하는데 실패했습니다.', 'error');
+        }
+    }
+
+    /**
+     * @description Render tax calculation in HTML
+     */
+    private renderTaxCalculation(result: any): void {
+        const container = this.#view.dom.taxCalculationContent;
+        if (!container) return;
+
+        const html = `
+            <div class="tax-summary-card">
+                <h3>💸 총 납부 세금</h3>
+                <div class="tax-total-amount">${TaxCalculatorService.formatCurrency(result.totalTax)}</div>
+            </div>
+
+            <div class="tax-breakdown-grid">
+                ${
+                    result.domesticCapitalGains !== 0
+                        ? `
+                <div class="tax-card">
+                    <h4>📌 국내주식 양도소득세</h4>
+                    <div class="tax-row">
+                        <span class="tax-label">양도차익:</span>
+                        <span class="tax-value ${result.domesticCapitalGains >= 0 ? 'positive' : 'negative'}">
+                            ${TaxCalculatorService.formatCurrency(result.domesticCapitalGains)}
+                        </span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">대주주 여부:</span>
+                        <span class="tax-value">${result.isMajorShareholder ? '예 (세금 부과 대상)' : '아니오 (면제)'}</span>
+                    </div>
+                    ${
+                        result.isMajorShareholder
+                            ? `
+                    <div class="tax-row">
+                        <span class="tax-label">기본공제:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatCurrency(result.details.domestic.basicDeduction)}</span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">과세표준:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatCurrency(result.details.domestic.taxableAmount)}</span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">세율:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatTaxRate(result.details.domestic.taxRate)}</span>
+                    </div>
+                    `
+                            : ''
+                    }
+                    <div class="tax-row tax-row-total">
+                        <span class="tax-label"><strong>세금:</strong></span>
+                        <span class="tax-value tax-amount">${TaxCalculatorService.formatCurrency(result.domesticCapitalGainsTax)}</span>
+                    </div>
+                </div>
+                `
+                        : ''
+                }
+
+                ${
+                    result.foreignCapitalGains !== 0
+                        ? `
+                <div class="tax-card">
+                    <h4>🌎 해외주식 양도소득세</h4>
+                    <div class="tax-row">
+                        <span class="tax-label">양도차익:</span>
+                        <span class="tax-value ${result.foreignCapitalGains >= 0 ? 'positive' : 'negative'}">
+                            ${TaxCalculatorService.formatCurrency(result.foreignCapitalGains)}
+                        </span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">기본공제:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatCurrency(result.details.foreign.basicDeduction)}</span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">과세표준:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatCurrency(result.details.foreign.taxableAmount)}</span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">세율:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatTaxRate(result.details.foreign.taxRate)}</span>
+                    </div>
+                    <div class="tax-row tax-row-total">
+                        <span class="tax-label"><strong>세금:</strong></span>
+                        <span class="tax-value tax-amount">${TaxCalculatorService.formatCurrency(result.foreignCapitalGainsTax)}</span>
+                    </div>
+                </div>
+                `
+                        : ''
+                }
+
+                ${
+                    result.totalDividends !== 0
+                        ? `
+                <div class="tax-card">
+                    <h4>💰 배당소득세</h4>
+                    <div class="tax-row">
+                        <span class="tax-label">총 배당금:</span>
+                        <span class="tax-value positive">
+                            ${TaxCalculatorService.formatCurrency(result.totalDividends)}
+                        </span>
+                    </div>
+                    <div class="tax-row">
+                        <span class="tax-label">세율:</span>
+                        <span class="tax-value">${TaxCalculatorService.formatTaxRate(result.details.dividend.taxRate)}</span>
+                    </div>
+                    <div class="tax-row tax-row-total">
+                        <span class="tax-label"><strong>세금:</strong></span>
+                        <span class="tax-value tax-amount">${TaxCalculatorService.formatCurrency(result.dividendIncomeTax)}</span>
+                    </div>
+                </div>
+                `
+                        : ''
+                }
+            </div>
+
+            <div class="tax-info-panel mt-4">
+                <p><strong>📌 세금 계산 기준 (2024년):</strong></p>
+                <ul>
+                    <li><strong>국내주식:</strong> 대주주는 양도차익에 대해 22% 과세 (지방소득세 포함), 기본공제 5천만원. 소액주주는 면제</li>
+                    <li><strong>해외주식:</strong> 모든 투자자에게 양도차익의 22% 과세 (지방소득세 포함), 기본공제 250만원</li>
+                    <li><strong>배당소득:</strong> 15.4% 과세 (지방소득세 포함), 기본공제 없음</li>
+                    <li><strong>대주주 기준:</strong> 시가총액 100억원 이상 보유 시 대주주로 판정</li>
+                </ul>
+                <p class="tax-disclaimer">
+                    ⚠️ 이 계산은 참고용이며, 실제 세금은 개인의 종합소득, 공제 항목 등에 따라 달라질 수 있습니다.
+                    정확한 세금 계산은 세무사와 상담하시기 바랍니다.
+                </p>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    /**
      * @description Hide all chart containers
      */
     #hideAllChartContainers(): void {
@@ -451,6 +621,7 @@ export class SnapshotManager {
             this.#view.dom.dailyReturnChartContainer,
             this.#view.dom.snapshotListContainer,
             this.#view.dom.riskMetricsContainer,
+            this.#view.dom.taxCalculationContainer,
         ];
 
         containers.forEach((container) => {
