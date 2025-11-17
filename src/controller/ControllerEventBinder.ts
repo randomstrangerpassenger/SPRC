@@ -138,6 +138,10 @@ export function bindControllerEvents(controller: PortfolioController): void {
             handler: () => controller.snapshotManager.handleShowTaxCalculation(),
         },
         {
+            event: 'generateComprehensiveReportClicked',
+            handler: () => controller.snapshotManager.handleGenerateComprehensiveReport(),
+        },
+        {
             event: 'mainModeChanged',
             handler: async (data: { mode: any }) =>
                 controller.calculationManager.handleMainModeChange(data.mode),

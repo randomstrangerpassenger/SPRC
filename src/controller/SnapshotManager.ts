@@ -6,6 +6,7 @@ import { ChartLoaderService } from '../services/ChartLoaderService';
 import { PerformanceChartService } from '../services/PerformanceChartService';
 import { RiskMetricsService } from '../services/RiskMetricsService';
 import { TaxCalculatorService } from '../services/TaxCalculatorService';
+import { ComprehensiveReportService } from '../services/ComprehensiveReportService';
 import { logger } from '../services/Logger';
 import type { PortfolioSnapshot, CalculatedStock } from '../types';
 import type { Chart } from 'chart.js';
@@ -629,6 +630,33 @@ export class SnapshotManager {
                 container.classList.add('hidden');
             }
         });
+    }
+
+    /**
+     * @description Generate comprehensive investment report (PDF)
+     */
+    async handleGenerateComprehensiveReport(): Promise<void> {
+        const activePortfolio = this.#state.getActivePortfolio();
+        if (!activePortfolio) return;
+
+        try {
+            // Show loading toast
+            this.#view.showToast('종합 리포트를 생성하는 중...', 'info');
+
+            // Get snapshots for performance and risk metrics
+            const snapshots = await this.#snapshotRepo.getByPortfolioId(activePortfolio.id);
+
+            // Generate comprehensive report
+            await ComprehensiveReportService.generateComprehensiveReport(
+                activePortfolio,
+                snapshots
+            );
+
+            this.#view.showToast('종합 리포트가 성공적으로 생성되었습니다!', 'success');
+        } catch (error) {
+            logger.error('Failed to generate comprehensive report', 'SnapshotManager', error);
+            this.#view.showToast('종합 리포트 생성에 실패했습니다.', 'error');
+        }
     }
 
     /**

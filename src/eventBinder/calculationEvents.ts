@@ -37,6 +37,9 @@ export function setupCalculationEvents(view: PortfolioView, signal: AbortSignal)
     dom.showTaxCalculationBtn?.addEventListener('click', () =>
         view.emit('showTaxCalculationClicked')
     );
+    dom.generateComprehensiveReportBtn?.addEventListener('click', () =>
+        view.emit('generateComprehensiveReportClicked')
+    );
 
     // 계산/통화 모드 라디오 버튼
     dom.mainModeSelector?.forEach((r) =>

@@ -191,6 +191,7 @@ export interface DOMElements {
     showDailyReturnChartBtn: HTMLElement | null;
     showRiskMetricsBtn: HTMLElement | null;
     showTaxCalculationBtn: HTMLElement | null;
+    generateComprehensiveReportBtn: HTMLElement | null;
     showSnapshotListBtn: HTMLElement | null;
     performanceChartContainer: HTMLElement | null;
     performanceChart: HTMLElement | null;

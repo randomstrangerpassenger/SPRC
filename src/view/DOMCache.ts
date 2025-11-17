@@ -78,6 +78,7 @@ export class DOMCache {
             showDailyReturnChartBtn: D.getElementById('showDailyReturnChartBtn'),
             showRiskMetricsBtn: D.getElementById('showRiskMetricsBtn'),
             showTaxCalculationBtn: D.getElementById('showTaxCalculationBtn'),
+            generateComprehensiveReportBtn: D.getElementById('generateComprehensiveReportBtn'),
             showSnapshotListBtn: D.getElementById('showSnapshotListBtn'),
             performanceChartContainer: D.getElementById('performanceChartContainer'),
             performanceChart: D.getElementById('performanceChart'),
