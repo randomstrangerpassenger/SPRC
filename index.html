@@ -261,6 +261,35 @@
                     <div id="dividendGrowthChart"></div>
                 </div>
             </section>
+
+            <section id="scenarioAnalysisSection" class="card hidden" role="region" aria-label="시나리오 분석">
+                <h2>🎯 시나리오 분석</h2>
+
+                <div class="scenario-summary mb-4">
+                    <h3>현재 포트폴리오 가치</h3>
+                    <p id="scenarioCurrentValue" class="amount-large">$0.00</p>
+                </div>
+
+                <div class="btn-controls mb-4">
+                    <button id="analyzeScenarioBtn" class="btn" data-variant="blue">📊 시나리오 분석 실행</button>
+                    <button id="customScenarioBtn" class="btn" data-variant="green">🎨 사용자 지정 시나리오</button>
+                </div>
+
+                <div id="scenarioResultsContainer" class="hidden mb-4">
+                    <h3>📈 시장 변동 시나리오</h3>
+                    <div id="scenarioResultsTable"></div>
+                </div>
+
+                <div id="customScenarioContainer" class="hidden mb-4">
+                    <h3>🎨 사용자 지정 시나리오</h3>
+                    <div class="input-group">
+                        <label for="customMarketChange">시장 변동률 (%):</label>
+                        <input type="number" id="customMarketChange" placeholder="예: 15 또는 -15" step="1" value="0">
+                        <button id="runCustomScenarioBtn" class="btn btn-sm" data-variant="blue">분석 실행</button>
+                    </div>
+                    <div id="customScenarioResult" class="mt-3"></div>
+                </div>
+            </section>
         </main>
     </div>
 

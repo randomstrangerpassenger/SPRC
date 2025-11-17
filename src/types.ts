@@ -184,6 +184,42 @@ export interface DividendAnalysisResult {
     dividendYield: Decimal; // 배당 수익률 (%)
 }
 
+// 시나리오 분석 타입
+export interface MarketScenario {
+    name: string; // 시나리오 이름 (예: "시장 +10%")
+    marketChange: number; // 시장 변동률 (%) (예: 10, -20)
+    description?: string; // 시나리오 설명
+}
+
+export interface ScenarioResult {
+    scenario: MarketScenario;
+    newTotalValue: Decimal; // 시나리오 적용 후 총 가치
+    valueChange: Decimal; // 가치 변화량
+    valueChangePercent: Decimal; // 가치 변화율 (%)
+    newStockValues: Array<{
+        stockId: string;
+        stockName: string;
+        currentValue: Decimal;
+        newValue: Decimal;
+        change: Decimal;
+        changePercent: Decimal;
+    }>;
+}
+
+export interface RebalancingFrequencyComparison {
+    frequency: string; // 리밸런싱 주기 (예: "분기별", "반기별", "연간")
+    annualizedReturn: Decimal; // 연환산 수익률 (%)
+    volatility: Decimal; // 변동성
+    sharpeRatio: Decimal; // 샤프 비율
+    transactionCosts: Decimal; // 거래 비용
+}
+
+export interface ScenarioAnalysisResult {
+    currentTotalValue: Decimal; // 현재 총 가치
+    marketScenarios: ScenarioResult[]; // 시장 시나리오 결과
+    rebalancingFrequencyComparison?: RebalancingFrequencyComparison[]; // 리밸런싱 주기별 비교
+}
+
 // View interface for error service (to avoid circular dependencies)
 export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
@@ -278,4 +314,14 @@ export interface DOMElements {
     yearlyDividendsTable: HTMLElement | null;
     monthlyDividendsTable: HTMLElement | null;
     dividendGrowthChart: HTMLElement | null;
+    scenarioAnalysisSection: HTMLElement | null;
+    scenarioCurrentValue: HTMLElement | null;
+    analyzeScenarioBtn: HTMLElement | null;
+    customScenarioBtn: HTMLElement | null;
+    scenarioResultsContainer: HTMLElement | null;
+    scenarioResultsTable: HTMLElement | null;
+    customScenarioContainer: HTMLElement | null;
+    customMarketChange: HTMLElement | null;
+    runCustomScenarioBtn: HTMLElement | null;
+    customScenarioResult: HTMLElement | null;
 }
