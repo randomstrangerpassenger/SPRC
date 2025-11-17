@@ -124,17 +124,20 @@ export class CalculationManager {
     private async executeRebalancingStrategy(
         mainMode: 'add' | 'sell' | 'simple',
         portfolioData: CalculatedStock[],
-        additionalInvestment: Decimal
+        additionalInvestment: Decimal,
+        rebalancingRules?: import('../types').RebalancingRules
     ): Promise<{ results: RebalancingResult[] }> {
         if (mainMode === 'add') {
             return await this.#rebalanceWorker.calculateAddRebalance(
                 portfolioData,
-                additionalInvestment
+                additionalInvestment,
+                rebalancingRules
             );
         } else if (mainMode === 'simple') {
             return await this.#rebalanceWorker.calculateSimpleRebalance(
                 portfolioData,
-                additionalInvestment
+                additionalInvestment,
+                rebalancingRules
             );
         } else {
             return await this.#rebalanceWorker.calculateSellRebalance(portfolioData);
@@ -248,7 +251,8 @@ export class CalculationManager {
             return await this.executeRebalancingStrategy(
                 activePortfolio.settings.mainMode,
                 calculatedState.portfolioData,
-                additionalInvestment
+                additionalInvestment,
+                activePortfolio.settings.rebalancingRules
             );
         });
 

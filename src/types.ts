@@ -49,6 +49,36 @@ export interface CalculatedStock extends Stock {
 export type MainMode = 'add' | 'sell' | 'simple';
 export type Currency = 'krw' | 'usd';
 
+// 맞춤형 리밸런싱 규칙 타입
+export interface StockLimitRule {
+    stockId: string; // 종목 ID
+    maxAllocationPercent?: number; // 종목별 최대 할당 비율 (%)
+    minTradeAmount?: number; // 최소 거래 금액 (USD)
+}
+
+export interface SectorLimitRule {
+    sector: string; // 섹터명
+    maxAllocationPercent: number; // 섹터별 최대 할당 비율 (%)
+}
+
+export interface RebalancingRules {
+    enabled: boolean; // 규칙 활성화 여부
+    bandPercentage?: number; // ±밴드 설정 (예: 5 = ±5%)
+    minTradeAmount?: number; // 최소 거래금액 임계값 (USD)
+    stockLimits?: StockLimitRule[]; // 종목별 상한선
+    sectorLimits?: SectorLimitRule[]; // 섹터별 상한선
+}
+
+// 리밸런싱 프리셋 타입
+export interface RebalancingPreset {
+    id: string; // 프리셋 고유 ID
+    name: string; // 프리셋 이름
+    description?: string; // 프리셋 설명
+    rules: RebalancingRules; // 리밸런싱 규칙
+    createdAt: number; // 생성 시간 (Unix timestamp)
+    updatedAt: number; // 수정 시간 (Unix timestamp)
+}
+
 export interface PortfolioSettings {
     mainMode: MainMode;
     currentCurrency: Currency;
@@ -56,6 +86,7 @@ export interface PortfolioSettings {
     rebalancingTolerance?: number; // 리밸런싱 허용 오차 (%), optional for backward compatibility
     tradingFeeRate?: number; // 거래 수수료율 (%), optional
     taxRate?: number; // 세율 (%), optional
+    rebalancingRules?: RebalancingRules; // 맞춤형 리밸런싱 규칙, optional
 }
 
 export interface Portfolio {
@@ -191,4 +222,16 @@ export interface DOMElements {
     rebalancingToleranceInput: HTMLElement | null;
     tradingFeeRateInput: HTMLElement | null;
     taxRateInput: HTMLElement | null;
+    rebalancingRulesEnabled: HTMLElement | null;
+    rebalancingRulesContent: HTMLElement | null;
+    bandPercentage: HTMLElement | null;
+    minTradeAmount: HTMLElement | null;
+    stockLimitsContainer: HTMLElement | null;
+    addStockLimitBtn: HTMLElement | null;
+    sectorLimitsContainer: HTMLElement | null;
+    addSectorLimitBtn: HTMLElement | null;
+    presetSelector: HTMLElement | null;
+    loadPresetBtn: HTMLElement | null;
+    savePresetBtn: HTMLElement | null;
+    deletePresetBtn: HTMLElement | null;
 }

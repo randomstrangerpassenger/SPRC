@@ -1,6 +1,6 @@
 // src/calculationStrategies.ts
 import Decimal from 'decimal.js';
-import type { CalculatedStock } from './types';
+import type { CalculatedStock, RebalancingRules } from './types';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from './constants';
 import { logger } from './services/Logger';
 
@@ -98,6 +98,126 @@ function distributeRemainingInvestment(
     }
 }
 
+/**
+ * @description 맞춤형 리밸런싱 규칙 적용
+ */
+function applyRebalancingRules(
+    results: RebalancingResult[],
+    totalInvestment: Decimal,
+    rules?: RebalancingRules
+): void {
+    if (!rules || !rules.enabled) {
+        return;
+    }
+
+    const zero = DECIMAL_ZERO;
+
+    // 1. 밴드 규칙 적용: 목표 비율과의 차이가 밴드 내에 있으면 매수 금액을 0으로 설정
+    if (rules.bandPercentage !== undefined && rules.bandPercentage > 0) {
+        const bandDec = new Decimal(rules.bandPercentage);
+        for (const result of results) {
+            const currentAmount = result.calculated?.currentAmount || zero;
+            const currentRatio = totalInvestment.isZero()
+                ? zero
+                : currentAmount.div(totalInvestment).times(DECIMAL_HUNDRED);
+            const targetRatio = new Decimal(result.targetRatio || 0);
+            const diff = currentRatio.minus(targetRatio).abs();
+
+            // 목표 비율과의 차이가 밴드 내에 있으면 매수하지 않음
+            if (diff.lessThanOrEqualTo(bandDec)) {
+                result.finalBuyAmount = zero;
+            }
+        }
+    }
+
+    // 2. 최소 거래 금액 규칙 적용
+    if (rules.minTradeAmount !== undefined && rules.minTradeAmount > 0) {
+        const minTradeDec = new Decimal(rules.minTradeAmount);
+        for (const result of results) {
+            if (result.finalBuyAmount.lessThan(minTradeDec)) {
+                result.finalBuyAmount = zero;
+            }
+        }
+    }
+
+    // 3. 종목별 상한선 적용
+    if (rules.stockLimits && rules.stockLimits.length > 0) {
+        for (const limit of rules.stockLimits) {
+            const result = results.find((r) => r.id === limit.stockId);
+            if (!result) continue;
+
+            // 최대 할당 비율 적용
+            if (limit.maxAllocationPercent !== undefined) {
+                const currentAmount = result.calculated?.currentAmount || zero;
+                const afterBuyAmount = currentAmount.plus(result.finalBuyAmount);
+                const afterBuyRatio = totalInvestment.isZero()
+                    ? zero
+                    : afterBuyAmount.div(totalInvestment).times(DECIMAL_HUNDRED);
+                const maxRatio = new Decimal(limit.maxAllocationPercent);
+
+                if (afterBuyRatio.greaterThan(maxRatio)) {
+                    // 상한선을 초과하지 않도록 매수 금액 조정
+                    const maxAmount = totalInvestment.times(maxRatio.div(DECIMAL_HUNDRED));
+                    result.finalBuyAmount = Decimal.max(zero, maxAmount.minus(currentAmount));
+                }
+            }
+
+            // 최소 거래 금액 적용 (종목별)
+            if (limit.minTradeAmount !== undefined) {
+                const minTradeDec = new Decimal(limit.minTradeAmount);
+                if (result.finalBuyAmount.lessThan(minTradeDec)) {
+                    result.finalBuyAmount = zero;
+                }
+            }
+        }
+    }
+
+    // 4. 섹터별 상한선 적용
+    if (rules.sectorLimits && rules.sectorLimits.length > 0) {
+        for (const limit of rules.sectorLimits) {
+            const sectorResults = results.filter((r) => r.sector === limit.sector);
+            if (sectorResults.length === 0) continue;
+
+            const sectorCurrentTotal = sectorResults.reduce(
+                (sum, r) => sum.plus(r.calculated?.currentAmount || zero),
+                zero
+            );
+            const sectorAfterBuyTotal = sectorResults.reduce(
+                (sum, r) =>
+                    sum.plus(r.calculated?.currentAmount || zero).plus(r.finalBuyAmount || zero),
+                zero
+            );
+            const sectorAfterBuyRatio = totalInvestment.isZero()
+                ? zero
+                : sectorAfterBuyTotal.div(totalInvestment).times(DECIMAL_HUNDRED);
+            const maxRatio = new Decimal(limit.maxAllocationPercent);
+
+            if (sectorAfterBuyRatio.greaterThan(maxRatio)) {
+                // 섹터 전체가 상한선을 초과하면 비율에 따라 매수 금액 조정
+                const maxSectorAmount = totalInvestment.times(maxRatio.div(DECIMAL_HUNDRED));
+                const excessAmount = sectorAfterBuyTotal.minus(maxSectorAmount);
+
+                // 각 종목의 매수 금액을 비율에 따라 감소
+                const totalBuyInSector = sectorResults.reduce(
+                    (sum, r) => sum.plus(r.finalBuyAmount || zero),
+                    zero
+                );
+
+                if (totalBuyInSector.greaterThan(zero)) {
+                    for (const result of sectorResults) {
+                        const ratio = result.finalBuyAmount.div(totalBuyInSector);
+                        const reduction = excessAmount.times(ratio);
+                        result.finalBuyAmount = Decimal.max(
+                            zero,
+                            result.finalBuyAmount.minus(reduction)
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ==================== 전략 인터페이스 ====================
 
 // Rebalancing result type (strategy-specific properties can extend this)
@@ -116,10 +236,16 @@ export interface IRebalanceStrategy {
 export class AddRebalanceStrategy implements IRebalanceStrategy {
     #portfolioData: CalculatedStock[];
     #additionalInvestment: Decimal;
+    #rebalancingRules?: RebalancingRules;
 
-    constructor(portfolioData: CalculatedStock[], additionalInvestment: Decimal) {
+    constructor(
+        portfolioData: CalculatedStock[],
+        additionalInvestment: Decimal,
+        rebalancingRules?: RebalancingRules
+    ) {
         this.#portfolioData = portfolioData;
         this.#additionalInvestment = additionalInvestment;
+        this.#rebalancingRules = rebalancingRules;
     }
 
     calculate(): { results: RebalancingResult[] } {
@@ -169,6 +295,9 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
             ratioMultiplier
         );
 
+        // 맞춤형 리밸런싱 규칙 적용
+        applyRebalancingRules(results, totalInvestment, this.#rebalancingRules);
+
         // buyRatio 계산
         const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
         const finalResults = results.map((s) => ({
@@ -196,10 +325,16 @@ export class AddRebalanceStrategy implements IRebalanceStrategy {
 export class SimpleRatioStrategy implements IRebalanceStrategy {
     #portfolioData: CalculatedStock[];
     #additionalInvestment: Decimal;
+    #rebalancingRules?: RebalancingRules;
 
-    constructor(portfolioData: CalculatedStock[], additionalInvestment: Decimal) {
+    constructor(
+        portfolioData: CalculatedStock[],
+        additionalInvestment: Decimal,
+        rebalancingRules?: RebalancingRules
+    ) {
         this.#portfolioData = portfolioData;
         this.#additionalInvestment = additionalInvestment;
+        this.#rebalancingRules = rebalancingRules;
     }
 
     calculate(): { results: RebalancingResult[] } {
@@ -272,6 +407,9 @@ export class SimpleRatioStrategy implements IRebalanceStrategy {
             remainingInvestment,
             ratioMultiplier
         );
+
+        // 맞춤형 리밸런싱 규칙 적용
+        applyRebalancingRules(results, totalInvestment, this.#rebalancingRules);
 
         // buyRatio 계산
         const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
