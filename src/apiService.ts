@@ -407,8 +407,99 @@ async function fetchExchangeRate(): Promise<number | null> {
     }
 }
 
+/**
+ * @description 벤치마크(예: SPY)의 히스토리 데이터를 Finnhub API에서 가져옵니다.
+ * @param symbol - 벤치마크 심볼 (예: SPY)
+ * @param from - 시작 날짜 (Unix timestamp)
+ * @param to - 종료 날짜 (Unix timestamp)
+ * @returns Promise<{ dates: string[]; closes: number[] }>
+ */
+async function fetchBenchmarkHistory(
+    symbol: string,
+    from: number,
+    to: number
+): Promise<{ dates: string[]; closes: number[] }> {
+    if (!symbol || symbol.trim() === '') {
+        throw new APIError('Symbol is empty', APIErrorType.INVALID_TICKER, { ticker: symbol });
+    }
+
+    // Finnhub API의 stock/candle 엔드포인트 사용 (일별 데이터)
+    const url = `/finnhub/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}`;
+
+    try {
+        const response = await fetchWithRetry(
+            url,
+            { signal: AbortSignal.timeout(CONFIG.API_TIMEOUT * 2) } // 히스토리 데이터는 더 긴 타임아웃
+        );
+
+        if (!response.ok) {
+            let errorBody = '';
+            try {
+                const errorData = await response.json();
+                if (errorData.s === 'no_data') {
+                    throw new APIError(
+                        `No historical data found for ${symbol}`,
+                        APIErrorType.INVALID_TICKER,
+                        { ticker: symbol, statusCode: response.status }
+                    );
+                }
+                errorBody = errorData.error || (await response.text());
+            } catch (error) {
+                errorBody = error instanceof Error ? error.message : await response.text();
+            }
+
+            throw new APIError(
+                `Failed to fetch benchmark history for ${symbol}: ${errorBody}`,
+                APIErrorType.SERVER_ERROR,
+                { ticker: symbol, statusCode: response.status }
+            );
+        }
+
+        const data = await response.json();
+
+        // Finnhub candle response: { c: [], h: [], l: [], o: [], s: "ok", t: [], v: [] }
+        // c = close prices, t = timestamps
+        if (data.s !== 'ok' || !data.c || !data.t || data.c.length === 0) {
+            throw new APIError(
+                `No historical data available for ${symbol}`,
+                APIErrorType.INVALID_TICKER,
+                { ticker: symbol }
+            );
+        }
+
+        // Unix timestamp를 YYYY-MM-DD 형식으로 변환
+        const dates: string[] = data.t.map((timestamp: number) => {
+            const date = new Date(timestamp * 1000);
+            return date.toISOString().split('T')[0];
+        });
+
+        const closes: number[] = data.c;
+
+        logger.info(`Fetched ${closes.length} data points for ${symbol}`, 'apiService');
+
+        return { dates, closes };
+    } catch (error) {
+        if (error instanceof APIError) {
+            throw error;
+        }
+
+        logger.error(
+            `Failed to fetch benchmark history for ${symbol}`,
+            'apiService.fetchBenchmarkHistory',
+            error
+        );
+
+        throw new APIError(
+            `Network error while fetching benchmark history for ${symbol}`,
+            APIErrorType.NETWORK_ERROR,
+            { ticker: symbol }
+        );
+    }
+}
+
 export const apiService = {
     fetchStockPrice,
     fetchAllStockPrices,
     fetchExchangeRate,
+    fetchBenchmarkHistory,
 };

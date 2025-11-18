@@ -248,6 +248,38 @@ export interface GoalSimulationResult {
     message?: string; // 메시지 (불가능한 경우 등)
 }
 
+// ==================== Benchmark Comparison (Phase 4.13) ====================
+
+export interface BenchmarkDataPoint {
+    date: string; // YYYY-MM-DD 형식
+    close: Decimal; // 종가
+    volume?: number; // 거래량 (선택사항)
+}
+
+export interface BenchmarkHistory {
+    symbol: string; // 벤치마크 심볼 (예: SPY)
+    name: string; // 벤치마크 이름 (예: S&P 500)
+    data: BenchmarkDataPoint[]; // 히스토리 데이터
+}
+
+export interface BenchmarkPerformance {
+    startDate: string; // 시작 날짜
+    endDate: string; // 종료 날짜
+    startValue: Decimal; // 시작 가치
+    endValue: Decimal; // 종료 가치
+    totalReturn: Decimal; // 총 수익률 (%)
+    annualizedReturn: Decimal; // 연환산 수익률 (%)
+}
+
+export interface BenchmarkComparison {
+    portfolioPerformance: BenchmarkPerformance; // 포트폴리오 성과
+    benchmarkPerformance: BenchmarkPerformance; // 벤치마크 성과
+    alpha: Decimal; // 알파 (포트폴리오 - 벤치마크 수익률)
+    outperformance: boolean; // 벤치마크 대비 우수한 성과 여부
+    portfolioNormalized: Array<{ date: string; value: Decimal }>; // 정규화된 포트폴리오 가치 (100 기준)
+    benchmarkNormalized: Array<{ date: string; value: Decimal }>; // 정규화된 벤치마크 가치 (100 기준)
+}
+
 // View interface for error service (to avoid circular dependencies)
 export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;

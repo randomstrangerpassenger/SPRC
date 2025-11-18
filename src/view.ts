@@ -299,9 +299,19 @@ export class PortfolioView {
     async displayPerformanceHistory(
         ChartClass: typeof Chart,
         snapshots: PortfolioSnapshot[],
-        currency: 'krw' | 'usd'
+        currency: 'krw' | 'usd',
+        benchmarkComparison?: {
+            portfolioNormalized: Array<{ date: string; value: import('decimal.js').default }>;
+            benchmarkNormalized: Array<{ date: string; value: import('decimal.js').default }>;
+            benchmarkName?: string;
+        }
     ): Promise<void> {
-        await this.#resultsRenderer.displayPerformanceHistory(ChartClass, snapshots, currency);
+        await this.#resultsRenderer.displayPerformanceHistory(
+            ChartClass,
+            snapshots,
+            currency,
+            benchmarkComparison
+        );
     }
 
     hideResults(): void {

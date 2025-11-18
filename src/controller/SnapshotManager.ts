@@ -3,8 +3,10 @@ import { PortfolioState } from '../state';
 import { PortfolioView } from '../view';
 import { SnapshotRepository } from '../state/SnapshotRepository';
 import { ChartLoaderService } from '../services/ChartLoaderService';
+import { BenchmarkComparisonService } from '../services/BenchmarkComparisonService';
 import { logger } from '../services/Logger';
-import type { PortfolioSnapshot } from '../types';
+import type { PortfolioSnapshot, BenchmarkComparison } from '../types';
+import Decimal from 'decimal.js';
 
 /**
  * @class SnapshotManager
@@ -28,8 +30,9 @@ export class SnapshotManager {
 
     /**
      * @description Display performance history
+     * @param includeBenchmark - 벤치마크 비교 포함 여부 (기본값: true)
      */
-    async handleShowPerformanceHistory(): Promise<void> {
+    async handleShowPerformanceHistory(includeBenchmark: boolean = true): Promise<void> {
         const activePortfolio = this.#state.getActivePortfolio();
         if (!activePortfolio) return;
 
@@ -47,13 +50,64 @@ export class SnapshotManager {
             this.#view.resultsRenderer.showPerformanceHistoryView(true);
 
             const ChartClass = await ChartLoaderService.getChart();
+
+            // Benchmark comparison (optional)
+            let benchmarkComparison:
+                | {
+                      portfolioNormalized: Array<{ date: string; value: Decimal }>;
+                      benchmarkNormalized: Array<{ date: string; value: Decimal }>;
+                      benchmarkName?: string;
+                  }
+                | undefined;
+
+            if (includeBenchmark && snapshots.length >= 2) {
+                try {
+                    // Sort snapshots by date
+                    const sorted = [...snapshots].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+                    const startDate = sorted[0].timestamp.split('T')[0];
+                    const endDate = sorted[sorted.length - 1].timestamp.split('T')[0];
+
+                    // Fetch benchmark history (SPY)
+                    const benchmarkHistory =
+                        await BenchmarkComparisonService.fetchBenchmarkHistory(
+                            'SPY',
+                            startDate,
+                            endDate
+                        );
+
+                    // Compare to benchmark
+                    const comparison = BenchmarkComparisonService.compareToBenchmark(
+                        snapshots,
+                        benchmarkHistory
+                    );
+
+                    benchmarkComparison = {
+                        portfolioNormalized: comparison.portfolioNormalized,
+                        benchmarkNormalized: comparison.benchmarkNormalized,
+                        benchmarkName: benchmarkHistory.name,
+                    };
+
+                    logger.info(
+                        `Benchmark comparison successful: Alpha = ${comparison.alpha.toFixed(2)}%`,
+                        'SnapshotManager'
+                    );
+                } catch (error) {
+                    logger.warn('Failed to fetch benchmark data, displaying without comparison', 'SnapshotManager', error);
+                    // Continue without benchmark comparison
+                }
+            }
+
             await this.#view.displayPerformanceHistory(
                 ChartClass,
                 snapshots,
-                activePortfolio.settings.currentCurrency
+                activePortfolio.settings.currentCurrency,
+                benchmarkComparison
             );
 
-            this.#view.showToast(`${snapshots.length}개의 스냅샷을 불러왔습니다.`, 'success');
+            const message = benchmarkComparison
+                ? `${snapshots.length}개의 스냅샷을 불러왔습니다 (S&P 500 비교 포함)`
+                : `${snapshots.length}개의 스냅샷을 불러왔습니다`;
+            this.#view.showToast(message, 'success');
         } catch (error) {
             logger.error('Failed to display performance history', 'SnapshotManager', error);
             this.#view.showToast('성과 히스토리를 불러오는데 실패했습니다.', 'error');

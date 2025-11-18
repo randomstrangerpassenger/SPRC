@@ -195,7 +195,12 @@ export class ResultsRenderer {
     async displayPerformanceHistory(
         ChartClass: typeof Chart,
         snapshots: PortfolioSnapshot[],
-        currency: 'krw' | 'usd'
+        currency: 'krw' | 'usd',
+        benchmarkComparison?: {
+            portfolioNormalized: Array<{ date: string; value: import('decimal.js').default }>;
+            benchmarkNormalized: Array<{ date: string; value: import('decimal.js').default }>;
+            benchmarkName?: string;
+        }
     ): Promise<void> {
         const section = this.#dom.performanceHistorySection;
         const container = this.#dom.performanceChartContainer;
@@ -219,27 +224,61 @@ export class ResultsRenderer {
         const unrealizedPLData = sorted.map((s) => s.totalUnrealizedPL);
         const realizedPLData = sorted.map((s) => s.totalRealizedPL);
 
-        const chartData = {
-            labels,
-            datasets: [
+        const datasets: any[] = [
+            {
+                label: '총 자산 가치',
+                data: totalValueData,
+                borderColor: '#36A2EB',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.4,
+                fill: true,
+            },
+            {
+                label: '투자 원금',
+                data: totalInvestedData,
+                borderColor: '#9966FF',
+                backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                tension: 0.4,
+                fill: false,
+                borderDash: [5, 5],
+            },
+        ];
+
+        // Add benchmark comparison if available (normalized to 100)
+        if (benchmarkComparison) {
+            const portfolioNormalizedData = benchmarkComparison.portfolioNormalized.map((p) =>
+                p.value.toNumber()
+            );
+            const benchmarkNormalizedData = benchmarkComparison.benchmarkNormalized.map((b) =>
+                b.value.toNumber()
+            );
+
+            datasets.push(
                 {
-                    label: '총 자산 가치',
-                    data: totalValueData,
-                    borderColor: '#36A2EB',
-                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                },
-                {
-                    label: '투자 원금',
-                    data: totalInvestedData,
-                    borderColor: '#9966FF',
-                    backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                    label: '포트폴리오 (정규화, 100 기준)',
+                    data: portfolioNormalizedData,
+                    borderColor: '#FF6384',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
                     tension: 0.4,
                     fill: false,
-                    borderDash: [5, 5],
+                    yAxisID: 'y1',
                 },
-            ],
+                {
+                    label: `${benchmarkComparison.benchmarkName || 'Benchmark'} (정규화, 100 기준)`,
+                    data: benchmarkNormalizedData,
+                    borderColor: '#FFCE56',
+                    backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                    tension: 0.4,
+                    fill: false,
+                    borderDash: [3, 3],
+                    yAxisID: 'y1',
+                }
+            );
+        }
+
+        const chartData = {
+            labels,
+            datasets,
         };
 
         const chartOptions = {
@@ -277,6 +316,9 @@ export class ResultsRenderer {
             },
             scales: {
                 y: {
+                    type: 'linear' as const,
+                    display: true,
+                    position: 'left' as const,
                     beginAtZero: true,
                     ticks: {
                         callback: function (value: unknown) {
@@ -287,6 +329,21 @@ export class ResultsRenderer {
                         },
                     },
                 },
+                ...(benchmarkComparison && {
+                    y1: {
+                        type: 'linear' as const,
+                        display: true,
+                        position: 'right' as const,
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: '정규화 값 (100 기준)',
+                        },
+                        grid: {
+                            drawOnChartArea: false, // 오버레이되지 않도록
+                        },
+                    },
+                }),
             },
         };
 
