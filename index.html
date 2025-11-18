@@ -199,7 +199,23 @@
             </section>
 
             <button id="calculateBtn" class="btn w-full p-4 text-lg mb-6">계산하기</button>
-            
+
+            <!-- Advanced Analysis Controls -->
+            <section class="card mb-6" role="region" aria-label="고급 분석 기능">
+                <h2>📊 고급 분석</h2>
+                <div class="btn-controls">
+                    <button id="showAssetTypeAllocationBtn" class="btn" data-variant="blue" title="자산 유형별 배분 분석">
+                        🎯 자산 유형별 배분
+                    </button>
+                    <button id="showCountryAllocationBtn" class="btn" data-variant="green" title="국가별 배분 분석">
+                        🌍 국가별 배분
+                    </button>
+                    <button id="showHeatmapBtn" class="btn" data-variant="purple" title="자산 배분 히트맵">
+                        🔥 히트맵
+                    </button>
+                </div>
+            </section>
+
             <section id="resultsSection" class="hidden" aria-live="polite" role="region" aria-label="계산 결과"></section>
             <section id="sectorAnalysisSection" class="hidden" role="region" aria-label="섹터별 분석 결과"></section>
             <section id="chartSection" class="card hidden" role="region" aria-label="포트폴리오 시각화 차트">
@@ -221,6 +237,28 @@
                     <h3>💾 저장된 스냅샷</h3>
                     <div id="snapshotList" class="snapshot-list-container"></div>
                 </div>
+            </section>
+
+            <!-- Phase 4.14: 자산 배분 상세 뷰 -->
+            <section id="assetAllocationSection" class="card hidden" role="region" aria-label="자산 유형별 배분">
+                <h2>🎯 자산 유형별 배분</h2>
+                <div class="chart-container mb-4" style="height: 400px;">
+                    <canvas id="assetAllocationChart"></canvas>
+                </div>
+                <div id="assetAllocationTableContainer" class="mb-4"></div>
+            </section>
+
+            <section id="countryAllocationSection" class="card hidden" role="region" aria-label="국가별 배분">
+                <h2>🌍 국가별 배분</h2>
+                <div class="chart-container mb-4" style="height: 400px;">
+                    <canvas id="countryAllocationChart"></canvas>
+                </div>
+                <div id="countryAllocationTableContainer" class="mb-4"></div>
+            </section>
+
+            <section id="heatmapSection" class="card hidden" role="region" aria-label="자산 배분 히트맵">
+                <h2>🔥 자산 배분 히트맵</h2>
+                <div id="heatmapContainer" class="mb-4"></div>
             </section>
 
             <section id="dividendDashboardSection" class="card hidden" role="region" aria-label="배당금 대시보드">

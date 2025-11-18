@@ -12,6 +12,8 @@ export interface Transaction {
     price: Decimal | number; // 단가 (Decimal 또는 number)
 }
 
+export type AssetType = 'stock' | 'bond' | 'cash' | 'etf' | 'other';
+
 export interface Stock {
     id: string; // 주식 고유 ID
     name: string; // 종목명
@@ -23,6 +25,8 @@ export interface Stock {
     isFixedBuyEnabled: boolean; // 고정 매수 활성화 여부
     fixedBuyAmount: Decimal | number; // 고정 매수 금액 (Decimal 또는 number)
     manualAmount?: Decimal | number; // 간단 모드용 수동 입력 금액 (선택 사항)
+    assetType?: AssetType; // 자산 유형 (선택 사항)
+    country?: string; // 국가/지역 (선택 사항, ISO 3166-1 alpha-2 코드 권장)
 }
 
 export interface CalculatedStockMetrics {
@@ -280,6 +284,49 @@ export interface BenchmarkComparison {
     benchmarkNormalized: Array<{ date: string; value: Decimal }>; // 정규화된 벤치마크 가치 (100 기준)
 }
 
+// ==================== Asset Allocation Analysis (Phase 4.14) ====================
+
+export interface AssetTypeAllocation {
+    assetType: AssetType | 'unclassified'; // 자산 유형 (미분류 포함)
+    totalValue: Decimal; // 해당 자산 유형의 총 평가액
+    percentage: Decimal; // 전체 포트폴리오 대비 비율 (%)
+    stockCount: number; // 해당 자산 유형의 종목 수
+    stocks: Array<{
+        ticker: string;
+        name: string;
+        value: Decimal;
+        percentage: Decimal;
+    }>;
+}
+
+export interface CountryAllocation {
+    country: string; // 국가 코드 또는 '미분류'
+    countryName: string; // 국가명 (표시용)
+    totalValue: Decimal; // 해당 국가의 총 평가액
+    percentage: Decimal; // 전체 포트폴리오 대비 비율 (%)
+    stockCount: number; // 해당 국가의 종목 수
+    stocks: Array<{
+        ticker: string;
+        name: string;
+        value: Decimal;
+        percentage: Decimal;
+    }>;
+}
+
+export interface AssetAllocationAnalysis {
+    totalValue: Decimal; // 포트폴리오 총 평가액
+    byAssetType: AssetTypeAllocation[]; // 자산 유형별 배분
+    byCountry: CountryAllocation[]; // 국가별 배분
+    diversificationScore?: Decimal; // 분산 점수 (선택적)
+}
+
+export interface HeatmapCell {
+    row: string; // 행 레이블 (예: 국가명)
+    col: string; // 열 레이블 (예: 자산 유형)
+    value: Decimal; // 값 (평가액 또는 비율)
+    percentage: Decimal; // 비율 (%)
+}
+
 // View interface for error service (to avoid circular dependencies)
 export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
@@ -346,6 +393,17 @@ export interface DOMElements {
     performanceChart: HTMLElement | null;
     snapshotListContainer: HTMLElement | null;
     snapshotList: HTMLElement | null;
+    assetAllocationSection: HTMLElement | null;
+    assetAllocationChart: HTMLElement | null;
+    assetAllocationTableContainer: HTMLElement | null;
+    countryAllocationSection: HTMLElement | null;
+    countryAllocationChart: HTMLElement | null;
+    countryAllocationTableContainer: HTMLElement | null;
+    heatmapSection: HTMLElement | null;
+    heatmapContainer: HTMLElement | null;
+    showAssetAllocationBtn: HTMLElement | null;
+    showCountryAllocationBtn: HTMLElement | null;
+    showHeatmapBtn: HTMLElement | null;
     rebalancingToleranceInput: HTMLElement | null;
     tradingFeeRateInput: HTMLElement | null;
     taxRateInput: HTMLElement | null;

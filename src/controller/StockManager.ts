@@ -64,6 +64,8 @@ export class StockManager {
             ['ticker', this.handleMetadataFieldChangeStrategy.bind(this)],
             ['sector', this.handleSectorChangeStrategy.bind(this)],
             ['currentPrice', this.handleCurrentPriceChangeStrategy.bind(this)],
+            ['assetType', this.handleMetadataFieldChangeStrategy.bind(this)],
+            ['country', this.handleMetadataFieldChangeStrategy.bind(this)],
         ]);
     }
 
@@ -165,7 +167,7 @@ export class StockManager {
 
         // 2. Sanitization (텍스트 필드만)
         let sanitizedValue = validationResult.value ?? value;
-        if (field === 'name' || field === 'sector') {
+        if (field === 'name' || field === 'sector' || field === 'country') {
             sanitizedValue = DOMPurify.sanitize(String(sanitizedValue));
         }
 

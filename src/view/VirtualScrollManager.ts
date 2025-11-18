@@ -114,6 +114,8 @@ export class VirtualScrollManager {
                     <div class="virtual-cell">${t('ui.stockName')}</div>
                     <div class="virtual-cell">${t('ui.ticker')}</div>
                     <div class="virtual-cell">${t('ui.sector')}</div>
+                    <div class="virtual-cell">자산 유형</div>
+                    <div class="virtual-cell">국가</div>
                     <div class="virtual-cell align-right">${t('ui.targetRatio')}(%)</div>
                     <div class="virtual-cell align-right">${t('ui.currentPrice')}(${currencySymbol})</div>
                     ${mainMode === 'add' ? `<div class="virtual-cell align-center">${t('ui.fixedBuy')}(${currencySymbol})</div>` : ''}

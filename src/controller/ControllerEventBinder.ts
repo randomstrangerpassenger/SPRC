@@ -235,6 +235,20 @@ export function bindControllerEvents(controller: PortfolioController): void {
             handler: () => controller.goalSimulatorManager.handleCalculateRequiredContribution(),
         },
 
+        // 자산 배분 분석 (Phase 4.14)
+        {
+            event: 'showAssetTypeAllocationClicked',
+            handler: () => controller.assetAllocationManager.handleShowAssetTypeAllocation(),
+        },
+        {
+            event: 'showCountryAllocationClicked',
+            handler: () => controller.assetAllocationManager.handleShowCountryAllocation(),
+        },
+        {
+            event: 'showHeatmapClicked',
+            handler: () => controller.assetAllocationManager.handleShowHeatmap(),
+        },
+
         // 모달 상호작용
         {
             event: 'closeTransactionModalClicked',

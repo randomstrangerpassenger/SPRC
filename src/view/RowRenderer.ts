@@ -13,6 +13,7 @@ import {
     createCheckbox,
     createButton,
     createCell,
+    createSelect,
     getGridTemplate,
 } from './DOMHelpers';
 
@@ -67,6 +68,40 @@ export function createStockRowFragment(
                     t('ui.sector'),
                     false,
                     t('aria.sectorInput', { name: stock.name })
+                )
+            );
+
+        // Asset Type dropdown
+        const assetTypeOptions = [
+            { value: 'stock', label: '주식' },
+            { value: 'bond', label: '채권' },
+            { value: 'cash', label: '현금' },
+            { value: 'etf', label: 'ETF' },
+            { value: 'other', label: '기타' },
+        ];
+        divInputs
+            .appendChild(createCell())
+            .appendChild(
+                createSelect(
+                    'assetType',
+                    assetTypeOptions,
+                    stock.assetType,
+                    '자산 유형',
+                    `${stock.name} 자산 유형`
+                )
+            );
+
+        // Country input
+        divInputs
+            .appendChild(createCell())
+            .appendChild(
+                createInput(
+                    'text',
+                    'country',
+                    stock.country || '',
+                    '국가',
+                    false,
+                    `${stock.name} 국가`
                 )
             );
     }

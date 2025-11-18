@@ -22,6 +22,7 @@ import { ResultsRenderer } from './view/ResultsRenderer';
 import { ToastManager } from './view/ToastManager';
 import { AccessibilityAnnouncer } from './view/AccessibilityAnnouncer';
 import { DOMCache } from './view/DOMCache';
+import { AssetAllocationRenderer } from './view/AssetAllocationRenderer';
 
 /**
  * @class PortfolioView
@@ -38,6 +39,7 @@ export class PortfolioView {
     #toastManager: ToastManager;
     #accessibilityAnnouncer: AccessibilityAnnouncer;
     #domCache: DOMCache;
+    #assetAllocationRenderer: AssetAllocationRenderer;
 
     /**
      * @constructor
@@ -52,6 +54,7 @@ export class PortfolioView {
         this.#toastManager = new ToastManager();
         this.#accessibilityAnnouncer = new AccessibilityAnnouncer();
         this.#domCache = new DOMCache();
+        this.#assetAllocationRenderer = new AssetAllocationRenderer(this.dom);
     }
 
     /**
@@ -83,6 +86,7 @@ export class PortfolioView {
         this.#modalManager.setDom(this.dom);
         this.#virtualScrollManager.setDom(this.dom);
         this.#resultsRenderer.setDom(this.dom);
+        this.#assetAllocationRenderer.setDom(this.dom);
 
         // 모달 이벤트 바인딩
         this.#modalManager.bindModalEvents();
@@ -113,6 +117,22 @@ export class PortfolioView {
      */
     closestWithData(element: HTMLElement, dataAttr: string): HTMLElement | null {
         return this.#domCache.closest(element, dataAttr);
+    }
+
+    // ===== Module Getters =====
+
+    /**
+     * @description Get results renderer instance
+     */
+    get resultsRenderer(): ResultsRenderer {
+        return this.#resultsRenderer;
+    }
+
+    /**
+     * @description Get asset allocation renderer instance
+     */
+    get assetAllocationRenderer(): AssetAllocationRenderer {
+        return this.#assetAllocationRenderer;
     }
 
     // ===== DOM Encapsulation =====

@@ -76,6 +76,17 @@ export class DOMCache {
             performanceChart: D.getElementById('performanceChart'),
             snapshotListContainer: D.getElementById('snapshotListContainer'),
             snapshotList: D.getElementById('snapshotList'),
+            assetAllocationSection: D.getElementById('assetAllocationSection'),
+            assetAllocationChart: D.getElementById('assetAllocationChart'),
+            assetAllocationTableContainer: D.getElementById('assetAllocationTableContainer'),
+            countryAllocationSection: D.getElementById('countryAllocationSection'),
+            countryAllocationChart: D.getElementById('countryAllocationChart'),
+            countryAllocationTableContainer: D.getElementById('countryAllocationTableContainer'),
+            heatmapSection: D.getElementById('heatmapSection'),
+            heatmapContainer: D.getElementById('heatmapContainer'),
+            showAssetAllocationBtn: D.getElementById('showAssetTypeAllocationBtn'),
+            showCountryAllocationBtn: D.getElementById('showCountryAllocationBtn'),
+            showHeatmapBtn: D.getElementById('showHeatmapBtn'),
         };
 
         return this.#cache;

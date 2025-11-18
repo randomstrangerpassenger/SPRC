@@ -71,6 +71,42 @@ export function createCheckbox(
 }
 
 /**
+ * @description Create a select dropdown element
+ */
+export function createSelect(
+    field: string,
+    options: Array<{ value: string; label: string }>,
+    selectedValue: string | undefined,
+    placeholder: string = '',
+    ariaLabel: string = ''
+): HTMLSelectElement {
+    const select = document.createElement('select');
+    select.dataset.field = field;
+    if (ariaLabel) select.setAttribute('aria-label', ariaLabel);
+
+    // Add placeholder option
+    if (placeholder) {
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholder;
+        placeholderOption.disabled = true;
+        placeholderOption.selected = !selectedValue;
+        select.appendChild(placeholderOption);
+    }
+
+    // Add options
+    options.forEach(({ value, label }) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        option.selected = selectedValue === value;
+        select.appendChild(option);
+    });
+
+    return select;
+}
+
+/**
  * @description Create a button element
  */
 export function createButton(
@@ -125,11 +161,13 @@ const _getGridTemplateImpl = (mainMode: 'add' | 'sell' | 'simple'): string => {
         return '1.5fr 1fr 1fr 1.2fr';
     } else {
         if (mainMode === 'add') {
-            return '1.5fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr';
+            // 종목명, 티커, 섹터, 자산유형, 국가, 목표비율, 현재가, 고정매수, 액션
+            return '1.5fr 0.9fr 0.9fr 0.8fr 0.8fr 0.9fr 0.9fr 1fr 1fr';
         } else if (mainMode === 'simple') {
             return '2fr 1fr 1fr 1.5fr 1.2fr 0.8fr';
         } else {
-            return '2fr 1fr 1fr 1fr 1fr 1.2fr';
+            // 종목명, 티커, 섹터, 자산유형, 국가, 목표비율, 현재가, 액션
+            return '1.8fr 1fr 1fr 0.9fr 0.9fr 1fr 1fr 1fr';
         }
     }
 };

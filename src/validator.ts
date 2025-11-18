@@ -282,6 +282,17 @@ export const Validator = {
             case 'sector':
                 return this.validateText(value, 30);
 
+            case 'country':
+                return this.validateText(value, 10);
+
+            case 'assetType':
+                // Asset type is a select field, so just validate it's a valid option
+                const validAssetTypes = ['stock', 'bond', 'cash', 'etf', 'other', ''];
+                if (typeof value === 'string' && (validAssetTypes.includes(value) || value === '')) {
+                    return { isValid: true, value: value };
+                }
+                return { isValid: false, value: value };
+
             default:
                 // 기본적으로 문자열로 처리
                 return this.validateText(value, 100);
