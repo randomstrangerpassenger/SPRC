@@ -49,6 +49,36 @@ export interface CalculatedStock extends Stock {
 export type MainMode = 'add' | 'sell' | 'simple';
 export type Currency = 'krw' | 'usd';
 
+// 맞춤형 리밸런싱 규칙 타입
+export interface StockLimitRule {
+    stockId: string; // 종목 ID
+    maxAllocationPercent?: number; // 종목별 최대 할당 비율 (%)
+    minTradeAmount?: number; // 최소 거래 금액 (USD)
+}
+
+export interface SectorLimitRule {
+    sector: string; // 섹터명
+    maxAllocationPercent: number; // 섹터별 최대 할당 비율 (%)
+}
+
+export interface RebalancingRules {
+    enabled: boolean; // 규칙 활성화 여부
+    bandPercentage?: number; // ±밴드 설정 (예: 5 = ±5%)
+    minTradeAmount?: number; // 최소 거래금액 임계값 (USD)
+    stockLimits?: StockLimitRule[]; // 종목별 상한선
+    sectorLimits?: SectorLimitRule[]; // 섹터별 상한선
+}
+
+// 리밸런싱 프리셋 타입
+export interface RebalancingPreset {
+    id: string; // 프리셋 고유 ID
+    name: string; // 프리셋 이름
+    description?: string; // 프리셋 설명
+    rules: RebalancingRules; // 리밸런싱 규칙
+    createdAt: number; // 생성 시간 (Unix timestamp)
+    updatedAt: number; // 수정 시간 (Unix timestamp)
+}
+
 export interface PortfolioSettings {
     mainMode: MainMode;
     currentCurrency: Currency;
@@ -56,6 +86,7 @@ export interface PortfolioSettings {
     rebalancingTolerance?: number; // 리밸런싱 허용 오차 (%), optional for backward compatibility
     tradingFeeRate?: number; // 거래 수수료율 (%), optional
     taxRate?: number; // 세율 (%), optional
+    rebalancingRules?: RebalancingRules; // 맞춤형 리밸런싱 규칙, optional
 }
 
 export interface Portfolio {
@@ -120,6 +151,101 @@ export interface SectorData {
     sector: string;
     amount: Decimal;
     percentage: Decimal;
+}
+
+// 배당금 분석 타입
+export interface MonthlyDividend {
+    year: number;
+    month: number; // 1-12
+    amount: Decimal; // USD
+    count: number; // 배당 거래 수
+}
+
+export interface YearlyDividend {
+    year: number;
+    totalAmount: Decimal; // USD
+    monthlyBreakdown: MonthlyDividend[];
+    averageMonthly: Decimal; // USD
+    stockCount: number; // 배당 지급 종목 수
+}
+
+export interface DividendGrowth {
+    year: number;
+    totalDividend: Decimal; // USD
+    growthRate: Decimal; // % (전년 대비)
+}
+
+export interface DividendAnalysisResult {
+    totalDividends: Decimal; // 총 배당금 (USD)
+    yearlyDividends: YearlyDividend[]; // 연도별 배당
+    monthlyDividends: MonthlyDividend[]; // 월별 배당 (최근 12개월)
+    dividendGrowth: DividendGrowth[]; // 배당 성장률
+    estimatedAnnualDividend: Decimal; // 예상 연간 배당 (최근 12개월 기준)
+    dividendYield: Decimal; // 배당 수익률 (%)
+}
+
+// 시나리오 분석 타입
+export interface MarketScenario {
+    name: string; // 시나리오 이름 (예: "시장 +10%")
+    marketChange: number; // 시장 변동률 (%) (예: 10, -20)
+    description?: string; // 시나리오 설명
+}
+
+export interface ScenarioResult {
+    scenario: MarketScenario;
+    newTotalValue: Decimal; // 시나리오 적용 후 총 가치
+    valueChange: Decimal; // 가치 변화량
+    valueChangePercent: Decimal; // 가치 변화율 (%)
+    newStockValues: Array<{
+        stockId: string;
+        stockName: string;
+        currentValue: Decimal;
+        newValue: Decimal;
+        change: Decimal;
+        changePercent: Decimal;
+    }>;
+}
+
+export interface RebalancingFrequencyComparison {
+    frequency: string; // 리밸런싱 주기 (예: "분기별", "반기별", "연간")
+    annualizedReturn: Decimal; // 연환산 수익률 (%)
+    volatility: Decimal; // 변동성
+    sharpeRatio: Decimal; // 샤프 비율
+    transactionCosts: Decimal; // 거래 비용
+}
+
+export interface ScenarioAnalysisResult {
+    currentTotalValue: Decimal; // 현재 총 가치
+    marketScenarios: ScenarioResult[]; // 시장 시나리오 결과
+    rebalancingFrequencyComparison?: RebalancingFrequencyComparison[]; // 리밸런싱 주기별 비교
+}
+
+// 목표 달성 시뮬레이터 타입
+export interface GoalSimulationInput {
+    currentValue: Decimal; // 현재 포트폴리오 가치
+    targetAmount: Decimal; // 목표 금액
+    monthlyContribution: Decimal; // 월 적립금
+    expectedAnnualReturn: number; // 예상 연간 수익률 (%)
+    yearsToGoal?: number; // 목표 달성 기간 (년, 선택사항)
+}
+
+export interface MonthlyProjection {
+    month: number; // 경과 개월 수
+    portfolioValue: Decimal; // 포트폴리오 가치
+    totalContributions: Decimal; // 총 적립금
+    totalGains: Decimal; // 총 수익금
+}
+
+export interface GoalSimulationResult {
+    input: GoalSimulationInput;
+    monthsToGoal: number; // 목표 달성까지 개월 수
+    yearsToGoal: number; // 목표 달성까지 년 수
+    finalValue: Decimal; // 최종 포트폴리오 가치
+    totalContributions: Decimal; // 총 적립금
+    totalGains: Decimal; // 총 수익금
+    monthlyProjections: MonthlyProjection[]; // 월별 예상 추이 (선택적)
+    achievable: boolean; // 목표 달성 가능 여부
+    message?: string; // 메시지 (불가능한 경우 등)
 }
 
 // View interface for error service (to avoid circular dependencies)
@@ -191,4 +317,52 @@ export interface DOMElements {
     rebalancingToleranceInput: HTMLElement | null;
     tradingFeeRateInput: HTMLElement | null;
     taxRateInput: HTMLElement | null;
+    rebalancingRulesEnabled: HTMLElement | null;
+    rebalancingRulesContent: HTMLElement | null;
+    bandPercentage: HTMLElement | null;
+    minTradeAmount: HTMLElement | null;
+    stockLimitsContainer: HTMLElement | null;
+    addStockLimitBtn: HTMLElement | null;
+    sectorLimitsContainer: HTMLElement | null;
+    addSectorLimitBtn: HTMLElement | null;
+    presetSelector: HTMLElement | null;
+    loadPresetBtn: HTMLElement | null;
+    savePresetBtn: HTMLElement | null;
+    deletePresetBtn: HTMLElement | null;
+    dividendDashboardSection: HTMLElement | null;
+    totalDividendsAmount: HTMLElement | null;
+    estimatedAnnualDividend: HTMLElement | null;
+    dividendYield: HTMLElement | null;
+    showYearlyDividendsBtn: HTMLElement | null;
+    showMonthlyDividendsBtn: HTMLElement | null;
+    showDividendGrowthBtn: HTMLElement | null;
+    yearlyDividendsContainer: HTMLElement | null;
+    monthlyDividendsContainer: HTMLElement | null;
+    dividendGrowthContainer: HTMLElement | null;
+    yearlyDividendsTable: HTMLElement | null;
+    monthlyDividendsTable: HTMLElement | null;
+    dividendGrowthChart: HTMLElement | null;
+    scenarioAnalysisSection: HTMLElement | null;
+    scenarioCurrentValue: HTMLElement | null;
+    analyzeScenarioBtn: HTMLElement | null;
+    customScenarioBtn: HTMLElement | null;
+    scenarioResultsContainer: HTMLElement | null;
+    scenarioResultsTable: HTMLElement | null;
+    customScenarioContainer: HTMLElement | null;
+    customMarketChange: HTMLElement | null;
+    runCustomScenarioBtn: HTMLElement | null;
+    customScenarioResult: HTMLElement | null;
+    goalSimulatorSection: HTMLElement | null;
+    goalCurrentValue: HTMLElement | null;
+    goalTargetAmount: HTMLElement | null;
+    goalMonthlyContribution: HTMLElement | null;
+    goalExpectedReturn: HTMLElement | null;
+    simulateGoalBtn: HTMLElement | null;
+    calculateRequiredContributionBtn: HTMLElement | null;
+    goalSimulationResult: HTMLElement | null;
+    goalSimulationSummary: HTMLElement | null;
+    goalSimulationChart: HTMLElement | null;
+    requiredContributionResult: HTMLElement | null;
+    goalYearsToGoal: HTMLElement | null;
+    requiredContributionSummary: HTMLElement | null;
 }

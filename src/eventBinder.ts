@@ -5,6 +5,10 @@ import { setupDataEvents } from './eventBinder/dataEvents';
 import { setupTableEvents } from './eventBinder/tableEvents';
 import { setupCalculationEvents } from './eventBinder/calculationEvents';
 import { setupModalEvents } from './eventBinder/modalEvents';
+import { setupRebalancingRulesEvents } from './eventBinder/rebalancingRulesEvents';
+import { setupDividendDashboardEvents } from './eventBinder/dividendDashboardEvents';
+import { setupScenarioAnalysisEvents } from './eventBinder/scenarioAnalysisEvents';
+import { setupGoalSimulatorEvents } from './eventBinder/goalSimulatorEvents';
 
 /**
  * @description 애플리케이션의 DOM 이벤트를 View의 추상 이벤트로 연결합니다.
@@ -22,6 +26,10 @@ export function bindEventListeners(view: PortfolioView): AbortController {
     setupTableEvents(view, signal);
     setupCalculationEvents(view, signal);
     setupModalEvents(view, signal);
+    setupRebalancingRulesEvents(view, signal);
+    setupDividendDashboardEvents(view, signal);
+    setupScenarioAnalysisEvents(view, signal);
+    setupGoalSimulatorEvents(view, signal);
 
     // 키보드 네비게이션 포커스 스타일
     document.addEventListener(

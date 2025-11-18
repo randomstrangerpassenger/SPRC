@@ -8,7 +8,7 @@
 
 import Decimal from 'decimal.js';
 import { DECIMAL_ZERO, DECIMAL_HUNDRED } from '../constants';
-import type { CalculatedStock } from '../types';
+import type { CalculatedStock, RebalancingRules } from '../types';
 
 // ==================== Serialized Types ====================
 
@@ -39,6 +39,7 @@ interface AddRebalanceMessage {
     data: {
         portfolioData: CalculatedStock[];
         additionalInvestment: string; // Decimal as string
+        rebalancingRules?: RebalancingRules;
     };
 }
 
@@ -47,6 +48,7 @@ interface SimpleRebalanceMessage {
     data: {
         portfolioData: CalculatedStock[];
         additionalInvestment: string; // Decimal as string
+        rebalancingRules?: RebalancingRules;
     };
 }
 
@@ -153,6 +155,117 @@ function distributeRemainingInvestment(
 }
 
 /**
+ * @description Apply custom rebalancing rules
+ */
+function applyRebalancingRules(
+    results: Array<any>,
+    totalInvestment: Decimal,
+    rules?: RebalancingRules
+): void {
+    if (!rules || !rules.enabled) {
+        return;
+    }
+
+    const zero = DECIMAL_ZERO;
+
+    // 1. Band rule
+    if (rules.bandPercentage !== undefined && rules.bandPercentage > 0) {
+        const bandDec = new Decimal(rules.bandPercentage);
+        for (const result of results) {
+            const currentAmount = result.calculated?.currentAmount || zero;
+            const currentRatio = totalInvestment.isZero()
+                ? zero
+                : currentAmount.div(totalInvestment).times(DECIMAL_HUNDRED);
+            const targetRatio = new Decimal(result.targetRatio || 0);
+            const diff = currentRatio.minus(targetRatio).abs();
+
+            if (diff.lessThanOrEqualTo(bandDec)) {
+                result.finalBuyAmount = zero;
+            }
+        }
+    }
+
+    // 2. Minimum trade amount rule
+    if (rules.minTradeAmount !== undefined && rules.minTradeAmount > 0) {
+        const minTradeDec = new Decimal(rules.minTradeAmount);
+        for (const result of results) {
+            if (result.finalBuyAmount && result.finalBuyAmount.lessThan(minTradeDec)) {
+                result.finalBuyAmount = zero;
+            }
+        }
+    }
+
+    // 3. Stock limits
+    if (rules.stockLimits && rules.stockLimits.length > 0) {
+        for (const limit of rules.stockLimits) {
+            const result = results.find((r) => r.id === limit.stockId);
+            if (!result) continue;
+
+            if (limit.maxAllocationPercent !== undefined) {
+                const currentAmount = result.calculated?.currentAmount || zero;
+                const afterBuyAmount = currentAmount.plus(result.finalBuyAmount || zero);
+                const afterBuyRatio = totalInvestment.isZero()
+                    ? zero
+                    : afterBuyAmount.div(totalInvestment).times(DECIMAL_HUNDRED);
+                const maxRatio = new Decimal(limit.maxAllocationPercent);
+
+                if (afterBuyRatio.greaterThan(maxRatio)) {
+                    const maxAmount = totalInvestment.times(maxRatio.div(DECIMAL_HUNDRED));
+                    result.finalBuyAmount = Decimal.max(zero, maxAmount.minus(currentAmount));
+                }
+            }
+
+            if (limit.minTradeAmount !== undefined) {
+                const minTradeDec = new Decimal(limit.minTradeAmount);
+                if (result.finalBuyAmount && result.finalBuyAmount.lessThan(minTradeDec)) {
+                    result.finalBuyAmount = zero;
+                }
+            }
+        }
+    }
+
+    // 4. Sector limits
+    if (rules.sectorLimits && rules.sectorLimits.length > 0) {
+        for (const limit of rules.sectorLimits) {
+            const sectorResults = results.filter((r) => r.sector === limit.sector);
+            if (sectorResults.length === 0) continue;
+
+            const sectorAfterBuyTotal = sectorResults.reduce(
+                (sum, r) =>
+                    sum
+                        .plus(r.calculated?.currentAmount || zero)
+                        .plus(r.finalBuyAmount || zero),
+                zero
+            );
+            const sectorAfterBuyRatio = totalInvestment.isZero()
+                ? zero
+                : sectorAfterBuyTotal.div(totalInvestment).times(DECIMAL_HUNDRED);
+            const maxRatio = new Decimal(limit.maxAllocationPercent);
+
+            if (sectorAfterBuyRatio.greaterThan(maxRatio)) {
+                const maxSectorAmount = totalInvestment.times(maxRatio.div(DECIMAL_HUNDRED));
+                const excessAmount = sectorAfterBuyTotal.minus(maxSectorAmount);
+                const totalBuyInSector = sectorResults.reduce(
+                    (sum, r) => sum.plus(r.finalBuyAmount || zero),
+                    zero
+                );
+
+                if (totalBuyInSector.greaterThan(zero)) {
+                    for (const result of sectorResults) {
+                        const ratio = (result.finalBuyAmount || zero).div(totalBuyInSector);
+                        const reduction = excessAmount.times(ratio);
+                        result.finalBuyAmount = Decimal.max(
+                            zero,
+                            (result.finalBuyAmount || zero).minus(reduction)
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
  * @description Serialize result for postMessage
  */
 function serializeResult(result: Record<string, any>): SerializedRebalancingResult {
@@ -187,7 +300,8 @@ function serializeMetrics(metrics: Record<string, any>): SerializedMetrics {
  */
 function calculateAddRebalance(
     portfolioData: CalculatedStock[],
-    additionalInvestment: Decimal
+    additionalInvestment: Decimal,
+    rebalancingRules?: RebalancingRules
 ): SerializedRebalancingResult[] {
     const zero = DECIMAL_ZERO;
 
@@ -228,6 +342,9 @@ function calculateAddRebalance(
         ratioMultiplier
     );
 
+    // Apply rebalancing rules
+    applyRebalancingRules(results, totalInvestment, rebalancingRules);
+
     const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
     const finalResults = results.map((s) => ({
         ...s,
@@ -244,7 +361,8 @@ function calculateAddRebalance(
  */
 function calculateSimpleRebalance(
     portfolioData: CalculatedStock[],
-    additionalInvestment: Decimal
+    additionalInvestment: Decimal,
+    rebalancingRules?: RebalancingRules
 ): SerializedRebalancingResult[] {
     const zero = DECIMAL_ZERO;
 
@@ -299,6 +417,9 @@ function calculateSimpleRebalance(
         remainingInvestment,
         ratioMultiplier
     );
+
+    // Apply rebalancing rules
+    applyRebalancingRules(results, totalInvestment, rebalancingRules);
 
     const totalBuyAmount = results.reduce((sum, s) => sum.plus(s.finalBuyAmount), zero);
     const finalResults = results.map((s) => ({
@@ -364,7 +485,8 @@ self.onmessage = (event: MessageEvent<WorkerMessage & { requestId?: string }>) =
             case 'calculateAddRebalance':
                 result = calculateAddRebalance(
                     data.portfolioData,
-                    new Decimal(data.additionalInvestment)
+                    new Decimal(data.additionalInvestment),
+                    data.rebalancingRules
                 );
                 self.postMessage({ type, result, requestId });
                 break;
@@ -372,7 +494,8 @@ self.onmessage = (event: MessageEvent<WorkerMessage & { requestId?: string }>) =
             case 'calculateSimpleRebalance':
                 result = calculateSimpleRebalance(
                     data.portfolioData,
-                    new Decimal(data.additionalInvestment)
+                    new Decimal(data.additionalInvestment),
+                    data.rebalancingRules
                 );
                 self.postMessage({ type, result, requestId });
                 break;

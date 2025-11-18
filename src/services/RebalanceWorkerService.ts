@@ -6,7 +6,7 @@
  * - Improves UI responsiveness during CPU-intensive rebalancing
  */
 
-import type { CalculatedStock } from '../types';
+import type { CalculatedStock, RebalancingRules } from '../types';
 import { CONFIG } from '../constants';
 import Decimal from 'decimal.js';
 import { logger } from './Logger';
@@ -49,6 +49,7 @@ interface WorkerResponse<T = unknown> {
 interface AddRebalanceRequest {
     portfolioData: CalculatedStock[];
     additionalInvestment: string; // Decimal as string
+    rebalancingRules?: RebalancingRules;
 }
 
 /**
@@ -57,6 +58,7 @@ interface AddRebalanceRequest {
 interface SimpleRebalanceRequest {
     portfolioData: CalculatedStock[];
     additionalInvestment: string; // Decimal as string
+    rebalancingRules?: RebalancingRules;
 }
 
 /**
@@ -202,7 +204,8 @@ export class RebalanceWorkerService {
      */
     async calculateAddRebalance(
         portfolioData: CalculatedStock[],
-        additionalInvestment: Decimal
+        additionalInvestment: Decimal,
+        rebalancingRules?: RebalancingRules
     ): Promise<{ results: RebalancingResult[] }> {
         await this.ensureInitialized();
 
@@ -214,6 +217,7 @@ export class RebalanceWorkerService {
                 >('calculateAddRebalance', {
                     portfolioData,
                     additionalInvestment: additionalInvestment.toString(),
+                    rebalancingRules,
                 });
 
                 // Deserialize Decimal strings back to Decimal objects
@@ -226,7 +230,11 @@ export class RebalanceWorkerService {
         }
 
         // Fallback to synchronous calculation
-        const strategy = new AddRebalanceStrategy(portfolioData, additionalInvestment);
+        const strategy = new AddRebalanceStrategy(
+            portfolioData,
+            additionalInvestment,
+            rebalancingRules
+        );
         return strategy.calculate();
     }
 
@@ -235,7 +243,8 @@ export class RebalanceWorkerService {
      */
     async calculateSimpleRebalance(
         portfolioData: CalculatedStock[],
-        additionalInvestment: Decimal
+        additionalInvestment: Decimal,
+        rebalancingRules?: RebalancingRules
     ): Promise<{ results: RebalancingResult[] }> {
         await this.ensureInitialized();
 
@@ -247,6 +256,7 @@ export class RebalanceWorkerService {
                 >('calculateSimpleRebalance', {
                     portfolioData,
                     additionalInvestment: additionalInvestment.toString(),
+                    rebalancingRules,
                 });
 
                 return {
@@ -258,7 +268,11 @@ export class RebalanceWorkerService {
         }
 
         // Fallback to synchronous calculation
-        const strategy = new SimpleRatioStrategy(portfolioData, additionalInvestment);
+        const strategy = new SimpleRatioStrategy(
+            portfolioData,
+            additionalInvestment,
+            rebalancingRules
+        );
         return strategy.calculate();
     }
 

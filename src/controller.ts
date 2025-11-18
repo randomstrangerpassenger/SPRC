@@ -29,6 +29,10 @@ import { CalculationManager } from './controller/CalculationManager';
 import { DataManager } from './controller/DataManager';
 import { AppInitializer } from './controller/AppInitializer';
 import { SnapshotManager } from './controller/SnapshotManager';
+import { RebalancingRulesManager } from './controller/RebalancingRulesManager';
+import { DividendDashboardManager } from './controller/DividendDashboardManager';
+import { ScenarioAnalysisManager } from './controller/ScenarioAnalysisManager';
+import { GoalSimulatorManager } from './controller/GoalSimulatorManager';
 import { bindControllerEvents as bindControllerEventsExternal } from './controller/ControllerEventBinder';
 
 /**
@@ -47,6 +51,10 @@ export class PortfolioController {
     calculationManager: CalculationManager;
     dataManager: DataManager;
     snapshotManager: SnapshotManager;
+    rebalancingRulesManager: RebalancingRulesManager;
+    dividendDashboardManager: DividendDashboardManager;
+    scenarioAnalysisManager: ScenarioAnalysisManager;
+    goalSimulatorManager: GoalSimulatorManager;
     #appInitializer: AppInitializer;
 
     // Repository 인스턴스
@@ -84,6 +92,10 @@ export class PortfolioController {
         );
         this.dataManager = new DataManager(this.state, this.view);
         this.snapshotManager = new SnapshotManager(this.state, this.view, this.#snapshotRepo);
+        this.rebalancingRulesManager = new RebalancingRulesManager(this.state, this.view);
+        this.dividendDashboardManager = new DividendDashboardManager(this.state, this.view);
+        this.scenarioAnalysisManager = new ScenarioAnalysisManager(this.state, this.view);
+        this.goalSimulatorManager = new GoalSimulatorManager(this.state, this.view);
         this.#appInitializer = new AppInitializer(this.state, this.view);
 
         // ErrorHandler 및 Command Pipeline 초기화
@@ -114,6 +126,8 @@ export class PortfolioController {
         );
         // fullRender는 초기화 후 호출
         this.fullRender();
+        // 리밸런싱 규칙 UI 초기화
+        this.rebalancingRulesManager.initializeUI();
     }
 
     /**
@@ -190,6 +204,19 @@ export class PortfolioController {
         // - WarningAnalysisCommand: 리밸런싱/리스크 경고 (full 모드만)
         // - PersistenceCommand: 상태 저장
         await this.#commandPipeline.execute(context);
+
+        // Update dividend dashboard and scenario analysis (if calculatedState is available)
+        if (context.calculatedState) {
+            this.dividendDashboardManager.updateDashboard(
+                context.calculatedState.portfolioData,
+                context.calculatedState.currentTotal
+            );
+            this.scenarioAnalysisManager.updateScenarioAnalysis(
+                context.calculatedState.portfolioData,
+                context.calculatedState.currentTotal
+            );
+            this.goalSimulatorManager.showGoalSimulator();
+        }
     }
 
     // === 기타 핸들러 ===

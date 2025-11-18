@@ -148,7 +148,56 @@
                     </span>
                 </div>
             </section>
-            
+
+            <section id="rebalancingRulesCard" class="card" aria-labelledby="rebalancingRulesHeading">
+                <h2 id="rebalancingRulesHeading">⚙️ 맞춤형 리밸런싱 규칙</h2>
+
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="rebalancingRulesEnabled">
+                        맞춤형 규칙 활성화
+                    </label>
+                </div>
+
+                <div id="rebalancingRulesContent" class="hidden">
+                    <div class="input-group mt-3">
+                        <label for="bandPercentage">📊 목표 비율 허용 밴드 (±%):</label>
+                        <input type="number" id="bandPercentage" placeholder="예: 5" min="0" step="0.1" value="5">
+                        <small class="text-muted">목표 비율에서 이 범위 내에 있으면 리밸런싱하지 않습니다</small>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <label for="minTradeAmount">💵 최소 거래 금액 (USD):</label>
+                        <input type="number" id="minTradeAmount" placeholder="예: 100" min="0" step="1" value="100">
+                        <small class="text-muted">이 금액 미만의 거래는 무시됩니다</small>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <h3>📌 종목별 상한선</h3>
+                        <div id="stockLimitsContainer"></div>
+                        <button id="addStockLimitBtn" class="btn btn-sm mt-2" data-variant="green">+ 종목 상한선 추가</button>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <h3>🏢 섹터별 상한선</h3>
+                        <div id="sectorLimitsContainer"></div>
+                        <button id="addSectorLimitBtn" class="btn btn-sm mt-2" data-variant="green">+ 섹터 상한선 추가</button>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <h3>💾 프리셋 관리</h3>
+                        <div class="btn-controls">
+                            <select id="presetSelector" class="input-group__select">
+                                <option value="">-- 프리셋 선택 --</option>
+                            </select>
+                            <button id="loadPresetBtn" class="btn btn-sm" data-variant="blue">불러오기</button>
+                            <button id="savePresetBtn" class="btn btn-sm" data-variant="green">현재 설정 저장</button>
+                            <button id="deletePresetBtn" class="btn btn-sm" data-variant="orange">삭제</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <button id="calculateBtn" class="btn w-full p-4 text-lg mb-6">계산하기</button>
             
             <section id="resultsSection" class="hidden" aria-live="polite" role="region" aria-label="계산 결과"></section>
@@ -171,6 +220,121 @@
                 <div id="snapshotListContainer" class="hidden mb-4">
                     <h3>💾 저장된 스냅샷</h3>
                     <div id="snapshotList" class="snapshot-list-container"></div>
+                </div>
+            </section>
+
+            <section id="dividendDashboardSection" class="card hidden" role="region" aria-label="배당금 대시보드">
+                <h2>💰 배당금 대시보드</h2>
+
+                <div class="dividend-summary mb-4">
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h3>총 배당금</h3>
+                            <p id="totalDividendsAmount" class="amount-large">$0.00</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>예상 연간 배당</h3>
+                            <p id="estimatedAnnualDividend" class="amount-large">$0.00</p>
+                            <small id="dividendYield" class="text-muted">수익률: 0.00%</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-controls mb-4">
+                    <button id="showYearlyDividendsBtn" class="btn" data-variant="blue">📊 연도별 배당</button>
+                    <button id="showMonthlyDividendsBtn" class="btn" data-variant="green">📅 월별 배당</button>
+                    <button id="showDividendGrowthBtn" class="btn" data-variant="purple">📈 배당 성장률</button>
+                </div>
+
+                <div id="yearlyDividendsContainer" class="hidden mb-4">
+                    <h3>📊 연도별 배당 내역</h3>
+                    <div id="yearlyDividendsTable"></div>
+                </div>
+
+                <div id="monthlyDividendsContainer" class="hidden mb-4">
+                    <h3>📅 월별 배당 (최근 12개월)</h3>
+                    <div id="monthlyDividendsTable"></div>
+                </div>
+
+                <div id="dividendGrowthContainer" class="hidden mb-4">
+                    <h3>📈 배당 성장률 (연도별)</h3>
+                    <div id="dividendGrowthChart"></div>
+                </div>
+            </section>
+
+            <section id="scenarioAnalysisSection" class="card hidden" role="region" aria-label="시나리오 분석">
+                <h2>🎯 시나리오 분석</h2>
+
+                <div class="scenario-summary mb-4">
+                    <h3>현재 포트폴리오 가치</h3>
+                    <p id="scenarioCurrentValue" class="amount-large">$0.00</p>
+                </div>
+
+                <div class="btn-controls mb-4">
+                    <button id="analyzeScenarioBtn" class="btn" data-variant="blue">📊 시나리오 분석 실행</button>
+                    <button id="customScenarioBtn" class="btn" data-variant="green">🎨 사용자 지정 시나리오</button>
+                </div>
+
+                <div id="scenarioResultsContainer" class="hidden mb-4">
+                    <h3>📈 시장 변동 시나리오</h3>
+                    <div id="scenarioResultsTable"></div>
+                </div>
+
+                <div id="customScenarioContainer" class="hidden mb-4">
+                    <h3>🎨 사용자 지정 시나리오</h3>
+                    <div class="input-group">
+                        <label for="customMarketChange">시장 변동률 (%):</label>
+                        <input type="number" id="customMarketChange" placeholder="예: 15 또는 -15" step="1" value="0">
+                        <button id="runCustomScenarioBtn" class="btn btn-sm" data-variant="blue">분석 실행</button>
+                    </div>
+                    <div id="customScenarioResult" class="mt-3"></div>
+                </div>
+            </section>
+
+            <section id="goalSimulatorSection" class="card hidden" role="region" aria-label="목표 달성 시뮬레이터">
+                <h2>🎯 목표 달성 시뮬레이터</h2>
+
+                <div class="goal-simulator-form mb-4">
+                    <div class="input-group">
+                        <label for="goalCurrentValue">현재 포트폴리오 가치 (USD):</label>
+                        <input type="number" id="goalCurrentValue" placeholder="예: 10000" min="0" step="100" value="0">
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <label for="goalTargetAmount">목표 금액 (USD):</label>
+                        <input type="number" id="goalTargetAmount" placeholder="예: 1000000" min="0" step="100" required>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <label for="goalMonthlyContribution">월 적립금 (USD):</label>
+                        <input type="number" id="goalMonthlyContribution" placeholder="예: 500" min="0" step="10" required>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <label for="goalExpectedReturn">예상 연간 수익률 (%):</label>
+                        <input type="number" id="goalExpectedReturn" placeholder="예: 7" min="-50" max="100" step="0.1" value="7">
+                        <small class="text-muted">역사적 평균: S&P 500 ~10%, 채권 ~4-5%</small>
+                    </div>
+
+                    <div class="btn-controls mt-3">
+                        <button id="simulateGoalBtn" class="btn" data-variant="blue">🎯 목표 달성 시뮬레이션</button>
+                        <button id="calculateRequiredContributionBtn" class="btn" data-variant="green">💡 필요 적립금 계산</button>
+                    </div>
+                </div>
+
+                <div id="goalSimulationResult" class="hidden mb-4">
+                    <h3>시뮬레이션 결과</h3>
+                    <div id="goalSimulationSummary"></div>
+                    <div id="goalSimulationChart" class="mt-3"></div>
+                </div>
+
+                <div id="requiredContributionResult" class="hidden mb-4">
+                    <h3>필요 적립금 계산 결과</h3>
+                    <div class="input-group mb-3">
+                        <label for="goalYearsToGoal">목표 달성 기간 (년):</label>
+                        <input type="number" id="goalYearsToGoal" placeholder="예: 20" min="1" max="100" step="1" value="20">
+                    </div>
+                    <div id="requiredContributionSummary"></div>
                 </div>
             </section>
         </main>

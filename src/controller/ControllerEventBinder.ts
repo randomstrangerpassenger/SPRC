@@ -140,6 +140,101 @@ export function bindControllerEvents(controller: PortfolioController): void {
                 controller.handleRebalancingToleranceChange(data.tolerance),
         },
 
+        // 리밸런싱 규칙
+        {
+            event: 'rebalancingRulesEnabledChanged',
+            handler: (data: { enabled: boolean }) =>
+                controller.rebalancingRulesManager.handleEnabledChanged(data.enabled),
+        },
+        {
+            event: 'bandPercentageChanged',
+            handler: (data: { value: number }) =>
+                controller.rebalancingRulesManager.handleBandPercentageChanged(data.value),
+        },
+        {
+            event: 'minTradeAmountChanged',
+            handler: (data: { value: number }) =>
+                controller.rebalancingRulesManager.handleMinTradeAmountChanged(data.value),
+        },
+        {
+            event: 'addStockLimitClicked',
+            handler: async () => controller.rebalancingRulesManager.handleAddStockLimit(),
+        },
+        {
+            event: 'removeStockLimitClicked',
+            handler: (data: { index: number }) =>
+                controller.rebalancingRulesManager.handleRemoveStockLimit(data.index),
+        },
+        {
+            event: 'addSectorLimitClicked',
+            handler: async () => controller.rebalancingRulesManager.handleAddSectorLimit(),
+        },
+        {
+            event: 'removeSectorLimitClicked',
+            handler: (data: { index: number }) =>
+                controller.rebalancingRulesManager.handleRemoveSectorLimit(data.index),
+        },
+        {
+            event: 'stockLimitsChanged',
+            handler: () => controller.rebalancingRulesManager.handleStockLimitsChanged(),
+        },
+        {
+            event: 'sectorLimitsChanged',
+            handler: () => controller.rebalancingRulesManager.handleSectorLimitsChanged(),
+        },
+        {
+            event: 'loadPresetClicked',
+            handler: (data: { presetId: string }) =>
+                controller.rebalancingRulesManager.handleLoadPreset(data.presetId),
+        },
+        {
+            event: 'savePresetClicked',
+            handler: async () => controller.rebalancingRulesManager.handleSavePreset(),
+        },
+        {
+            event: 'deletePresetClicked',
+            handler: async (data: { presetId: string }) =>
+                controller.rebalancingRulesManager.handleDeletePreset(data.presetId),
+        },
+
+        // 배당금 대시보드
+        {
+            event: 'showYearlyDividendsClicked',
+            handler: () => controller.dividendDashboardManager.handleShowYearlyDividends(),
+        },
+        {
+            event: 'showMonthlyDividendsClicked',
+            handler: () => controller.dividendDashboardManager.handleShowMonthlyDividends(),
+        },
+        {
+            event: 'showDividendGrowthClicked',
+            handler: () => controller.dividendDashboardManager.handleShowDividendGrowth(),
+        },
+
+        // 시나리오 분석
+        {
+            event: 'analyzeScenarioClicked',
+            handler: () => controller.scenarioAnalysisManager.handleAnalyzeScenario(),
+        },
+        {
+            event: 'customScenarioToggled',
+            handler: () => controller.scenarioAnalysisManager.handleCustomScenarioToggle(),
+        },
+        {
+            event: 'runCustomScenarioClicked',
+            handler: () => controller.scenarioAnalysisManager.handleRunCustomScenario(),
+        },
+
+        // 목표 시뮬레이터
+        {
+            event: 'simulateGoalClicked',
+            handler: () => controller.goalSimulatorManager.handleSimulateGoal(),
+        },
+        {
+            event: 'calculateRequiredContributionClicked',
+            handler: () => controller.goalSimulatorManager.handleCalculateRequiredContribution(),
+        },
+
         // 모달 상호작용
         {
             event: 'closeTransactionModalClicked',
