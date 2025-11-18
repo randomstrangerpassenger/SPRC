@@ -34,6 +34,7 @@ import { DividendDashboardManager } from './controller/DividendDashboardManager'
 import { ScenarioAnalysisManager } from './controller/ScenarioAnalysisManager';
 import { GoalSimulatorManager } from './controller/GoalSimulatorManager';
 import { AssetAllocationManager } from './controller/AssetAllocationManager';
+import { AdvancedAnalysisManager } from './controller/AdvancedAnalysisManager';
 import { bindControllerEvents as bindControllerEventsExternal } from './controller/ControllerEventBinder';
 
 /**
@@ -57,6 +58,7 @@ export class PortfolioController {
     scenarioAnalysisManager: ScenarioAnalysisManager;
     goalSimulatorManager: GoalSimulatorManager;
     assetAllocationManager: AssetAllocationManager;
+    advancedAnalysisManager: AdvancedAnalysisManager;
     #appInitializer: AppInitializer;
 
     // Repository 인스턴스
@@ -99,6 +101,7 @@ export class PortfolioController {
         this.scenarioAnalysisManager = new ScenarioAnalysisManager(this.state, this.view);
         this.goalSimulatorManager = new GoalSimulatorManager(this.state, this.view);
         this.assetAllocationManager = new AssetAllocationManager(this.state, this.view);
+        this.advancedAnalysisManager = new AdvancedAnalysisManager(this.state, this.view);
         this.#appInitializer = new AppInitializer(this.state, this.view);
 
         // ErrorHandler 및 Command Pipeline 초기화

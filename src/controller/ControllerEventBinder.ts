@@ -249,6 +249,22 @@ export function bindControllerEvents(controller: PortfolioController): void {
             handler: () => controller.assetAllocationManager.handleShowHeatmap(),
         },
 
+        // Tax-Lot Accounting (Phase 4.15)
+        {
+            event: 'showTaxLotAnalysisClicked',
+            handler: () => controller.advancedAnalysisManager.handleShowTaxLotAnalysis(),
+        },
+        {
+            event: 'calculateTaxOptimizedSaleClicked',
+            handler: () => controller.advancedAnalysisManager.handleCalculateTaxOptimizedSale(),
+        },
+
+        // Transaction Analysis (Phase 4.16)
+        {
+            event: 'showTransactionAnalysisClicked',
+            handler: () => controller.advancedAnalysisManager.handleShowTransactionAnalysis(),
+        },
+
         // 모달 상호작용
         {
             event: 'closeTransactionModalClicked',

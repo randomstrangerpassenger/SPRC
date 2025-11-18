@@ -87,6 +87,14 @@ export class DOMCache {
             showAssetAllocationBtn: D.getElementById('showAssetTypeAllocationBtn'),
             showCountryAllocationBtn: D.getElementById('showCountryAllocationBtn'),
             showHeatmapBtn: D.getElementById('showHeatmapBtn'),
+            taxLotSection: D.getElementById('taxLotSection'),
+            taxLotAnalysisContainer: D.getElementById('taxLotAnalysisContainer'),
+            taxOptimizedSaleContainer: D.getElementById('taxOptimizedSaleContainer'),
+            showTaxLotAnalysisBtn: D.getElementById('showTaxLotAnalysisBtn'),
+            calculateTaxOptimizedSaleBtn: D.getElementById('calculateTaxOptimizedSaleBtn'),
+            transactionAnalysisSection: D.getElementById('transactionAnalysisSection'),
+            transactionSummaryContainer: D.getElementById('transactionSummaryContainer'),
+            showTransactionAnalysisBtn: D.getElementById('showTransactionAnalysisBtn'),
         };
 
         return this.#cache;

@@ -327,6 +327,103 @@ export interface HeatmapCell {
     percentage: Decimal; // 비율 (%)
 }
 
+// ==================== Tax-Lot Accounting (Phase 4.15) ====================
+
+export type TaxCalculationMethod = 'FIFO' | 'LIFO' | 'HIFO'; // HIFO = Highest In, First Out
+
+export interface TaxLot {
+    transactionId: string; // 원래 매수 거래 ID
+    date: string; // 매수 날짜 (YYYY-MM-DD)
+    quantity: Decimal; // 남은 수량
+    originalQuantity: Decimal; // 원래 매수 수량
+    price: Decimal; // 매수 단가
+    remainingQuantity: Decimal; // 남은 수량 (매도 후)
+}
+
+export interface TaxLotSale {
+    lotId: string; // 매도한 tax lot ID
+    quantity: Decimal; // 매도 수량
+    purchasePrice: Decimal; // 매수 단가
+    purchaseDate: string; // 매수 날짜
+    salePrice: Decimal; // 매도 단가
+    saleDate: string; // 매도 날짜
+    capitalGain: Decimal; // 양도 차익 (salePrice - purchasePrice) * quantity
+    isLongTerm: boolean; // 장기 보유 여부 (1년 이상)
+    holdingPeriodDays: number; // 보유 기간 (일)
+}
+
+export interface TaxLotAnalysis {
+    stockId: string; // 종목 ID
+    ticker: string; // 티커
+    name: string; // 종목명
+    method: TaxCalculationMethod; // 세금 계산 방법
+    lots: TaxLot[]; // 현재 보유 중인 tax lots
+    totalQuantity: Decimal; // 총 보유 수량
+    averageCostBasis: Decimal; // 평균 단가
+    currentPrice: Decimal; // 현재가
+    unrealizedGain: Decimal; // 미실현 이익
+    unrealizedGainPercent: Decimal; // 미실현 수익률 (%)
+}
+
+export interface TaxOptimizedSale {
+    stockId: string; // 종목 ID
+    ticker: string; // 티커
+    quantityToSell: Decimal; // 매도 수량
+    method: TaxCalculationMethod; // 추천 방법
+    estimatedSales: TaxLotSale[]; // 예상 매도 내역
+    totalCapitalGain: Decimal; // 총 양도 차익
+    totalTax: Decimal; // 예상 세금
+    shortTermGain: Decimal; // 단기 차익
+    longTermGain: Decimal; // 장기 차익
+    effectiveTaxRate: Decimal; // 실효 세율 (%)
+}
+
+export interface TaxSettings {
+    shortTermTaxRate: number; // 단기 양도세율 (%)
+    longTermTaxRate: number; // 장기 양도세율 (%)
+    holdingPeriodForLongTerm: number; // 장기 보유 기준 (일)
+}
+
+// ==================== Transaction Analysis (Phase 4.16) ====================
+
+export interface TransactionAnalysis {
+    stockId: string; // 종목 ID
+    ticker: string; // 티커
+    name: string; // 종목명
+    buyTransactions: Transaction[]; // 매수 거래 목록
+    sellTransactions: Transaction[]; // 매도 거래 목록
+    dividendTransactions: Transaction[]; // 배당 거래 목록
+    avgBuyPrice: Decimal; // 평균 매수 단가
+    avgSellPrice: Decimal; // 평균 매도 단가
+    totalBuyAmount: Decimal; // 총 매수 금액
+    totalSellAmount: Decimal; // 총 매도 금액
+    totalDividends: Decimal; // 총 배당금
+    buyCount: number; // 매수 횟수
+    sellCount: number; // 매도 횟수
+    dividendCount: number; // 배당 횟수
+    tradingFrequency: Decimal; // 거래 빈도 (회/월)
+    firstTransactionDate: string; // 첫 거래 날짜
+    lastTransactionDate: string; // 마지막 거래 날짜
+    tradingPeriodDays: number; // 거래 기간 (일)
+}
+
+export interface PortfolioTransactionSummary {
+    totalBuyAmount: Decimal; // 총 매수 금액
+    totalSellAmount: Decimal; // 총 매도 금액
+    totalDividends: Decimal; // 총 배당금
+    totalTransactions: number; // 총 거래 수
+    totalTradingCosts: Decimal; // 총 거래 비용 (수수료 + 세금)
+    netCashFlow: Decimal; // 순현금흐름 (매도+배당 - 매수)
+    stockAnalyses: TransactionAnalysis[]; // 종목별 분석
+    tradingCostByStock: Array<{
+        stockId: string;
+        ticker: string;
+        tradingCost: Decimal;
+        feeAmount: Decimal;
+        taxAmount: Decimal;
+    }>;
+}
+
 // View interface for error service (to avoid circular dependencies)
 export interface IView {
     showToast(message: string, type: 'error' | 'success' | 'info' | 'warning'): void;
@@ -404,6 +501,14 @@ export interface DOMElements {
     showAssetAllocationBtn: HTMLElement | null;
     showCountryAllocationBtn: HTMLElement | null;
     showHeatmapBtn: HTMLElement | null;
+    taxLotSection: HTMLElement | null;
+    taxLotAnalysisContainer: HTMLElement | null;
+    taxOptimizedSaleContainer: HTMLElement | null;
+    showTaxLotAnalysisBtn: HTMLElement | null;
+    calculateTaxOptimizedSaleBtn: HTMLElement | null;
+    transactionAnalysisSection: HTMLElement | null;
+    transactionSummaryContainer: HTMLElement | null;
+    showTransactionAnalysisBtn: HTMLElement | null;
     rebalancingToleranceInput: HTMLElement | null;
     tradingFeeRateInput: HTMLElement | null;
     taxRateInput: HTMLElement | null;

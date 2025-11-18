@@ -23,6 +23,7 @@ import { ToastManager } from './view/ToastManager';
 import { AccessibilityAnnouncer } from './view/AccessibilityAnnouncer';
 import { DOMCache } from './view/DOMCache';
 import { AssetAllocationRenderer } from './view/AssetAllocationRenderer';
+import { AdvancedAnalysisRenderer } from './view/AdvancedAnalysisRenderer';
 
 /**
  * @class PortfolioView
@@ -40,6 +41,7 @@ export class PortfolioView {
     #accessibilityAnnouncer: AccessibilityAnnouncer;
     #domCache: DOMCache;
     #assetAllocationRenderer: AssetAllocationRenderer;
+    #advancedAnalysisRenderer: AdvancedAnalysisRenderer;
 
     /**
      * @constructor
@@ -55,6 +57,7 @@ export class PortfolioView {
         this.#accessibilityAnnouncer = new AccessibilityAnnouncer();
         this.#domCache = new DOMCache();
         this.#assetAllocationRenderer = new AssetAllocationRenderer(this.dom);
+        this.#advancedAnalysisRenderer = new AdvancedAnalysisRenderer(this.dom);
     }
 
     /**
@@ -87,6 +90,7 @@ export class PortfolioView {
         this.#virtualScrollManager.setDom(this.dom);
         this.#resultsRenderer.setDom(this.dom);
         this.#assetAllocationRenderer.setDom(this.dom);
+        this.#advancedAnalysisRenderer.setDom(this.dom);
 
         // 모달 이벤트 바인딩
         this.#modalManager.bindModalEvents();
@@ -133,6 +137,13 @@ export class PortfolioView {
      */
     get assetAllocationRenderer(): AssetAllocationRenderer {
         return this.#assetAllocationRenderer;
+    }
+
+    /**
+     * @description Get advanced analysis renderer instance
+     */
+    get advancedAnalysisRenderer(): AdvancedAnalysisRenderer {
+        return this.#advancedAnalysisRenderer;
     }
 
     // ===== DOM Encapsulation =====
